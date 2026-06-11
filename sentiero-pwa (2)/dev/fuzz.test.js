@@ -9,7 +9,7 @@ new Function('exports', core + `
   exports.sanitizeDiary=sanitizeDiary; exports.sanitizeState=sanitizeState; exports.scheduledFor=scheduledFor;
   exports.computeProgress=computeProgress; exports.rolloverDay=rolloverDay; exports.sealIfComplete=sealIfComplete;
   exports.accumFromResults=accumFromResults; exports.extractJson=extractJson; exports.aiOutputToState=aiOutputToState;
-  exports.nextReminderDelays=nextReminderDelays; exports.pruneForSpace=pruneForSpace; exports.dayGap=dayGap;
+  exports.nextReminderDelays=nextReminderDelays; exports.sortQuests=sortQuests; exports.activeQuests=activeQuests; exports.pruneForSpace=pruneForSpace; exports.dayGap=dayGap;
 `)(C);
 
 const DEF = {
@@ -43,7 +43,9 @@ function garbage(depth) {
 }
 function garbageQuest() {
   if (rnd() < 0.3) return garbage();
-  return { id: rnd()<0.5 ? pick(['a','a','b','']) : garbage(), titolo: rnd()<0.7 ? 'q'+ri(1000) : garbage(), note: garbage(), fatto: garbage() };
+  return { id: rnd()<0.5 ? pick(['a','a','b','']) : garbage(), titolo: rnd()<0.7 ? 'q'+ri(1000) : garbage(), note: garbage(), fatto: garbage(),
+    quando: rnd()<0.5 ? pick(['2026-06-'+String(1+ri(28)).padStart(2,'0'),'2026-13-99','domani','',garbage()]) : undefined,
+    ora: rnd()<0.5 ? pick([String(ri(24)).padStart(2,'0')+':'+String(ri(60)).padStart(2,'0'),'99:99','alle 7','',garbage()]) : undefined };
 }
 
 let total = 0, failures = [];
@@ -64,6 +66,8 @@ function validState(st) {
   st.quests.forEach(q => {
     check(typeof q.titolo === 'string' && q.titolo.length > 0 && q.titolo.length <= C.LIMITS.TITLE, 'titolo valido', q);
     check(typeof q.fatto === 'boolean', 'fatto boolean', q);
+    check(q.quando === '' || /^\d{4}-\d{2}-\d{2}$/.test(q.quando), 'quando valido', q.quando);
+    check(q.ora === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(q.ora), 'ora valida', q.ora);
   });
   check(st.quests.length <= C.LIMITS.QMAX, 'quest <= QMAX', st.quests.length);
   check(Number.isInteger(st.streak) && st.streak >= 0, 'streak >= 0', st.streak);
@@ -78,7 +82,20 @@ function validState(st) {
   check(re.streak === st.streak, 'round-trip streak stabile', [re.streak, st.streak]);
 }
 
-console.log('SUITE 1 — sanitizeState con input ostili (300.000)');
+console.log('SUITE 0 — voci di diario con born/done ostili (50.000)');
+for (let i = 0; i < 50000; i++) {
+  const raw = { diary: Array(ri(8)).fill(0).map(() => ({ testo: rnd()<0.8?'nota '+ri(99):garbage(), iso: rnd()<0.7?new Date().toISOString():garbage(), born: garbage(), done: garbage(), raw: garbage(), pos: rnd()<0.6?pick([{lat:90*(rnd()*2-1),lon:180*(rnd()*2-1)},{lat:999,lon:0},{lat:'x',lon:'y'},garbage(),null]):undefined })) };
+  let st;
+  try { st = C.sanitizeState(raw, DEF); } catch (e) { check(false, 'sanitizeDiary non deve lanciare', e.message); continue; }
+  st.diary.forEach(e => {
+    check(Array.isArray(e.born) && e.born.length <= 20 && e.born.every(x => typeof x === 'string' && x.length <= 200), 'born sanitizzato', e.born && e.born.length);
+    check(Array.isArray(e.done) && e.done.length <= 20 && e.done.every(x => typeof x === 'string' && x.length <= 200), 'done sanitizzato', e.done && e.done.length);
+    check(e.pos === null || (typeof e.pos === 'object' && isFinite(e.pos.lat) && isFinite(e.pos.lon) && Math.abs(e.pos.lat) <= 90 && Math.abs(e.pos.lon) <= 180), 'pos valida o nulla', e.pos);
+  });
+}
+report();
+
+console.log('\nSUITE 1 — sanitizeState con input ostili (300.000)');
 for (let i = 0; i < 300000; i++) {
   let raw;
   const mode = ri(4);
@@ -106,7 +123,7 @@ for (let i = 0; i < 200000; i++) {
   if (out) {
     const ids = out.quests.map(q => q.id);
     check(new Set(ids).size === ids.length, 'IA: id unici dopo merge', ids.slice(0,5));
-    check(typeof out.diario === 'string' && out.diario.length > 0 && out.diario.length <= C.LIMITS.DIARY, 'IA: diario valido', out.diario.length);
+    check(typeof out.diario === 'string' && out.diario.length <= C.LIMITS.DIARY, 'IA: diario stringa (anche vuota)', out.diario.length);
     out.quests.forEach(q => check(typeof q.titolo === 'string' && q.titolo.length <= C.LIMITS.TITLE, 'IA: titolo valido', q.titolo && q.titolo.length));
   }
   // extractJson su testo con rumore attorno
@@ -169,6 +186,28 @@ console.log('\nSUITE 3 — simulatore di vita: azioni casuali su giorni che scor
   const size = JSON.stringify(st).length;
   check(size < 4500000, 'stato sotto il limite localStorage', size);
   console.log('  dimensione stato dopo simulazione:', (size/1024).toFixed(1), 'KB; giorni sigillati:', sealedDays.size);
+}
+report();
+
+console.log('\nSUITE 3b — ordinamento per giorno/ora e progresso che esclude le future (100.000)');
+for (let i = 0; i < 100000; i++) {
+  const qs = C.sanitizeQuests(Array(ri(15)).fill(0).map(garbageQuest));
+  const sorted = C.sortQuests(qs);
+  check(sorted.length === qs.length, 'sort conserva tutte le quest', [sorted.length, qs.length]);
+  for (let j = 1; j < sorted.length; j++) {
+    const a = (sorted[j-1].quando||'9999-99-99')+' '+(sorted[j-1].ora||'99:99');
+    const b = (sorted[j].quando||'9999-99-99')+' '+(sorted[j].ora||'99:99');
+    check(a <= b, 'ordine non decrescente per giorno/ora', [a, b]);
+  }
+  const tk = '2026-06-'+String(1+ri(28)).padStart(2,'0');
+  const st = C.sanitizeState({ quests: qs, scheduled: [] }, DEF);
+  st.scheduled = [];
+  const prog = C.computeProgress(st, tk, 0);
+  const attese = st.quests.filter(q => !q.quando || q.quando <= tk);
+  check(prog.total === attese.length, 'le future non pesano sul cerchio', { total: prog.total, attese: attese.length, tk });
+  check(prog.done === attese.filter(q => q.fatto).length, 'done conta solo le attive', prog);
+  const sealed = C.sealIfComplete(st, tk, 0);
+  if (sealed === 'sealed') check(attese.length > 0 && attese.every(q => q.fatto), 'sigillo solo con tutte le attive fatte', attese.length);
 }
 report();
 
