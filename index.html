@@ -269,7 +269,8 @@ body.shake-big{animation:shkb .45s cubic-bezier(.36,.07,.19,.97)}
         <label for="apikey">Chiave API Anthropic (resta solo su questo telefono)</label>
         <input type="password" id="apikey" placeholder="sk-ant-...">
         <p class="note">Con la chiave, l'IA distilla le quest dal parlato e scrive la voce di diario. Senza, il trascritto viene salvato così com'è.</p>
-        <div class="btn-row"><button class="act primary" id="btn-savekey">Salva chiave</button></div>
+        <div class="btn-row"><button class="act primary" id="btn-savekey">Salva chiave</button><button class="act" id="btn-testkey">Prova connessione</button></div>
+        <p class="note" id="test-result"></p>
       </section>
 
       <section>
@@ -776,7 +777,16 @@ document.querySelector('#btn-save').onclick=async()=>{
     resetCapture();
   }catch(err){
     addDiary(transcript,''); save(); render(); resetCapture();
-    toast(err&&err.message==='AUTH' ? 'Chiave API non valida: controlla in Altro. Trascritto salvato.' : 'IA non raggiungibile: trascritto salvato comunque');
+    const code=(err&&err.message)||'';
+    let msg='IA non raggiungibile: trascritto salvato comunque';
+    if(code==='AUTH') msg='Chiave API non valida: ricopiala in Altro. Trascritto salvato.';
+    else if(code==='CREDIT') msg='Chiave valida ma credito assente: carica su console.anthropic.com → Billing. Trascritto salvato.';
+    else if(code==='MODEL') msg='Modello IA non disponibile: serve aggiornare l\u2019app. Trascritto salvato.';
+    else if(code==='RATE') msg='Troppe richieste ravvicinate: riprova tra un minuto. Trascritto salvato.';
+    else if(code==='BUSY') msg='Server IA sovraccarichi: riprova tra poco. Trascritto salvato.';
+    else if(err&&err.name==='AbortError') msg='IA troppo lenta (timeout): riprova. Trascritto salvato.';
+    else if(err instanceof TypeError) msg='Rete assente o bloccata: controlla la connessione. Trascritto salvato.';
+    toast(msg);
   }finally{
     distilling=false;
     btn.textContent='Distilla'; btn.disabled=false;
@@ -788,6 +798,9 @@ function addDiary(testo,raw){
   if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX;
 }
 
+/* catena di modelli: se uno viene ritirato dall'API, si passa da soli al successivo */
+const AI_MODELS=['claude-sonnet-4-6','claude-haiku-4-5-20251001','claude-sonnet-4-20250514'];
+
 async function askClaude(transcript){
   const sys='Sei il motore di "Sentiero", un diario vocale personale in italiano.\n'+
 'Ricevi: (1) la lista JSON delle quest esistenti, (2) il trascritto vocale di oggi.\n'+
@@ -798,32 +811,44 @@ async function askClaude(transcript){
 '- Scrivi "diario": una voce di diario in prima persona, 2-5 frasi, tono sobrio, basata SOLO sul trascritto.\n'+
 'Rispondi SOLO con JSON valido, nessun testo extra:\n'+
 '{"quests":[{"id":"...","titolo":"...","note":"...","fatto":false}],"diario":"..."}';
-  const ctrl=('AbortController' in window)?new AbortController():null;
-  const timer=ctrl?setTimeout(()=>ctrl.abort(),45000):null; /* mai un'attesa infinita */
-  let r;
-  try{
-    r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      signal:ctrl?ctrl.signal:undefined,
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':S.apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1500,
-        system:sys,
-        messages:[{role:'user',content:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTRASCRITTO DI OGGI ('+todayKey()+'):\n'+transcript}]
-      })
-    });
-  }finally{ if(timer) clearTimeout(timer); }
-  if(r.status===401||r.status===403) throw new Error('AUTH');
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const data=await r.json();
-  const text=(data.content||[]).map(c=>c.text||'').join('');
-  return aiOutputToState(extractJson(text));
+  let lastErr=null;
+  for(const model of AI_MODELS){
+    const ctrl=('AbortController' in window)?new AbortController():null;
+    const timer=ctrl?setTimeout(()=>ctrl.abort(),45000):null; /* mai un'attesa infinita */
+    let r;
+    try{
+      r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        signal:ctrl?ctrl.signal:undefined,
+        headers:{
+          'Content-Type':'application/json',
+          'x-api-key':S.apiKey,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body:JSON.stringify({
+          model:model,
+          max_tokens:1500,
+          system:sys,
+          messages:[{role:'user',content:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTRASCRITTO DI OGGI ('+todayKey()+'):\n'+transcript}]
+        })
+      });
+    }finally{ if(timer) clearTimeout(timer); }
+    if(!r.ok){
+      let detail='';
+      try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
+      if(r.status===401||r.status===403) throw new Error('AUTH');
+      if(r.status===400&&/credit/i.test(detail)) throw new Error('CREDIT');
+      if(r.status===404||/model/i.test(detail)&&r.status===400){ lastErr=new Error('MODEL'); continue; } /* modello ritirato: prova il prossimo */
+      if(r.status===429) throw new Error('RATE');
+      if(r.status===529||/overloaded/i.test(detail)) throw new Error('BUSY');
+      throw new Error('HTTP '+r.status);
+    }
+    const data=await r.json();
+    const text=(data.content||[]).map(c=>c.text||'').join('');
+    return aiOutputToState(extractJson(text));
+  }
+  throw lastErr||new Error('MODEL');
 }
 
 /* ======================================================================
@@ -1000,6 +1025,42 @@ document.querySelector('#sw-notif').onclick=async()=>{
   }
 };
 document.querySelector('#btn-savekey').onclick=()=>{ S.apiKey=document.querySelector('#apikey').value.trim(); save(); toast(S.apiKey?'Chiave salvata':'Chiave rimossa'); };
+document.querySelector('#btn-testkey').onclick=async()=>{
+  const out=document.querySelector('#test-result');
+  const field=document.querySelector('#apikey').value.trim();
+  if(field&&field!==S.apiKey){ S.apiKey=field; save(); } /* se ha incollato senza salvare, salva ora */
+  if(!S.apiKey){ out.textContent='Nessuna chiave salvata: incollala qui sopra.'; return; }
+  if(!S.apiKey.startsWith('sk-ant-')){ out.textContent='✗ La chiave dovrebbe iniziare con sk-ant-. Probabilmente è stata copiata a metà: creane una nuova su console.anthropic.com → API Keys.'; return; }
+  out.textContent='Provo la connessione…';
+  try{
+    let r=null,detail='',usedModel='';
+    for(const model of AI_MODELS){
+      r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-api-key':S.apiKey,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body:JSON.stringify({model:model,max_tokens:8,messages:[{role:'user',content:'Rispondi solo: ok'}]})
+      });
+      detail='';
+      try{ const j=await r.clone().json(); detail=(j&&j.error&&j.error.message)||''; }catch(_){}
+      if(r.ok){ usedModel=model; break; }
+      if(!(r.status===404||(r.status===400&&/model/i.test(detail)))) break; /* errore diverso dal modello: inutile provare oltre */
+    }
+    if(r&&r.ok){ out.textContent='✓ Tutto funziona: chiave valida, credito attivo, modello '+usedModel+'. Vai a distillare.'; sAppear(0); }
+    else if(r&&(r.status===401||r.status===403)) out.textContent='✗ Chiave non valida (errore '+r.status+'). Ricopiala per intero da console.anthropic.com → API Keys (o creane una nuova) e salvala di nuovo qui.';
+    else if(r&&r.status===400&&/credit/i.test(detail)) out.textContent='✗ La chiave è giusta ma manca il credito: su console.anthropic.com → Billing carica almeno 5 $ con una carta, poi riprova.';
+    else if(r&&(r.status===404||/model/i.test(detail))) out.textContent='✗ Nessuno dei modelli risponde (404): l\u2019app va aggiornata, segnalalo.';
+    else if(r&&r.status===429) out.textContent='✗ Troppe richieste (429): aspetta un minuto e riprova.';
+    else if(r&&r.status===529) out.textContent='✗ Server IA momentaneamente sovraccarichi: riprova tra qualche minuto.';
+    else out.textContent='✗ Errore '+(r?r.status:'')+(detail?': '+detail.slice(0,140):'');
+  }catch(e){
+    out.textContent='✗ La rete non raggiunge i server IA: controlla la connessione (e prova a spegnere VPN o blocchi DNS/contenuti se ne usi).';
+  }
+};
 document.querySelector('#btn-addtask').onclick=()=>{
   const txt=document.querySelector('#new-task-txt').value.trim();
   if(!txt) return toast('Scrivi il testo della task');
