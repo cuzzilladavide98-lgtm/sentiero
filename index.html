@@ -76,19 +76,28 @@ button,.item,.chk,.sw,.days button,#mic{touch-action:manipulation;-webkit-user-s
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 #app{position:relative;z-index:1;max-width:430px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
-main{flex:1;padding:0 18px 140px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+main{flex:1;padding:0 18px 150px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* scroll edge effect iOS 26: il contenuto sfuma ai bordi della scroll area */
+#edge-top{position:fixed;top:var(--safe-top);left:0;right:0;height:14px;z-index:18;pointer-events:none;
+  background:linear-gradient(180deg,var(--c-bg-0),transparent)}
+#edge-bot{position:fixed;bottom:0;left:0;right:0;height:96px;z-index:18;pointer-events:none;
+  background:linear-gradient(0deg,var(--c-bg-0) 30%,transparent)}
 section{margin-top:30px}
 
 /* ───────────── TESTATA: la data come diario ───────────── */
 header{padding:20px 22px 8px;display:flex;align-items:baseline;justify-content:space-between}
 #dateline{
   font-family:var(--serif);font-style:italic;font-weight:500;
-  font-size:22px;letter-spacing:.01em;color:var(--c-paper);
-  text-transform:lowercase;
+  font-size:30px;letter-spacing:-.01em;color:var(--c-paper);
+  text-transform:lowercase;line-height:1.1;
+  transition:font-size .28s cubic-bezier(.22,1,.36,1);
 }
+header.scrolled #dateline{font-size:19px}
+header{transition:padding .28s cubic-bezier(.22,1,.36,1)}
+header.scrolled{padding-top:12px;padding-bottom:8px}
 #streak{font-size:14px;color:var(--c-paper-2);letter-spacing:.04em}
 #streak b{color:var(--c-lac);font-weight:700;font-size:16px}
-#btn-pin{border:none;background:none;font-size:19px;padding:4px 0 4px 12px;line-height:1;opacity:.7;transition:transform .15s,opacity .15s;will-change:transform}
+#btn-pin{border:none;background:none;font-size:19px;min-width:44px;min-height:44px;padding:0 0 0 12px;line-height:1;opacity:.7;transition:transform .15s,opacity .15s;will-change:transform;display:flex;align-items:center;justify-content:flex-end}
 #btn-pin:active{opacity:1;transform:scale(1.25)}
 
 /* ───────────── titoli sezione: trattino di pennello ───────────── */
@@ -142,10 +151,10 @@ h2::before{content:'';width:16px;height:2px;border-radius:2px;background:linear-
 .item .txt::after{content:'';position:absolute;left:0;top:.62em;height:1.5px;width:0;border-radius:1px;background:var(--c-paper-3);transition:width .4s cubic-bezier(.22,1,.36,1)}
 .item.done .txt{color:var(--c-paper-3)}
 .item.done .txt::after{width:100%}
-.item .meta{display:block;font-size:12px;color:var(--c-paper-2);margin-top:3px}
+.item .meta{display:block;font-size:13px;color:var(--c-paper-2);margin-top:3px}
 .item .meta.over{color:var(--c-ember)}
 .item .meta.soon{color:var(--c-lac)}
-.item .del{flex:none;border:none;background:none;color:var(--c-paper-3);font-size:20px;padding:2px 6px;transition:color .15s}
+.item .del{flex:none;border:none;background:none;color:var(--c-paper-3);font-size:22px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;transition:color .15s}
 .item .del:active{color:var(--c-ember)}
 .item.future{opacity:.42}
 .empty{font-family:var(--serif);font-style:italic;color:var(--c-paper-2);font-size:15px;padding:18px 16px;line-height:1.65}
@@ -214,17 +223,30 @@ button.act:active{transform:scale(.96) translateY(1px);opacity:.9}
 .entry .tags.done-t{color:var(--c-paper-3)}
 
 /* ───────────── nav ───────────── */
+/* tab bar iOS 26: pillola flottante, inset 21pt dai bordi, Liquid Glass */
 nav{
-  position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;z-index:20;
-  background:rgba(19,16,9,.86);
-  backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);
-  border-top:1px solid var(--c-line);
-  padding-bottom:env(safe-area-inset-bottom);
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  display:flex;justify-content:center;
+  padding:0 21px calc(env(safe-area-inset-bottom) + 12px);
+  pointer-events:none;
 }
-nav .inner{display:flex;width:100%;max-width:430px}
-nav button{flex:1;padding:12px 0 10px;border:none;background:none;color:var(--c-paper-3);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;position:relative}
+nav .inner{
+  display:flex;width:100%;max-width:388px;pointer-events:auto;
+  background:rgba(28,22,13,.72);
+  backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7);
+  border:1px solid rgba(240,233,219,.12);
+  border-top-color:rgba(240,233,219,.2);
+  border-radius:28px;
+  box-shadow:0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+  overflow:hidden;
+}
+nav button{
+  flex:1;min-height:52px;padding:9px 0 7px;border:none;background:none;
+  color:var(--c-paper-3);font-size:11px;font-weight:600;letter-spacing:.04em;
+  position:relative;
+}
 nav button.on{color:var(--c-lac)}
-nav button .ico{display:block;font-size:22px;margin-bottom:4px;transition:transform .22s cubic-bezier(.34,1.6,.64,1);will-change:transform}
+nav button .ico{display:block;font-size:22px;margin-bottom:3px;transition:transform .22s cubic-bezier(.34,1.6,.64,1);will-change:transform}
 nav button.on .ico{transform:translateY(-2px) scale(1.12);text-shadow:0 0 14px rgba(232,168,76,.5)}
 
 /* ───────────── impostazioni ───────────── */
@@ -232,7 +254,7 @@ label{display:block;font-size:13px;color:var(--c-paper-2);margin:16px 0 6px}
 input[type=text],input[type=password],input[type=time]{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--c-line);background:var(--c-card);color:var(--c-paper);font-size:16px}
 input:focus{outline:none;border-color:var(--c-lac)}
 .days{display:flex;gap:6px;margin-top:8px}
-.days button{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--c-line);background:var(--c-card);color:var(--c-paper-2);font-size:13px;font-weight:700}
+.days button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--c-line);background:var(--c-card);color:var(--c-paper-2);font-size:14px;font-weight:700}
 .days button.on{background:var(--c-lac-dim);border-color:var(--c-lac);color:var(--c-lac)}
 .switchrow{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--c-line)}
 .switchrow span{font-size:15px}
@@ -241,9 +263,9 @@ input:focus{outline:none;border-color:var(--c-lac)}
 .sw.on{background:var(--c-lac)}
 .sw.on::after{transform:translateX(20px)}
 .seg{display:flex;border:1px solid var(--c-line);border-radius:10px;overflow:hidden}
-.seg button{padding:9px 16px;border:none;background:var(--c-card);color:var(--c-paper-2);font-size:13px;font-weight:600}
+.seg button{min-height:44px;padding:0 18px;border:none;background:var(--c-card);color:var(--c-paper-2);font-size:14px;font-weight:600}
 .seg button.on{background:var(--c-lac-dim);color:var(--c-lac)}
-.note{font-size:13px;color:var(--c-paper-3);line-height:1.55;margin-top:10px}
+.note{font-size:13px;color:var(--c-paper-3);line-height:1.5;margin-top:10px}
 
 /* ───────────── toast ───────────── */
 .toast{
@@ -370,6 +392,8 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
 <div id="bg"></div>
 <div id="watermark"></div>
 <div id="grain"></div>
+<div id="edge-top"></div>
+<div id="edge-bot"></div>
 <div id="app-intro">
   <svg viewBox="0 0 200 200" aria-hidden="true">
     <circle fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7" cx="100" cy="100" r="80"/>
@@ -685,7 +709,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v14 · 2026-06-11';
+const APP_VERSION='v15 · 2026-06-11';
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -1621,6 +1645,15 @@ initDay();
 render();
 scheduleReminders();
 capturePos();
+/* large title iOS 26: compatta la testata allo scroll */
+try{
+  const mainEl=document.querySelector('main'), hdr=document.querySelector('header');
+  let ticking=false;
+  mainEl.addEventListener('scroll',()=>{
+    if(ticking) return; ticking=true;
+    requestAnimationFrame(()=>{ hdr.classList.toggle('scrolled', mainEl.scrollTop>16); ticking=false; });
+  },{passive:true});
+}catch(_){}
 /* ── animazione apertura app ── */
 try{
   const intro=document.querySelector('#app-intro');
