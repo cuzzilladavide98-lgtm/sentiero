@@ -41,7 +41,13 @@ Diario vocale con quest e task pianificate. Parli, l'IA estrae le quest, le fond
 
 ## Qualità e collaudo
 
-Il cuore logico dell'app (sigillo, streak, rollover del giorno, sanitizzazione dell'output IA, accumulo del trascritto, promemoria, potatura spazio) è isolato in un nucleo puro testato con ~21 milioni di verifiche su 1 milione di operazioni casuali e ostili, più test di mutazione (6 bug iniettati deliberatamente, tutti catturati dalla suite). I test sono nella cartella `dev/` del progetto e si rilanciano con `node dev/fuzz.test.js`.
+Due livelli di test automatici:
+
+1. **Nucleo logico** (`dev/fuzz.test.js`): la logica pura — sigillo, streak, rollover del giorno, priorità e ordinamento, sanitizzazione di stato/IA/posizione, accumulo del trascritto, promemoria, potatura spazio — è isolata e martellata con oltre 44 milioni di verifiche su input casuali e ostili, più test di mutazione (bug iniettati deliberatamente, tutti catturati).
+
+2. **Interfaccia reale** (`dev/dom.test.js`): un mini-ambiente DOM senza dipendenze monta il vero codice dell'app e simula migliaia di sessioni di interazioni casuali (tap su quest, spunte, eliminazioni, cambi tab, scroll, switch impostazioni, distillazioni offline), verificando dopo ogni azione che il DOM resti coerente: nessun nodo orfano, nessun NaN nel rendering dell'enso, testata sempre presente. Oltre 157.000 verifiche DOM, zero fallimenti.
+
+Si rilanciano con `node dev/fuzz.test.js` e `node dev/dom.test.js`.
 
 ## Limiti noti su iOS
 
