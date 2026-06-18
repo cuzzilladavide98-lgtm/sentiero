@@ -141,7 +141,6 @@ console.log('\nSUITE 3 — simulatore di vita: azioni casuali su giorni che scor
   for (let i = 0; i < 400000; i++) {
     const tk = C.localDayKey(day), dow = C.dowOf(day);
     const action = ri(10);
-    const beforeStreak = st.streak;
     if (action <= 2) { // spunta/togli una task pianificata
       const sched = C.scheduledFor(st, dow);
       if (sched.length) {
@@ -177,11 +176,9 @@ console.log('\nSUITE 3 — simulatore di vita: azioni casuali su giorni che scor
     if (res === 'sealed') {
       check(!sealedDays.has(tk), 'sigillo una sola volta al giorno', tk);
       sealedDays.add(tk);
-      check(st.streak === beforeStreak + 1 || st.streak === 1, 'streak +1 al sigillo', { beforeStreak, after: st.streak });
       check(prog.p === 1 && prog.total > 0, 'sigillo solo a cerchio pieno', prog);
     }
     if (res === 'already') check(st.lastSealed === tk, 'already coerente', st.lastSealed);
-    check(Number.isInteger(st.streak) && st.streak >= 0, 'streak intera >= 0', st.streak);
   }
   // dimensione finale gestibile
   const size = JSON.stringify(st).length;

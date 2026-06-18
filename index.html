@@ -50,17 +50,16 @@ button,.item,.chk,.sw,.days button,#mic{touch-action:manipulation;-webkit-user-s
 main{flex:1;padding:0 28px 132px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 /* ── testata: solo testo, molto spazio ── */
-header{padding:8px 28px 0}
-.hd-row{display:flex;align-items:center;justify-content:space-between;min-height:44px}
+/* ── testata: la data è il titolo, sospesa con spazio ── */
+header{padding:14px 28px 0}
+.hd-row{display:flex;align-items:flex-start;justify-content:space-between;min-height:44px}
 #dateline{
-  font-family:var(--serif);font-weight:400;font-size:26px;
-  letter-spacing:-.02em;color:var(--t1);text-transform:lowercase;
+  font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.15;
+  letter-spacing:-.02em;color:var(--t1);text-transform:lowercase;max-width:78%;
 }
-#btn-pin{border:none;background:none;color:var(--t3);width:44px;height:44px;
-  display:flex;align-items:center;justify-content:center;transition:color .2s}
-#btn-pin:active{color:var(--accent)}
-#streak{font-size:13px;color:var(--t3);margin-top:1px;min-height:15px;letter-spacing:0}
-#streak b{color:var(--accent);font-weight:600}
+#btn-pin{border:none;background:none;color:var(--t3);width:44px;height:44px;flex:none;
+  display:flex;align-items:center;justify-content:center;transition:color .2s,transform .15s}
+#btn-pin:active{color:var(--accent);transform:scale(1.15)}
 
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
 #mic-wrap{display:flex;flex-direction:column;align-items:center;padding:40px 0 28px;position:relative}
@@ -285,7 +284,6 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
       </button>
     </div>
-    <div id="streak"></div>
   </header>
 
   <main>
@@ -523,7 +521,6 @@ function dayGap(a,b){ /* giorni interi tra due chiavi YYYY-MM-DD (b-a) */
 function rolloverDay(state,tk){
   if(state.lastDayInit===tk) return false;
   state.quests=state.quests.filter(q=>!q.fatto); /* le compiute si archiviano */
-  if(state.lastSealed&&dayGap(state.lastSealed,tk)>1) state.streak=0; /* un giorno saltato spezza la catena */
   state.lastDayInit=tk;
   return true;
 }
@@ -531,7 +528,7 @@ function sealIfComplete(state,tk,dow){
   const r=computeProgress(state,tk,dow);
   if(!(r.p===1&&r.total>0)) return 'open';
   if(state.lastSealed===tk) return 'already';
-  state.streak++; state.lastSealed=tk;
+  state.lastSealed=tk;
   return 'sealed';
 }
 function accumFromResults(results){
@@ -577,7 +574,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v19 · 2026-06-11';
+const APP_VERSION='v20 · 2026-06-18';
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -948,7 +945,6 @@ document.querySelector('#btn-pin').onclick=()=>{
    ====================================================================== */
 function renderStreak(){
   $('#dateline').textContent=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
-  $('#streak').innerHTML=S.streak>0?'<b>◯ '+S.streak+'</b>':'';
 }
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>{
@@ -1217,9 +1213,7 @@ function updateRing(){
       try{ FX.bloom(); }catch(_){}
       try{ const f=document.querySelector('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }catch(_){}
     },350);
-    renderStreak();
     document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani';
-    if(S.streak>0&&S.streak%7===0) setTimeout(()=>toast('Sette cerchi: esporta un backup in Altro, custodisce il cammino'),2200);
   } else if(res==='already'){
     micBtn.classList.add('sealed');
     document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani';
