@@ -8,9 +8,16 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Sentiero">
-<meta name="theme-color" content="#131009">
+<meta name="theme-color" content="#000000">
+<!-- splash screen iOS: nere con enso, così il primo fotogramma combacia con l'app (niente lampo bianco) -->
+<link rel="apple-touch-startup-image" href="splash-1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3)">
+<link rel="apple-touch-startup-image" href="splash-1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3)">
+<link rel="apple-touch-startup-image" href="splash-1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3)">
+<link rel="apple-touch-startup-image" href="splash-1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3)">
+<link rel="apple-touch-startup-image" href="splash-828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2)">
+<link rel="apple-touch-startup-image" href="splash-750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2)">
 <meta name="color-scheme" content="dark">
 <style>
 /* ═══════════════════════════════════════════════════════
@@ -224,14 +231,25 @@ nav button.on .ico{color:var(--accent)}
 .ob-note{font-size:13px;color:var(--t3);line-height:1.5;margin-top:24px;min-height:18px}
 
 /* ════════ apertura ════════ */
-#app-intro{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
-#app-intro svg{width:92px;height:92px}
-#app-intro .intro-enso{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round}
-#app-intro .intro-name{font-family:var(--serif);font-style:italic;font-size:22px;letter-spacing:.2em;color:var(--t1);opacity:.9;text-transform:lowercase;margin-left:.2em}
+#app-intro{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+/* l'enso ha la stessa scala della splash nativa: ~32% del lato minore di diametro */
+#app-intro svg{width:32vmin;height:32vmin;max-width:236px;max-height:236px}
+#app-intro .intro-track{opacity:0}
+#app-intro .intro-enso{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;
+  animation:introsvg 1.1s cubic-bezier(.4,0,.2,1) .25s forwards}
+#app-intro .intro-glyph{opacity:0;animation:introglyph .5s ease-out .15s forwards}
+#app-intro .intro-name{font-family:var(--serif);font-style:italic;font-size:22px;letter-spacing:.2em;
+  color:var(--t1);opacity:0;text-transform:lowercase;margin-left:.2em;
+  animation:introname .5s ease-out 1.1s forwards}
+/* uscita: il nome svanisce, poi l'intero intro fa una lieve dissolvenza lasciando l'app già montata sotto */
+#app-intro.leaving .intro-name{animation:nameout .35s ease forwards}
+#app-intro.leaving{animation:introexit .5s cubic-bezier(.4,0,.2,1) .2s forwards}
 
 @keyframes introsvg{0%{stroke-dashoffset:503}100%{stroke-dashoffset:40}}
+@keyframes introglyph{from{opacity:0;transform:translate(100px,100px) scale(.9)}to{opacity:1;transform:translate(100px,100px) scale(1)}}
 @keyframes introname{from{opacity:0;transform:translateY(8px)}to{opacity:.9;transform:none}}
-@keyframes introexit{from{opacity:1}to{opacity:0}}
+@keyframes nameout{to{opacity:0;transform:translateY(-6px)}}
+@keyframes introexit{to{opacity:0}}
 @keyframes born{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
 @keyframes tabin{from{opacity:0}to{opacity:1}}
 .item.born{animation:born .5s cubic-bezier(.22,1,.36,1) backwards}
@@ -252,17 +270,16 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 <div id="edge-bot"></div>
 <div id="app-intro">
   <svg viewBox="0 0 200 200" aria-hidden="true">
-    <circle fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7" cx="100" cy="100" r="80"/>
+    <circle class="intro-track" fill="none" stroke="rgba(245,242,234,.07)" stroke-width="2.5" cx="100" cy="100" r="80"/>
     <circle class="intro-enso" cx="100" cy="100" r="80"
       transform="rotate(-100 100 100)"
-      stroke-dasharray="503" stroke-dashoffset="503"
-      style="animation:introsvg 1.2s cubic-bezier(.4,0,.2,1) .15s forwards"/>
-    <g fill="rgba(242,237,228,.85)" transform="translate(100 100)">
-      <rect x="-10" y="-35" width="20" height="40" rx="10"/>
-      <path d="M -22 -5 a 22 22 0 0 0 44 0 h 6 a 28 28 0 0 1 -25 27.5 V 35 h 12 v 7 H -16 v -7 h 12 V 22.5 A 28 28 0 0 1 -28 -5 Z"/>
+      stroke-dasharray="503" stroke-dashoffset="503"/>
+    <g class="intro-glyph" fill="#F5F2EA" transform="translate(100 100)">
+      <rect x="-9" y="-32" width="18" height="38" rx="9"/>
+      <path d="M -20 -5 a 20 20 0 0 0 40 0 h 6 a 26 26 0 0 1 -23 25.5 V 32 h 11 v 7 H -15 v -7 h 11 V 20.5 A 26 26 0 0 1 -26 -5 Z"/>
     </g>
   </svg>
-  <div class="intro-name" style="animation:introname .5s ease-out .9s both">sentiero</div>
+  <div class="intro-name">sentiero</div>
 </div>
 <div id="onboard" class="hidden">
   <div class="ob-inner">
@@ -574,7 +591,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v20 · 2026-06-18';
+const APP_VERSION='v21 · 2026-06-18';
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -1530,22 +1547,19 @@ try{
     requestAnimationFrame(()=>{ hdr.classList.toggle('scrolled', mainEl.scrollTop>16); ticking=false; });
   },{passive:true});
 }catch(_){}
-/* ── animazione apertura app ── */
+/* ── apertura: l'intro continua dalla splash nativa e si dissolve sull'app già viva sotto ── */
 try{
   const intro=document.querySelector('#app-intro');
   const appEl=document.querySelector('#app');
-  appEl.style.opacity='0';
+  /* l'app è già montata e opaca sotto l'intro: quando l'intro svanisce, l'enso del microfono
+     è già lì nella stessa posizione → illusione di un solo movimento continuo */
+  appEl.style.opacity='1';
   const fast=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   setTimeout(()=>{
-    intro.style.animation='introexit .45s cubic-bezier(.4,0,1,1) forwards';
-    setTimeout(()=>{
-      intro.style.display='none';
-      appEl.style.transition='opacity .35s ease-out';
-      appEl.style.opacity='1';
-      maybeOnboard();
-    },420);
-  },fast?250:1600);
-}catch(_){ maybeOnboard(); }
+    intro.classList.add('leaving');
+    setTimeout(()=>{ intro.style.display='none'; maybeOnboard(); }, fast?60:750);
+  },fast?200:1500);
+}catch(_){ try{document.querySelector('#app-intro').style.display='none';}catch(e){} maybeOnboard(); }
 
 /* ======================================================================
    ONBOARDING + PERMESSI (una sola volta, nel contesto giusto)
