@@ -606,7 +606,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v22 · 2026-06-18';
+const APP_VERSION='v23 · 2026-06-18';
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -916,6 +916,36 @@ function floatWord(word,lvl){
 }
 
 /* ======================================================================
+   INTEGRAZIONI NATIVE iOS (feature detection, mai assunte)
+   ====================================================================== */
+/* APTICA: l'unica via su iOS è un <input type=checkbox switch> su cui Safari (18+)
+   emette il feedback tattile al click. La Vibration API è bloccata da WebKit. */
+let hapticEl=null;
+function initHaptic(){
+  try{
+    hapticEl=document.createElement('input');
+    hapticEl.type='checkbox';
+    hapticEl.setAttribute('switch','');
+    const lab=document.createElement('label');
+    lab.appendChild(hapticEl); lab.style.cssText='position:absolute;left:-9999px;opacity:0;pointer-events:none';
+    document.body.appendChild(lab);
+    hapticEl._label=lab;
+  }catch(_){ hapticEl=null; }
+}
+function haptic(){
+  try{ if(hapticEl&&hapticEl._label) hapticEl._label.click(); }catch(_){}
+  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(_){}  /* fallback Android, innocuo su iOS */
+}
+/* WAKE LOCK: tiene lo schermo acceso durante la dettatura lunga */
+let wakeLock=null;
+async function acquireWake(){
+  try{ if('wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen'); }catch(_){}
+}
+function releaseWake(){
+  try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(_){}
+}
+
+/* ======================================================================
    SUONI PERSONALIZZATI — file dell'utente, solo su questo telefono
    ====================================================================== */
 const SFX_LS='sentiero-sfx-v1';
@@ -1008,7 +1038,7 @@ function startRec(){
     if(!recording) return;
     micBtn.classList.remove('arming'); micBtn.classList.add('rec');
     micLabel.textContent='Rilascia… tocca di nuovo per fermare';
-    sMicOn();
+    sMicOn(); haptic(); acquireWake();
   };
   rec.onresult=e=>{
     const arr=[];
@@ -1041,7 +1071,7 @@ function stopRec(){
   recording=false;
   if(rec){ rec.onend=null; try{rec.stop()}catch(_){} }
   micBtn.classList.remove('rec','arming');
-  sMicOff();
+  sMicOff(); releaseWake();
   const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
   if(txt){
     micLabel.textContent='Rileggi e distilla';
@@ -1053,12 +1083,16 @@ function stopRec(){
     updateRing();
   }
 }
+let micBusy=false; /* anti-doppio-tap durante l'avvio del microfono */
 micBtn.addEventListener('click',()=>{
   if(!SR){
     const txt=live.textContent.trim();
     if(txt) document.querySelector('#confirm-row').classList.remove('hidden');
     return;
   }
+  if(micBusy) return;            /* tap ravvicinati ignorati: niente stato incoerente */
+  micBusy=true;
+  setTimeout(()=>{ micBusy=false; }, 450);
   recording?stopRec():startRec();
 });
 document.querySelector('#btn-discard').onclick=resetCapture;
@@ -1208,7 +1242,8 @@ function onComplete(el){
   lastCheck=now;
   const lvl=Math.min(combo,6);
   const word=COMBO_WORDS[lvl-1];
-  if(playSFX(lvl-1)){ floatWord(word,lvl); } /* suono dell'utente: niente synth n\u00e9 voce sopra */
+  haptic();  /* tocco tattile a ogni completamento */
+  if(playSFX(lvl-1)){ floatWord(word,lvl); }
   else { sCheck(lvl); say(word,lvl); floatWord(word,lvl); }
   try{
     const c=el.querySelector('.chk');
@@ -1238,6 +1273,7 @@ function updateRing(){
   const res=sealIfComplete(S,tk,dow);
   if(res==='sealed'){
     save();
+    haptic(); setTimeout(haptic,120); setTimeout(haptic,240);  /* tripla pulsazione: il cerchio si è chiuso */
     micBtn.classList.add('sealed');
     setTimeout(()=>{
       if(playSFX(SFX.length-1)){ floatWord('Cerchio chiuso',6); shake(true); }
@@ -1290,6 +1326,8 @@ function renderTasks(){
       '<button class="chk" aria-label="Completa"></button>'+
       '<span class="txt">'+escapeHtml(t.titolo)+(t.time?'<span class="meta">⏰ '+t.time+'</span>':'')+'</span>';
     div.querySelector('.chk').onclick=()=>{
+      if(div.dataset.busy) return;
+      div.dataset.busy='1';
       S.checks[todayKey()]=S.checks[todayKey()]||{};
       const now=!done;
       S.checks[todayKey()][t.id]=now; save();
@@ -1323,8 +1361,10 @@ function renderQuests(bornIds){
     div.innerHTML='<span class="prio prio-'+p+'"></span>'+
       '<button class="chk" aria-label="Completa"></button>'+
       '<span class="txt">'+escapeHtml(q.titolo)+when+(q.note?'<span class="meta">'+escapeHtml(q.note)+'</span>':'')+'</span>'+
-      '<button class="del" aria-label="Elimina">×</button>';
+      '<button class="del" aria-label="Elimina">&#215;</button>';
     div.querySelector('.chk').onclick=()=>{
+      if(div.dataset.busy) return;          /* tap ravvicinati sulla stessa spunta: ignorati */
+      div.dataset.busy='1';
       q.fatto=!q.fatto; save();
       if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(()=>renderQuests([]),600); }
       else { sUndo(); renderQuests([]); updateRing(); }
@@ -1558,6 +1598,7 @@ document.querySelector('#import-file').onchange=e=>{
    AVVIO
    ====================================================================== */
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').then(scheduleReminders).catch(()=>{}); }
+initHaptic();
 initDay();
 render();
 scheduleReminders();

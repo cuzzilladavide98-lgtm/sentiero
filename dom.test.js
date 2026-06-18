@@ -45,6 +45,7 @@ class Node {
   getBoundingClientRect(){ return {left:50,top:50,width:50,height:50,right:100,bottom:100}; }
   addEventListener(t,f,o){ (this._listeners[t]=this._listeners[t]||[]).push(f); }
   removeEventListener(t,f){ if(this._listeners[t]) this._listeners[t]=this._listeners[t].filter(x=>x!==f); }
+  click(){ this.dispatch('click',{}); }
   dispatch(t,ev){
     ev=ev||{}; ev.type=t; ev.target=ev.target||this; ev.preventDefault=()=>{}; ev.stopPropagation=()=>{};
     if(this._on[t]) this._on[t](ev);
@@ -151,7 +152,7 @@ function newEnv(){
     cancelAnimationFrame:()=>{},
     performance:{now:()=>Date.now()},
     setTimeout:(f)=>{ return 0; }, clearTimeout:()=>{}, setInterval:()=>0, clearInterval:()=>{},
-    navigator:{}, innerWidth:390, innerHeight:844, devicePixelRatio:2,
+    navigator:{ vibrate:()=>true, wakeLock:{ request:()=>Promise.resolve({release:()=>Promise.resolve()}) } }, innerWidth:390, innerHeight:844, devicePixelRatio:2,
     AudioContext:function(){ return {state:'running',resume(){},currentTime:0,destination:{},createOscillator:()=>({type:'',frequency:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){return{connect(){}};},start(){},stop(){}}),createGain:()=>({gain:{setValueAtTime(){},exponentialRampToValueAtTime(){},value:0},connect(){return{connect(){}};}}),createBuffer:()=>({getChannelData:()=>new Float32Array(10)}),createBufferSource:()=>({buffer:null,connect(){return{connect(){}};},start(){},stop(){}}),createBiquadFilter:()=>({type:'',frequency:{value:0},Q:{value:0},connect(){return{connect(){}};}}),createDynamicsCompressor:()=>({threshold:{value:0},knee:{value:0},ratio:{value:0},attack:{value:0},release:{value:0},connect(){return{connect(){}};}}) }; },
     speechSynthesis:{ speaking:false,pending:false,getVoices:()=>[],cancel(){},speak(){} },
     SpeechSynthesisUtterance:function(){},
