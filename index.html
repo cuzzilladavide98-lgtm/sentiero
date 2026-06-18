@@ -386,6 +386,82 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
   *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
   #grain{animation:none}
 }
+
+/* ═══════════ v16 — raffinamento nativo ═══════════ */
+
+/* onboarding una schermata */
+#onboard{position:fixed;inset:0;z-index:110;background:var(--c-bg-0);
+  display:flex;align-items:center;justify-content:center;padding:32px;
+  padding-top:calc(var(--safe-top) + 32px);padding-bottom:calc(var(--safe-bot) + 32px)}
+#onboard::before{content:'';position:absolute;inset:0;background:radial-gradient(90% 55% at 50% 28%, rgba(232,168,76,.09), transparent 60%)}
+.ob-inner{position:relative;max-width:340px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.ob-enso{width:96px;height:96px;margin-bottom:26px}
+.ob-stroke{fill:none;stroke:var(--c-lac);stroke-width:7;stroke-linecap:round;filter:drop-shadow(0 0 10px rgba(232,168,76,.4));animation:introsvg 1.1s cubic-bezier(.4,0,.2,1) .1s forwards}
+.ob-title{font-family:var(--serif);font-style:italic;font-weight:500;font-size:34px;letter-spacing:.04em;color:var(--c-paper);margin-bottom:14px}
+.ob-sub{font-size:16px;line-height:1.6;color:var(--c-paper-2);margin-bottom:34px}
+.ob-go{appearance:none;border:none;border-radius:16px;padding:16px 48px;
+  background:linear-gradient(180deg,var(--c-lac),var(--c-lac-2));color:#241703;
+  font-size:17px;font-weight:700;letter-spacing:-.01em;
+  box-shadow:0 6px 20px rgba(232,168,76,.3), inset 0 1px 0 rgba(255,255,255,.35);
+  transition:transform .14s cubic-bezier(.34,1.4,.64,1)}
+.ob-go:active{transform:scale(.95)}
+.ob-note{font-size:13px;color:var(--c-paper-3);line-height:1.5;margin-top:20px;min-height:18px}
+
+/* header large-title nativo */
+header{padding:14px 20px 4px}
+.hd-row{display:flex;align-items:center;justify-content:space-between;min-height:44px}
+#btn-pin{color:var(--c-lac)}
+#streak{font-size:13px;color:var(--c-paper-3);margin-top:2px;letter-spacing:.02em;min-height:16px}
+#streak b{color:var(--c-lac);font-weight:700;font-size:14px}
+
+/* sezione: header in stile Impostazioni iOS (label sopra il gruppo) */
+section{margin-top:26px}
+.sec-head{font-size:13px;font-weight:600;color:var(--c-paper-3);
+  letter-spacing:.02em;margin:0 4px 8px;text-transform:none}
+
+/* gruppo inset: separa per sfondo, non per bordo */
+.group{
+  background:var(--c-card);
+  border:1px solid var(--c-line);
+  border-radius:var(--r-card);
+  overflow:hidden;
+}
+.group:empty{display:none}
+
+/* righe più ariose, separatori che non toccano il bordo (inset) */
+.item{padding:15px 16px;gap:14px}
+.item:not(:last-child){border-bottom:.5px solid var(--c-line)}
+.item .txt{font-size:16px;font-weight:450}
+
+/* quest completata: scivola via con grazia invece di sparire */
+.item.leaving{animation:leave .5s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes leave{
+  0%{opacity:1;transform:translateX(0);max-height:80px}
+  40%{opacity:0;transform:translateX(40px)}
+  100%{opacity:0;transform:translateX(40px);max-height:0;padding-top:0;padding-bottom:0}
+}
+
+/* switchrow dentro group: stesso ritmo */
+.group .switchrow{padding:15px 16px;border-bottom:.5px solid var(--c-line)}
+.group .switchrow:last-child{border-bottom:none}
+
+/* input nativi: pieni, non outline freddi */
+input[type=text],input[type=password],input[type=time]{
+  background:var(--c-card);border:1px solid var(--c-line);
+  border-radius:14px;padding:15px 16px;margin-bottom:4px;
+}
+
+/* diario: voci più editoriali, separatore leggero */
+.entry{padding:20px 4px}
+.entry:not(:last-child){border-bottom:.5px solid var(--c-line)}
+
+/* nav bar tipografia più discreta */
+nav button{font-size:10px;letter-spacing:.06em;text-transform:none;font-weight:600}
+
+/* stato 'in avvio' del microfono: pulsa neutro finché il consenso non è risolto */
+#mic.arming .enso{stroke:var(--c-lac);animation:armpulse 1s ease-in-out infinite}
+#mic.arming .mic-glyph{fill:var(--c-lac);animation:armpulse 1s ease-in-out infinite}
+@keyframes armpulse{0%,100%{opacity:.45}50%{opacity:1}}
 </style>
 </head>
 <body>
@@ -408,13 +484,27 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
   </svg>
   <div class="intro-name" style="animation:introname .5s ease-out .9s both">sentiero</div>
 </div>
+<div id="onboard" class="hidden">
+  <div class="ob-inner">
+    <svg class="ob-enso" viewBox="0 0 200 200" aria-hidden="true">
+      <circle fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7" cx="100" cy="100" r="80"/>
+      <circle class="ob-stroke" cx="100" cy="100" r="80" transform="rotate(-100 100 100)" stroke-dasharray="503" stroke-dashoffset="503"/>
+    </svg>
+    <h1 class="ob-title">sentiero</h1>
+    <p class="ob-sub">Parla. Le tue parole diventano quest da compiere, e ogni giorno si chiude come un cerchio.</p>
+    <button class="ob-go" id="ob-go">Inizia</button>
+    <p class="ob-note" id="ob-note"></p>
+  </div>
+</div>
 <div id="app">
   <header>
-    <div id="dateline"></div>
-    <div style="display:flex;align-items:baseline;gap:2px">
-      <div id="streak"></div>
-      <button id="btn-pin" aria-label="Condividi la mia posizione">📍</button>
+    <div class="hd-row">
+      <div id="dateline"></div>
+      <button id="btn-pin" aria-label="Condividi la mia posizione">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      </button>
     </div>
+    <div id="streak"></div>
   </header>
 
   <main>
@@ -445,20 +535,19 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
       </div>
 
       <section id="sec-task">
-        <h2>Task di oggi</h2>
-        <div class="card" id="list-task"></div>
+        <div class="sec-head">Oggi</div>
+        <div class="group" id="list-task"></div>
       </section>
 
       <section id="sec-quest">
-        <h2>Quest attive</h2>
-        <div class="card" id="list-quest"></div>
+        <div class="sec-head">Quest</div>
+        <div class="group" id="list-quest"></div>
       </section>
     </div>
 
     <!-- ===== DIARIO ===== -->
     <div id="tab-diario" class="hidden">
       <section>
-        <h2>Diario</h2>
         <div id="list-diario" class="diary-font"></div>
       </section>
     </div>
@@ -466,8 +555,8 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
     <!-- ===== ALTRO ===== -->
     <div id="tab-impostazioni" class="hidden">
       <section>
-        <h2>Esperienza</h2>
-        <div class="card" style="padding:4px 14px">
+        <div class="sec-head">Esperienza</div>
+        <div class="group">
           <div class="switchrow"><span>Suoni</span><button class="sw" id="sw-sound"></button></div>
           <div class="switchrow"><span>Tema sonoro</span>
             <div class="seg" id="seg-theme">
@@ -476,19 +565,20 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
           </div>
           <div class="switchrow"><span>Voce ai completamenti</span><button class="sw" id="sw-voice"></button></div>
           <div class="switchrow"><span>Posizione nelle note</span><button class="sw" id="sw-geo"></button></div>
-          <div class="switchrow" style="border-bottom:none"><span>Promemoria (notifiche)</span><button class="sw" id="sw-notif"></button></div>
+          <div class="switchrow"><span>Promemoria</span><button class="sw" id="sw-notif"></button></div>
         </div>
-        <label>Suoni miei ai completamenti (restano solo sul telefono)</label>
-        <div class="card" id="list-sfx"></div>
-        <div class="btn-row"><button class="act primary" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
-        <input type="file" id="sfx-file" accept="audio/*,.m4r" class="hidden">
-        <p class="note">Caricali in ordine di intensità crescente (es. Tasty → Sweet → Delicious → Divine → Sugar Crush): il combo livello 1 suona il primo, e così via. L'ultimo caricato suona anche al sigillo del cerchio. Sostituiscono suono sintetico e voce per quei livelli. Non finiscono nel backup né su GitHub: vivono solo in questo telefono.</p>
-        <p class="note">I promemoria avvisano all'ora delle task. Su iPhone funzionano con l'app installata sulla schermata Home (iOS 16.4+); quelli programmati a orari futuri richiedono che l'app sia stata aperta nella giornata.</p>
       </section>
 
       <section>
-        <h2>Intelligenza artificiale</h2>
-        <label for="apikey">Chiave API Anthropic (resta solo su questo telefono)</label>
+        <div class="sec-head">Suoni personali</div>
+        <div class="group" id="list-sfx"></div>
+        <div class="btn-row"><button class="act primary" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
+        <input type="file" id="sfx-file" accept="audio/*,.m4r" class="hidden">
+        <p class="note">In ordine di intensità crescente: il combo livello 1 suona il primo, e così via. L'ultimo suona anche al sigillo. Restano solo su questo telefono.</p>
+      </section>
+
+      <section>
+        <div class="sec-head">Intelligenza artificiale</div>
         <input type="password" id="apikey" placeholder="sk-ant-...">
         <p class="note">Con la chiave, l'IA distilla le quest dal parlato con priorità, giorno e ora. Senza, il trascritto viene salvato così com'è.</p>
         <div class="btn-row"><button class="act primary" id="btn-savekey">Salva chiave</button><button class="act" id="btn-testkey">Prova connessione</button></div>
@@ -496,25 +586,22 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
       </section>
 
       <section>
-        <h2>Task pianificate</h2>
-        <div class="card" id="list-sched"></div>
-        <label for="new-task-txt">Nuova task</label>
+        <div class="sec-head">Task pianificate</div>
+        <div class="group" id="list-sched"></div>
         <input type="text" id="new-task-txt" placeholder="Es. 80 g proteine">
-        <label>Giorni</label>
         <div class="days" id="new-task-days"></div>
-        <label for="new-task-time">Ora (facoltativa)</label>
         <input type="time" id="new-task-time">
         <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi task</button></div>
       </section>
 
       <section>
-        <h2>Dati</h2>
+        <div class="sec-head">Dati</div>
         <div class="btn-row">
           <button class="act" id="btn-export">Esporta backup</button>
           <button class="act" id="btn-import">Importa</button>
         </div>
         <input type="file" id="import-file" accept="application/json" class="hidden">
-        <p class="note" id="version-line" style="text-align:center;margin-top:18px;opacity:.7"></p>
+        <p class="note" id="version-line" style="text-align:center;margin-top:18px;opacity:.6"></p>
       </section>
     </div>
   </main>
@@ -523,7 +610,7 @@ body.shake-big{animation:shkb .46s cubic-bezier(.36,.07,.19,.97)}
     <div class="inner">
       <button data-tab="oggi" class="on"><span class="ico">◯</span>Oggi</button>
       <button data-tab="diario"><span class="ico">✎</span>Diario</button>
-      <button data-tab="impostazioni"><span class="ico">⚙︎</span>Altro</button>
+      <button data-tab="impostazioni"><span class="ico">⚙</span>Altro</button>
     </div>
   </nav>
 </div>
@@ -709,7 +796,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v15 · 2026-06-11';
+const APP_VERSION='v16 · 2026-06-11';
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -1107,6 +1194,13 @@ function startRec(){
   committedText=''; sessionFinal=''; interimText='';
   rec=new SR();
   rec.lang='it-IT'; rec.continuous=true; rec.interimResults=true;
+  rec.onstart=()=>{
+    /* il microfono è DAVVERO attivo: solo ora invitiamo a parlare ed entriamo in rosso */
+    if(!recording) return;
+    micBtn.classList.remove('arming'); micBtn.classList.add('rec');
+    micLabel.textContent='Rilascia… tocca di nuovo per fermare';
+    sMicOn();
+  };
   rec.onresult=e=>{
     const arr=[];
     for(let i=0;i<e.results.length;i++) arr.push({final:e.results[i].isFinal,text:e.results[i][0].transcript});
@@ -1115,22 +1209,29 @@ function startRec(){
     live.innerHTML=escapeHtml(committedText+sessionFinal)+'<em>'+escapeHtml(interimText)+'</em>';
     live.classList.add('show');
   };
-  rec.onerror=e=>{ if(e.error!=='no-speech'&&e.error!=='aborted'){ toast('Errore microfono: '+e.error); stopRec(); } };
+  rec.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      recording=false; micBtn.classList.remove('rec','arming');
+      micLabel.textContent='Microfono non concesso. Attivalo in Impostazioni → Sentiero.';
+      return;
+    }
+    if(e.error!=='no-speech'&&e.error!=='aborted'){ toast('Errore microfono: '+e.error); stopRec(); }
+  };
   rec.onend=()=>{
     committedText+=sessionFinal; sessionFinal=''; interimText='';
-    if(recording){ try{rec.start()}catch(_){ recording=false; micBtn.classList.remove('rec'); micLabel.textContent='Microfono interrotto. Tocca per riprendere.'; } }
+    if(recording){ try{rec.start()}catch(_){ recording=false; micBtn.classList.remove('rec','arming'); micLabel.textContent='Microfono interrotto. Tocca per riprendere.'; } }
   };
-  try{ rec.start(); }
-  catch(_){ toast('Impossibile avviare il microfono'); return; }
   recording=true;
-  micBtn.classList.add('rec');
-  micLabel.textContent='Rilascia… tocca di nuovo per fermare';
-  sMicOn();
+  /* stato 'in avvio': enso pulsa neutro, l'utente NON è invitato a parlare finché onstart non scatta */
+  micBtn.classList.add('arming');
+  micLabel.textContent='Preparazione del microfono…';
+  try{ rec.start(); }
+  catch(_){ recording=false; micBtn.classList.remove('arming'); toast('Impossibile avviare il microfono'); }
 }
 function stopRec(){
   recording=false;
   if(rec){ rec.onend=null; try{rec.stop()}catch(_){} }
-  micBtn.classList.remove('rec');
+  micBtn.classList.remove('rec','arming');
   sMicOff();
   const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
   if(txt){
@@ -1644,7 +1745,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').then
 initDay();
 render();
 scheduleReminders();
-capturePos();
+/* la posizione si attiva solo su scelta esplicita (switch in Altro) o sul pin: niente richieste a freddo */
 /* large title iOS 26: compatta la testata allo scroll */
 try{
   const mainEl=document.querySelector('main'), hdr=document.querySelector('header');
@@ -1666,9 +1767,50 @@ try{
       intro.style.display='none';
       appEl.style.transition='opacity .35s ease-out';
       appEl.style.opacity='1';
+      maybeOnboard();
     },420);
   },fast?250:1600);
-}catch(_){}
+}catch(_){ maybeOnboard(); }
+
+/* ======================================================================
+   ONBOARDING + PERMESSI (una sola volta, nel contesto giusto)
+   ====================================================================== */
+function isStandalone(){
+  return (window.navigator&&window.navigator.standalone===true) ||
+         (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+}
+function maybeOnboard(){
+  let seen=false;
+  try{ seen=localStorage.getItem('sentiero-onboarded')==='1'; }catch(_){}
+  if(seen) return;
+  const ob=document.querySelector('#onboard');
+  const note=document.querySelector('#ob-note');
+  if(!isStandalone()) note.textContent='Suggerimento: Condividi → "Aggiungi alla schermata Home" per i permessi permanenti e le notifiche.';
+  ob.classList.remove('hidden');
+  document.querySelector('#ob-go').onclick=async()=>{
+    try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){}
+    /* chiede il microfono una volta, nel momento giusto, con un gesto utente reale */
+    await primeMicPermission();
+    ob.style.transition='opacity .4s ease'; ob.style.opacity='0';
+    setTimeout(()=>ob.classList.add('hidden'),400);
+  };
+}
+/* "scalda" il permesso microfono: avvio+stop immediato così iOS chiede ORA, non a metà dettatura */
+async function primeMicPermission(){
+  if(!SR) return;
+  try{
+    if(navigator.permissions&&navigator.permissions.query){
+      const st=await navigator.permissions.query({name:'microphone'}).catch(()=>null);
+      if(st&&st.state==='granted') return; /* già concesso: non ridisturbare */
+    }
+  }catch(_){}
+  try{
+    const probe=new SR(); probe.lang='it-IT';
+    probe.onerror=()=>{}; probe.onstart=()=>{ try{probe.stop()}catch(_){} };
+    probe.start();
+    setTimeout(()=>{ try{probe.stop()}catch(_){} },400);
+  }catch(_){}
+}
 
 </script>
 </body>
