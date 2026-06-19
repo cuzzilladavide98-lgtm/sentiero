@@ -64,9 +64,11 @@ header{padding:14px 28px 0}
   font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.15;
   letter-spacing:-.02em;color:var(--t1);text-transform:lowercase;max-width:78%;
 }
-#btn-pin{border:none;background:none;color:var(--t3);width:44px;height:44px;flex:none;
+#btn-pin{border:none;background:none;color:var(--t2);width:44px;height:44px;flex:none;
   display:flex;align-items:center;justify-content:center;transition:color .2s,transform .15s}
 #btn-pin:active{color:var(--accent);transform:scale(1.15)}
+nav button .ico{display:block;width:25px;height:25px;margin:0 auto 4px;color:var(--t2);transition:color .2s,transform .2s}
+nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
 #mic-wrap{display:flex;flex-direction:column;align-items:center;padding:40px 0 28px;position:relative}
@@ -184,10 +186,10 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 .seg button{padding:6px 0;border:none;background:none;color:var(--t3);font-size:15px;font-weight:500;position:relative}
 .seg button.on{color:var(--accent)}
 
-.days{display:flex;gap:8px;margin-top:8px}
-.days button{flex:1;height:44px;border-radius:0;border:none;border-bottom:1.5px solid rgba(245,242,234,.12);
-  background:none;color:var(--t3);font-size:15px;font-weight:600}
-.days button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.days{display:flex;gap:7px;margin-top:10px}
+.days button{flex:1;aspect-ratio:1;max-width:42px;border-radius:50%;border:1.5px solid rgba(245,242,234,.16);
+  background:none;color:var(--t2);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.days button.on{background:var(--accent);border-color:var(--accent);color:#1a1208;font-weight:700}
 
 .note{font-size:13px;color:var(--t3);line-height:1.55;margin-top:8px}
 
@@ -196,11 +198,9 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;z
   background:linear-gradient(0deg,#000 55%,transparent);
   padding:18px 0 calc(var(--safe-bot) + 14px);pointer-events:none}
 nav .inner{display:flex;gap:8px;pointer-events:auto}
-nav button{padding:8px 22px;border:none;background:none;color:var(--t3);
-  font-size:13px;font-weight:500;letter-spacing:0;transition:color .2s}
+nav button{padding:8px 20px;border:none;background:none;color:var(--t2);
+  font-size:12px;font-weight:500;letter-spacing:0;transition:color .2s}
 nav button.on{color:var(--t1)}
-nav button .ico{display:block;font-size:20px;margin-bottom:3px;opacity:.9}
-nav button.on .ico{color:var(--accent)}
 
 /* ════════ toast: testo che appare, niente pillola pesante ════════ */
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(8px);
@@ -272,8 +272,68 @@ nav button.on .ico{color:var(--accent)}
 .inkdot{display:none}
 body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalismo */
 
+/* ════════ ottimizzazione schermi stretti ════════ */
+/* iPhone 12/13 Pro (390px) e simili: leggera riduzione */
+@media (max-width:400px){
+  main{padding:0 22px 132px}
+  header{padding:14px 22px 0}
+  #dateline{font-size:27px}
+  #mic{width:212px;height:212px}
+  #mic-wrap{padding:32px 0 24px}
+  .entry p{font-size:17px}
+  .item .txt{font-size:16px}
+}
+/* iPhone 13 mini (375px): margini più stretti, enso ancora più compatto */
+@media (max-width:380px){
+  main{padding:0 18px 128px}
+  header{padding:12px 18px 0}
+  #dateline{font-size:25px}
+  #mic{width:196px;height:196px}
+  #mic-label{font-size:14px;margin-top:18px}
+  .ed-num{font-size:30px}
+  nav button{padding:8px 16px}
+}
+/* Galaxy A14 5G e Android stretti (~360px): il caso più stretto */
+@media (max-width:365px){
+  main{padding:0 16px 126px}
+  header{padding:12px 16px 0}
+  #dateline{font-size:23px}
+  #mic{width:184px;height:184px}
+  .days{gap:5px}
+  .days button{font-size:13px}
+  nav button{padding:8px 13px;font-size:11px}
+  nav .inner{gap:4px}
+  button.act{padding:12px 20px;font-size:15px}
+}
+
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
+
+/* ════════ dispositivi stretti: 13/12 mini (375), 12 Pro (390), Galaxy A14 5G (360) ════════ */
+@media (max-width:400px){
+  main{padding:0 20px 128px}
+  header{padding:12px 20px 0}
+  #dateline{font-size:26px}
+  #mic{width:200px;height:200px}
+  #mic-wrap{padding:30px 0 22px}
+  #mic-label{font-size:14px;margin-top:18px}
+  .item .txt{font-size:16px}
+  .ed-num{font-size:30px}
+  .entry p{font-size:17px;line-height:1.7}
+  .days button{max-width:38px;font-size:13px}
+  nav button{padding:8px 16px}
+}
+/* schermi molto stretti (Galaxy A14 ~360 e sotto): un altro gradino */
+@media (max-width:365px){
+  main{padding:0 16px 124px}
+  header{padding:12px 16px 0}
+  #dateline{font-size:24px}
+  #mic{width:184px;height:184px}
+  .days{gap:5px}
+  .days button{max-width:34px;font-size:12px}
+  nav button{padding:8px 13px;font-size:12px}
+  .seg{gap:14px}
 }
 </style>
 </head>
@@ -400,7 +460,15 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="sec-head">Task pianificate</div>
         <div class="group" id="list-sched"></div>
         <input type="text" id="new-task-txt" placeholder="Es. 80 g proteine">
-        <div class="days" id="new-task-days"></div>
+        <div class="seg" id="task-mode" style="margin-top:14px">
+          <button data-mode="ric" class="on">Ricorrente</button><button data-mode="data">Data precisa</button>
+        </div>
+        <div id="task-ric">
+          <div class="days" id="new-task-days"></div>
+        </div>
+        <div id="task-data" class="hidden">
+          <input type="date" id="new-task-date">
+        </div>
         <input type="time" id="new-task-time">
         <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi task</button></div>
       </section>
@@ -419,9 +487,9 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 
   <nav>
     <div class="inner">
-      <button data-tab="oggi" class="on"><span class="ico">◯</span>Oggi</button>
-      <button data-tab="diario"><span class="ico">✎</span>Diario</button>
-      <button data-tab="impostazioni"><span class="ico">⚙</span>Altro</button>
+      <button data-tab="oggi" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/></svg>Oggi</button>
+      <button data-tab="diario"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Diario</button>
+      <button data-tab="impostazioni"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>Altro</button>
     </div>
   </nav>
 </div>
@@ -475,11 +543,13 @@ function sanitizeScheduled(arr){
     let id=clampStr(t.id,24)||coreUid();
     while(seen.has(id)) id=coreUid();
     seen.add(id);
+    const time=(typeof t.time==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(t.time))?t.time:'';
+    /* una task può essere ricorrente (days) OPPURE legata a una data esatta (date, tipo compleanno) */
+    const date=(typeof t.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t.date))?t.date:'';
     let days=Array.isArray(t.days)?t.days.filter(x=>Number.isInteger(x)&&x>=0&&x<=6):[];
     days=[...new Set(days)].sort((a,b)=>a-b);
-    if(!days.length) continue;
-    const time=(typeof t.time==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(t.time))?t.time:'';
-    out.push({id,titolo,days,time});
+    if(!days.length&&!date) continue;   /* serve almeno uno dei due */
+    out.push({id,titolo,days,time,date});
     if(out.length>=LIMITS.SMAX) break;
   }
   return out;
@@ -538,9 +608,9 @@ function sanitizeState(raw,def){
   while(keys.length>60) delete st.checks[keys.shift()];
   return st;
 }
-function scheduledFor(state,dow){ return state.scheduled.filter(t=>t.days.includes(dow)); }
+function scheduledFor(state,dow,tk){ return state.scheduled.filter(t=>(t.days&&t.days.includes(dow))||(t.date&&t.date===tk)); }
 function computeProgress(state,tk,dow){
-  const sched=scheduledFor(state,dow);
+  const sched=scheduledFor(state,dow,tk);
   const checks=state.checks[tk]||{};
   const act=activeQuests(state,tk); /* le quest future non pesano sul cerchio di oggi */
   const total=sched.length+act.length;
@@ -582,7 +652,8 @@ function aiOutputToState(parsed){
 }
 function nextReminderDelays(state,now){
   const dow=dowOf(now),out=[];
-  for(const t of scheduledFor(state,dow)){
+  const tk=now.toISOString().slice(0,10);
+  for(const t of scheduledFor(state,dow,tk)){
     if(!t.time) continue;
     const parts=t.time.split(':');
     const when=new Date(now); when.setHours(+parts[0],+parts[1],0,0);
@@ -606,7 +677,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v23 · 2026-06-18';
+const APP_VERSION='v24 · 2026-06-18';
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -932,9 +1003,14 @@ function initHaptic(){
     hapticEl._label=lab;
   }catch(_){ hapticEl=null; }
 }
-function haptic(){
-  try{ if(hapticEl&&hapticEl._label) hapticEl._label.click(); }catch(_){}
-  try{ if(navigator.vibrate) navigator.vibrate(8); }catch(_){}  /* fallback Android, innocuo su iOS */
+function haptic(strong){
+  try{
+    if(hapticEl&&hapticEl._label){
+      hapticEl._label.click();
+      if(strong) setTimeout(()=>{ try{hapticEl._label.click();}catch(_){} },45);
+    }
+  }catch(_){}
+  try{ if(navigator.vibrate) navigator.vibrate(strong?[12,30,12]:10); }catch(_){}
 }
 /* WAKE LOCK: tiene lo schermo acceso durante la dettatura lunga */
 let wakeLock=null;
@@ -1242,7 +1318,7 @@ function onComplete(el){
   lastCheck=now;
   const lvl=Math.min(combo,6);
   const word=COMBO_WORDS[lvl-1];
-  haptic();  /* tocco tattile a ogni completamento */
+  haptic(true);  /* tocco tattile deciso a ogni completamento */
   if(playSFX(lvl-1)){ floatWord(word,lvl); }
   else { sCheck(lvl); say(word,lvl); floatWord(word,lvl); }
   try{
@@ -1273,7 +1349,7 @@ function updateRing(){
   const res=sealIfComplete(S,tk,dow);
   if(res==='sealed'){
     save();
-    haptic(); setTimeout(haptic,120); setTimeout(haptic,240);  /* tripla pulsazione: il cerchio si è chiuso */
+    haptic(true); setTimeout(()=>haptic(true),160); setTimeout(()=>haptic(true),320);  /* tre pulsazioni decise: il cerchio si è chiuso */
     micBtn.classList.add('sealed');
     setTimeout(()=>{
       if(playSFX(SFX.length-1)){ floatWord('Cerchio chiuso',6); shake(true); }
@@ -1311,7 +1387,7 @@ document.addEventListener('visibilitychange',()=>{
    RENDER
    ====================================================================== */
 function render(bornIds){ renderTasks(); renderQuests(bornIds||[]); renderDiary(); renderSettings(); renderStreak(); updateRing(); }
-function todaysScheduled(){ return scheduledFor(S,dowOf()); }
+function todaysScheduled(){ return scheduledFor(S,dowOf(),todayKey()); }
 
 function renderTasks(){
   const el=document.querySelector('#list-task'); const list=todaysScheduled();
@@ -1443,8 +1519,14 @@ function renderSettings(){
     el.innerHTML='';
     S.scheduled.forEach(t=>{
       const div=document.createElement('div'); div.className='item';
-      const days=t.days.length===7?'ogni giorno':t.days.map(i=>DAYS_IT[i]).join(' ');
-      div.innerHTML='<span class="txt">'+escapeHtml(t.titolo)+'<span class="meta">'+days+(t.time?' · '+t.time:'')+'</span></span><button class="del">×</button>';
+      let quando;
+      if(t.date){
+        const d=new Date(t.date+'T12:00:00');
+        quando=d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+      } else {
+        quando=t.days.length===7?'ogni giorno':t.days.map(i=>DAYS_IT[i]).join(' ');
+      }
+      div.innerHTML='<span class="txt">'+escapeHtml(t.titolo)+'<span class="meta">'+quando+(t.time?' · '+t.time:'')+'</span></span><button class="del">&#215;</button>';
       div.querySelector('.del').onclick=()=>{ S.scheduled=S.scheduled.filter(x=>x!==t); save(); renderSettings(); renderTasks(); updateRing(); };
       el.appendChild(div);
     });
@@ -1543,11 +1625,28 @@ document.querySelector('#btn-testkey').onclick=async()=>{
     out.textContent='✗ La rete non raggiunge i server IA: controlla la connessione (e prova a spegnere VPN o blocchi DNS/contenuti se ne usi).';
   }
 };
+let taskMode='ric'; /* 'ric' = ricorrente, 'data' = data precisa */
+document.querySelectorAll('#task-mode button').forEach(b=>{
+  b.onclick=()=>{
+    taskMode=b.dataset.mode;
+    document.querySelectorAll('#task-mode button').forEach(x=>x.classList.toggle('on',x===b));
+    document.querySelector('#task-ric').classList.toggle('hidden',taskMode!=='ric');
+    document.querySelector('#task-data').classList.toggle('hidden',taskMode!=='data');
+  };
+});
 document.querySelector('#btn-addtask').onclick=()=>{
   const txt=document.querySelector('#new-task-txt').value.trim();
   if(!txt) return toast('Scrivi il testo della task');
-  if(!newDays.length) return toast('Scegli almeno un giorno');
-  S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[...newDays].sort((a,b)=>a-b),time:document.querySelector('#new-task-time').value||''}]);
+  const time=document.querySelector('#new-task-time').value||'';
+  if(taskMode==='data'){
+    const date=document.querySelector('#new-task-date').value||'';
+    if(!date) return toast('Scegli una data');
+    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[],date,time}]);
+    document.querySelector('#new-task-date').value='';
+  } else {
+    if(!newDays.length) return toast('Scegli almeno un giorno');
+    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[...newDays].sort((a,b)=>a-b),time}]);
+  }
   document.querySelector('#new-task-txt').value=''; document.querySelector('#new-task-time').value='';
   save(); renderSettings(); renderTasks(); updateRing(); scheduleReminders(); toast('Task aggiunta');
 };

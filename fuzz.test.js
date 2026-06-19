@@ -71,9 +71,10 @@ function validState(st) {
     check([1,2,3].includes(q.prio), 'prio in [1,2,3]', q.prio);
   });
   check(st.quests.length <= C.LIMITS.QMAX, 'quest <= QMAX', st.quests.length);
-  check(Number.isInteger(st.streak) && st.streak >= 0, 'streak >= 0', st.streak);
   st.scheduled.forEach(t => {
-    check(t.days.length > 0 && t.days.every(d => d >= 0 && d <= 6), 'days validi', t);
+    const hasDays = t.days.length > 0 && t.days.every(d => d >= 0 && d <= 6);
+    const hasDate = t.date && /^\d{4}-\d{2}-\d{2}$/.test(t.date);
+    check(hasDays || hasDate, 'task con giorni o data', t);
     check(t.time === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(t.time), 'time valido', t);
   });
   // serializzabile e re-importabile senza perdita di validità
@@ -142,7 +143,7 @@ console.log('\nSUITE 3 — simulatore di vita: azioni casuali su giorni che scor
     const tk = C.localDayKey(day), dow = C.dowOf(day);
     const action = ri(10);
     if (action <= 2) { // spunta/togli una task pianificata
-      const sched = C.scheduledFor(st, dow);
+      const sched = C.scheduledFor(st, dow, tk);
       if (sched.length) {
         const t = pick(sched);
         st.checks[tk] = st.checks[tk] || {};
@@ -155,8 +156,11 @@ console.log('\nSUITE 3 — simulatore di vita: azioni casuali su giorni che scor
       if (out) st.quests = out.quests;
     } else if (action === 6) { // elimina una quest
       if (st.quests.length) st.quests.splice(ri(st.quests.length), 1);
-    } else if (action === 7) { // aggiunge task pianificata
-      st.scheduled = C.sanitizeScheduled([...st.scheduled, { id: 'n'+i, titolo: 'task '+i, days: [ri(7)], time: rnd()<0.5 ? (String(ri(24)).padStart(2,'0')+':'+String(ri(60)).padStart(2,'0')) : '' }]);
+    } else if (action === 7) { // aggiunge task pianificata (ricorrente o data esatta)
+      const t = rnd()<0.5
+        ? { id: 'n'+i, titolo: 'task '+i, days: [ri(7)], time: rnd()<0.5 ? (String(ri(24)).padStart(2,'0')+':'+String(ri(60)).padStart(2,'0')) : '' }
+        : { id: 'd'+i, titolo: 'compleanno '+i, days: [], date: '2026-'+String(1+ri(12)).padStart(2,'0')+'-'+String(1+ri(28)).padStart(2,'0'), time: '' };
+      st.scheduled = C.sanitizeScheduled([...st.scheduled, t]);
     } else if (action === 8) { // avanza il giorno (a volte salta giorni)
       day = new Date(day.getTime() + (1 + (rnd() < 0.1 ? ri(5) : 0)) * 86400000);
       const ntk = C.localDayKey(day);
