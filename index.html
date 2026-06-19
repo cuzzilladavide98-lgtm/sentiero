@@ -147,6 +147,7 @@ section{margin-top:38px}
   width:44px;height:44px;display:flex;align-items:center;justify-content:center;transition:opacity .15s}
 .item .del:active{opacity:.4}
 .item.future{opacity:.4}
+#list-quest .item.future{opacity:1}  /* nella loro scheda dedicata le future sono protagoniste */
 .item.leaving{animation:leave .45s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes leave{0%{opacity:1;max-height:70px}100%{opacity:0;max-height:0;padding-top:0;padding-bottom:0}}
 .empty{font-family:var(--serif);font-style:italic;color:var(--t3);font-size:16px;padding:8px 0;line-height:1.6}
@@ -335,6 +336,44 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   nav button{padding:8px 13px;font-size:12px}
   .seg{gap:14px}
 }
+
+/* ═══════════ v25 — navigazione a 3 + focus Distilla + contrasti ═══════════ */
+
+/* contrasto: pin posizione e meta diario più leggibili sul nero */
+#btn-pin{color:rgba(245,242,234,.7) !important}
+.ed-meta{color:rgba(245,242,234,.5) !important}
+.ed-meta .posa{color:var(--jade) !important}
+.sec-head{color:rgba(245,242,234,.45)}
+.item .meta{color:rgba(245,242,234,.42)}
+
+/* Distilla in evidenza: pillola piena ambra, non più testo */
+.btn-row .act.distilla-cta{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--accent);color:#1a1208;font-weight:700;font-size:16px;
+  padding:14px 26px;border-radius:16px;
+  box-shadow:0 6px 22px rgba(232,168,76,.32);
+}
+.btn-row .act.distilla-cta:active{transform:scale(.96);opacity:1}
+#btn-discard{color:var(--t2)}
+
+/* riga domanda priorità */
+#prio-row{margin-top:14px}
+#prio-row .act{font-size:15px;padding:11px 20px;border-radius:14px}
+#prio-row .act.primary{background:rgba(232,168,76,.16);color:var(--accent);font-weight:600}
+#prio-row .act:not(.primary){color:var(--t2)}
+
+/* testata Diario con accesso ad Altro */
+.diario-head{display:flex;align-items:center;justify-content:space-between;padding-top:4px}
+.altro-link{display:inline-flex;align-items:center;gap:6px;border:none;background:none;
+  color:var(--t2);font-size:14px;font-weight:500;padding:8px 4px;transition:color .2s}
+.altro-link:active{color:var(--accent)}
+.altro-link svg{display:block}
+
+/* back dal Altro al Diario */
+.back-link{display:inline-flex;align-items:center;gap:4px;border:none;background:none;
+  color:var(--accent);font-size:16px;font-weight:500;padding:6px 0 12px;margin-top:2px}
+.back-link svg{display:block}
+.back-link:active{opacity:.6}
 </style>
 </head>
 <body>
@@ -401,7 +440,13 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div id="live"></div>
         <div class="btn-row hidden" id="confirm-row">
           <button class="act" id="btn-discard">Scarta</button>
-          <button class="act primary" id="btn-save">Distilla</button>
+          <button class="act primary distilla-cta" id="btn-save">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:7px"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4"/><path d="M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z"/></svg>
+          Distilla</button>
+        </div>
+        <div class="btn-row hidden" id="prio-row">
+          <button class="act" id="btn-prio-no">Tutte normali</button>
+          <button class="act primary" id="btn-prio-yes">Tieni le priorità</button>
         </div>
       </div>
 
@@ -410,21 +455,40 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="group" id="list-task"></div>
       </section>
 
-      <section id="sec-quest">
-        <div class="sec-head">Quest</div>
+      <section id="sec-today-quests">
+        <div class="sec-head">Quest di oggi</div>
+        <div class="group" id="list-quest-today"></div>
+      </section>
+    </div>
+
+    <!-- ===== QUEST (secondarie) ===== -->
+    <div id="tab-quest" class="hidden">
+      <section>
+        <div class="sec-head">In programma</div>
         <div class="group" id="list-quest"></div>
       </section>
     </div>
 
     <!-- ===== DIARIO ===== -->
     <div id="tab-diario" class="hidden">
-      <section>
+      <div class="diario-head">
+        <div class="sec-head" style="margin:0">Diario</div>
+        <button id="open-altro" class="altro-link" aria-label="Apri Altro">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+          Altro
+        </button>
+      </div>
+      <section style="margin-top:14px">
         <div id="list-diario" class="diary-font"></div>
       </section>
     </div>
 
-    <!-- ===== ALTRO ===== -->
+    <!-- ===== ALTRO (nascosto, aperto dal Diario) ===== -->
     <div id="tab-impostazioni" class="hidden">
+      <button id="close-altro" class="back-link" aria-label="Torna al Diario">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Diario
+      </button>
       <section>
         <div class="sec-head">Esperienza</div>
         <div class="group">
@@ -488,8 +552,8 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   <nav>
     <div class="inner">
       <button data-tab="oggi" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/></svg>Oggi</button>
+      <button data-tab="quest"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>Quest</button>
       <button data-tab="diario"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Diario</button>
-      <button data-tab="impostazioni"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>Altro</button>
     </div>
   </nav>
 </div>
@@ -530,9 +594,10 @@ function sanitizeQuests(arr){
   }
   return out;
 }
-function questSortKey(q){ return String(q.prio||3)+(q.quando||'9999-99-99')+' '+(q.ora||'99:99'); }
+function questSortKey(q){ return (q.fatto?'1':'0')+String(q.prio||3)+(q.quando||'9999-99-99')+' '+(q.ora||'99:99'); }
 function sortQuests(qs){ return [...qs].sort((a,b)=>{const x=questSortKey(a),y=questSortKey(b);return x<y?-1:x>y?1:0;}); }
 function activeQuests(state,tk){ return state.quests.filter(q=>!q.quando||q.quando<=tk); }
+function futureQuests(state,tk){ return state.quests.filter(q=>q.quando&&q.quando>tk); }
 function sanitizeScheduled(arr){
   if(!Array.isArray(arr)) return [];
   const out=[],seen=new Set();
@@ -677,7 +742,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v24 · 2026-06-18';
+const APP_VERSION='v25 · 2026-06-19';
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -1084,18 +1149,24 @@ document.querySelector('#btn-pin').onclick=()=>{
 function renderStreak(){
   $('#dateline').textContent=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 }
+function showPane(name){
+  ['oggi','quest','diario','impostazioni'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',t!==name));
+  if(name!=='impostazioni'){
+    document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===name));
+  }
+  render();
+  try{
+    const pane=$('#tab-'+name);
+    pane.classList.remove('tab-in'); void pane.offsetWidth; pane.classList.add('tab-in');
+    const m=document.querySelector('main'); if(m) m.scrollTop=0;
+  }catch(_){}
+}
 document.querySelectorAll('nav button').forEach(b=>{
-  b.onclick=()=>{
-    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    ['oggi','diario','impostazioni'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
-    render();
-    try{
-      const pane=$('#tab-'+b.dataset.tab);
-      pane.classList.remove('tab-in'); void pane.offsetWidth; pane.classList.add('tab-in');
-    }catch(_){}
-  };
+  b.onclick=()=>showPane(b.dataset.tab);
 });
+/* Altro è nascosto: si apre dal Diario e si torna indietro */
+document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
+document.querySelector('#close-altro').onclick=()=>showPane('diario');
 
 /* ======================================================================
    DETTATURA
@@ -1172,11 +1243,34 @@ micBtn.addEventListener('click',()=>{
   recording?stopRec():startRec();
 });
 document.querySelector('#btn-discard').onclick=resetCapture;
+/* domanda priorità: se l'IA rileva quest urgenti/importanti, l'utente conferma */
+let pendingPrioIds=[];
+function maybeAskPriority(bornIds){
+  pendingPrioIds=(bornIds||[]).filter(id=>{ const q=S.quests.find(x=>x.id===id); return q&&q.prio<=2; });
+  const row=document.querySelector('#prio-row');
+  if(!pendingPrioIds.length){ row.classList.add('hidden'); return; }
+  const n=pendingPrioIds.length;
+  micLabel.textContent='Ho rilevato '+n+(n===1?' quest in evidenza':' quest in evidenza')+': le tengo così?';
+  row.classList.remove('hidden');
+}
+document.querySelector('#btn-prio-yes').onclick=()=>{
+  document.querySelector('#prio-row').classList.add('hidden');
+  pendingPrioIds=[]; micLabel.textContent='Tocca il cerchio e rilascia';
+  haptic();
+};
+document.querySelector('#btn-prio-no').onclick=()=>{
+  pendingPrioIds.forEach(id=>{ const q=S.quests.find(x=>x.id===id); if(q) q.prio=3; });
+  save(); render();
+  document.querySelector('#prio-row').classList.add('hidden');
+  pendingPrioIds=[]; micLabel.textContent='Tocca il cerchio e rilascia';
+  toast('Priorità azzerate: tutte normali');
+};
 function resetCapture(){
   committedText='';sessionFinal='';interimText='';
   live.textContent='';live.classList.remove('show','distill');
   if(!SR) live.classList.add('show');
   document.querySelector('#confirm-row').classList.add('hidden');
+  document.querySelector('#prio-row').classList.add('hidden');
   micLabel.textContent='Tocca il cerchio e rilascia';
   updateRing();
 }
@@ -1219,6 +1313,7 @@ document.querySelector('#btn-save').onclick=async()=>{
           });
         },60);
         toast(bornIds.length? bornIds.length+(bornIds.length===1?' nuova quest distillata':' nuove quest distillate') : 'Quest aggiornate, nota salvata');
+        maybeAskPriority(bornIds);
       } else throw new Error('bad');
     }else{
       addDiary(transcript,[],[]);
@@ -1386,7 +1481,7 @@ document.addEventListener('visibilitychange',()=>{
 /* ======================================================================
    RENDER
    ====================================================================== */
-function render(bornIds){ renderTasks(); renderQuests(bornIds||[]); renderDiary(); renderSettings(); renderStreak(); updateRing(); }
+function render(bornIds){ renderTasks(); renderTodayQuests(bornIds||[]); renderQuests(bornIds||[]); renderDiary(); renderSettings(); renderStreak(); updateRing(); }
 function todaysScheduled(){ return scheduledFor(S,dowOf(),todayKey()); }
 
 function renderTasks(){
@@ -1413,41 +1508,58 @@ function renderTasks(){
     el.appendChild(div);
   });
 }
-function renderQuests(bornIds){
-  const el=document.querySelector('#list-quest');
-  if(!S.quests.length){ el.innerHTML='<p class="empty">Nessuna quest. Parla al cerchio: l\u2019IA le distiller\u00e0 da ci\u00f2 che dici.</p>'; return; }
-  el.innerHTML='';
+function questWhen(q,tk,domani){
+  const future=q.quando&&q.quando>tk;
+  const overdue=q.quando&&q.quando<tk&&!q.fatto;
+  let when='';
+  if(q.quando){
+    const lbl=q.quando===tk?'oggi':q.quando===domani?'domani':new Date(q.quando+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+    when='<span class="meta'+(overdue?' over':future?' soon':'')+'">'+(overdue?'in ritardo · ':'')+lbl+(q.ora?' · '+q.ora:'')+'</span>';
+  } else if(q.ora){
+    when='<span class="meta">'+q.ora+'</span>';
+  }
+  return {when,future};
+}
+function buildQuestRow(q,tk,domani,bornIds,rerender){
+  const {when,future}=questWhen(q,tk,domani);
+  const p=q.prio||3;
+  const div=document.createElement('div');
+  div.dataset.qid=q.id;
+  div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'');
+  if(bornIds.includes(q.id)) div.style.animationDelay=(bornIds.indexOf(q.id)*0.13)+'s';
+  div.innerHTML='<span class="prio prio-'+p+'"></span>'+
+    '<button class="chk" aria-label="Completa"></button>'+
+    '<span class="txt">'+escapeHtml(q.titolo)+when+(q.note?'<span class="meta">'+escapeHtml(q.note)+'</span>':'')+'</span>'+
+    '<button class="del" aria-label="Elimina">&#215;</button>';
+  div.querySelector('.chk').onclick=()=>{
+    if(div.dataset.busy) return;
+    div.dataset.busy='1';
+    q.fatto=!q.fatto; save();
+    if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(rerender,600); }
+    else { sUndo(); rerender(); updateRing(); }
+  };
+  div.querySelector('.del').onclick=()=>{ S.quests=S.quests.filter(x=>x!==q); save(); rerender(); updateRing(); };
+  return div;
+}
+function renderTodayQuests(bornIds){
+  bornIds=bornIds||[];
+  const el=document.querySelector('#list-quest-today');
   const tk=todayKey();
   const domani=localDayKey(new Date(Date.now()+86400000));
-  sortQuests(S.quests).forEach(q=>{
-    const future=q.quando&&q.quando>tk;
-    const overdue=q.quando&&q.quando<tk&&!q.fatto;
-    let when='';
-    if(q.quando){
-      const lbl=q.quando===tk?'oggi':q.quando===domani?'domani':new Date(q.quando+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
-      when='<span class="meta'+(overdue?' over':future?' soon':'')+'">'+(overdue?'\u23F3 in ritardo \u00b7 ':'')+'\uD83D\uDCC5 '+lbl+(q.ora?' \u00b7 '+q.ora:'')+'</span>';
-    } else if(q.ora){
-      when='<span class="meta">\u23F0 '+q.ora+'</span>';
-    }
-    const p=q.prio||3;
-    const div=document.createElement('div');
-    div.dataset.qid=q.id;
-    div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'');
-    if(bornIds.includes(q.id)) div.style.animationDelay=(bornIds.indexOf(q.id)*0.13)+'s';
-    div.innerHTML='<span class="prio prio-'+p+'"></span>'+
-      '<button class="chk" aria-label="Completa"></button>'+
-      '<span class="txt">'+escapeHtml(q.titolo)+when+(q.note?'<span class="meta">'+escapeHtml(q.note)+'</span>':'')+'</span>'+
-      '<button class="del" aria-label="Elimina">&#215;</button>';
-    div.querySelector('.chk').onclick=()=>{
-      if(div.dataset.busy) return;          /* tap ravvicinati sulla stessa spunta: ignorati */
-      div.dataset.busy='1';
-      q.fatto=!q.fatto; save();
-      if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(()=>renderQuests([]),600); }
-      else { sUndo(); renderQuests([]); updateRing(); }
-    };
-    div.querySelector('.del').onclick=()=>{ S.quests=S.quests.filter(x=>x!==q); save(); renderQuests([]); updateRing(); };
-    el.appendChild(div);
-  });
+  const list=sortQuests(activeQuests(S,tk));
+  if(!list.length){ el.innerHTML='<p class="empty">Nessuna quest per oggi. Parla al cerchio: l\u2019IA le distiller\u00e0 da ci\u00f2 che dici.</p>'; return; }
+  el.innerHTML='';
+  list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>renderTodayQuests([]))));
+}
+function renderQuests(bornIds){
+  bornIds=bornIds||[];
+  const el=document.querySelector('#list-quest');
+  const tk=todayKey();
+  const domani=localDayKey(new Date(Date.now()+86400000));
+  const list=sortQuests(futureQuests(S,tk));
+  if(!list.length){ el.innerHTML='<p class="empty">Nessuna quest in programma. Quelle con una data futura compaiono qui.</p>'; return; }
+  el.innerHTML='';
+  list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>{renderQuests([]);renderTodayQuests([]);})));
 }
 function renderDiary(){
   const el=document.querySelector('#list-diario');
