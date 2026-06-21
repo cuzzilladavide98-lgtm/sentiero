@@ -849,7 +849,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v36 · 2026-06-20';
+const APP_VERSION='v37 · 2026-06-21';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1020,274 +1020,237 @@ const sGong  =()=>sfx('seal');
    Un solo brano flessibile, sintetizzato in tempo reale: nessun file, nessun copyright.
    ====================================================================== */
 const MUSIC=(()=>{
-  /* progressione di 4 battute in La minore: Am – F – C – G (i–VI–III–VII) */
+  /* ====================================================================
+     Motore orchestrale generativo. Timbri caldi (onde su misura, inviluppi
+     ADSR morbidi, vibrato), armonia ricca, melodia composta. La minore.
+     Ispirazione: l'opera sinfonica dei JRPG fatta al computer.
+     ==================================================================== */
   const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
-  function f(name,oct){ const m=name.match(/^([A-G]#?)(-?\d)?$/); const semi=NOTE[m[1]]; const o=oct!==undefined?oct:parseInt(m[2]); return 440*Math.pow(2,(semi+(o-4)*12-9)/12); }
+  function f(name,oct){ const semi=NOTE[name]; return 440*Math.pow(2,(semi+(oct-4)*12-9)/12); }
+  /* progressione con colori (Am – Fmaj7 – Cmaj7 – G): voicing a 4 voci, dolce */
   const CHORDS=[
-    {root:'A',oct:2,tri:[['A',3],['C',4],['E',4]]},
-    {root:'F',oct:2,tri:[['F',3],['A',3],['C',4]]},
-    {root:'C',oct:2,tri:[['C',3],['E',3],['G',3]]},
-    {root:'G',oct:2,tri:[['G',2],['B',3],['D',4]]}
+    {root:'A',oct:2, pad:[['A',3],['C',4],['E',4],['B',4]]},   /* Am(add9) */
+    {root:'F',oct:2, pad:[['F',3],['A',3],['C',4],['E',4]]},   /* Fmaj7 */
+    {root:'C',oct:2, pad:[['C',3],['E',3],['G',3],['B',3]]},   /* Cmaj7 */
+    {root:'G',oct:2, pad:[['G',2],['B',3],['D',4],['G',4]]}    /* G */
   ];
-  const PENTA=[['A',4],['C',5],['D',5],['E',5],['G',5],['A',5]]; /* la minore pentatonica per il lead */
-  let running=false,timer=null,step=0,nextT=0,gain=null,filter=null,reactGain=null;
-  let pump=null,percBus=null,master=null,reverb=null,cycle=0;
+  /* scala La minore naturale per la melodia (gradi → semitoni) */
+  const SCALE=[['A',0],['B',2],['C',3],['D',5],['E',7],['F',8],['G',10]];
+  function scaleNote(deg,octShift){
+    const d=((deg%7)+7)%7; const extra=Math.floor(deg/7);
+    const base=SCALE[d]; return f(base[0], 4+extra+(octShift||0));
+  }
+  /* frasi melodiche composte (grado, durata in sedicesimi) — hanno forma e risolvono */
+  const PHRASES=[
+    [[4,4],[2,2],[4,2],[7,8]],          /* E . C E . G(sopra) */
+    [[7,4],[6,2],[4,2],[2,4],[0,4]],    /* discesa cantabile */
+    [[0,2],[2,2],[4,4],[2,2],[4,2],[7,4]],
+    [[4,6],[7,2],[6,4],[4,4]],
+    [[2,4],[4,4],[7,4],[9,4]]           /* slancio verso l'alto */
+  ];
+
+  let running=false,timer=null,step=0,nextT=0,cycle=0;
+  let gain=null,filter=null,reactGain=null,percBus=null,master=null,reverb=null,duckGain=null,pump=null;
   let intensity=0,target=0,over=0,targetOver=0;
-  const MOTIFS=[[0,2,4,3],[4,3,2,0],[0,3,4,5],[2,4,5,4],[4,5,4,2]]; /* motivi pentatonici per il lead, a rotazione */
-  const LOOK=0.12,TICK=25;
-  function bpm(){ return 86+intensity*64+over*24; }            /* 86 calmo → 150 pieno → 174 in overdrive */
-  function stepDur(){ return 60/bpm()/4; }                  /* sedicesimo */
+  let unlocked=false, recDuckOn=false;
+  let W_STR=null,W_FLUTE=null,W_HORN=null;
+  const LOOK=0.14,TICK=25;
+  function bpm(){ return 72+intensity*52+over*20; }   /* più lento e respirato: 72 calmo → 124 pieno → 144 overdrive */
+  function stepDur(){ return 60/bpm()/4; }
+
+  function mkWave(a,amps){
+    const n=amps.length+1, real=new Float32Array(n), imag=new Float32Array(n);
+    for(let i=1;i<n;i++) imag[i]=amps[i-1];
+    return a.createPeriodicWave(real,imag,{disableNormalization:false});
+  }
   function setup(){
     const a=ac(); if(!a) return null;
-    if(!NOISEBUF){
-      try{
-        NOISEBUF=a.createBuffer(1,Math.floor(a.sampleRate*0.5),a.sampleRate);
-        const d=NOISEBUF.getChannelData(0);
-        for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-      }catch(_){}
-    }
+    if(!NOISEBUF){ try{ NOISEBUF=a.createBuffer(1,Math.floor(a.sampleRate*0.5),a.sampleRate); const d=NOISEBUF.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }catch(_){} }
     if(!gain){
-      /* MASTER con saturazione morbida (tanh): calore e volume senza distorcere */
-      master=a.createGain(); master.gain.value=1;
+      /* onde su misura: spettri caldi e controllati invece di saw/square grezzi */
       try{
-        const shaper=a.createWaveShaper();
-        const n=1024,curve=new Float32Array(n);
-        for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; curve[i]=Math.tanh(x*1.7); }
-        shaper.curve=curve; shaper.oversample='2x';
-        master.connect(shaper); shaper.connect(BUS||a.destination);
-      }catch(_){ master.connect(BUS||a.destination); }
-      /* RIVERBERO: convolver con coda generata — lo spazio cinematografico */
+        W_STR=mkWave(a,[1,0.6,0.42,0.3,0.22,0.16,0.12,0.09,0.06,0.04]);   /* archi/ensemble caldo */
+        W_FLUTE=mkWave(a,[1,0.16,0.06,0.02]);                              /* flauto/voce, dolce */
+        W_HORN=mkWave(a,[1,0.5,0.3,0.16,0.09,0.05]);                      /* corno morbido */
+      }catch(_){ W_STR=W_FLUTE=W_HORN=null; }
+      /* duck finale (per la registrazione) → BUS */
+      duckGain=a.createGain(); duckGain.gain.value=1; duckGain.connect(BUS||a.destination);
+      /* master con saturazione gentile */
+      master=a.createGain();
+      try{ const sh=a.createWaveShaper(); const n=1024,c=new Float32Array(n); for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(x*1.1);} sh.curve=c; sh.oversample='2x'; master.connect(sh); sh.connect(duckGain); }
+      catch(_){ master.connect(duckGain); }
+      /* riverbero lungo e caldo */
       try{
         reverb=a.createConvolver();
-        const len=Math.floor(a.sampleRate*1.9);
-        const ir=a.createBuffer(2,len,a.sampleRate);
-        for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch);
-          for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6); }
-        reverb.buffer=ir;
-        const verbReturn=a.createGain(); verbReturn.gain.value=0.55;
-        reverb.connect(verbReturn); verbReturn.connect(master);
+        const len=Math.floor(a.sampleRate*2.6); const ir=a.createBuffer(2,len,a.sampleRate);
+        for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2); }
+        reverb.buffer=ir; const vr=a.createGain(); vr.gain.value=0.62; reverb.connect(vr); vr.connect(master);
       }catch(_){ reverb=null; }
-      /* CATENA MELODICA: filtro → intensità → pompaggio → master */
-      filter=a.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=700; filter.Q.value=0.7;
+      /* catena melodica: filtro caldo → intensità → pompaggio leggero → master */
+      filter=a.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=900; filter.Q.value=0.4;
       gain=a.createGain(); gain.gain.value=0;
       pump=a.createGain(); pump.gain.value=1;
       filter.connect(gain); gain.connect(pump); pump.connect(master);
-      if(reverb){ const bedSend=a.createGain(); bedSend.gain.value=0.3; gain.connect(bedSend); bedSend.connect(reverb); }
-      /* BUS PERCUSSIONI: punchy, non ducked dal pompaggio */
-      percBus=a.createGain(); percBus.gain.value=1; percBus.connect(master);
-      if(reverb){ const pSend=a.createGain(); pSend.gain.value=0.12; percBus.connect(pSend); pSend.connect(reverb); }
-      /* REAZIONI: secco + una mano di riverbero */
-      reactGain=a.createGain(); reactGain.gain.value=0.95; reactGain.connect(master);
-      if(reverb){ const rSend=a.createGain(); rSend.gain.value=0.32; reactGain.connect(rSend); rSend.connect(reverb); }
+      if(reverb){ const bs=a.createGain(); bs.gain.value=0.34; gain.connect(bs); bs.connect(reverb); }
+      percBus=a.createGain(); percBus.gain.value=0.9; percBus.connect(master);
+      if(reverb){ const ps=a.createGain(); ps.gain.value=0.16; percBus.connect(ps); ps.connect(reverb); }
+      reactGain=a.createGain(); reactGain.gain.value=1; reactGain.connect(master);
+      if(reverb){ const rs=a.createGain(); rs.gain.value=0.4; reactGain.connect(rs); rs.connect(reverb); }
     }
     return a;
   }
-  /* pompaggio sidechain: a ogni cassa il tappeto melodico si abbassa e risale → spinta */
-  function duck(t){
-    try{ pump.gain.cancelScheduledValues(t); pump.gain.setValueAtTime(0.58,t); pump.gain.linearRampToValueAtTime(1,t+0.17); }catch(_){}
-  }
-  function voice(type,freq,t,dur,vol,dest,slideTo){
-    const a=ac(); if(!a) return;
-    const o=a.createOscillator(),g=a.createGain();
-    o.type=type; o.frequency.setValueAtTime(freq,t);
-    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+
+  /* voce con inviluppo ADSR morbido, vibrato e filtro opzionali — il cuore del calore */
+  function note(wave,freq,t,dur,vol,o){
+    o=o||{}; const a=ac(); if(!a) return;
+    const osc=a.createOscillator();
+    if(wave&&typeof wave==='object'){ try{osc.setPeriodicWave(wave);}catch(_){osc.type='triangle';} } else osc.type=wave||'triangle';
+    osc.frequency.setValueAtTime(freq,t);
+    const g=a.createGain();
+    const A=o.a!=null?o.a:0.05, D=o.d!=null?o.d:0.12, S=o.s!=null?o.s:0.72, R=o.r!=null?o.r:0.28;
+    const peak=Math.max(0.0008,vol), sus=Math.max(0.0006,vol*S);
     g.gain.setValueAtTime(0.0001,t);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.001,vol),t+0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    o.connect(g); g.connect(dest||filter);
-    o.start(t); o.stop(t+dur+0.03);
+    g.gain.linearRampToValueAtTime(peak,t+A);
+    g.gain.exponentialRampToValueAtTime(sus,t+A+D);
+    const rel=t+Math.max(A+D,dur);
+    g.gain.setValueAtTime(sus,rel);
+    g.gain.exponentialRampToValueAtTime(0.0001,rel+R);
+    osc.connect(g);
+    if(o.vib){ try{ const lfo=a.createOscillator(),lg=a.createGain(); lfo.frequency.value=o.vibRate||5; lg.gain.value=o.vib; lfo.connect(lg); lg.connect(osc.frequency); lfo.start(t); lfo.stop(rel+R+0.05);}catch(_){} }
+    let out=g;
+    if(o.lp){ const fl=a.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=o.lp; fl.Q.value=o.q||0.4; g.connect(fl); out=fl; }
+    out.connect(o.dest||filter);
+    osc.start(t); osc.stop(rel+R+0.06);
   }
-  /* PAD DI ARCHI: accordo tenuto che gonfia e cala — il tappeto orchestrale dei brividi */
-  function pad(freq,t,dur,vol){
+  /* campana/arpa via FM — luccichio caldo (celesta) per arpeggi e reazioni */
+  function bell(freq,t,dur,vol,dest){
     const a=ac(); if(!a) return;
-    const o=a.createOscillator(),g=a.createGain();
-    o.type='sawtooth'; o.frequency.setValueAtTime(freq,t);
-    g.gain.setValueAtTime(0.0001,t);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.001,vol),t+dur*0.4);   /* swell lento in entrata */
-    g.gain.setValueAtTime(Math.max(0.001,vol),t+dur*0.62);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);                    /* dissolvenza in coda */
-    o.connect(g); g.connect(filter);
-    o.start(t); o.stop(t+dur+0.06);
+    const car=a.createOscillator(),mod=a.createOscillator(),mg=a.createGain(),g=a.createGain();
+    car.type='sine'; mod.type='sine'; mod.frequency.setValueAtTime(freq*3.01,t);
+    mg.gain.setValueAtTime(freq*1.6,t); mg.gain.exponentialRampToValueAtTime(0.001,t+dur*0.7);
+    mod.connect(mg); mg.connect(car.frequency); car.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(Math.max(0.001,vol),t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    car.connect(g); g.connect(dest||filter);
+    car.start(t); mod.start(t); car.stop(t+dur+0.05); mod.stop(t+dur+0.05);
   }
-  /* LEAD SUPERSAW: tre saw leggermente scordati impastati — il lead epico e ricco */
-  function superLead(freq,t,dur,vol,dest){
-    const a=ac(); if(!a) return;
-    [-9,0,9].forEach(c=>{
-      const o=a.createOscillator(),g=a.createGain();
-      o.type='sawtooth'; o.frequency.setValueAtTime(freq*Math.pow(2,c/1200),t);
-      g.gain.setValueAtTime(0.0001,t);
-      g.gain.exponentialRampToValueAtTime(Math.max(0.001,vol/3),t+0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-      o.connect(g); g.connect(dest||filter); o.start(t); o.stop(t+dur+0.03);
-    });
-  }
+  function strings(freq,t,dur,vol){ note(W_STR||'sawtooth',freq,t,dur,vol,{a:0.22,d:0.2,s:0.85,r:0.7,vib:2.6,vibRate:4,lp:2100}); }
+  function flute(freq,t,dur,vol){ note(W_FLUTE||'triangle',freq,t,dur,vol,{a:0.06,d:0.1,s:0.8,r:0.3,vib:4,vibRate:5.4,lp:3200}); }
+  function horn(freq,t,dur,vol){ note(W_HORN||'sawtooth',freq,t,dur,vol,{a:0.08,d:0.12,s:0.8,r:0.3,vib:2,vibRate:4.5,lp:2400}); }
+  function bassNote(freq,t,dur,vol){ note('sine',freq,t,dur,vol,{a:0.02,d:0.14,s:0.7,r:0.2,lp:520}); note(W_STR||'triangle',freq,t,dur,vol*0.3,{a:0.03,d:0.12,s:0.6,r:0.18,lp:380}); }
+
   function kick(t){
     const a=ac(); if(!a) return;
-    duck(t); /* pompaggio: il tappeto melodico respira sulla cassa */
+    try{ pump.gain.cancelScheduledValues(t); pump.gain.setValueAtTime(0.7,t); pump.gain.linearRampToValueAtTime(1,t+0.18); }catch(_){}
     const o=a.createOscillator(),g=a.createGain();
-    o.type='sine'; o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(46,t+0.12);
-    g.gain.setValueAtTime(1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.17);
-    o.connect(g); g.connect(percBus); o.start(t); o.stop(t+0.19);
+    o.type='sine'; o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(46,t+0.13);
+    g.gain.setValueAtTime(0.85,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+    o.connect(g); g.connect(percBus); o.start(t); o.stop(t+0.2);
   }
-  /* TAIKO: tamburo grave cinematografico — tono che cala + corpo di pelle. Il respiro epico. */
   function taiko(t,freq,vol){
     const a=ac(); if(!a) return;
     const o=a.createOscillator(),g=a.createGain();
-    o.type='triangle'; o.frequency.setValueAtTime(freq*2.3,t); o.frequency.exponentialRampToValueAtTime(freq,t+0.06);
-    g.gain.setValueAtTime(Math.max(0.001,vol),t); g.gain.exponentialRampToValueAtTime(0.001,t+0.38);
-    o.connect(g); g.connect(percBus); o.start(t); o.stop(t+0.42);
-    if(NOISEBUF){ /* attacco di pelle */
-      const s2=a.createBufferSource(); s2.buffer=NOISEBUF;
-      const f2=a.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=420;
-      const g2=a.createGain(); g2.gain.setValueAtTime(vol*0.5,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.12);
-      s2.connect(f2); f2.connect(g2); g2.connect(percBus); s2.start(t); s2.stop(t+0.14);
-    }
+    o.type='triangle'; o.frequency.setValueAtTime(freq*2.2,t); o.frequency.exponentialRampToValueAtTime(freq,t+0.07);
+    g.gain.setValueAtTime(Math.max(0.001,vol),t); g.gain.exponentialRampToValueAtTime(0.001,t+0.42);
+    o.connect(g); g.connect(percBus); o.start(t); o.stop(t+0.46);
+    if(NOISEBUF){ const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=380; const g2=a.createGain(); g2.gain.setValueAtTime(vol*0.4,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.13); s.connect(fl); fl.connect(g2); g2.connect(percBus); s.start(t); s.stop(t+0.15); }
   }
-  function noiseHit(t,dur,hp,vol){
+  function cymbalSwell(t,dur,vol){
     const a=ac(); if(!a||!NOISEBUF) return;
-    const s=a.createBufferSource(); s.buffer=NOISEBUF;
-    const f2=a.createBiquadFilter(); f2.type='highpass'; f2.frequency.value=hp;
-    const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
-    s.connect(f2); f2.connect(g); g.connect(percBus); s.start(t); s.stop(t+dur+0.02);
+    const s=a.createBufferSource(); s.buffer=NOISEBUF; s.loop=true;
+    const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=5000;
+    const g=a.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+dur*0.8); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(fl); fl.connect(g); g.connect(percBus); s.start(t); s.stop(t+dur+0.05);
   }
-  function schedStep(s,t){
-    const bar=Math.floor(s/16)%4, b=s%16, ch=CHORDS[bar];
-    const I=intensity;
-    /* filtro: più intensità → più brillante */
-    try{ filter.frequency.setTargetAtTime(600+I*3600,t,0.05); }catch(_){}
-    /* BASSO: fondamentale, raddoppia in ottavi/sedicesimi con l'intensità */
-    if(b===0||b===8||(I>0.4&&(b===4||b===12))||(I>0.75&&b%2===0)){
-      voice('sawtooth',f(ch.root,ch.oct),t,0.22,0.16+I*0.06);
-    }
-    /* SUB-BASSO: sinusoide un'ottava sotto sugli appoggi forti — il peso che senti nel petto */
-    if(b===0||b===8){ voice('sine',f(ch.root,ch.oct-1),t,0.34,0.13+I*0.05); }
-    /* ===== PERCUSSIONI EPICHE — il cuore incalzante ===== */
-    /* Cassa: pattern che si infittisce come un motore che sale di giri */
-    const kickHit=(b===0||b===8)||(I>0.3&&(b===6||b===14))||(I>0.6&&(b===4||b===12))||(I>0.85&&b%2===0);
-    if(kickHit) kick(t);
-    /* Taiko: colpi gravi sugli accenti forti — il respiro cinematografico */
-    if(I>0.22&&b===0) taiko(t,76,0.55+I*0.3);
-    if(I>0.5&&b===8) taiko(t,92,0.42+I*0.22);
-    if(I>0.75&&(b===4||b===12)) taiko(t,84,0.32);
-    /* Rullante con corpo (rumore + tono) sui levare */
-    if(I>0.4&&(b===4||b===12)){ noiseHit(t,0.14,1600,0.16+I*0.08); voice('triangle',190,t,0.05,0.05,gain); }
-    /* Charleston / sedicesimi di spinta */
-    if(I>0.3&&b%2===0) noiseHit(t,0.03,8000,0.04+I*0.05);
-    if(I>0.72&&b%2===1) noiseHit(t,0.02,9000,0.03+I*0.03);
-    /* Gallop epico ad alta intensità: il sedicesimo extra che incalza */
-    if(I>0.8&&(b===3||b===7||b===11||b===15)) kick(t);
-    /* Crash-swell all'inizio del giro di 4 battute: l'accento maestoso */
-    if(s===0&&I>0.42) noiseHit(t,0.6,2600,0.12+I*0.1);
-    /* Fill di tom in chiusura del giro, che rilancia */
-    if(I>0.55&&s>=61) taiko(t,70+(s-61)*26,0.3+I*0.18);
+  function hat(t,vol){ const a=ac(); if(!a||!NOISEBUF) return; const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=8500; const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.025); s.connect(fl); fl.connect(g); g.connect(percBus); s.start(t); s.stop(t+0.04); }
 
-    /* ===== OVERDRIVE — oltre le 7 quest, la "seconda marcia" da boss rush ===== */
-    const O=over;
-    if(O>0.05){
-      /* hi-hat in doppio tempo: spinge su ogni step */
-      if(O>0.25&&b%2===1) noiseHit(t,0.018,9500,0.03+O*0.04);
-      /* taiko di guerra su ogni movimento forte */
-      if(O>0.15&&(b===2||b===10)) taiko(t,80,0.3+O*0.25);
-      if(O>0.45&&(b===6||b===14)) taiko(t,88,0.3+O*0.2);
-      /* gallop fitto: il sedicesimo extra ovunque */
-      if(O>0.3&&(b===3||b===7||b===11||b===15)) kick(t);
-      /* coro alto sostenuto: la quinta che svetta sopra, epica pura */
-      if(O>0.4&&b===0){
-        const dur=stepDur()*16*0.98;
-        pad(f(ch.tri[2][0],ch.tri[2][1]+1),t,dur,0.02+O*0.035);
-      }
-      /* lead raddoppiato un'ottava sopra nei picchi */
-      if(O>0.55&&(b===0||b===8)){
-        const n=PENTA[(Math.floor(s/4)+bar)%PENTA.length];
-        voice('square',f(n[0],n[1]+1),t,0.3,0.03+O*0.04);
-      }
+  function schedStep(s,t){
+    const bar=Math.floor(s/16)%4,b=s%16,ch=CHORDS[bar],I=intensity,O=over;
+    try{ filter.frequency.setTargetAtTime(900+I*2200,t,0.06); }catch(_){}
+    /* ARCHI: accordo tenuto che gonfia a ogni battuta — il tappeto caldo */
+    if(b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.05+I*0.06)*(k===0?1:0.8))); }
+    /* BASSO + sub sugli appoggi */
+    if(b===0||b===8||(I>0.5&&(b===4||b===12))) bassNote(f(ch.root,ch.oct),t,0.5,0.15+I*0.05);
+    /* ARPA: arpeggio di celesta che scorre — entra presto, dolce */
+    if(I>0.12){ const dense=I>0.55?2:4; if(b%dense===0){ const nn=ch.pad[(s/2)%ch.pad.length|0]; bell(f(nn[0],nn[1]+1),t,0.7,0.05+I*0.05,filter); } }
+    /* PERCUSSIONI morbide, crescono con l'intensità */
+    if(I>0.3&&(b===0||b===8)) kick(t);
+    if(I>0.25&&b===0) taiko(t,80,0.4+I*0.25);
+    if(I>0.6&&b===8) taiko(t,96,0.34);
+    if(I>0.45&&b%4===2) hat(t,0.03+I*0.04);
+    if(I>0.75&&b%2===1) hat(t,0.025);
+    /* MELODIA composta (flauto/voce) — entra a intensità media, frase per ciclo */
+    if(I>0.4){
+      const ph=PHRASES[cycle%PHRASES.length];
+      let acc=0;
+      for(const [deg,d] of ph){ if(acc===b && bar===0){ flute(scaleNote(deg,1),t,stepDur()*d*0.95,0.06+I*0.05); } acc+=d; }
+      /* nei bar successivi, una controvoce di corno sostiene gli accordi a intensità alta */
+      if(I>0.7 && bar>0 && b===0){ horn(f(ch.pad[2][0],ch.pad[2][1]),t,stepDur()*12,0.04+I*0.03); }
     }
-    /* ARPEGGIO: triade dell'accordo, più fitto con l'intensità */
-    if(I>0.18){
-      const dense=I>0.6?1:2; /* ogni step o ogni 2 */
-      if(b%dense===0){
-        const note=ch.tri[(s)%ch.tri.length];
-        voice('triangle',f(note[0],note[1]),t,0.16,0.05+I*0.06);
-      }
-    }
-    /* PAD DI ARCHI: a ogni inizio battuta, l'accordo tenuto gonfia — il bed orchestrale */
-    if(I>0.15&&b===0){
-      const dur=stepDur()*16*0.98;
-      ch.tri.forEach(nn=>pad(f(nn[0],nn[1]),t,dur,0.025+I*0.045));
-      pad(f(ch.root,ch.oct+1),t,dur,0.02+I*0.03);  /* ottava di sostegno */
-    }
-    /* LEAD: motivo pentatonico che svetta — supersaw ricco, motivi a rotazione, più cantato con l'intensità */
-    if(I>0.62&&(b===0||b===4||b===8||b===12)){
-      const motif=MOTIFS[cycle%MOTIFS.length];
-      const n=PENTA[motif[(b/4)%motif.length]];
-      const dur=I>0.85?0.5:0.32;
-      superLead(f(n[0],n[1]),t,dur,0.06+(I-0.62)*0.16);
-      if(I>0.85) voice('triangle',f(n[0],n[1]+1),t,dur,0.03); /* ottava alta che brilla */
+    /* CRESCENDO: piatto-swell all'inizio del giro di 4 battute */
+    if(s===0&&I>0.5) cymbalSwell(t,stepDur()*8,0.05+I*0.05);
+    /* OVERDRIVE: più corpo, mai più ronzio */
+    if(O>0.1){
+      if(O>0.3&&(b===4||b===12)) kick(t);
+      if(O>0.2&&(b===2||b===10)) taiko(t,72,0.3+O*0.2);
+      if(O>0.4&&b%2===1) hat(t,0.03+O*0.03);
+      if(O>0.5&&(b===0||b===8)){ const nn=ch.pad[3]; horn(f(nn[0],nn[1]),t,stepDur()*6,0.04+O*0.04); }  /* ottoni che svettano */
     }
   }
+
   function scheduler(){
-    const a=ac(); if(!a){ running=false; return; }   /* contesto perso: resetta, così un prossimo update può ripartire */
+    const a=ac(); if(!a){ running=false; return; }
     if(!running){ return; }
-    /* avvicina dolcemente l'intensità al target: transizioni morbide */
-    intensity+=(target-intensity)*0.04;
-    over+=(targetOver-over)*0.04;
+    intensity+=(target-intensity)*0.035; over+=(targetOver-over)*0.035;
     while(nextT < a.currentTime+LOOK){
-      schedStep(step,nextT);
-      nextT+=stepDur();
-      const prev=step; step=(step+1)%64;
-      if(step===0&&prev!==0) cycle++;   /* nuovo giro: ruota i motivi del lead */
+      schedStep(step,nextT); nextT+=stepDur();
+      const prev=step; step=(step+1)%64; if(step===0&&prev!==0) cycle++;
     }
-    /* volume complessivo segue l'intensità; a target 0 sfuma e si ferma */
-    try{
-      const vol=target<=0.001?0:(0.24+intensity*0.2+over*0.06);  /* più corposo con la nuova catena */
-      gain.gain.setTargetAtTime(vol,a.currentTime,0.4);
-    }catch(_){}
+    try{ const vol=target<=0.001?0:(0.2+intensity*0.18+over*0.05); gain.gain.setTargetAtTime(vol,a.currentTime,0.5); }catch(_){}
     if(target<=0.001 && intensity<0.02){ stop(); return; }
     timer=setTimeout(scheduler,TICK);
   }
-  function start(){
-    if(running) return;
+  function start(){ if(running) return; const a=setup(); if(!a) return; running=true; step=0; nextT=a.currentTime+0.08; scheduler(); }
+  function stop(){ running=false; if(timer){ clearTimeout(timer); timer=null; } try{ if(gain) gain.gain.setTargetAtTime(0,ac().currentTime,0.4); }catch(_){} }
+
+  /* sblocco audio: SOLO da un gesto utente (iOS lo esige). Senza questo non parte mai. */
+  function unlock(){
+    if(!S.settings.music) return;
     const a=setup(); if(!a) return;
-    running=true; step=0; nextT=a.currentTime+0.06;
-    scheduler();
+    try{ if(a.state==='suspended') a.resume(); }catch(_){}
+    unlocked=true;
+    try{ const r=computeProgress(S,todayKey(),dowOf()); update(Math.max(0,r.total-r.done)); }catch(_){}
   }
-  function stop(){
-    running=false; if(timer){ clearTimeout(timer); timer=null; }
-    try{ if(gain) gain.gain.setTargetAtTime(0,ac().currentTime,0.3); }catch(_){}
-  }
-  /* chiamata a ogni cambiamento: quante quest/task restano oggi */
   function update(remaining){
     if(!S.settings.music){ if(running) stop(); return; }
-    target=remaining<=0?0:Math.min(1,remaining/7);              /* pieno a 7 quest */
-    targetOver=remaining<=7?0:Math.min(1,(remaining-7)/7);      /* overdrive da 8 a 14: "boss rush" */
-    if(remaining>0 && !running) start();
+    target=remaining<=0?0:Math.min(1,remaining/7);
+    targetOver=remaining<=7?0:Math.min(1,(remaining-7)/7);
+    if(remaining>0 && unlocked && !running) start();   /* parte solo se l'audio è stato sbloccato da un gesto */
   }
-  /* REAZIONE al completamento: un guizzo eroico in tonalità, scala col combo */
+  /* abbassa la musica quasi a zero mentre registri, così non copre la voce */
+  function recDuck(on){
+    recDuckOn=!!on; const a=ac(); if(!a||!duckGain) return;
+    try{ duckGain.gain.setTargetAtTime(on?0.0:1.0, a.currentTime, on?0.08:0.5); }catch(_){}
+  }
+
+  /* REAZIONE al completamento: "got item!" — arpeggio di arpa/celesta + accordo caldo che sboccia */
   function flourish(lvl){
-    const a=setup(); if(!a) return;
-    const t=a.currentTime+0.01;
-    const scale=[['A',4],['C',5],['E',5],['A',5],['C',6],['E',6]];
-    const n=Math.min(lvl||1,6);
-    for(let i=0;i<n+1;i++){
-      const note=scale[Math.min(i,scale.length-1)];
-      voice('sawtooth',f(note[0],note[1]),t+i*0.045,0.28,0.12,reactGain);
-    }
-    /* accordo di potenza sotto */
-    voice('sawtooth',f('A',2),t,0.4,0.14,reactGain);
-    voice('sawtooth',f('E',3),t,0.4,0.1,reactGain);
+    const a=setup(); if(!a) return; const t=a.currentTime+0.01;
+    const up=[['A',4],['C',5],['E',5],['A',5],['C',6],['E',6],['A',6]];
+    const n=Math.min((lvl||1)+2,up.length);
+    for(let i=0;i<n;i++){ bell(f(up[i][0],up[i][1]),t+i*0.055,0.8,0.12,reactGain); }
+    /* accordo caldo di archi che sboccia sotto (Do maggiore: una luce che si apre) */
+    [['C',4],['E',4],['G',4],['C',5]].forEach((nn,i)=> note(W_STR||'triangle',f(nn[0],nn[1]),t+0.04,1.4,0.06,{a:0.06,d:0.2,s:0.8,r:0.6,vib:2.5,vibRate:4,lp:2600,dest:reactGain}));
+    note('sine',f('C',2),t,1.2,0.1,{a:0.02,d:0.2,s:0.6,r:0.4,lp:500,dest:reactGain});
   }
-  /* REAZIONE al sigillo: cadenza trionfale che risolve, poi la musica tace */
+  /* REAZIONE al sigillo: cadenza orchestrale calda e conclusiva, poi la musica tace */
   function seal(){
-    const a=setup(); if(!a) return;
-    const t=a.currentTime+0.01;
-    [['A',2],['E',3],['A',3],['C',4],['E',4],['A',4]].forEach((nn,i)=>{
-      voice('sawtooth',f(nn[0],nn[1]),t+i*0.02,2.2,0.12,reactGain);
-    });
-    /* svetta una quinta che chiude */
-    voice('triangle',f('E',5),t+0.3,1.6,0.1,reactGain);
-    voice('triangle',f('A',5),t+0.45,1.8,0.12,reactGain);
+    const a=setup(); if(!a) return; const t=a.currentTime+0.01;
+    [['A',2],['E',3],['A',3],['C',4],['E',4],['A',4]].forEach((nn,i)=> strings(f(nn[0],nn[1]),t+i*0.03,2.6,0.07));
+    /* la melodia chiude salendo, in arpa */
+    [['A',4],['C',5],['E',5],['A',5]].forEach((nn,i)=> bell(f(nn[0],nn[1]),t+0.3+i*0.12,1.6,0.11,reactGain));
+    note('sine',f('A',1),t,2.4,0.1,{a:0.03,d:0.3,s:0.6,r:0.6,lp:460,dest:reactGain});
   }
-  return {update,flourish,seal,start,stop};
+  return {update,flourish,seal,start,stop,unlock,recDuck};
 })();
 
 let itVoice=null;
@@ -1581,6 +1544,7 @@ function startRec(){
     micBtn.classList.remove('arming'); micBtn.classList.add('rec');
     micLabel.textContent='Rilascia… tocca di nuovo per fermare';
     sMicOn(); haptic(); acquireWake();
+    try{ if(S.settings.music) MUSIC.recDuck(true); }catch(_){}  /* la musica scende: la voce resta pulita per il riconoscimento */
   };
   rec.onresult=e=>{
     const arr=[];
@@ -1614,6 +1578,7 @@ function stopRec(){
   if(rec){ rec.onend=null; try{rec.stop()}catch(_){} }
   micBtn.classList.remove('rec','arming');
   sMicOff(); releaseWake();
+  try{ if(S.settings.music) MUSIC.recDuck(false); }catch(_){}  /* la musica risale dopo la dettatura */
   const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
   if(txt){
     micLabel.textContent='Rileggi e distilla';
@@ -1818,13 +1783,14 @@ async function askClaude(transcript){
    MENTE OSSERVATRICE — specchio-commentatore. Solo osserva, non dialoga.
    Riusa l'IA già presente; se non c'è chiave o è offline, usa logica locale.
    ====================================================================== */
-const OBSERVER_SYS='Sei una Mente Osservatrice. Non sei una chat, non fai domande e non dialoghi. '+
-'Osservi le azioni registrate dall\'utente nel tempo e produci UN commento breve, calmo, analitico, freddo ma utile. '+
-'Cerca pattern reali: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi che si completano solo quando ridotti, rinvii ripetuti, giorni di continuità contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo quando già motivato. '+
-'Giudica il SISTEMA e il COMPORTAMENTO, mai l\'identità della persona. Vietato: "sei pigro/incapace/indisciplinato", diagnosi, terapia, moralismi, frasi motivazionali generiche. '+
-'Confronta con le OSSERVAZIONI PRECEDENTI fornite: NON ripeterle, e se vedi un cambiamento (in meglio o peggio) nominalo. '+
-'Massimo 1-3 frasi nel campo "note". Se i dati sono pochi, dillo in modo essenziale. '+
-'Rispondi ESCLUSIVAMENTE con JSON, nessun testo prima o dopo: {"summary":"sintesi del pattern","detectedPatterns":["pattern brevi"],"note":"commento finale da mostrare"}';
+const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido che osserva i pattern di chi usa l\'app e restituisce UNA riflessione breve e precisa. Non sei una chat, non fai domande, non dialoghi.\n'+
+'VOCE: calma, affilata, un po\' zen. Pensa a un maestro taoista che parla la lingua di oggi: cio che dici deve suonare come un cheat code, uno sblocco improvviso, non come un\'app di produttivita che fa la morale. Sobrio, mai motivazionale a vuoto, mai terapeutico.\n'+
+'CONCRETEZZA (regola piu importante): cita il MATERIALE REALE che vedi. Nomina la quest o l\'azione specifica (es. chiamare il commercialista torna da tre giorni), il numero, il giorno. Le frasi astratte tipo le intenzioni superano le azioni sono VIETATE se non ancorate a un dato concreto. Mostra che hai visto proprio i SUOI dati.\n'+
+'SAGGEZZA (Tao, usala senza nominarla ne citarla): il grande nasce dal piccolo (l\'azione ridotta e quella che continua); non-forzare wu wei (cio che si spinge troppo genera attrito, cio che scorre si compie); l\'acqua e morbida e paziente eppure scava la roccia (la costanza batte l\'intensita); sapersi fermare prima di traboccare (un obiettivo a misura della giornata si chiude, uno ideale si rimanda). Questi principi traspaiono dal modo in cui leggi i pattern, mai come citazioni o prediche.\n'+
+'PATTERN da cercare: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi completati solo quando ridotti, rinvii ripetuti, giorni di continuita contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo se gia motivato.\n'+
+'CONFINI: giudica il SISTEMA e il COMPORTAMENTO, mai l\'identita. Vietato sei pigro/incapace/indisciplinato, diagnosi, moralismi. Confronta con le OSSERVAZIONI PRECEDENTI: non ripeterle; se c\'e un cambiamento in meglio o peggio nominalo.\n'+
+'FORMATO: note = 1-3 frasi asciutte che restano in testa. Se i dati sono pochi, dillo in una riga essenziale e basta.\n'+
+'Rispondi ESCLUSIVAMENTE con JSON: {"summary":"sintesi","detectedPatterns":["pattern brevi"],"note":"la riflessione da mostrare"}';
 
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
 function buildObserverDigest(){
@@ -1880,7 +1846,7 @@ async function askObserver(digest){
 /* logica locale base: gira offline, senza chiave. Rileva i pattern essenziali. */
 function buildObserverLocal(digest){
   const d=digest.diario||[];
-  if(d.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio è quasi vuoto. La prossima azione conterà più del commento.'};
+  if(d.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. La prossima azione contera piu del commento. Comincia da una riga.'};
   let born=0,done=0; const bornCount={},doneCount={};
   d.forEach(e=>{
     (e.intenzioni||[]).forEach(t=>{born++; bornCount[t]=(bornCount[t]||0)+1;});
@@ -1896,25 +1862,25 @@ function buildObserverLocal(digest){
   const giorniVuoti=comp.filter(g=>g.taskCompletate===0).length;
   if(recurring&&maxGap>=2){
     patterns.push('promessa ricorrente non mantenuta');
-    note='Questa intenzione compare spesso ma viene eseguita poco. Va ridotta o eliminata.';
+    note='"'+recurring+'" torna spesso ma si compie di rado. Rimpiccioliscila finche parte da sola, o lasciala andare.';
   } else if(comp.length>=5&&giorniVuoti>giorniAttivi){
     patterns.push('ritmo interrotto');
-    note='Il ritmo si spezza nei giorni vuoti. La continuità migliora quando l\'azione del giorno è piccola e certa.';
+    note='Piu giorni vuoti che pieni. Non serve un giorno grande: serve un\'azione piccola che non salti mai.';
   } else if(born>0&&done/born<0.5){
     patterns.push('intenzione oltre l\'azione');
-    note='Le intenzioni superano le azioni. L\'obiettivo è troppo grande rispetto all\'energia reale del giorno.';
+    note=born+' intenzioni, '+done+' azioni. L\'obiettivo pesa piu della giornata: tagliane meta e quella meta si chiude.';
   } else if((born>0&&done/born>=0.8)||(giorniAttivi>=5&&giorniAttivi>giorniVuoti)){
     patterns.push('struttura a basso attrito');
-    note='L\'azione segue l\'intenzione. La struttura attuale produce poco attrito: ripetila, non l\'emozione.';
+    note='Qui l\'azione segue l\'intenzione con poco attrito. Ripeti la struttura, non l\'emozione: e cosi che l\'acqua scava.';
   } else {
     patterns.push('ritmo medio incostante');
-    note='Non manca forza. Manca continuità nei giorni medi.';
+    note='Non manca la forza, manca la costanza nei giorni medi. Il piccolo che continua batte il grande che parte e si ferma.';
   }
   return {summary:born+' intenzioni, '+done+' azioni, '+giorniAttivi+' giorni attivi',detectedPatterns:patterns,note:note};
 }
 
 let observing=false;
-async function observe(){
+async function observe(silent){
   if(observing) return; observing=true;
   const btn=document.querySelector('#btn-observe');
   const noteEl=document.querySelector('#observer-note');
@@ -1922,9 +1888,9 @@ async function observe(){
   const range={from:(digest.diario.length?digest.diario[digest.diario.length-1].giorno:null),to:digest.oggi};
   let result=null;
   if(S.apiKey){
-    if(btn){ btn.textContent='Osservo…'; btn.disabled=true; } if(noteEl) noteEl.classList.add('observing');
+    if(!silent){ if(btn){ btn.textContent='Osservo…'; btn.disabled=true; } if(noteEl) noteEl.classList.add('observing'); }
     try{ result=await askObserver(digest); }catch(_){ result=null; }
-    if(btn){ btn.textContent='Osserva'; btn.disabled=false; } if(noteEl) noteEl.classList.remove('observing');
+    if(!silent){ if(btn){ btn.textContent='Osserva'; btn.disabled=false; } if(noteEl) noteEl.classList.remove('observing'); }
   }
   if(!result) result=buildObserverLocal(digest); /* fallback: offline o IA non disponibile */
   const entry={
@@ -1937,8 +1903,19 @@ async function observe(){
   };
   S.observerNotes.push(entry);
   S.observerNotes=sanitizeObserverNotes(S.observerNotes);
-  save(); renderObserver(); haptic();
+  save(); renderObserver(); if(!silent){ try{ haptic(); }catch(_){} }
   observing=false;
+}
+/* osservazione AUTOMATICA: una volta al giorno, se c'è abbastanza materiale e non si è già osservato oggi */
+function maybeObserveAuto(){
+  try{
+    const notes=S.observerNotes||[];
+    const last=notes.length?notes[notes.length-1]:null;
+    if(last && (last.createdAt||'').slice(0,10)===todayKey()) return;   /* già osservato oggi */
+    const haDati=(S.diary&&S.diary.length>=2)||Object.keys(S.checks||{}).length>=2;
+    if(!haDati) return;                                                  /* troppo poco da osservare */
+    setTimeout(()=>{ observe(true); }, 1200);                            /* silenziosa, poco dopo l'avvio */
+  }catch(_){}
 }
 function fmtObsDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
 function renderObserver(){
@@ -2015,6 +1992,7 @@ function updateRing(){
       try{ const f=document.querySelector('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }catch(_){}
     },350);
     document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani';
+    try{ setTimeout(()=>observe(true),1500); }catch(_){}   /* a cerchio chiuso, la Mente osserva la giornata */
   } else if(res==='already'){
     micBtn.classList.add('sealed');
     document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani';
@@ -2285,9 +2263,7 @@ document.querySelector('#sw-sound').onclick=()=>{ S.settings.sound=!S.settings.s
 document.querySelector('#sw-music').onclick=()=>{
   S.settings.music=!S.settings.music; save(); renderSettings();
   if(S.settings.music){
-    /* il tocco è il gesto utente che sblocca l'audio su iOS: parte subito secondo le quest di oggi */
-    const r=computeProgress(S,todayKey(),dowOf());
-    try{ MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){}
+    try{ MUSIC.unlock(); }catch(_){}   /* il tocco sblocca l'audio iOS e avvia la musica */
     toast('Colonna sonora attiva');
   } else {
     try{ MUSIC.stop(); }catch(_){}
@@ -2469,6 +2445,17 @@ try{ initHaptic(); }catch(_){}
 try{ initDay(); }catch(_){}
 try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
+try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
+/* rete di sicurezza audio: il primo tocco ovunque sblocca la colonna sonora (iOS esige un gesto) */
+(function(){
+  function firstGesture(){
+    try{ if(S.settings.music) MUSIC.unlock(); }catch(_){}
+    window.removeEventListener('pointerdown',firstGesture);
+    window.removeEventListener('touchend',firstGesture);
+  }
+  window.addEventListener('pointerdown',firstGesture,{passive:true});
+  window.addEventListener('touchend',firstGesture,{passive:true});
+})();
 /* la posizione si attiva solo su scelta esplicita (switch in Altro) o sul pin: niente richieste a freddo */
 /* large title iOS 26: compatta la testata allo scroll */
 try{
@@ -2479,7 +2466,8 @@ try{
     requestAnimationFrame(()=>{ hdr.classList.toggle('scrolled', mainEl.scrollTop>16); ticking=false; });
   },{passive:true});
 }catch(_){}
-/* ── apertura: l'intro continua dalla splash nativa e si dissolve sull'app già viva sotto ── */
+/* ── apertura: una sola schermata che si dissolve. Se la musica è attiva, mostra il
+     pensiero dell'osservatrice; l'audio si sblocca al primo tocco (rete di sicurezza). ── */
 try{
   const intro=document.querySelector('#app-intro');
   const appEl=document.querySelector('#app');
@@ -2490,24 +2478,13 @@ try{
     setTimeout(()=>{ intro.style.display='none'; maybeOnboard(); }, fast?60:750);
   }
   if(S.settings.music){
-    /* SOGLIA: il tocco necessario all'audio iOS diventa un rito d'ingresso.
-       Mostra l'ultima riflessione della Mente Osservatrice; il tocco sblocca l'audio e avvia la musica. */
     const sumEl=document.querySelector('#intro-summary');
-    const tapEl=document.querySelector('#intro-tap');
     const notes=S.observerNotes||[];
     if(sumEl&&notes.length){ sumEl.textContent=notes[notes.length-1].note; sumEl.classList.remove('hidden'); }
-    if(tapEl) tapEl.classList.remove('hidden');
-    intro.classList.add('gate');
-    const enter=()=>{
-      intro.removeEventListener('click',enter);
-      try{ const a=ac(); if(a&&a.state==='suspended') a.resume(); }catch(_){}  /* sblocco audio NEL gesto */
-      try{ const r=computeProgress(S,todayKey(),dowOf()); MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){}
-      try{ haptic(); }catch(_){}
-      dismissIntro();
-    };
-    intro.addEventListener('click',enter);
+    /* nessun blocco: si dissolve da sola, un po' più a lungo per leggere il pensiero */
+    setTimeout(dismissIntro, fast?260:2600);
   } else {
-    setTimeout(dismissIntro, fast?200:1500);  /* senza musica: dissolvenza automatica come prima */
+    setTimeout(dismissIntro, fast?200:1500);
   }
 }catch(_){ try{document.querySelector('#app-intro').style.display='none';}catch(e){} maybeOnboard(); }
 
