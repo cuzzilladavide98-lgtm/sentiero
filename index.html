@@ -402,6 +402,38 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   color:var(--accent);font-size:16px;font-weight:500;padding:6px 0 12px;margin-top:2px}
 .back-link svg{display:block}
 .back-link:active{opacity:.6}
+
+/* ═══════════ Mente Osservatrice — specchio sobrio ═══════════ */
+#observer-card{padding:2px 0}
+#observer-note{font-family:var(--serif);font-size:19px;line-height:1.55;color:var(--t1);
+  font-style:italic;letter-spacing:-.01em;min-height:28px;transition:opacity .3s}
+#observer-note.observing{opacity:.4}
+#observer-meta{font-size:12px;color:var(--t3);margin-top:10px;letter-spacing:.02em}
+#observer-patterns{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.obs-tag{font-size:11px;color:var(--accent);border:.5px solid rgba(232,168,76,.4);
+  border-radius:99px;padding:3px 10px;letter-spacing:.02em}
+#observer-card .btn-row{margin-top:18px}
+#observer-history{margin-top:6px}
+.obs-hist-head{font-size:11px;color:var(--t3);text-transform:lowercase;letter-spacing:.06em;margin:14px 0 8px}
+.obs-hist{font-family:var(--serif);font-size:15px;line-height:1.5;color:var(--t2);
+  padding:10px 0;border-top:.5px solid rgba(245,242,234,.07)}
+.obs-hist-date{display:block;font-family:var(--sans);font-size:11px;color:var(--t3);margin-bottom:3px;letter-spacing:.02em}
+
+/* soglia musicale: il tocco che sblocca l'audio diventa un rito d'ingresso */
+#app-intro.gate{cursor:pointer;gap:18px;padding:0 40px}
+#app-intro .intro-summary{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.55;
+  color:var(--t2);text-align:center;max-width:30ch;opacity:0;animation:gatefade 1s ease-out .4s forwards}
+#app-intro .intro-tap{font-size:12px;letter-spacing:.18em;text-transform:lowercase;color:var(--t3);
+  margin-top:6px;opacity:0;animation:gatepulse 2.4s ease-in-out 1s infinite,gatefade 1s ease-out .8s forwards}
+@keyframes gatefade{to{opacity:1}}
+@keyframes gatepulse{0%,100%{opacity:.3}50%{opacity:.75}}
+
+/* pulsante calendario sulle quest datate — discreto */
+.item .cal{flex:none;width:30px;height:30px;border:none;background:none;color:var(--t3);
+  display:flex;align-items:center;justify-content:center;transition:color .2s,transform .15s;margin-right:-2px}
+.item .cal svg{width:17px;height:17px}
+.item .cal:active{color:var(--accent);transform:scale(1.12)}
+.item.future .cal{color:rgba(245,242,234,.4)}
 </style>
 </head>
 <body>
@@ -422,6 +454,8 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
     </g>
   </svg>
   <div class="intro-name">sentiero</div>
+  <div class="intro-summary hidden" id="intro-summary"></div>
+  <div class="intro-tap hidden" id="intro-tap">tocca per entrare</div>
 </div>
 <div id="onboard" class="hidden">
   <div class="ob-inner">
@@ -495,6 +529,19 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="sec-head">In programma</div>
         <div class="group" id="list-quest"></div>
       </section>
+
+      <section id="sec-observer">
+        <div class="sec-head">Mente Osservatrice</div>
+        <div id="observer-card">
+          <p id="observer-note">—</p>
+          <div id="observer-meta"></div>
+          <div id="observer-patterns"></div>
+          <div class="btn-row" style="justify-content:flex-start">
+            <button class="act primary" id="btn-observe">Osserva</button>
+          </div>
+          <div id="observer-history"></div>
+        </div>
+      </section>
     </div>
 
     <!-- ===== DIARIO ===== -->
@@ -521,6 +568,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="sec-head">Esperienza</div>
         <div class="group">
           <div class="switchrow"><span>Suoni</span><button class="sw" id="sw-sound"></button></div>
+          <div class="switchrow"><span>Colonna sonora adattiva</span><button class="sw" id="sw-music"></button></div>
           <div class="switchrow"><span>Tema sonoro</span>
             <div class="seg" id="seg-theme">
               <button data-theme="arcade">Arcade</button><button data-theme="zen">Zen</button>
@@ -530,6 +578,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
           <div class="switchrow"><span>Posizione nelle note</span><button class="sw" id="sw-geo"></button></div>
           <div class="switchrow"><span>Promemoria</span><button class="sw" id="sw-notif"></button></div>
         </div>
+        <p class="note" id="music-note"></p>
       </section>
 
       <section>
@@ -546,6 +595,12 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <p class="note">Con la chiave, l'IA distilla le quest dal parlato con priorità, giorno e ora. Senza, il trascritto viene salvato così com'è.</p>
         <div class="btn-row"><button class="act primary" id="btn-savekey">Salva chiave</button><button class="act" id="btn-testkey">Prova connessione</button></div>
         <p class="note" id="test-result"></p>
+        <div class="switchrow" style="margin-top:6px"><span>Motore</span>
+          <div class="seg" id="seg-model">
+            <button data-model="max">Massimo</button><button data-model="balanced">Bilanciato</button><button data-model="fast">Veloce</button>
+          </div>
+        </div>
+        <p class="note" id="model-note"></p>
       </section>
 
       <section>
@@ -667,6 +722,27 @@ function sanitizeDiary(arr){
   }
   return out;
 }
+function sanitizeObserverNotes(arr){
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  for(const n of arr){
+    if(!n||typeof n!=='object') continue;
+    const note=clampStr(n.note,600).trim();
+    if(!note) continue;
+    out.push({
+      id:clampStr(n.id,40)||('o'+Math.random().toString(36).slice(2,9)),
+      createdAt:(typeof n.createdAt==='string')?n.createdAt.slice(0,40):new Date().toISOString(),
+      sourceRange:{
+        from:(n.sourceRange&&typeof n.sourceRange.from==='string')?n.sourceRange.from.slice(0,40):null,
+        to:(n.sourceRange&&typeof n.sourceRange.to==='string')?n.sourceRange.to.slice(0,40):null
+      },
+      summary:clampStr(n.summary,300).trim(),
+      detectedPatterns:Array.isArray(n.detectedPatterns)?n.detectedPatterns.slice(0,8).map(p=>clampStr(p,80).trim()).filter(Boolean):[],
+      note:note
+    });
+  }
+  return out.slice(-50); /* conserva al massimo gli ultimi 50 commenti */
+}
 function sanitizeState(raw,def){
   raw=(raw&&typeof raw==='object'&&!Array.isArray(raw))?raw:{};
   const st={
@@ -674,6 +750,7 @@ function sanitizeState(raw,def){
     quests:sanitizeQuests(raw.quests),
     diary:sanitizeDiary(raw.diary),
     scheduled:('scheduled' in raw)?sanitizeScheduled(raw.scheduled):JSON.parse(JSON.stringify(def.scheduled)),
+    observerNotes:sanitizeObserverNotes(raw.observerNotes),
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
     lastSealed:(typeof raw.lastSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastSealed))?raw.lastSealed:'',
@@ -683,6 +760,8 @@ function sanitizeState(raw,def){
       voice:!(raw.settings&&raw.settings.voice===false),
       notif:!!(raw.settings&&raw.settings.notif===true),
       geo:!!(raw.settings&&raw.settings.geo===true),
+      music:!!(raw.settings&&raw.settings.music===true),
+      aiModel:(raw.settings&&['max','balanced','fast'].includes(raw.settings.aiModel))?raw.settings.aiModel:'balanced',
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade'
     }
   };
@@ -770,7 +849,16 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v26 · 2026-06-19';
+const APP_VERSION='v36 · 2026-06-20';
+/* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
+try{
+  window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
+  window.addEventListener('unhandledrejection',function(e){
+    /* le promesse async (IA, condivisione, audio) hanno già i loro try/catch:
+       qui assorbiamo solo eventuali sfuggite, senza bloccare l'interfaccia */
+    try{ if(e&&e.preventDefault) e.preventDefault(); }catch(_){}
+  });
+}catch(_){}
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
@@ -781,7 +869,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00'}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],
   settings:{sound:true,voice:true,notif:false}
 };
 let S=load();
@@ -809,7 +897,7 @@ function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':
    ====================================================================== */
 let AC=null,BUS=null,NOISEBUF=null;
 function ac(){
-  if(!S.settings.sound) return null;
+  if(!S.settings.sound && !S.settings.music) return null;
   try{
     const Ctor=window.AudioContext||window.webkitAudioContext;
     if(!Ctor) return null;
@@ -917,13 +1005,290 @@ const THEMES={
     seal(){ tone(98,0,2.6,'sine',0.3); tone(147,0.02,2.3,'sine',0.14); tone(196,0.04,2.0,'sine',0.08); tone(294,0.06,1.4,'sine',0.05); }
   }
 };
-function sfx(name,arg){ try{ (THEMES[S.settings.theme]||THEMES.arcade)[name](arg); }catch(_){} }
+function sfx(name,arg){ if(S.settings.music) return; try{ (THEMES[S.settings.theme]||THEMES.arcade)[name](arg); }catch(_){} }
 const sMicOn =()=>sfx('micOn');
 const sMicOff=()=>sfx('micOff');
 const sAppear=i=>sfx('appear',i);
 const sCheck =c=>sfx('check',c);
 const sUndo  =()=>sfx('undo');
 const sGong  =()=>sfx('seal');
+
+/* ======================================================================
+   COLONNA SONORA ADATTIVA — musica generativa originale.
+   Ispirazione: l'intensità musicale sale col numero di sfide (stile Budokai).
+   Più quest restano → più strati, tempo e brillantezza. A zero → silenzio.
+   Un solo brano flessibile, sintetizzato in tempo reale: nessun file, nessun copyright.
+   ====================================================================== */
+const MUSIC=(()=>{
+  /* progressione di 4 battute in La minore: Am – F – C – G (i–VI–III–VII) */
+  const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+  function f(name,oct){ const m=name.match(/^([A-G]#?)(-?\d)?$/); const semi=NOTE[m[1]]; const o=oct!==undefined?oct:parseInt(m[2]); return 440*Math.pow(2,(semi+(o-4)*12-9)/12); }
+  const CHORDS=[
+    {root:'A',oct:2,tri:[['A',3],['C',4],['E',4]]},
+    {root:'F',oct:2,tri:[['F',3],['A',3],['C',4]]},
+    {root:'C',oct:2,tri:[['C',3],['E',3],['G',3]]},
+    {root:'G',oct:2,tri:[['G',2],['B',3],['D',4]]}
+  ];
+  const PENTA=[['A',4],['C',5],['D',5],['E',5],['G',5],['A',5]]; /* la minore pentatonica per il lead */
+  let running=false,timer=null,step=0,nextT=0,gain=null,filter=null,reactGain=null;
+  let pump=null,percBus=null,master=null,reverb=null,cycle=0;
+  let intensity=0,target=0,over=0,targetOver=0;
+  const MOTIFS=[[0,2,4,3],[4,3,2,0],[0,3,4,5],[2,4,5,4],[4,5,4,2]]; /* motivi pentatonici per il lead, a rotazione */
+  const LOOK=0.12,TICK=25;
+  function bpm(){ return 86+intensity*64+over*24; }            /* 86 calmo → 150 pieno → 174 in overdrive */
+  function stepDur(){ return 60/bpm()/4; }                  /* sedicesimo */
+  function setup(){
+    const a=ac(); if(!a) return null;
+    if(!NOISEBUF){
+      try{
+        NOISEBUF=a.createBuffer(1,Math.floor(a.sampleRate*0.5),a.sampleRate);
+        const d=NOISEBUF.getChannelData(0);
+        for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+      }catch(_){}
+    }
+    if(!gain){
+      /* MASTER con saturazione morbida (tanh): calore e volume senza distorcere */
+      master=a.createGain(); master.gain.value=1;
+      try{
+        const shaper=a.createWaveShaper();
+        const n=1024,curve=new Float32Array(n);
+        for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; curve[i]=Math.tanh(x*1.7); }
+        shaper.curve=curve; shaper.oversample='2x';
+        master.connect(shaper); shaper.connect(BUS||a.destination);
+      }catch(_){ master.connect(BUS||a.destination); }
+      /* RIVERBERO: convolver con coda generata — lo spazio cinematografico */
+      try{
+        reverb=a.createConvolver();
+        const len=Math.floor(a.sampleRate*1.9);
+        const ir=a.createBuffer(2,len,a.sampleRate);
+        for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch);
+          for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6); }
+        reverb.buffer=ir;
+        const verbReturn=a.createGain(); verbReturn.gain.value=0.55;
+        reverb.connect(verbReturn); verbReturn.connect(master);
+      }catch(_){ reverb=null; }
+      /* CATENA MELODICA: filtro → intensità → pompaggio → master */
+      filter=a.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=700; filter.Q.value=0.7;
+      gain=a.createGain(); gain.gain.value=0;
+      pump=a.createGain(); pump.gain.value=1;
+      filter.connect(gain); gain.connect(pump); pump.connect(master);
+      if(reverb){ const bedSend=a.createGain(); bedSend.gain.value=0.3; gain.connect(bedSend); bedSend.connect(reverb); }
+      /* BUS PERCUSSIONI: punchy, non ducked dal pompaggio */
+      percBus=a.createGain(); percBus.gain.value=1; percBus.connect(master);
+      if(reverb){ const pSend=a.createGain(); pSend.gain.value=0.12; percBus.connect(pSend); pSend.connect(reverb); }
+      /* REAZIONI: secco + una mano di riverbero */
+      reactGain=a.createGain(); reactGain.gain.value=0.95; reactGain.connect(master);
+      if(reverb){ const rSend=a.createGain(); rSend.gain.value=0.32; reactGain.connect(rSend); rSend.connect(reverb); }
+    }
+    return a;
+  }
+  /* pompaggio sidechain: a ogni cassa il tappeto melodico si abbassa e risale → spinta */
+  function duck(t){
+    try{ pump.gain.cancelScheduledValues(t); pump.gain.setValueAtTime(0.58,t); pump.gain.linearRampToValueAtTime(1,t+0.17); }catch(_){}
+  }
+  function voice(type,freq,t,dur,vol,dest,slideTo){
+    const a=ac(); if(!a) return;
+    const o=a.createOscillator(),g=a.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.001,vol),t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(dest||filter);
+    o.start(t); o.stop(t+dur+0.03);
+  }
+  /* PAD DI ARCHI: accordo tenuto che gonfia e cala — il tappeto orchestrale dei brividi */
+  function pad(freq,t,dur,vol){
+    const a=ac(); if(!a) return;
+    const o=a.createOscillator(),g=a.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.001,vol),t+dur*0.4);   /* swell lento in entrata */
+    g.gain.setValueAtTime(Math.max(0.001,vol),t+dur*0.62);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);                    /* dissolvenza in coda */
+    o.connect(g); g.connect(filter);
+    o.start(t); o.stop(t+dur+0.06);
+  }
+  /* LEAD SUPERSAW: tre saw leggermente scordati impastati — il lead epico e ricco */
+  function superLead(freq,t,dur,vol,dest){
+    const a=ac(); if(!a) return;
+    [-9,0,9].forEach(c=>{
+      const o=a.createOscillator(),g=a.createGain();
+      o.type='sawtooth'; o.frequency.setValueAtTime(freq*Math.pow(2,c/1200),t);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.001,vol/3),t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g); g.connect(dest||filter); o.start(t); o.stop(t+dur+0.03);
+    });
+  }
+  function kick(t){
+    const a=ac(); if(!a) return;
+    duck(t); /* pompaggio: il tappeto melodico respira sulla cassa */
+    const o=a.createOscillator(),g=a.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(46,t+0.12);
+    g.gain.setValueAtTime(1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.17);
+    o.connect(g); g.connect(percBus); o.start(t); o.stop(t+0.19);
+  }
+  /* TAIKO: tamburo grave cinematografico — tono che cala + corpo di pelle. Il respiro epico. */
+  function taiko(t,freq,vol){
+    const a=ac(); if(!a) return;
+    const o=a.createOscillator(),g=a.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(freq*2.3,t); o.frequency.exponentialRampToValueAtTime(freq,t+0.06);
+    g.gain.setValueAtTime(Math.max(0.001,vol),t); g.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+    o.connect(g); g.connect(percBus); o.start(t); o.stop(t+0.42);
+    if(NOISEBUF){ /* attacco di pelle */
+      const s2=a.createBufferSource(); s2.buffer=NOISEBUF;
+      const f2=a.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=420;
+      const g2=a.createGain(); g2.gain.setValueAtTime(vol*0.5,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+      s2.connect(f2); f2.connect(g2); g2.connect(percBus); s2.start(t); s2.stop(t+0.14);
+    }
+  }
+  function noiseHit(t,dur,hp,vol){
+    const a=ac(); if(!a||!NOISEBUF) return;
+    const s=a.createBufferSource(); s.buffer=NOISEBUF;
+    const f2=a.createBiquadFilter(); f2.type='highpass'; f2.frequency.value=hp;
+    const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    s.connect(f2); f2.connect(g); g.connect(percBus); s.start(t); s.stop(t+dur+0.02);
+  }
+  function schedStep(s,t){
+    const bar=Math.floor(s/16)%4, b=s%16, ch=CHORDS[bar];
+    const I=intensity;
+    /* filtro: più intensità → più brillante */
+    try{ filter.frequency.setTargetAtTime(600+I*3600,t,0.05); }catch(_){}
+    /* BASSO: fondamentale, raddoppia in ottavi/sedicesimi con l'intensità */
+    if(b===0||b===8||(I>0.4&&(b===4||b===12))||(I>0.75&&b%2===0)){
+      voice('sawtooth',f(ch.root,ch.oct),t,0.22,0.16+I*0.06);
+    }
+    /* SUB-BASSO: sinusoide un'ottava sotto sugli appoggi forti — il peso che senti nel petto */
+    if(b===0||b===8){ voice('sine',f(ch.root,ch.oct-1),t,0.34,0.13+I*0.05); }
+    /* ===== PERCUSSIONI EPICHE — il cuore incalzante ===== */
+    /* Cassa: pattern che si infittisce come un motore che sale di giri */
+    const kickHit=(b===0||b===8)||(I>0.3&&(b===6||b===14))||(I>0.6&&(b===4||b===12))||(I>0.85&&b%2===0);
+    if(kickHit) kick(t);
+    /* Taiko: colpi gravi sugli accenti forti — il respiro cinematografico */
+    if(I>0.22&&b===0) taiko(t,76,0.55+I*0.3);
+    if(I>0.5&&b===8) taiko(t,92,0.42+I*0.22);
+    if(I>0.75&&(b===4||b===12)) taiko(t,84,0.32);
+    /* Rullante con corpo (rumore + tono) sui levare */
+    if(I>0.4&&(b===4||b===12)){ noiseHit(t,0.14,1600,0.16+I*0.08); voice('triangle',190,t,0.05,0.05,gain); }
+    /* Charleston / sedicesimi di spinta */
+    if(I>0.3&&b%2===0) noiseHit(t,0.03,8000,0.04+I*0.05);
+    if(I>0.72&&b%2===1) noiseHit(t,0.02,9000,0.03+I*0.03);
+    /* Gallop epico ad alta intensità: il sedicesimo extra che incalza */
+    if(I>0.8&&(b===3||b===7||b===11||b===15)) kick(t);
+    /* Crash-swell all'inizio del giro di 4 battute: l'accento maestoso */
+    if(s===0&&I>0.42) noiseHit(t,0.6,2600,0.12+I*0.1);
+    /* Fill di tom in chiusura del giro, che rilancia */
+    if(I>0.55&&s>=61) taiko(t,70+(s-61)*26,0.3+I*0.18);
+
+    /* ===== OVERDRIVE — oltre le 7 quest, la "seconda marcia" da boss rush ===== */
+    const O=over;
+    if(O>0.05){
+      /* hi-hat in doppio tempo: spinge su ogni step */
+      if(O>0.25&&b%2===1) noiseHit(t,0.018,9500,0.03+O*0.04);
+      /* taiko di guerra su ogni movimento forte */
+      if(O>0.15&&(b===2||b===10)) taiko(t,80,0.3+O*0.25);
+      if(O>0.45&&(b===6||b===14)) taiko(t,88,0.3+O*0.2);
+      /* gallop fitto: il sedicesimo extra ovunque */
+      if(O>0.3&&(b===3||b===7||b===11||b===15)) kick(t);
+      /* coro alto sostenuto: la quinta che svetta sopra, epica pura */
+      if(O>0.4&&b===0){
+        const dur=stepDur()*16*0.98;
+        pad(f(ch.tri[2][0],ch.tri[2][1]+1),t,dur,0.02+O*0.035);
+      }
+      /* lead raddoppiato un'ottava sopra nei picchi */
+      if(O>0.55&&(b===0||b===8)){
+        const n=PENTA[(Math.floor(s/4)+bar)%PENTA.length];
+        voice('square',f(n[0],n[1]+1),t,0.3,0.03+O*0.04);
+      }
+    }
+    /* ARPEGGIO: triade dell'accordo, più fitto con l'intensità */
+    if(I>0.18){
+      const dense=I>0.6?1:2; /* ogni step o ogni 2 */
+      if(b%dense===0){
+        const note=ch.tri[(s)%ch.tri.length];
+        voice('triangle',f(note[0],note[1]),t,0.16,0.05+I*0.06);
+      }
+    }
+    /* PAD DI ARCHI: a ogni inizio battuta, l'accordo tenuto gonfia — il bed orchestrale */
+    if(I>0.15&&b===0){
+      const dur=stepDur()*16*0.98;
+      ch.tri.forEach(nn=>pad(f(nn[0],nn[1]),t,dur,0.025+I*0.045));
+      pad(f(ch.root,ch.oct+1),t,dur,0.02+I*0.03);  /* ottava di sostegno */
+    }
+    /* LEAD: motivo pentatonico che svetta — supersaw ricco, motivi a rotazione, più cantato con l'intensità */
+    if(I>0.62&&(b===0||b===4||b===8||b===12)){
+      const motif=MOTIFS[cycle%MOTIFS.length];
+      const n=PENTA[motif[(b/4)%motif.length]];
+      const dur=I>0.85?0.5:0.32;
+      superLead(f(n[0],n[1]),t,dur,0.06+(I-0.62)*0.16);
+      if(I>0.85) voice('triangle',f(n[0],n[1]+1),t,dur,0.03); /* ottava alta che brilla */
+    }
+  }
+  function scheduler(){
+    const a=ac(); if(!a){ running=false; return; }   /* contesto perso: resetta, così un prossimo update può ripartire */
+    if(!running){ return; }
+    /* avvicina dolcemente l'intensità al target: transizioni morbide */
+    intensity+=(target-intensity)*0.04;
+    over+=(targetOver-over)*0.04;
+    while(nextT < a.currentTime+LOOK){
+      schedStep(step,nextT);
+      nextT+=stepDur();
+      const prev=step; step=(step+1)%64;
+      if(step===0&&prev!==0) cycle++;   /* nuovo giro: ruota i motivi del lead */
+    }
+    /* volume complessivo segue l'intensità; a target 0 sfuma e si ferma */
+    try{
+      const vol=target<=0.001?0:(0.24+intensity*0.2+over*0.06);  /* più corposo con la nuova catena */
+      gain.gain.setTargetAtTime(vol,a.currentTime,0.4);
+    }catch(_){}
+    if(target<=0.001 && intensity<0.02){ stop(); return; }
+    timer=setTimeout(scheduler,TICK);
+  }
+  function start(){
+    if(running) return;
+    const a=setup(); if(!a) return;
+    running=true; step=0; nextT=a.currentTime+0.06;
+    scheduler();
+  }
+  function stop(){
+    running=false; if(timer){ clearTimeout(timer); timer=null; }
+    try{ if(gain) gain.gain.setTargetAtTime(0,ac().currentTime,0.3); }catch(_){}
+  }
+  /* chiamata a ogni cambiamento: quante quest/task restano oggi */
+  function update(remaining){
+    if(!S.settings.music){ if(running) stop(); return; }
+    target=remaining<=0?0:Math.min(1,remaining/7);              /* pieno a 7 quest */
+    targetOver=remaining<=7?0:Math.min(1,(remaining-7)/7);      /* overdrive da 8 a 14: "boss rush" */
+    if(remaining>0 && !running) start();
+  }
+  /* REAZIONE al completamento: un guizzo eroico in tonalità, scala col combo */
+  function flourish(lvl){
+    const a=setup(); if(!a) return;
+    const t=a.currentTime+0.01;
+    const scale=[['A',4],['C',5],['E',5],['A',5],['C',6],['E',6]];
+    const n=Math.min(lvl||1,6);
+    for(let i=0;i<n+1;i++){
+      const note=scale[Math.min(i,scale.length-1)];
+      voice('sawtooth',f(note[0],note[1]),t+i*0.045,0.28,0.12,reactGain);
+    }
+    /* accordo di potenza sotto */
+    voice('sawtooth',f('A',2),t,0.4,0.14,reactGain);
+    voice('sawtooth',f('E',3),t,0.4,0.1,reactGain);
+  }
+  /* REAZIONE al sigillo: cadenza trionfale che risolve, poi la musica tace */
+  function seal(){
+    const a=setup(); if(!a) return;
+    const t=a.currentTime+0.01;
+    [['A',2],['E',3],['A',3],['C',4],['E',4],['A',4]].forEach((nn,i)=>{
+      voice('sawtooth',f(nn[0],nn[1]),t+i*0.02,2.2,0.12,reactGain);
+    });
+    /* svetta una quinta che chiude */
+    voice('triangle',f('E',5),t+0.3,1.6,0.1,reactGain);
+    voice('triangle',f('A',5),t+0.45,1.8,0.12,reactGain);
+  }
+  return {update,flourish,seal,start,stop};
+})();
 
 let itVoice=null;
 function pickVoice(){
@@ -934,6 +1299,7 @@ function pickVoice(){
 }
 if('speechSynthesis' in window){ pickVoice(); try{speechSynthesis.onvoiceschanged=pickVoice;}catch(_){} }
 function say(word,lvl){
+  if(S.settings.music) return;
   if(!S.settings.voice||!('speechSynthesis' in window)) return;
   try{
     if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
@@ -1132,6 +1498,7 @@ function saveSFX(){
 }
 function playSFX(idx){
   try{
+    if(S.settings.music) return false;
     if(!S.settings.sound||!SFX.length) return false;
     const i=Math.max(0,Math.min(idx,SFX.length-1));
     const a=new Audio(SFX[i].data);
@@ -1331,7 +1698,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         const bornIds=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.id);
         const bornTitles=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.titolo);
         const doneTitles=S.quests.filter(q=>{const b=beforeMap.get(q.id);return b&&!b.fatto&&q.fatto;}).map(q=>q.titolo);
-        addDiary(transcript,bornTitles,doneTitles);
+        addDiary(out.diario||transcript,bornTitles,doneTitles,transcript);
         save(); render(bornIds);
         bornIds.forEach((_,i)=>sAppear(i));
         setTimeout(()=>{ /* scintille su ogni quest appena nata, a cascata */
@@ -1369,30 +1736,41 @@ document.querySelector('#btn-save').onclick=async()=>{
     live.classList.remove('distill');
   }
 };
-function addDiary(testo,born,done){
+function addDiary(testo,born,done,raw){
   const lst=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,20).map(x=>x.slice(0,200)):[];
-  S.diary.unshift({data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:'',born:lst(born),done:lst(done),pos:freshPos()});
+  S.diary.unshift({data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos()});
   if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX;
 }
 
-/* catena di modelli: se uno viene ritirato dall'API, si passa da soli al successivo */
-const AI_MODELS=['claude-sonnet-4-6','claude-haiku-4-5-20251001','claude-sonnet-4-20250514'];
+/* catene di modelli per livello scelto: se uno viene ritirato, si passa al successivo */
+const AI_CHAINS={
+  max:     ['claude-opus-4-8','claude-sonnet-4-6','claude-haiku-4-5-20251001'],
+  balanced:['claude-sonnet-4-6','claude-haiku-4-5-20251001','claude-sonnet-4-20250514'],
+  fast:    ['claude-haiku-4-5-20251001','claude-sonnet-4-6']
+};
+function aiModels(){ return AI_CHAINS[(S.settings&&S.settings.aiModel)||'balanced']||AI_CHAINS.balanced; }
+const AI_MODELS=AI_CHAINS.balanced; /* compatibilità: prova-connessione */
 
 async function askClaude(transcript){
   const oggi=new Date();
-  const oggiStr=oggi.toLocaleDateString('it-IT',{weekday:'long'})+' '+todayKey();
-  const sys='Sei il motore di "Sentiero", un diario vocale personale in italiano. OGGI è '+oggiStr+'.\n'+
-'Ricevi: (1) la lista JSON delle quest esistenti, (2) il trascritto vocale di oggi.\n'+
-'Compiti:\n'+
-'- Estrai TUTTE le quest dal trascritto: se contiene più attività distinte, crea una quest separata per ciascuna.\n'+
-'- Per ogni quest assegna "prio": 1=urgente (oggi, scade presto, critico), 2=importante, 3=normale.\n'+
-'- Se indica quando, compila "quando" (YYYY-MM-DD) e "ora" (HH:MM). Se no, lascia stringa vuota.\n'+
-'- Se una quest corrisponde a una esistente, aggiornala (stesso id); se dice che l\'ha completata, "fatto":true.\n'+
-'- Mantieni le quest esistenti non menzionate invariate.\n'+
-'Rispondi SOLO con JSON valido:\n'+
-'{"quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}]}';
+  const giorni=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+  const oggiStr=giorni[oggi.getDay()]+' '+todayKey();
+  const sched=todaysScheduled().map(t=>t.titolo);
+  const sys='Sei il motore di distillazione di "Sentiero", diario vocale personale in italiano. OGGI è '+oggiStr+', ora locale '+oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+'.\n'+
+'Ricevi: (1) le quest esistenti in JSON, (2) le task già pianificate per oggi, (3) il trascritto vocale grezzo (può contenere errori di riconoscimento).\n'+
+'COMPITI:\n'+
+'1. Estrai OGNI attività distinta come quest separata. Ignora riempitivi, esitazioni, divagazioni.\n'+
+'2. Titolo: imperativo, conciso, iniziale maiuscola, senza "devo/dovrei". Es. "devo chiamare il commercialista per la fattura" → titolo "Chiamare il commercialista", note "per la fattura". Metti il contesto utile in "note", non nel titolo.\n'+
+'3. Priorità: 1=urgente (scadenza oggi/critico, parole come "assolutamente", "entro oggi", "urgente"), 2=importante, 3=normale.\n'+
+'4. DATE RELATIVE → risolvi in YYYY-MM-DD usando OGGI: "oggi"=oggi, "domani"=+1, "dopodomani"=+2, "tra N giorni", nomi di giorno ("lunedì"→il prossimo lunedì futuro), "tra una settimana"=+7, "fine mese"=ultimo giorno del mese. ORE → "stasera"=20:00, "stamattina/in mattinata"=09:00, "pomeriggio"=15:00, "a pranzo"=13:00, orari espliciti vanno in "ora" (HH:MM). Se nulla è indicato, lascia "quando" e "ora" vuoti.\n'+
+'5. COMPLETAMENTI: se dice di aver già fatto qualcosa ("ho chiamato", "fatto", "già spedito") e c\'è una quest che combacia (anche con parole diverse), imposta "fatto":true su quella (stesso id).\n'+
+'6. ANTI-DUPLICATI: se un\'attività combacia con una quest esistente o con una task già pianificata per oggi, NON crearne una nuova: aggiorna l\'esistente o ometti.\n'+
+'7. Mantieni invariate le quest esistenti non menzionate.\n'+
+'8. "diario": il trascritto ripulito SOLO dagli errori evidenti di riconoscimento vocale (omofoni, nomi: "Justin case"→"just in case"). Punteggiatura minima. NON aggiungere, togliere o reinterpretare: restano le parole dell\'utente, in prima persona. Se non serve, identico.\n'+
+'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
+'{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}]}';
   let lastErr=null;
-  for(const model of AI_MODELS){
+  for(const model of aiModels()){
     const ctrl=('AbortController' in window)?new AbortController():null;
     const timer=ctrl?setTimeout(()=>ctrl.abort(),45000):null; /* mai un'attesa infinita */
     let r;
@@ -1409,8 +1787,12 @@ async function askClaude(transcript){
         body:JSON.stringify({
           model:model,
           max_tokens:1500,
+          temperature:0.2,                                    /* estrazione precisa e ripetibile */
           system:sys,
-          messages:[{role:'user',content:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTRASCRITTO DI OGGI ('+todayKey()+'):\n'+transcript}]
+          messages:[
+            {role:'user',content:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript},
+            {role:'assistant',content:'{'}                    /* prefill: forza il JSON, niente preamboli */
+          ]
         })
       });
     }finally{ if(timer) clearTimeout(timer); }
@@ -1426,10 +1808,159 @@ async function askClaude(transcript){
     }
     const data=await r.json();
     const text=(data.content||[]).map(c=>c.text||'').join('');
-    return aiOutputToState(extractJson(text));
+    const full=text.trim().startsWith('{')?text:'{'+text;   /* prefill: completa la graffa iniziale */
+    return aiOutputToState(extractJson(full));
   }
   throw lastErr||new Error('MODEL');
 }
+
+/* ======================================================================
+   MENTE OSSERVATRICE — specchio-commentatore. Solo osserva, non dialoga.
+   Riusa l'IA già presente; se non c'è chiave o è offline, usa logica locale.
+   ====================================================================== */
+const OBSERVER_SYS='Sei una Mente Osservatrice. Non sei una chat, non fai domande e non dialoghi. '+
+'Osservi le azioni registrate dall\'utente nel tempo e produci UN commento breve, calmo, analitico, freddo ma utile. '+
+'Cerca pattern reali: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi che si completano solo quando ridotti, rinvii ripetuti, giorni di continuità contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo quando già motivato. '+
+'Giudica il SISTEMA e il COMPORTAMENTO, mai l\'identità della persona. Vietato: "sei pigro/incapace/indisciplinato", diagnosi, terapia, moralismi, frasi motivazionali generiche. '+
+'Confronta con le OSSERVAZIONI PRECEDENTI fornite: NON ripeterle, e se vedi un cambiamento (in meglio o peggio) nominalo. '+
+'Massimo 1-3 frasi nel campo "note". Se i dati sono pochi, dillo in modo essenziale. '+
+'Rispondi ESCLUSIVAMENTE con JSON, nessun testo prima o dopo: {"summary":"sintesi del pattern","detectedPatterns":["pattern brevi"],"note":"commento finale da mostrare"}';
+
+/* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
+function buildObserverDigest(){
+  const tk=todayKey();
+  const diario=(S.diary||[]).slice(0,30).map(e=>({
+    giorno:(e.iso||'').slice(0,10),
+    intenzioni:Array.isArray(e.born)?e.born.slice(0,12):[],
+    azioni:Array.isArray(e.done)?e.done.slice(0,12):[]
+  }));
+  const questAperte=(S.quests||[]).filter(q=>!q.fatto).map(q=>({titolo:q.titolo,prio:q.prio||3,quando:q.quando||null}));
+  const giorni=Object.keys(S.checks||{}).sort().slice(-14);
+  /* completamenti reali per giorno: includono le spunte toccate, non solo quelle dettate */
+  const completamentiGiornalieri=giorni.map(day=>({giorno:day,taskCompletate:Object.values(S.checks[day]||{}).filter(v=>v===true).length}));
+  /* le ultime osservazioni, perché non si ripeta e noti l'evoluzione */
+  const osservazioniPrecedenti=(S.observerNotes||[]).slice(-4).map(n=>n.note);
+  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
+}
+
+async function askObserver(digest){
+  let lastErr=null;
+  for(const model of aiModels()){
+    const ctrl=('AbortController' in window)?new AbortController():null;
+    const timer=ctrl?setTimeout(()=>ctrl.abort(),45000):null;
+    let r;
+    try{
+      r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST', signal:ctrl?ctrl.signal:undefined,
+        headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:model,max_tokens:400,temperature:0.6,system:OBSERVER_SYS,messages:[
+          {role:'user',content:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest)},
+          {role:'assistant',content:'{'}
+        ]})
+      });
+    }finally{ if(timer) clearTimeout(timer); }
+    if(!r.ok){
+      if(r.status===404){ lastErr=new Error('MODEL'); continue; }
+      if(r.status===401||r.status===403) throw new Error('AUTH');
+      throw new Error('HTTP '+r.status);
+    }
+    const data=await r.json();
+    const raw=(data.content||[]).map(c=>c.text||'').join('');
+    const text=raw.trim().startsWith('{')?raw:'{'+raw;   /* prefill: completa la graffa */
+    const p=extractJson(text);
+    if(p&&typeof p.note==='string'&&p.note.trim()){
+      return {summary:clampStr(p.summary||'',300),detectedPatterns:Array.isArray(p.detectedPatterns)?p.detectedPatterns.slice(0,8).map(x=>clampStr(x,80)):[],note:clampStr(p.note,600)};
+    }
+    if(raw.trim()) return {summary:'',detectedPatterns:[],note:clampStr(raw.trim(),600)}; /* parsing robusto: testo grezzo */
+    lastErr=new Error('EMPTY');
+  }
+  throw lastErr||new Error('MODEL');
+}
+
+/* logica locale base: gira offline, senza chiave. Rileva i pattern essenziali. */
+function buildObserverLocal(digest){
+  const d=digest.diario||[];
+  if(d.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio è quasi vuoto. La prossima azione conterà più del commento.'};
+  let born=0,done=0; const bornCount={},doneCount={};
+  d.forEach(e=>{
+    (e.intenzioni||[]).forEach(t=>{born++; bornCount[t]=(bornCount[t]||0)+1;});
+    (e.azioni||[]).forEach(t=>{done++; doneCount[t]=(doneCount[t]||0)+1;});
+  });
+  /* promessa ricorrente eseguita poco */
+  let recurring=null,maxGap=0;
+  Object.keys(bornCount).forEach(t=>{ const gap=bornCount[t]-(doneCount[t]||0); if(bornCount[t]>=2&&gap>maxGap){maxGap=gap;recurring=t;} });
+  const patterns=[]; let note='';
+  /* segnale di continuità dai completamenti reali (anche le spunte toccate) */
+  const comp=digest.completamentiGiornalieri||[];
+  const giorniAttivi=comp.filter(g=>g.taskCompletate>0).length;
+  const giorniVuoti=comp.filter(g=>g.taskCompletate===0).length;
+  if(recurring&&maxGap>=2){
+    patterns.push('promessa ricorrente non mantenuta');
+    note='Questa intenzione compare spesso ma viene eseguita poco. Va ridotta o eliminata.';
+  } else if(comp.length>=5&&giorniVuoti>giorniAttivi){
+    patterns.push('ritmo interrotto');
+    note='Il ritmo si spezza nei giorni vuoti. La continuità migliora quando l\'azione del giorno è piccola e certa.';
+  } else if(born>0&&done/born<0.5){
+    patterns.push('intenzione oltre l\'azione');
+    note='Le intenzioni superano le azioni. L\'obiettivo è troppo grande rispetto all\'energia reale del giorno.';
+  } else if((born>0&&done/born>=0.8)||(giorniAttivi>=5&&giorniAttivi>giorniVuoti)){
+    patterns.push('struttura a basso attrito');
+    note='L\'azione segue l\'intenzione. La struttura attuale produce poco attrito: ripetila, non l\'emozione.';
+  } else {
+    patterns.push('ritmo medio incostante');
+    note='Non manca forza. Manca continuità nei giorni medi.';
+  }
+  return {summary:born+' intenzioni, '+done+' azioni, '+giorniAttivi+' giorni attivi',detectedPatterns:patterns,note:note};
+}
+
+let observing=false;
+async function observe(){
+  if(observing) return; observing=true;
+  const btn=document.querySelector('#btn-observe');
+  const noteEl=document.querySelector('#observer-note');
+  const digest=buildObserverDigest();
+  const range={from:(digest.diario.length?digest.diario[digest.diario.length-1].giorno:null),to:digest.oggi};
+  let result=null;
+  if(S.apiKey){
+    if(btn){ btn.textContent='Osservo…'; btn.disabled=true; } if(noteEl) noteEl.classList.add('observing');
+    try{ result=await askObserver(digest); }catch(_){ result=null; }
+    if(btn){ btn.textContent='Osserva'; btn.disabled=false; } if(noteEl) noteEl.classList.remove('observing');
+  }
+  if(!result) result=buildObserverLocal(digest); /* fallback: offline o IA non disponibile */
+  const entry={
+    id:'o'+Date.now().toString(36),
+    createdAt:new Date().toISOString(),
+    sourceRange:range,
+    summary:result.summary||'',
+    detectedPatterns:result.detectedPatterns||[],
+    note:result.note
+  };
+  S.observerNotes.push(entry);
+  S.observerNotes=sanitizeObserverNotes(S.observerNotes);
+  save(); renderObserver(); haptic();
+  observing=false;
+}
+function fmtObsDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
+function renderObserver(){
+  const noteEl=document.querySelector('#observer-note'); if(!noteEl) return;
+  const metaEl=document.querySelector('#observer-meta');
+  const patEl=document.querySelector('#observer-patterns');
+  const histEl=document.querySelector('#observer-history');
+  const notes=S.observerNotes||[];
+  if(!notes.length){
+    noteEl.textContent='La mente non ha ancora osservato. Premi Osserva quando vuoi uno specchio.';
+    if(metaEl) metaEl.textContent=''; if(patEl) patEl.innerHTML=''; if(histEl) histEl.innerHTML=''; return;
+  }
+  const last=notes[notes.length-1];
+  noteEl.textContent=last.note;
+  if(metaEl) metaEl.textContent=fmtObsDate(last.createdAt);
+  if(patEl) patEl.innerHTML=(last.detectedPatterns||[]).map(p=>'<span class="obs-tag">'+escapeHtml(p)+'</span>').join('');
+  if(histEl){
+    const prev=notes.slice(0,-1).slice(-5).reverse();
+    histEl.innerHTML=prev.length?('<div class="obs-hist-head">tracce precedenti</div>'+prev.map(n=>'<div class="obs-hist"><span class="obs-hist-date">'+fmtObsDate(n.createdAt)+'</span>'+escapeHtml(n.note)+'</div>').join('')):'';
+  }
+}
+const _btnObs=document.querySelector('#btn-observe'); if(_btnObs) _btnObs.onclick=observe;
 
 /* ======================================================================
    COMBO & SIGILLO
@@ -1442,7 +1973,8 @@ function onComplete(el){
   const lvl=Math.min(combo,6);
   const word=COMBO_WORDS[lvl-1];
   haptic(true);  /* tocco tattile deciso a ogni completamento */
-  if(playSFX(lvl-1)){ floatWord(word,lvl); }
+  if(S.settings.music){ try{MUSIC.flourish(lvl);}catch(_){} floatWord(word,lvl); }
+  else if(playSFX(lvl-1)){ floatWord(word,lvl); }
   else { sCheck(lvl); say(word,lvl); floatWord(word,lvl); }
   try{
     const c=el.querySelector('.chk');
@@ -1469,13 +2001,15 @@ function updateRing(){
   const ensoEl=document.querySelector('#enso');
   ensoEl.style.strokeDashoffset=500-460*r.p;
   ensoEl.style.filter='drop-shadow(0 0 '+(4+12*r.p)+'px var(--jade-glow))'; /* il bagliore cresce col cerchio */
+  try{ MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){}  /* la musica segue le quest rimaste */
   const res=sealIfComplete(S,tk,dow);
   if(res==='sealed'){
     save();
     haptic(true); setTimeout(()=>haptic(true),160); setTimeout(()=>haptic(true),320);  /* tre pulsazioni decise: il cerchio si è chiuso */
     micBtn.classList.add('sealed');
     setTimeout(()=>{
-      if(playSFX(SFX.length-1)){ floatWord('Cerchio chiuso',6); shake(true); }
+      if(S.settings.music){ try{MUSIC.seal();}catch(_){} floatWord('Cerchio chiuso',6); shake(true); }
+      else if(playSFX(SFX.length-1)){ floatWord('Cerchio chiuso',6); shake(true); }
       else { sGong(); say('Tao',6); floatWord('Cerchio chiuso',6); shake(true); }
       try{ FX.bloom(); }catch(_){}
       try{ const f=document.querySelector('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }catch(_){}
@@ -1496,7 +2030,7 @@ function updateRing(){
 let renderedDay=todayKey();
 function initDay(){ if(rolloverDay(S,todayKey())) save(); }
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState!=='visible'){ try{FX.pause();}catch(_){} return; }
+  if(document.visibilityState!=='visible'){ try{FX.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
   try{FX.resume();}catch(_){}
   if(renderedDay!==todayKey()){
     renderedDay=todayKey();
@@ -1504,12 +2038,23 @@ document.addEventListener('visibilitychange',()=>{
   }
   scheduleReminders();
   capturePos();
+  if(S.settings.music){ try{ const r=computeProgress(S,todayKey(),dowOf()); MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){} }
 });
 
 /* ======================================================================
    RENDER
    ====================================================================== */
-function render(bornIds){ renderTasks(); renderTodayQuests(bornIds||[]); renderQuests(bornIds||[]); renderDiary(); renderSettings(); renderStreak(); updateRing(); }
+function render(bornIds){
+  const S_=(f)=>{ try{ f(); }catch(_){} };  /* ogni sezione è isolata: un guasto non ferma le altre */
+  S_(()=>renderTasks());
+  S_(()=>renderTodayQuests(bornIds||[]));
+  S_(()=>renderQuests(bornIds||[]));
+  S_(()=>renderDiary());
+  S_(()=>renderSettings());
+  S_(()=>renderStreak());
+  S_(()=>renderObserver());
+  S_(()=>updateRing());
+}
 function todaysScheduled(){ return scheduledFor(S,dowOf(),todayKey()); }
 
 function renderTasks(){
@@ -1548,6 +2093,58 @@ function questWhen(q,tk,domani){
   }
   return {when,future};
 }
+/* ======================================================================
+   PONTE AL CALENDARIO — solo esportazione (.ics). iOS non concede sync alle PWA.
+   ====================================================================== */
+function icsEscape(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
+function icsFold(line){ if(line.length<=72) return line; let out='',i=0; while(i<line.length){ out+=(i?'\r\n ':'')+line.substr(i,72); i+=72; } return out; }
+function icsFmtLocal(dt){ const p=n=>String(n).padStart(2,'0'); return ''+dt.getFullYear()+p(dt.getMonth()+1)+p(dt.getDate())+'T'+p(dt.getHours())+p(dt.getMinutes())+'00'; }
+function icsStamp(){ return new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z'); }
+function buildICS(q){
+  const uid='sentiero-'+(q.id||Math.random().toString(36).slice(2))+'@sentiero.app';
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Sentiero//Diario//IT','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+icsStamp()];
+  if(q.ora){
+    const start=new Date(q.quando+'T'+q.ora+':00');
+    const end=new Date(start.getTime()+60*60000); /* durata 1h di cortesia */
+    L.push('DTSTART:'+icsFmtLocal(start),'DTEND:'+icsFmtLocal(end));
+    L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(q.titolo),'TRIGGER:-PT30M','END:VALARM'); /* avviso 30 min prima */
+  } else {
+    const d0=q.quando.replace(/-/g,'');
+    const nd=new Date(q.quando+'T12:00:00'); nd.setDate(nd.getDate()+1);
+    const p=n=>String(n).padStart(2,'0'); const d1=''+nd.getFullYear()+p(nd.getMonth()+1)+p(nd.getDate());
+    L.push('DTSTART;VALUE=DATE:'+d0,'DTEND;VALUE=DATE:'+d1);
+    L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(q.titolo),'TRIGGER:PT9H','END:VALARM'); /* mattina del giorno, ~9:00 */
+  }
+  L.push('SUMMARY:'+icsEscape(q.titolo));
+  if(q.note) L.push('DESCRIPTION:'+icsEscape(q.note));
+  L.push('END:VEVENT','END:VCALENDAR');
+  return L.map(icsFold).join('\r\n');
+}
+function slugify(s){ return (String(s||'evento').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'evento').slice(0,40); }
+async function addToCalendar(q){
+  try{ haptic(); }catch(_){}
+  const ics=buildICS(q);
+  const fname=slugify(q.titolo)+'.ics';
+  /* via primaria: condivisione di sistema con file — la più affidabile dalla PWA installata */
+  try{
+    if(navigator.canShare){
+      const file=new File([ics],fname,{type:'text/calendar'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:q.titolo});
+        return;
+      }
+    }
+  }catch(_){ /* l'utente può annullare la condivisione: nessun errore da mostrare */ return; }
+  /* fallback: scarica/apri il file, con guida */
+  try{
+    const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=fname; a.rel='noopener';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ try{document.body.removeChild(a);}catch(_){}; URL.revokeObjectURL(url); },4000);
+    toast('Evento pronto: se il Calendario non si apre, cercalo nei File e toccalo');
+  }catch(_){ toast('Non riesco a creare l\u2019evento su questo dispositivo'); }
+}
 function buildQuestRow(q,tk,domani,bornIds,rerender){
   const {when,future}=questWhen(q,tk,domani);
   const p=q.prio||3;
@@ -1555,9 +2152,11 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   div.dataset.qid=q.id;
   div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'');
   if(bornIds.includes(q.id)) div.style.animationDelay=(bornIds.indexOf(q.id)*0.13)+'s';
+  const calBtn=(q.quando&&!q.fatto)?'<button class="cal" aria-label="Aggiungi al calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>':'';
   div.innerHTML='<span class="prio prio-'+p+'"></span>'+
     '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
     '<span class="txt"><span class="ttl">'+escapeHtml(q.titolo)+'</span>'+when+(q.note?'<span class="meta">'+escapeHtml(q.note)+'</span>':'')+'</span>'+
+    calBtn+
     '<button class="del" aria-label="Elimina">&#215;</button>';
   div.querySelector('.chk').onclick=()=>{
     if(div.dataset.busy) return;
@@ -1566,6 +2165,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(rerender,600); }
     else { sUndo(); rerender(); updateRing(); }
   };
+  const cb=div.querySelector('.cal'); if(cb) cb.onclick=(e)=>{ e.stopPropagation(); addToCalendar(q); };
   div.querySelector('.del').onclick=()=>{ S.quests=S.quests.filter(x=>x!==q); save(); rerender(); updateRing(); };
   return div;
 }
@@ -1626,10 +2226,19 @@ function renderSettings(){
   document.querySelector('#version-line').textContent='Sentiero '+APP_VERSION;
   document.querySelector('#apikey').value=S.apiKey;
   document.querySelector('#sw-sound').classList.toggle('on',S.settings.sound);
+  document.querySelector('#sw-music').classList.toggle('on',!!S.settings.music);
+  const mn=document.querySelector('#music-note');
+  if(mn) mn.textContent=S.settings.music
+    ? 'La musica sale con le quest rimaste e tace quando il cerchio si chiude. In questa modalità i suoni normali, la voce e i suoni personali sono in pausa: completamenti e sigillo suonano dalla colonna sonora.'
+    : '';
   document.querySelector('#sw-voice').classList.toggle('on',S.settings.voice);
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
   document.querySelector('#sw-geo').classList.toggle('on',S.settings.geo);
   document.querySelectorAll('#seg-theme button').forEach(b=>b.classList.toggle('on',b.dataset.theme===S.settings.theme));
+  const mdl=(S.settings.aiModel)||'balanced';
+  document.querySelectorAll('#seg-model button').forEach(b=>b.classList.toggle('on',b.dataset.model===mdl));
+  const mnote=document.querySelector('#model-note');
+  if(mnote) mnote.textContent={max:'Massimo: il modello più capace (Opus). Distillazione e osservazioni più fini, un po\' più lento e costoso.',balanced:'Bilanciato: Sonnet. Ottimo equilibrio tra qualità e velocità. Consigliato.',fast:'Veloce: Haiku. Risposte rapide e leggere, ideale per usi frequenti.'}[mdl];
   /* lista suoni personalizzati */
   const sfxEl=document.querySelector('#list-sfx');
   if(!SFX.length){ sfxEl.innerHTML='<p class="empty">Nessun suono caricato: combo e sigillo usano il tema sonoro.</p>'; }
@@ -1673,11 +2282,30 @@ function renderSettings(){
   }
 }
 document.querySelector('#sw-sound').onclick=()=>{ S.settings.sound=!S.settings.sound; save(); renderSettings(); if(S.settings.sound) sAppear(0); };
+document.querySelector('#sw-music').onclick=()=>{
+  S.settings.music=!S.settings.music; save(); renderSettings();
+  if(S.settings.music){
+    /* il tocco è il gesto utente che sblocca l'audio su iOS: parte subito secondo le quest di oggi */
+    const r=computeProgress(S,todayKey(),dowOf());
+    try{ MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){}
+    toast('Colonna sonora attiva');
+  } else {
+    try{ MUSIC.stop(); }catch(_){}
+    toast('Colonna sonora disattivata');
+  }
+};
 document.querySelectorAll('#seg-theme button').forEach(b=>{
   b.onclick=()=>{
     S.settings.theme=b.dataset.theme==='zen'?'zen':'arcade';
     save(); renderSettings();
     sCheck(3); /* anteprima immediata del nuovo tema */
+  };
+});
+document.querySelectorAll('#seg-model button').forEach(b=>{
+  b.onclick=()=>{
+    S.settings.aiModel=b.dataset.model;
+    save(); renderSettings(); haptic();
+    toast(b.dataset.model==='max'?'Motore IA: Massimo (Opus)':b.dataset.model==='fast'?'Motore IA: Veloce (Haiku)':'Motore IA: Bilanciato (Sonnet)');
   };
 });
 document.querySelector('#sw-voice').onclick=()=>{ S.settings.voice=!S.settings.voice; save(); renderSettings(); if(S.settings.voice) say('Voce attiva'); };
@@ -1738,7 +2366,7 @@ document.querySelector('#btn-testkey').onclick=async()=>{
   out.textContent='Provo la connessione…';
   try{
     let r=null,detail='',usedModel='';
-    for(const model of AI_MODELS){
+    for(const model of aiModels()){
       r=await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST',
         headers:{
@@ -1837,10 +2465,10 @@ document.querySelector('#import-file').onchange=e=>{
    AVVIO
    ====================================================================== */
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').then(scheduleReminders).catch(()=>{}); }
-initHaptic();
-initDay();
-render();
-scheduleReminders();
+try{ initHaptic(); }catch(_){}
+try{ initDay(); }catch(_){}
+try{ render(); }catch(_){}
+try{ scheduleReminders(); }catch(_){}
 /* la posizione si attiva solo su scelta esplicita (switch in Altro) o sul pin: niente richieste a freddo */
 /* large title iOS 26: compatta la testata allo scroll */
 try{
@@ -1855,14 +2483,32 @@ try{
 try{
   const intro=document.querySelector('#app-intro');
   const appEl=document.querySelector('#app');
-  /* l'app è già montata e opaca sotto l'intro: quando l'intro svanisce, l'enso del microfono
-     è già lì nella stessa posizione → illusione di un solo movimento continuo */
   appEl.style.opacity='1';
   const fast=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  setTimeout(()=>{
+  function dismissIntro(){
     intro.classList.add('leaving');
     setTimeout(()=>{ intro.style.display='none'; maybeOnboard(); }, fast?60:750);
-  },fast?200:1500);
+  }
+  if(S.settings.music){
+    /* SOGLIA: il tocco necessario all'audio iOS diventa un rito d'ingresso.
+       Mostra l'ultima riflessione della Mente Osservatrice; il tocco sblocca l'audio e avvia la musica. */
+    const sumEl=document.querySelector('#intro-summary');
+    const tapEl=document.querySelector('#intro-tap');
+    const notes=S.observerNotes||[];
+    if(sumEl&&notes.length){ sumEl.textContent=notes[notes.length-1].note; sumEl.classList.remove('hidden'); }
+    if(tapEl) tapEl.classList.remove('hidden');
+    intro.classList.add('gate');
+    const enter=()=>{
+      intro.removeEventListener('click',enter);
+      try{ const a=ac(); if(a&&a.state==='suspended') a.resume(); }catch(_){}  /* sblocco audio NEL gesto */
+      try{ const r=computeProgress(S,todayKey(),dowOf()); MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){}
+      try{ haptic(); }catch(_){}
+      dismissIntro();
+    };
+    intro.addEventListener('click',enter);
+  } else {
+    setTimeout(dismissIntro, fast?200:1500);  /* senza musica: dissolvenza automatica come prima */
+  }
 }catch(_){ try{document.querySelector('#app-intro').style.display='none';}catch(e){} maybeOnboard(); }
 
 /* ======================================================================
