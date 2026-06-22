@@ -862,7 +862,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v39 · 2026-06-22';
+const APP_VERSION='v40 · 2026-06-22';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1209,61 +1209,68 @@ const MUSIC=(()=>{
   }
   function hat(t,vol){ const a=ac(); if(!a||!NOISEBUF) return; const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=8500; const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.025); s.connect(fl); fl.connect(g); g.connect(percBus); s.start(t); s.stop(t+0.04); }
 
+  /* ── TEMA DI SENTIERO: un gancio melodico composto, l'identità della colonna sonora.
+        [stepIniziale, grado-scala, durata-in-sedicesimi] su 4 battute Am–F–C–G. ── */
+  const THEME=[
+    [0,4,2],[2,4,2],[4,7,4],[8,4,2],[10,3,2],[12,0,4],          /* bar1 Am: E E A↑ E D A — slancio eroico */
+    [16,2,2],[18,3,2],[20,5,4],[24,3,4],[28,2,4],               /* bar2 F:  C D F D C */
+    [32,4,2],[34,6,2],[36,9,4],[40,6,2],[42,4,2],[44,2,4],      /* bar3 C:  E G C↑ G E D — vetta */
+    [48,6,4],[52,4,2],[54,2,2],[56,0,8]                          /* bar4 G:  G E D A — risolve */
+  ];
+  /* basso sequenziato stile Depeche Mode: pompa in ottavi con accenti d'ottava */
+  const BASSP=[1,0,0,1,0,1,2,0, 1,0,0,1,0,1,0,2]; /* 1=root, 2=ottava, 0=silenzio (in 16esimi) */
   function schedStep(s,t){
     const bar=Math.floor(s/16)%4,b=s%16,ch=CHORDS[bar],I=intensity,O=over;
     const rootHz=f(ch.root,ch.oct);
-    try{ filter.frequency.setTargetAtTime(900+I*2200,t,0.06); }catch(_){}
+    try{ filter.frequency.setTargetAtTime(700+I*2600+O*900,t,0.06); }catch(_){}
 
-    /* ── STRATO CALMO (poche quest): contemplativo, prima della battaglia ── */
-    if(I<0.5){
-      if(b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.05+I*0.05)*(k===0?1:0.8))); }
-      if(I<0.35){ if(b%4===0){ const nn=ch.pad[(s/4)%ch.pad.length|0]; bell(f(nn[0],nn[1]+1),t,0.8,0.05+I*0.05,filter); } }
-      if(b===0||b===8) bassNote(rootHz,t,0.5,0.14+I*0.05);
+    /* ── ARPEGGIO SEQUENCER (stile Jarre): 16esimi ipnotici che girano sulle note dell'accordo ── */
+    if(I>0.18){
+      const tones=ch.pad; const nn=tones[s%tones.length];
+      const av=0.03+I*0.045;
+      note(W_FLUTE||'triangle', f(nn[0],nn[1]+1), t, stepDur()*1.3, av, {a:0.005,d:0.06,s:0.4,r:0.12,lp:1800+I*2600,dest:filter});
     }
 
-    /* ── BATTERIA ROCK: backbeat che spinge, cresce con l'intensità ── */
-    if(I>0.28){
-      /* cassa sul battere + ottavi guida */
-      if(b===0||b===8) kick(t);
-      if(I>0.45&&(b===4||b===12)) kick(t);
-      if(I>0.7&&b%4===2) kick(t);                 /* cassa più fitta */
-      /* RULLANTE sul 2 e 4 (backbeat rock) */
-      if(b===4||b===12) snare(t,0.18+I*0.12);
-      /* charleston in ottavi/sedicesimi */
-      const hd=I>0.7?1:2; if(b%hd===0) hat(t,0.02+I*0.03);
-    }
+    /* ── BASSO sequenziato: l'ossatura ritmica con identità ── */
+    if(I>0.22){
+      const bp=BASSP[b];
+      if(bp===1) bassNote(rootHz,t,stepDur()*1.4,0.16+I*0.05);
+      else if(bp===2) bassNote(rootHz*2,t,stepDur()*1.4,0.14+I*0.05);
+    } else if(b===0||b===8){ bassNote(rootHz,t,0.5,0.13); }
 
-    /* ── CHITARRA: riff palm-muted che entra a intensità media, power chord da pieno ── */
-    if(I>0.42){
-      const riff=RIFFS[(Math.floor(s/16))%RIFFS.length];
-      const semi=riff[b];
-      /* chugga ritmico: note brevi palm-muted sulla fondamentale del riff */
-      if(typeof semi==='number'){
-        const dur=stepDur()*(I>0.7?0.9:1.6);
-        gtr(rootHz*Math.pow(2,semi/12), t, dur, 0.07+I*0.06);            /* palm mute */
-        if(I>0.62&&(b===0||b===8)) powerChord(rootHz*Math.pow(2,semi/12), t, stepDur()*3.6, 0.05+I*0.05); /* accordo pieno sull'appoggio */
+    /* ── STRATO CALMO: pad caldo che regge il tema quando ci sono poche quest ── */
+    if(I<0.55 && b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.04+I*0.04)*(k===0?1:0.7))); }
+
+    /* ── IL TEMA (il gancio): suonato SEMPRE, è l'identità. Timbro che evolve con l'intensità. ── */
+    for(const [st,deg,dur] of THEME){
+      if(st===s){
+        const lf=scaleNote(deg,1), d=stepDur()*dur*0.96;
+        if(I<0.45){ flute(lf,t,d,0.06+I*0.05); }                                   /* calmo: flauto/synth dolce */
+        else if(I<0.72){ horn(lf,t,d,0.06+I*0.04); flute(lf*2,t,d,0.025); }        /* medio: corno + ottava */
+        else { gtr(lf,t,d,0.07+I*0.05); gtr(lf*2,t,d,0.035); horn(lf,t,d,0.04); }  /* battaglia: chitarra distorta raddoppia il tema */
       }
     }
 
-    /* ── BASSO che groova in ottavi a intensità alta ── */
-    if(I>0.5){ if(b%2===0) bassNote(rootHz/2,t,stepDur()*1.8,0.12+I*0.05); }
-
-    /* ── LEAD CHITARRA in overdrive: melodia che svetta (originale, stile power-metal) ── */
-    if(I>0.66){
-      const ph=PHRASES[cycle%PHRASES.length]; let acc=0;
-      for(const [deg,d] of ph){ if(acc===b && bar%2===0){ const lf=scaleNote(deg,1); gtr(lf,t,stepDur()*d*0.95,0.06+I*0.05); gtr(lf*2,t,stepDur()*d*0.9,0.03); } acc+=d; }
+    /* ── BATTERIA ROCK: backbeat che spinge ── */
+    if(I>0.3){
+      if(b===0||b===8) kick(t);
+      if(I>0.5&&(b===4||b===12)) kick(t);
+      if(I>0.72&&b%4===2) kick(t);
+      if(b===4||b===12) snare(t,0.18+I*0.12);
+      const hd=I>0.7?1:2; if(b%hd===0) hat(t,0.02+I*0.03);
     }
 
-    /* ── OVERDRIVE: doppia cassa (il marchio Budokai), piatti, furia ── */
+    /* ── CHITARRA RITMICA: power chord sull'accordo a intensità piena (sotto il tema) ── */
+    if(I>0.6){ if(b===0||b===8) powerChord(rootHz, t, stepDur()*3.4, 0.045+I*0.04); }
+
+    /* ── OVERDRIVE: doppia cassa, furia ── */
     if(O>0.05){
-      if(b%2===1) kick(t);                          /* doppia cassa: sedicesimi */
-      if(O>0.4&&b%2===0) kick(t);                   /* relentless */
+      if(b%2===1) kick(t);
+      if(O>0.45&&b%2===0) kick(t);
       if(O>0.3&&(b===0||b===8)) snare(t,0.2+O*0.15);
       if(O>0.2&&b%2===1) hat(t,0.03+O*0.03);
-      if(O>0.5&&b===0){ powerChord(rootHz,t,stepDur()*4,0.06+O*0.05); }
       if(s===0&&O>0.3) cymbalSwell(t,stepDur()*6,0.06+O*0.05);
     }
-    /* crescendo di piatto all'inizio del giro quando si sta scaldando */
     if(s===0&&I>0.5&&I<0.85) cymbalSwell(t,stepDur()*8,0.04+I*0.04);
   }
 
