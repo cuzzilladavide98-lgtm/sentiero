@@ -722,6 +722,18 @@ function sanitizeDiary(arr){
   }
   return out;
 }
+function sanitizeQuestLog(arr){
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  for(const e of arr){
+    if(!e||typeof e!=='object') continue;
+    const titolo=clampStr(e.titolo,200).trim(); if(!titolo) continue;
+    const day=(typeof e.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.day))?e.day:'';
+    if(!day) continue;
+    out.push({titolo:titolo,day:day});
+  }
+  return out.slice(-300); /* conserva gli ultimi 300 completamenti */
+}
 function sanitizeObserverNotes(arr){
   if(!Array.isArray(arr)) return [];
   const out=[];
@@ -751,6 +763,7 @@ function sanitizeState(raw,def){
     diary:sanitizeDiary(raw.diary),
     scheduled:('scheduled' in raw)?sanitizeScheduled(raw.scheduled):JSON.parse(JSON.stringify(def.scheduled)),
     observerNotes:sanitizeObserverNotes(raw.observerNotes),
+    questLog:sanitizeQuestLog(raw.questLog),
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
     lastSealed:(typeof raw.lastSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastSealed))?raw.lastSealed:'',
@@ -849,7 +862,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v37 · 2026-06-21';
+const APP_VERSION='v38 · 2026-06-22';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -869,7 +882,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00'}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],questLog:[],
   settings:{sound:true,voice:true,notif:false}
 };
 let S=load();
@@ -1217,6 +1230,8 @@ const MUSIC=(()=>{
     if(!S.settings.music) return;
     const a=setup(); if(!a) return;
     try{ if(a.state==='suspended') a.resume(); }catch(_){}
+    /* trucco iOS: un buffer muto suonato NEL gesto sblocca davvero il contesto (senza, resta muto finché non si forza un suono) */
+    try{ const sb=a.createBuffer(1,1,a.sampleRate); const ss=a.createBufferSource(); ss.buffer=sb; ss.connect(a.destination); ss.start(0); }catch(_){}
     unlocked=true;
     try{ const r=computeProgress(S,todayKey(),dowOf()); update(Math.max(0,r.total-r.done)); }catch(_){}
   }
@@ -1233,22 +1248,49 @@ const MUSIC=(()=>{
   }
 
   /* REAZIONE al completamento: "got item!" — arpeggio di arpa/celesta + accordo caldo che sboccia */
+  /* REAZIONE al completamento: "got item!" — breve, brillante, GRATIFICANTE e variata a ogni volta */
+  let flourishN=0;
   function flourish(lvl){
-    const a=setup(); if(!a) return; const t=a.currentTime+0.01;
-    const up=[['A',4],['C',5],['E',5],['A',5],['C',6],['E',6],['A',6]];
-    const n=Math.min((lvl||1)+2,up.length);
-    for(let i=0;i<n;i++){ bell(f(up[i][0],up[i][1]),t+i*0.055,0.8,0.12,reactGain); }
-    /* accordo caldo di archi che sboccia sotto (Do maggiore: una luce che si apre) */
-    [['C',4],['E',4],['G',4],['C',5]].forEach((nn,i)=> note(W_STR||'triangle',f(nn[0],nn[1]),t+0.04,1.4,0.06,{a:0.06,d:0.2,s:0.8,r:0.6,vib:2.5,vibRate:4,lp:2600,dest:reactGain}));
-    note('sine',f('C',2),t,1.2,0.1,{a:0.02,d:0.2,s:0.6,r:0.4,lp:500,dest:reactGain});
+    const a=setup(); if(!a) return; const t=a.currentTime+0.02;
+    flourishN++;
+    /* tre motivi a rotazione, su radici diverse: non suonano mai due volte identici */
+    const VARS=[
+      {root:['C',5], steps:[0,4,7,12], chord:[['C',4],['E',4],['G',4]]},
+      {root:['D',5], steps:[0,3,7,10], chord:[['D',4],['F',4],['A',4]]},
+      {root:['E',5], steps:[0,5,7,12], chord:[['E',4],['G',4],['B',4]]}
+    ];
+    const v=VARS[flourishN%VARS.length];
+    const base=f(v.root[0],v.root[1]);
+    /* arpeggio luminoso che SALE e si accenta sull'ultima nota (il "ding!" che premia) */
+    v.steps.forEach((semi,i)=>{
+      const last=i===v.steps.length-1;
+      bell(base*Math.pow(2,semi/12), t+i*0.05, last?1.0:0.5, last?0.16:0.09, reactGain);
+    });
+    /* glint acuto finale + stab caldo di ottoni sotto */
+    bell(base*Math.pow(2,(v.steps[v.steps.length-1]+12)/12), t+v.steps.length*0.05+0.02, 0.9, 0.1, reactGain);
+    v.chord.forEach(nn=> horn(f(nn[0],nn[1]), t+0.02, 0.5, 0.05));
+    note('sine', f(v.chord[0][0],2), t, 0.7, 0.09, {a:0.01,d:0.15,s:0.5,r:0.3,lp:480,dest:reactGain});
+    try{ const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=7000; const g=a.createGain(); g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); s.connect(fl); fl.connect(g); g.connect(reactGain); s.start(t); s.stop(t+0.14); }catch(_){}
   }
-  /* REAZIONE al sigillo: cadenza orchestrale calda e conclusiva, poi la musica tace */
+  /* REAZIONE al sigillo: FANFARA DI VITTORIA — lunga, eroica, piena. Nettamente diversa dall'item-get. */
   function seal(){
-    const a=setup(); if(!a) return; const t=a.currentTime+0.01;
-    [['A',2],['E',3],['A',3],['C',4],['E',4],['A',4]].forEach((nn,i)=> strings(f(nn[0],nn[1]),t+i*0.03,2.6,0.07));
-    /* la melodia chiude salendo, in arpa */
-    [['A',4],['C',5],['E',5],['A',5]].forEach((nn,i)=> bell(f(nn[0],nn[1]),t+0.3+i*0.12,1.6,0.11,reactGain));
-    note('sine',f('A',1),t,2.4,0.1,{a:0.03,d:0.3,s:0.6,r:0.6,lp:460,dest:reactGain});
+    const a=setup(); if(!a) return; const t=a.currentTime+0.02;
+    /* rullo di timpani + piatto che cresce: l'attacco epico */
+    for(let i=0;i<7;i++){ taiko(t+i*0.07, 70, 0.18+i*0.04); }
+    try{ const s=a.createBufferSource(); s.buffer=NOISEBUF; s.loop=true; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=5000; const g=a.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.08,t+0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+0.9); s.connect(fl); fl.connect(g); g.connect(reactGain); s.start(t); s.stop(t+0.95); }catch(_){}
+    const T=t+0.55; /* il colpo: la fanfara parte dopo il crescendo */
+    taiko(T,64,0.7); kick(T);
+    /* melodia eroica che sale (ottoni + archi insieme) e risolve in alto */
+    const line=[['A',4],['C',5],['E',5],['G',5],['A',5]];
+    line.forEach((nn,i)=>{ const tt=T+i*0.16; horn(f(nn[0],nn[1]),tt,0.5,0.08); strings(f(nn[0],nn[1]),tt,0.6,0.05); });
+    /* grande accordo conclusivo di La (sospeso poi pieno) sotto la melodia */
+    const Tc=T+line.length*0.16+0.05;
+    [['A',2],['E',3],['A',3],['C',4],['E',4]].forEach(nn=> strings(f(nn[0],nn[1]),Tc,2.8,0.07));
+    [['A',3],['C',4],['E',4],['A',4]].forEach(nn=> horn(f(nn[0],nn[1]),Tc,1.6,0.05));
+    note('sine',f('A',1),Tc,3.0,0.11,{a:0.02,d:0.3,s:0.6,r:0.8,lp:440,dest:reactGain});
+    /* cascata di campane che scende sopra l'accordo: il sigillo brilla e si spegne */
+    [['A',6],['E',6],['C',6],['A',5],['E',5]].forEach((nn,i)=> bell(f(nn[0],nn[1]),Tc+0.2+i*0.13,1.4,0.09,reactGain));
+    taiko(Tc,58,0.6);
   }
   return {update,flourish,seal,start,stop,unlock,recDuck};
 })();
@@ -1795,16 +1837,26 @@ const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido c
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
 function buildObserverDigest(){
   const tk=todayKey();
-  const diario=(S.diary||[]).slice(0,30).map(e=>({
-    giorno:(e.iso||'').slice(0,10),
-    intenzioni:Array.isArray(e.born)?e.born.slice(0,12):[],
-    azioni:Array.isArray(e.done)?e.done.slice(0,12):[]
-  }));
+  /* azioni reali dalle spunte toccate (questLog), raggruppate per giorno */
+  const log=Array.isArray(S.questLog)?S.questLog:[];
+  const azioniPerGiorno={};
+  log.forEach(e=>{ if(!azioniPerGiorno[e.day]) azioniPerGiorno[e.day]=[]; azioniPerGiorno[e.day].push(e.titolo); });
+  const diario=(S.diary||[]).slice(0,30).map(e=>{
+    const g=(e.iso||'').slice(0,10);
+    const dettate=Array.isArray(e.done)?e.done.slice(0,12):[];
+    const toccate=azioniPerGiorno[g]||[];
+    /* unisci dettate + toccate, senza duplicati */
+    const azioni=Array.from(new Set([...dettate,...toccate])).slice(0,16);
+    return {giorno:g, intenzioni:Array.isArray(e.born)?e.born.slice(0,12):[], azioni:azioni};
+  });
   const questAperte=(S.quests||[]).filter(q=>!q.fatto).map(q=>({titolo:q.titolo,prio:q.prio||3,quando:q.quando||null}));
-  const giorni=Object.keys(S.checks||{}).sort().slice(-14);
-  /* completamenti reali per giorno: includono le spunte toccate, non solo quelle dettate */
-  const completamentiGiornalieri=giorni.map(day=>({giorno:day,taskCompletate:Object.values(S.checks[day]||{}).filter(v=>v===true).length}));
-  /* le ultime osservazioni, perché non si ripeta e noti l'evoluzione */
+  /* giorni con attività = sia task ricorrenti spuntate sia quest completate */
+  const giorniSet=new Set([...Object.keys(S.checks||{}),...Object.keys(azioniPerGiorno)]);
+  const giorni=Array.from(giorniSet).sort().slice(-14);
+  const completamentiGiornalieri=giorni.map(day=>({
+    giorno:day,
+    taskCompletate:Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0)
+  }));
   const osservazioniPrecedenti=(S.observerNotes||[]).slice(-4).map(n=>n.note);
   return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
 }
@@ -2139,7 +2191,15 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   div.querySelector('.chk').onclick=()=>{
     if(div.dataset.busy) return;
     div.dataset.busy='1';
-    q.fatto=!q.fatto; save();
+    q.fatto=!q.fatto;
+    if(q.fatto){
+      /* registra l'azione: così la Mente Osservatrice sa che l'hai DAVVERO compiuta */
+      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey()}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
+    } else {
+      /* annullamento: togli l'ultimo log di oggi per quel titolo */
+      try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()){ S.questLog.splice(i,1); break; } } }catch(_){}
+    }
+    save();
     if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(rerender,600); }
     else { sUndo(); rerender(); updateRing(); }
   };
@@ -2473,10 +2533,14 @@ try{
   const appEl=document.querySelector('#app');
   appEl.style.opacity='1';
   const fast=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let introGone=false;
   function dismissIntro(){
+    if(introGone) return; introGone=true;
     intro.classList.add('leaving');
     setTimeout(()=>{ intro.style.display='none'; maybeOnboard(); }, fast?60:750);
   }
+  /* un tocco sull'intro sblocca subito l'audio e fa entrare (oltre alla dissolvenza automatica) */
+  intro.addEventListener('click',()=>{ try{ if(S.settings.music) MUSIC.unlock(); }catch(_){} dismissIntro(); }, {once:true});
   if(S.settings.music){
     const sumEl=document.querySelector('#intro-summary');
     const notes=S.observerNotes||[];
@@ -2498,7 +2562,12 @@ function isStandalone(){
 function maybeOnboard(){
   let seen=false;
   try{ seen=localStorage.getItem('sentiero-onboarded')==='1'; }catch(_){}
-  if(seen) return;
+  /* chi ha già usato l'app (ha dati) è di fatto onboardato: niente seconda schermata */
+  if(!seen){
+    const haDati=(S.diary&&S.diary.length>0)||(S.quests&&S.quests.length>0)||(Array.isArray(S.questLog)&&S.questLog.length>0);
+    if(haDati){ try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){} seen=true; }
+  }
+  if(seen){ try{ if(S.settings.music) MUSIC.unlock(); }catch(_){} return; }
   const ob=document.querySelector('#onboard');
   const note=document.querySelector('#ob-note');
   if(!isStandalone()) note.textContent='Suggerimento: Condividi → "Aggiungi alla schermata Home" per i permessi permanenti e le notifiche.';
@@ -2507,6 +2576,7 @@ function maybeOnboard(){
     try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){}
     /* chiede il microfono una volta, nel momento giusto, con un gesto utente reale */
     await primeMicPermission();
+    try{ if(S.settings.music) MUSIC.unlock(); }catch(_){}  /* dopo il microfono, sblocca e avvia la musica */
     ob.style.transition='opacity .4s ease'; ob.style.opacity='0';
     setTimeout(()=>ob.classList.add('hidden'),400);
   };
