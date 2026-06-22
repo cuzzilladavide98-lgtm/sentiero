@@ -862,7 +862,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v38 · 2026-06-22';
+const APP_VERSION='v39 · 2026-06-22';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1064,11 +1064,17 @@ const MUSIC=(()=>{
 
   let running=false,timer=null,step=0,nextT=0,cycle=0;
   let gain=null,filter=null,reactGain=null,percBus=null,master=null,reverb=null,duckGain=null,pump=null;
+  let gtrBus=null,gtrDist=null; /* bus chitarra distorta (anima Budokai) */
   let intensity=0,target=0,over=0,targetOver=0;
   let unlocked=false, recDuckOn=false;
   let W_STR=null,W_FLUTE=null,W_HORN=null;
   const LOOK=0.14,TICK=25;
-  function bpm(){ return 72+intensity*52+over*20; }   /* più lento e respirato: 72 calmo → 124 pieno → 144 overdrive */
+  /* RIFF di power-metal in La minore (originale, in stile Budokai): gradi cromatici sul giro */
+  const RIFFS=[
+    [0,0,0,3,0,0,5,0,  0,0,0,3,5,3,0,-2],   /* chugga su La con escursioni */
+    [0,0,7,0,0,5,0,3,  0,0,7,0,5,3,2,0]
+  ];
+  function bpm(){ return 96+intensity*54+over*22; }   /* energia rock: 96 calmo → 150 pieno → 172 overdrive */
   function stepDur(){ return 60/bpm()/4; }
 
   function mkWave(a,amps){
@@ -1109,8 +1115,35 @@ const MUSIC=(()=>{
       if(reverb){ const ps=a.createGain(); ps.gain.value=0.16; percBus.connect(ps); ps.connect(reverb); }
       reactGain=a.createGain(); reactGain.gain.value=1; reactGain.connect(master);
       if(reverb){ const rs=a.createGain(); rs.gain.value=0.4; reactGain.connect(rs); rs.connect(reverb); }
+      /* BUS CHITARRA DISTORTA: distorsione dura + filtro "cassa" → power chord ringhianti (anima Budokai) */
+      gtrBus=a.createGain(); gtrBus.gain.value=0.9;
+      try{
+        gtrDist=a.createWaveShaper();
+        const n=2048,c=new Float32Array(n),k=14; /* curva di distorsione dura */
+        for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; c[i]=(1+k)*x/(1+k*Math.abs(x)); }
+        gtrDist.curve=c; gtrDist.oversample='4x';
+        const cab=a.createBiquadFilter(); cab.type='lowpass'; cab.frequency.value=3000; cab.Q.value=0.7; /* simulazione cassa */
+        const hp=a.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=90;
+        gtrBus.connect(gtrDist); gtrDist.connect(cab); cab.connect(hp); hp.connect(master);
+      }catch(_){ gtrDist=null; gtrBus.connect(master); }
     }
     return a;
+  }
+  /* CHITARRA ELETTRICA: saw nel bus distorto. Power chord = fondamentale + quinta + ottava. */
+  function gtr(freq,t,dur,vol){
+    const a=ac(); if(!a||!gtrBus) return;
+    const o=a.createOscillator(),g=a.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(Math.max(0.001,vol),t+0.005);
+    g.gain.setValueAtTime(Math.max(0.001,vol),t+dur*0.6); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(gtrBus); o.start(t); o.stop(t+dur+0.02);
+  }
+  function powerChord(root,t,dur,vol){ gtr(root,t,dur,vol); gtr(root*1.4983,t,dur,vol*0.85); gtr(root*2,t,dur,vol*0.6); } /* root + quinta + ottava */
+  /* RULLANTE rock sul battere 2 e 4 */
+  function snare(t,vol){
+    const a=ac(); if(!a) return;
+    if(NOISEBUF){ const s=a.createBufferSource(); s.buffer=NOISEBUF; const hp=a.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=1800; const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.13); s.connect(hp); hp.connect(g); g.connect(percBus); s.start(t); s.stop(t+0.15); }
+    const o=a.createOscillator(),g2=a.createGain(); o.type='triangle'; o.frequency.setValueAtTime(220,t); g2.gain.setValueAtTime(vol*0.5,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.09); o.connect(g2); g2.connect(percBus); o.start(t); o.stop(t+0.1);
   }
 
   /* voce con inviluppo ADSR morbido, vibrato e filtro opzionali — il cuore del calore */
@@ -1178,36 +1211,60 @@ const MUSIC=(()=>{
 
   function schedStep(s,t){
     const bar=Math.floor(s/16)%4,b=s%16,ch=CHORDS[bar],I=intensity,O=over;
+    const rootHz=f(ch.root,ch.oct);
     try{ filter.frequency.setTargetAtTime(900+I*2200,t,0.06); }catch(_){}
-    /* ARCHI: accordo tenuto che gonfia a ogni battuta — il tappeto caldo */
-    if(b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.05+I*0.06)*(k===0?1:0.8))); }
-    /* BASSO + sub sugli appoggi */
-    if(b===0||b===8||(I>0.5&&(b===4||b===12))) bassNote(f(ch.root,ch.oct),t,0.5,0.15+I*0.05);
-    /* ARPA: arpeggio di celesta che scorre — entra presto, dolce */
-    if(I>0.12){ const dense=I>0.55?2:4; if(b%dense===0){ const nn=ch.pad[(s/2)%ch.pad.length|0]; bell(f(nn[0],nn[1]+1),t,0.7,0.05+I*0.05,filter); } }
-    /* PERCUSSIONI morbide, crescono con l'intensità */
-    if(I>0.3&&(b===0||b===8)) kick(t);
-    if(I>0.25&&b===0) taiko(t,80,0.4+I*0.25);
-    if(I>0.6&&b===8) taiko(t,96,0.34);
-    if(I>0.45&&b%4===2) hat(t,0.03+I*0.04);
-    if(I>0.75&&b%2===1) hat(t,0.025);
-    /* MELODIA composta (flauto/voce) — entra a intensità media, frase per ciclo */
-    if(I>0.4){
-      const ph=PHRASES[cycle%PHRASES.length];
-      let acc=0;
-      for(const [deg,d] of ph){ if(acc===b && bar===0){ flute(scaleNote(deg,1),t,stepDur()*d*0.95,0.06+I*0.05); } acc+=d; }
-      /* nei bar successivi, una controvoce di corno sostiene gli accordi a intensità alta */
-      if(I>0.7 && bar>0 && b===0){ horn(f(ch.pad[2][0],ch.pad[2][1]),t,stepDur()*12,0.04+I*0.03); }
+
+    /* ── STRATO CALMO (poche quest): contemplativo, prima della battaglia ── */
+    if(I<0.5){
+      if(b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.05+I*0.05)*(k===0?1:0.8))); }
+      if(I<0.35){ if(b%4===0){ const nn=ch.pad[(s/4)%ch.pad.length|0]; bell(f(nn[0],nn[1]+1),t,0.8,0.05+I*0.05,filter); } }
+      if(b===0||b===8) bassNote(rootHz,t,0.5,0.14+I*0.05);
     }
-    /* CRESCENDO: piatto-swell all'inizio del giro di 4 battute */
-    if(s===0&&I>0.5) cymbalSwell(t,stepDur()*8,0.05+I*0.05);
-    /* OVERDRIVE: più corpo, mai più ronzio */
-    if(O>0.1){
-      if(O>0.3&&(b===4||b===12)) kick(t);
-      if(O>0.2&&(b===2||b===10)) taiko(t,72,0.3+O*0.2);
-      if(O>0.4&&b%2===1) hat(t,0.03+O*0.03);
-      if(O>0.5&&(b===0||b===8)){ const nn=ch.pad[3]; horn(f(nn[0],nn[1]),t,stepDur()*6,0.04+O*0.04); }  /* ottoni che svettano */
+
+    /* ── BATTERIA ROCK: backbeat che spinge, cresce con l'intensità ── */
+    if(I>0.28){
+      /* cassa sul battere + ottavi guida */
+      if(b===0||b===8) kick(t);
+      if(I>0.45&&(b===4||b===12)) kick(t);
+      if(I>0.7&&b%4===2) kick(t);                 /* cassa più fitta */
+      /* RULLANTE sul 2 e 4 (backbeat rock) */
+      if(b===4||b===12) snare(t,0.18+I*0.12);
+      /* charleston in ottavi/sedicesimi */
+      const hd=I>0.7?1:2; if(b%hd===0) hat(t,0.02+I*0.03);
     }
+
+    /* ── CHITARRA: riff palm-muted che entra a intensità media, power chord da pieno ── */
+    if(I>0.42){
+      const riff=RIFFS[(Math.floor(s/16))%RIFFS.length];
+      const semi=riff[b];
+      /* chugga ritmico: note brevi palm-muted sulla fondamentale del riff */
+      if(typeof semi==='number'){
+        const dur=stepDur()*(I>0.7?0.9:1.6);
+        gtr(rootHz*Math.pow(2,semi/12), t, dur, 0.07+I*0.06);            /* palm mute */
+        if(I>0.62&&(b===0||b===8)) powerChord(rootHz*Math.pow(2,semi/12), t, stepDur()*3.6, 0.05+I*0.05); /* accordo pieno sull'appoggio */
+      }
+    }
+
+    /* ── BASSO che groova in ottavi a intensità alta ── */
+    if(I>0.5){ if(b%2===0) bassNote(rootHz/2,t,stepDur()*1.8,0.12+I*0.05); }
+
+    /* ── LEAD CHITARRA in overdrive: melodia che svetta (originale, stile power-metal) ── */
+    if(I>0.66){
+      const ph=PHRASES[cycle%PHRASES.length]; let acc=0;
+      for(const [deg,d] of ph){ if(acc===b && bar%2===0){ const lf=scaleNote(deg,1); gtr(lf,t,stepDur()*d*0.95,0.06+I*0.05); gtr(lf*2,t,stepDur()*d*0.9,0.03); } acc+=d; }
+    }
+
+    /* ── OVERDRIVE: doppia cassa (il marchio Budokai), piatti, furia ── */
+    if(O>0.05){
+      if(b%2===1) kick(t);                          /* doppia cassa: sedicesimi */
+      if(O>0.4&&b%2===0) kick(t);                   /* relentless */
+      if(O>0.3&&(b===0||b===8)) snare(t,0.2+O*0.15);
+      if(O>0.2&&b%2===1) hat(t,0.03+O*0.03);
+      if(O>0.5&&b===0){ powerChord(rootHz,t,stepDur()*4,0.06+O*0.05); }
+      if(s===0&&O>0.3) cymbalSwell(t,stepDur()*6,0.06+O*0.05);
+    }
+    /* crescendo di piatto all'inizio del giro quando si sta scaldando */
+    if(s===0&&I>0.5&&I<0.85) cymbalSwell(t,stepDur()*8,0.04+I*0.04);
   }
 
   function scheduler(){
