@@ -730,12 +730,9 @@ function sanitizeQuestLog(arr){
     const titolo=clampStr(e.titolo,200).trim(); if(!titolo) continue;
     const day=(typeof e.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.day))?e.day:'';
     if(!day) continue;
-    const at=(typeof e.at==='string'&&!isNaN(Date.parse(e.at)))?e.at:'';
-    const kind=(e.kind==='scheduled'||e.kind==='task_ricorrente')?'scheduled':'quest';
-    const id=clampStr(e.id,40);
-    out.push({titolo:titolo,day:day,at:at,kind:kind,id:id});
+    out.push({titolo:titolo,day:day});
   }
-  return out.slice(-400); /* conserva gli ultimi 400 completamenti: quest + task ricorrenti */
+  return out.slice(-300); /* conserva gli ultimi 300 completamenti */
 }
 function sanitizeObserverNotes(arr){
   if(!Array.isArray(arr)) return [];
@@ -865,7 +862,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v46 · 2026-06-23 · Mente Osservatrice contestuale';
+const APP_VERSION='v45 · 2026-06-23';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1252,65 +1249,65 @@ const MUSIC=(()=>{
   }
   function hat(t,vol){ const a=ac(); if(!a||!NOISEBUF) return; const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=8500; const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.025); s.connect(fl); fl.connect(g); g.connect(percBus); s.start(t); s.stop(t+0.04); }
 
+  /* ── RIFF MADRE pesante (stile Sabbath, originale): incede greve, non corre.
+        Pedale su Sol; lo stab-risposta scende G→F→Eb→D. ── */
+  const RIFF_HITS=[0,4,7,10,12,15];                    /* step in cui la chitarra MORDE (power chord) */
+  const RIFF_RESP=[0,0,0,5, 0,5,3,2, 0,0,3,2, 5,3,2,0];/* per battuta: 0=G,5=F,3=Eb,2=D (semitoni sotto G) sullo stab */
+  const RESP_STEP=10;                                  /* lo stab-risposta cade qui */
   function schedStep(s,t){
-    const bar=Math.floor(s/16)%NBARS, b=s%16, ch=CHORDS[bar], I=intensity, O=over;
-    const rootHz=f(ch.root,ch.oct);
-    try{ filter.frequency.setTargetAtTime(560+I*2300+O*1100,t,0.06); }catch(_){}
-    const sIdle=s%NSTEP;
+    const bar=Math.floor(s/16)%NBARS, b=s%16, I=intensity, O=over;
+    const G=f('G',1);                                  /* pedale grave: il passo che pesa */
+    const respDeg=RIFF_RESP[bar];
+    const respHz=f('G',1)*Math.pow(2,respDeg/12);
+    try{ filter.frequency.setTargetAtTime(900+I*2600+O*1000,t,0.05); }catch(_){}
 
-    /* ════════ MODULO 1 — IDLE (sempre presente): pad scuro, sub lungo, pluck raro, respiro ════════ */
-    /* pad scuro filtrato, una tenuta per battuta che respira (onda di 4 battute) */
-    if(b===0){ const swell=0.03+0.012*Math.sin((bar%4)/4*Math.PI*2)+I*0.02; synthPad(f(ch.root,ch.oct+1),t,stepDur()*16*1.02,Math.max(0.02,swell)); }
-    /* archi bassi filtrati tenuti */
-    if(b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.03+I*0.04)*(k===0?1:0.55))); }
-    /* sub bass morbido su note lunghe (Idle) */
-    if(I<0.4 && b===0){ bassNote(rootHz,t,stepDur()*15.5,0.12); }
-    /* respiro interno: pulse soft del sub su 1 e 3 (anche in Idle) */
-    if(I<0.45 && (b===0||b===8)){ note('sine',rootHz,t,0.5,0.05,{a:0.04,d:0.2,s:0.3,r:0.2,lp:300}); }
-    /* pluck raro, lontano: una nota ogni 4 battute */
-    if(I<0.42){ for(const [st,nm,oc] of PLUCK_IDLE){ if(st===sIdle){ pluck(f(nm,oc),t,0.055); } } }
-    /* melodia Idle: tema madre rarefatto */
-    if(I<0.4){ for(const [st,nm,oc,du] of MOTHER_IDLE){ if(st===sIdle){ const lf=f(nm,oc); pluck(lf,t,0.06); strings(lf,t,stepDur()*du*0.9,0.03); } } }
-
-    /* ════════ MODULO 2 — ACTIVE (I>0.34): groove, focus, avanzamento ════════ */
-    if(I>0.34){
-      const sec=bar>=8; /* sezione B: più fitta */
-      /* batteria rock/elettronica */
-      if(KICKP[b]) kick(t);
-      if(SNAREP[b]) snare(t,0.17+I*0.12);
-      if(b%2===0) hat(t,0.016+I*0.028);                       /* hi-hat ottavi */
-      if(sec && I>0.55 && b%2===1) hat(t,0.01+I*0.018);       /* sedicesimi nella sezione B */
-      if(sec && (b===0)) cymbalSwell(t,stepDur()*2,0.04+I*0.03);
-      /* basso ostinato in ottavi (nota per nota) */
-      if(b%2===0){ const idx=b/2; bassNote(noteName(BASS_OST[bar][idx]),t,stepDur()*1.8,0.14+I*0.05); }
-      /* chitarra palm-muted, bloccata sul kick (corti) + accento su 1 */
-      if(KICKP[b]){ powerChord(rootHz, t, stepDur()*(b===0?2.0:0.9), 0.05+I*0.045); }
-      /* arpeggiatore synth 1/16 filtrato sui toni dell'accordo */
-      { const nn=ch.pad[s%ch.pad.length]; note(W_STR||'sawtooth',f(nn[0],nn[1]+1),t,stepDur()*1.1,0.018+I*0.028,{a:0.004,d:0.05,s:0.3,r:0.07,lp:1300+I*2700,dest:filter}); }
-      /* archi staccati bassi su 1 e 3 */
-      if(b===0||b===8){ const nn=ch.pad[1]; note(W_STR||'sawtooth',f(nn[0],nn[1]),t,stepDur()*1.3,0.035+I*0.035,{a:0.01,d:0.07,s:0.35,r:0.1,lp:2200}); }
+    /* ════ Idle minimale finché non ci sono quest (sotto 0.3): solo un alone, niente fantasy ════ */
+    if(I<0.3){
+      if(b===0){ synthPad(f('G',3),t,stepDur()*16,0.03); note('sine',G,t,stepDur()*15,0.1,{a:0.05,d:0.3,s:0.6,r:0.4,lp:300}); }
+      if(I<0.28 && (b===0||b===8)){ note('sine',G,t,0.5,0.05,{a:0.04,d:0.2,s:0.3,r:0.2,lp:280}); }
+      return;
     }
 
-    /* ════════ TEMA MADRE che attraversa i moduli ════════ */
-    /* Active: hook ritmico ogni 4 battute (timbro che si apre con l'intensità) */
-    if(I>=0.4){
-      const phase=s%64;  /* ogni 4 battute */
-      for(const [st,nm,oc,du] of MOTHER){
-        if(st===phase){
-          const lf=f(nm,oc), d=stepDur()*du*0.94;
-          if(I<0.7){ horn(lf,t,d,0.055+I*0.035); strings(lf,t,d,0.028); }
-          else { gtr(lf,t,d,0.06+I*0.04); gtr(lf*2,t,d,0.025); brassStab(lf,t,d,0.04); strings(lf,t,d,0.03); }
-        }
-      }
+    /* ════ ACTIVE: drums + bass + guitar che stanno in piedi da soli ════ */
+    /* BATTERIA secca: cassa incollata agli stab, rullante sul 2 e 4, hi-hat in ottavi */
+    if(b===0||b===4||b===7||b===10||b===12||b===15) kick(t);   /* aggancia il riff */
+    if(b===4||b===12) snare(t,0.26+I*0.12);                     /* backbeat aggressivo */
+    if(b%2===0) hat(t,0.02+I*0.025);                            /* ottavi */
+    if(bar>=8 && b%2===1) hat(t,0.012);                         /* sezione B: sedicesimi */
+    if(b===0 && bar%4===0) cymbalSwell(t,stepDur()*1.5,0.05);   /* crash a inizio frase */
+
+    /* BASSO ostinato saturo, raddoppia il riff sul pedale, segue la risposta */
+    const bassHits=[0,2,3,4,7,10,12,14,15];
+    if(bassHits.indexOf(b)>=0){
+      const hz = (b===RESP_STEP)? respHz/2 : G;                 /* sullo stab-risposta scende */
+      bassNote(hz, t, stepDur()*1.6, 0.18+I*0.05);
     }
 
-    /* ════════ verso la VITTORIA (overdrive): apre, crash, ride ════════ */
+    /* CHITARRA palm-muted + power chord: il riff madre.
+       MORDE (power chord lasciato suonare) sugli accenti; chug corti tra gli accenti. */
+    const isHit = (b===0||b===4||b===12||b===RESP_STEP||b===15);
+    if(isHit){
+      const hz = (b===RESP_STEP)? respHz : G;                   /* lo stab-risposta scende G→F→Eb→D */
+      powerChord(hz, t, stepDur()*(b===RESP_STEP?2.2:1.6), 0.09+I*0.05);   /* morde */
+    } else if(b%1===0 && (b===1||b===2||b===5||b===6||b===8||b===13||b===14)){
+      gtr(G, t, stepDur()*0.5, 0.06+I*0.04);                    /* chug palm-muted strettissimo su G */
+      gtr(G*1.4983, t, stepDur()*0.5, 0.04+I*0.03);
+    }
+
+    /* ARP synth filtrato, SOLO supporto, basso nel mix */
+    if(I>0.4 && b%2===1){ note(W_STR||'sawtooth', f('G',4)*Math.pow(2,([0,3,7,10][(s/2|0)%4])/12), t, stepDur()*0.9, 0.014+I*0.02, {a:0.004,d:0.05,s:0.25,r:0.06,lp:1400+I*2200,dest:filter}); }
+
+    /* LEAD HOOK aggressivo (2 battute, ogni 4): entra nella pausa, distorto. D–Eb–D · Bb–G–D */
+    if(I>0.5){
+      const ph=s%64;
+      const hook=[[8,'D',5,2],[11,'Eb',5,1],[12,'D',5,3],[24,'Bb',4,2],[28,'D',5,3]];
+      for(const [st,nm,oc,du] of hook){ if(st===ph){ const lf=f(nm,oc); gtr(lf,t,stepDur()*du*0.9,0.07+I*0.04); gtr(lf*2,t,stepDur()*du*0.85,0.03); } }
+    }
+
+    /* OVERDRIVE: doppia cassa, più furia (resta pesante) */
     if(O>0.05){
       if(b%2===1) kick(t);
-      if(O>0.4&&(b===0||b===8)) snare(t,0.2+O*0.14);
-      if(O>0.25) hat(t,0.02+O*0.03);
-      if(s%64===0 && O>0.3) cymbalSwell(t,stepDur()*4,0.06+O*0.05);
-      if(O>0.4&&(b===4||b===12)){ const nn=ch.pad[2]; brassStab(f(nn[0],nn[1]),t,stepDur()*3,0.05+O*0.04); }
+      if(O>0.4&&(b===4||b===12)) snare(t,0.28+O*0.12);
     }
   }
 
@@ -1412,6 +1409,56 @@ const MUSIC=(()=>{
   }
 
   return {update,flourish,seal,start,stop,unlock,recDuck};
+})();
+
+/* ── ATHEME: Active Quest Theme provvisorio (campione v6, loop seamless via Web Audio).
+      Parte solo con quest attive; fade out quando non ce ne sono; precaricato; volume da codice. ── */
+const ATHEME=(()=>{
+  const URL='audio/active_quest_v6_bandcore.wav';
+  let VOL=0.40;                       /* volume gestibile da codice (0.35–0.45) */
+  let ctx=null,buf=null,src=null,gain=null;
+  let loaded=false,loading=false,playing=false,unlocked=false,wantActive=false;
+  function ac(){ if(!ctx){ try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(_){ ctx=null; } } return ctx; }
+  function preload(){
+    if(loaded||loading) return; const a=ac(); if(!a) return; loading=true;
+    fetch(URL).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(b=>{
+      buf=b; loaded=true; loading=false; if(wantActive&&unlocked) play();
+    }).catch(()=>{ loading=false; });
+  }
+  function play(){
+    const a=ac(); if(!a||!loaded||playing) return;
+    if(!S.settings || !S.settings.music) return;       /* rispetta l'impostazione audio */
+    try{
+      src=a.createBufferSource(); src.buffer=buf; src.loop=true;   /* loop gapless */
+      gain=a.createGain(); gain.gain.setValueAtTime(0.0001,a.currentTime);
+      src.connect(gain); gain.connect(a.destination);
+      src.start(0);
+      gain.gain.linearRampToValueAtTime(VOL,a.currentTime+0.4);    /* fade in */
+      playing=true;
+    }catch(_){ playing=false; }
+  }
+  function stop(fade){
+    if(!playing){ try{ if(src) src.stop(); }catch(_){} src=null; gain=null; return; }
+    const a=ac(); const s=src,g=gain; playing=false; src=null; gain=null;
+    try{
+      if(fade&&g&&a){ g.gain.cancelScheduledValues(a.currentTime); g.gain.setValueAtTime(g.gain.value,a.currentTime); g.gain.linearRampToValueAtTime(0.0001,a.currentTime+0.6); setTimeout(()=>{try{s.stop();}catch(_){}} ,750); }
+      else if(s){ try{s.stop();}catch(_){} }
+    }catch(_){}
+  }
+  function unlock(){
+    unlocked=true; const a=ac(); if(!a) return;
+    try{ if(a.state==='suspended') a.resume(); }catch(_){}
+    try{ const b=a.createBuffer(1,1,a.sampleRate); const t=a.createBufferSource(); t.buffer=b; t.connect(a.destination); t.start(0); }catch(_){}  /* sblocco iOS */
+    if(!loaded) preload(); else if(wantActive) play();
+  }
+  function setActive(active){
+    wantActive=!!active;
+    if(wantActive){ if(unlocked){ if(loaded) play(); else preload(); } }
+    else { stop(true); }
+  }
+  function setVolume(v){ VOL=Math.max(0,Math.min(1,v)); const a=ac(); if(gain&&a) gain.gain.setTargetAtTime(VOL,a.currentTime,0.1); }
+  function pause(){ stop(false); }
+  return { unlock, setActive, pause, stop, setVolume, preload, isPlaying:()=>playing };
 })();
 
 let itVoice=null;
@@ -1944,102 +1991,16 @@ async function askClaude(transcript){
    MENTE OSSERVATRICE — specchio-commentatore. Solo osserva, non dialoga.
    Riusa l'IA già presente; se non c'è chiave o è offline, usa logica locale.
    ====================================================================== */
-const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido. Non sei una chat, non fai domande, non dialoghi. Restituisci UNA riflessione breve, tagliente e utilizzabile.\n'+
-'NUCLEO LETTERARIO — DARRELL STANDING: quando l\'utente dice non ho voglia, non riesco, sono bloccato, ho fallito, tratta il blocco come camicia di forza biologica: corpo, divano, ansia, dopamina bassa, paura e scusa sono materia che stringe. L\'utente non coincide con quella materia: e il punto che la osserva. I muri tengono la carne, non lo sguardo. Non motivare: disidentifica.\n'+
-'NUCLEO TAO — WU WEI: non spingere, non sfondare, non fare guerra interna. Riduci il gesto finche passa. L\'acqua non discute con la pietra: trova il varco. Meno attrito, azione minima, non-contesa. Il wu wei qui e una lama sobria, non relax new age.\n'+
-'NUCLEO CANI DI PAGLIA: ansia, vergogna, fallimento, orgoglio e problemi sono fenomeni impersonali. Non consolarli, non drammatizzarli, non santificarli. La vergogna non merita un altare; il fallimento e un dato, non un nome; il problema non e sacro, e attrito.\n'+
-'CONTESTO_SENTIERO: prima di rispondere leggi il blocco CONTESTO_SENTIERO. Se modalita_stato=completo puoi fare bilanci su quest attive e completate. Se modalita_stato=parziale o cieco, NON dire che l\'utente non ha fatto nulla e NON fare processi: un dato mancante e nebbia operativa, non colpa.\n'+
-'CONCRETEZZA: se vedi dati certi, nominali: quest, completamento, ricorrenza, giorno. Se non vedi dati certi, dillo senza pesare sull\'utente e torna al gesto minimo.\n'+
-'VOCE: frasi brevi, asciutte, memorabili. Niente dai che ce la fai, niente moralismi, niente terapia, niente diagnosi, niente identita ferite. Giudica il sistema e il comportamento, mai la persona.\n'+
-'ESEMPI DI TONO: La camicia stringe il corpo, non te. / Il divano tiene la carne, non la coscienza. / Non sfondare il muro: passa dalla fessura. / La vergogna chiede un altare: non darglielo.\n'+
-'FORMATO: note = 1-3 frasi. summary sintetico. detectedPatterns = pattern brevi.\n'+
+const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido che osserva i pattern di chi usa l\'app e restituisce UNA riflessione breve e precisa. Non sei una chat, non fai domande, non dialoghi.\n'+
+'VOCE: calma, affilata, un po\' zen. Pensa a un maestro taoista che parla la lingua di oggi: cio che dici deve suonare come un cheat code, uno sblocco improvviso, non come un\'app di produttivita che fa la morale. Sobrio, mai motivazionale a vuoto, mai terapeutico.\n'+
+'CONCRETEZZA (regola piu importante): cita il MATERIALE REALE che vedi. Nomina la quest o l\'azione specifica (es. chiamare il commercialista torna da tre giorni), il numero, il giorno. Le frasi astratte tipo le intenzioni superano le azioni sono VIETATE se non ancorate a un dato concreto. Mostra che hai visto proprio i SUOI dati.\n'+
+'SAGGEZZA (Tao, usala senza nominarla ne citarla): il grande nasce dal piccolo (l\'azione ridotta e quella che continua); non-forzare wu wei (cio che si spinge troppo genera attrito, cio che scorre si compie); l\'acqua e morbida e paziente eppure scava la roccia (la costanza batte l\'intensita); sapersi fermare prima di traboccare (un obiettivo a misura della giornata si chiude, uno ideale si rimanda). Questi principi traspaiono dal modo in cui leggi i pattern, mai come citazioni o prediche.\n'+
+'PATTERN da cercare: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi completati solo quando ridotti, rinvii ripetuti, giorni di continuita contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo se gia motivato.\n'+
+'CONFINI: giudica il SISTEMA e il COMPORTAMENTO, mai l\'identita. Vietato sei pigro/incapace/indisciplinato, diagnosi, moralismi. Confronta con le OSSERVAZIONI PRECEDENTI: non ripeterle; se c\'e un cambiamento in meglio o peggio nominalo.\n'+
+'FORMATO: note = 1-3 frasi asciutte che restano in testa. Se i dati sono pochi, dillo in una riga essenziale e basta.\n'+
 'Rispondi ESCLUSIVAMENTE con JSON: {"summary":"sintesi","detectedPatterns":["pattern brevi"],"note":"la riflessione da mostrare"}';
 
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
-function localNowLabel(){
-  try{ return new Date().toLocaleString('it-IT',{dateStyle:'full',timeStyle:'short'}); }catch(_){ return new Date().toISOString(); }
-}
-function safeLineList(arr,empty){
-  if(!Array.isArray(arr)||!arr.length) return empty||'non_disponibile';
-  return arr.map(x=>'- '+x).join('\n');
-}
-function hhmmFromIso(iso){
-  if(!iso||isNaN(Date.parse(iso))) return '';
-  try{ return new Date(iso).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; }
-}
-function buildSentieroContext(){
-  let modalita='cieco';
-  const tk=todayKey();
-  const nowIso=new Date().toISOString();
-  try{
-    const questsReadable=!!(S&&Array.isArray(S.quests));
-    const logReadable=!!(S&&Array.isArray(S.questLog));
-    if(questsReadable&&logReadable) modalita='completo';
-    else if(questsReadable) modalita='parziale';
-    else modalita='cieco';
-
-    const active=questsReadable?activeQuests(S,tk).filter(q=>!q.fatto).map(q=>{
-      const meta=[];
-      if(q.prio) meta.push('prio '+q.prio);
-      if(q.quando) meta.push(q.quando);
-      return q.titolo+(meta.length?' ('+meta.join(', ')+')':'');
-    }):null;
-
-    const log=logReadable?(S.questLog||[]).filter(e=>e&&e.day===tk):[];
-    const seen=new Set();
-    const completate=[];
-    log.forEach(e=>{
-      const label=(e.kind==='scheduled'?'Ricorrente: ':'Quest: ')+e.titolo+(e.at?' · '+hhmmFromIso(e.at):' · orario non_disponibile');
-      const key=(e.kind||'quest')+'|'+e.titolo+'|'+(e.at||'');
-      if(!seen.has(key)){ seen.add(key); completate.push(label); }
-    });
-    if(questsReadable){
-      (S.quests||[]).filter(q=>q.fatto).forEach(q=>{
-        const key='quest|'+q.titolo;
-        const already=Array.from(seen).some(k=>k.startsWith(key+'|')||k===key);
-        if(!already){ seen.add(key); completate.push('Quest: '+q.titolo+' · visibile_completata_senza_orario'); }
-      });
-    }
-    if(questsReadable){
-      const checks=(S.checks||{})[tk]||{};
-      scheduledFor(S,dowOf(new Date()),tk).forEach(t=>{
-        if(checks[t.id]===true){
-          const key='scheduled|'+t.titolo;
-          const already=Array.from(seen).some(k=>k.startsWith(key+'|')||k===key);
-          if(!already){ seen.add(key); completate.push('Ricorrente: '+t.titolo+' · orario non_disponibile'); }
-        }
-      });
-    }
-
-    let latest='non_disponibile';
-    const timed=log.filter(e=>e.at&&!isNaN(Date.parse(e.at))).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
-    if(timed.length) latest=(timed[0].kind==='scheduled'?'Ricorrente: ':'Quest: ')+timed[0].titolo+' · '+hhmmFromIso(timed[0].at);
-
-    return {
-      data_ora_locale:localNowLabel(),
-      data_ora_iso:nowIso,
-      modalita_stato:modalita,
-      quest_attive:questsReadable?active:'non_disponibile',
-      quest_completate_oggi:logReadable?completate:'non_disponibile',
-      ultima_quest_completata:latest,
-      messaggio_utente:'Osservazione richiesta: leggi lo stato visibile e restituisci una sola nota.'
-    };
-  }catch(_){
-    return {data_ora_locale:localNowLabel(),data_ora_iso:nowIso,modalita_stato:'cieco',quest_attive:'non_disponibile',quest_completate_oggi:'non_disponibile',ultima_quest_completata:'non_disponibile',messaggio_utente:'Osservazione richiesta: stato non leggibile.'};
-  }
-}
-function formatSentieroContext(ctx){
-  const att=Array.isArray(ctx.quest_attive)?safeLineList(ctx.quest_attive,'nessuna_visibile'):ctx.quest_attive;
-  const comp=Array.isArray(ctx.quest_completate_oggi)?safeLineList(ctx.quest_completate_oggi,'nessuna_visibile'):ctx.quest_completate_oggi;
-  return 'CONTESTO_SENTIERO:\n'+
-    'data_ora_locale: '+ctx.data_ora_locale+'\n'+
-    'modalità_stato: '+ctx.modalita_stato+'\n\n'+
-    'quest_attive:\n'+att+'\n\n'+
-    'quest_completate_oggi:\n'+comp+'\n\n'+
-    'ultima_quest_completata:\n'+(ctx.ultima_quest_completata||'non_disponibile')+'\n\n'+
-    'messaggio_utente:\n'+(ctx.messaggio_utente||'');
-}
-
 function buildObserverDigest(){
   const tk=todayKey();
   /* azioni reali dalle spunte toccate (questLog), raggruppate per giorno */
@@ -2063,8 +2024,7 @@ function buildObserverDigest(){
     taskCompletate:Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0)
   }));
   const osservazioniPrecedenti=(S.observerNotes||[]).slice(-4).map(n=>n.note);
-  const contestoSentiero=buildSentieroContext();
-  return {oggi:tk, contestoSentiero:contestoSentiero, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
+  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
 }
 
 async function askObserver(digest){
@@ -2077,8 +2037,8 @@ async function askObserver(digest){
       r=await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST', signal:ctrl?ctrl.signal:undefined,
         headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:model,max_tokens:420,temperature:0.55,system:OBSERVER_SYS,messages:[
-          {role:'user',content:formatSentieroContext(digest.contestoSentiero||buildSentieroContext())+'\n\nDATI OSSERVATI DI SUPPORTO (JSON):\n'+JSON.stringify(digest)},
+        body:JSON.stringify({model:model,max_tokens:400,temperature:0.6,system:OBSERVER_SYS,messages:[
+          {role:'user',content:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest)},
           {role:'assistant',content:'{'}
         ]})
       });
@@ -2104,13 +2064,7 @@ async function askObserver(digest){
 /* logica locale base: gira offline, senza chiave. Rileva i pattern essenziali. */
 function buildObserverLocal(digest){
   const d=digest.diario||[];
-  if(d.length<3){
-    const ctx=digest.contestoSentiero||buildSentieroContext();
-    const comp=Array.isArray(ctx.quest_completate_oggi)?ctx.quest_completate_oggi:[];
-    if(ctx.modalita_stato!=='completo') return {summary:'Stato '+ctx.modalita_stato,detectedPatterns:['nebbia operativa'],note:'Il registro e in nebbia: niente processo. Vedi la camicia, non diventarla; scegli una quest minuscola e incidila con un gesto.'};
-    if(comp.length) return {summary:comp.length+' completamenti visibili',detectedPatterns:['traccia nella materia'],note:'Falso vuoto: c\'e gia una traccia nella materia. Non discutere con la voce: passa alla prossima fessura.'};
-    return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. Il problema non e sacro: apri una fessura con una sola azione.'};
-  }
+  if(d.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. La prossima azione contera piu del commento. Comincia da una riga.'};
   let born=0,done=0; const bornCount={},doneCount={};
   d.forEach(e=>{
     (e.intenzioni||[]).forEach(t=>{born++; bornCount[t]=(bornCount[t]||0)+1;});
@@ -2214,9 +2168,8 @@ function onComplete(el){
   const lvl=Math.min(combo,6);
   const word=COMBO_WORDS[lvl-1];
   haptic(true);  /* tocco tattile deciso a ogni completamento */
-  if(S.settings.music){ try{MUSIC.flourish(lvl);}catch(_){} floatWord(word,lvl); }
-  else if(playSFX(lvl-1)){ floatWord(word,lvl); }
-  else { sCheck(lvl); say(word,lvl); floatWord(word,lvl); }
+  floatWord(word,lvl);  /* niente suono sintetico di Completed: solo visivo+tattile + voce TTS se attiva */
+  try{ say(word,lvl); }catch(_){}   /* voce reale solo se music off & voice on; nessun synth */
   try{
     const c=el.querySelector('.chk');
     if(c){ const r=c.getBoundingClientRect(); FX.burst(r.left+r.width/2,r.top+r.height/2,lvl); }
@@ -2242,16 +2195,16 @@ function updateRing(){
   const ensoEl=document.querySelector('#enso');
   ensoEl.style.strokeDashoffset=500-460*r.p;
   ensoEl.style.filter='drop-shadow(0 0 '+(4+12*r.p)+'px var(--jade-glow))'; /* il bagliore cresce col cerchio */
-  try{ MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){}  /* la musica segue le quest rimaste */
+  try{ ATHEME.setActive((r.total-r.done)>0); }catch(_){}  /* Active Theme: parte solo con quest attive */
   const res=sealIfComplete(S,tk,dow);
   if(res==='sealed'){
     save();
     haptic(true); setTimeout(()=>haptic(true),160); setTimeout(()=>haptic(true),320);  /* tre pulsazioni decise: il cerchio si è chiuso */
     micBtn.classList.add('sealed');
     setTimeout(()=>{
-      if(S.settings.music){ try{MUSIC.seal();}catch(_){} floatWord('Cerchio chiuso',6); shake(true); }
-      else if(playSFX(SFX.length-1)){ floatWord('Cerchio chiuso',6); shake(true); }
-      else { sGong(); say('Tao',6); floatWord('Cerchio chiuso',6); shake(true); }
+      try{ATHEME.stop(true);}catch(_){}   /* ultima quest completata → fade out dell'Active Theme; niente Victory sintetica */
+      try{ say('Tao',6); }catch(_){}     /* voce reale se attiva; nessun gong/synth */
+      floatWord('Cerchio chiuso',6); shake(true);
       try{ FX.bloom(); }catch(_){}
       try{ const f=document.querySelector('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }catch(_){}
     },350);
@@ -2272,7 +2225,7 @@ function updateRing(){
 let renderedDay=todayKey();
 function initDay(){ if(rolloverDay(S,todayKey())) save(); }
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState!=='visible'){ try{FX.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
+  if(document.visibilityState!=='visible'){ try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} return; }
   try{FX.resume();}catch(_){}
   if(renderedDay!==todayKey()){
     renderedDay=todayKey();
@@ -2280,7 +2233,7 @@ document.addEventListener('visibilitychange',()=>{
   }
   scheduleReminders();
   capturePos();
-  if(S.settings.music){ try{ const r=computeProgress(S,todayKey(),dowOf()); MUSIC.update(Math.max(0,r.total-r.done)); }catch(_){} }
+  if(S.settings.music){ try{ const r=computeProgress(S,todayKey(),dowOf()); ATHEME.setActive((r.total-r.done)>0); }catch(_){} } else { try{ATHEME.stop(false);}catch(_){} }
 });
 
 /* ======================================================================
@@ -2316,13 +2269,7 @@ function renderTasks(){
       div.dataset.busy='1';
       S.checks[todayKey()]=S.checks[todayKey()]||{};
       const now=!done;
-      S.checks[todayKey()][t.id]=now;
-      try{
-        if(!Array.isArray(S.questLog)) S.questLog=[];
-        if(now){ S.questLog.push({titolo:t.titolo,day:todayKey(),at:new Date().toISOString(),kind:'scheduled',id:t.id}); if(S.questLog.length>400) S.questLog=S.questLog.slice(-400); }
-        else { for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===t.titolo&&S.questLog[i].day===todayKey()&&S.questLog[i].kind==='scheduled'){ S.questLog.splice(i,1); break; } } }
-      }catch(_){}
-      save();
+      S.checks[todayKey()][t.id]=now; save();
       if(now){ div.classList.add('done'); onComplete(div); setTimeout(renderTasks,600); }
       else { sUndo(); renderTasks(); updateRing(); }
     };
@@ -2412,10 +2359,10 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     q.fatto=!q.fatto;
     if(q.fatto){
       /* registra l'azione: così la Mente Osservatrice sa che l'hai DAVVERO compiuta */
-      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey(),at:new Date().toISOString(),kind:'quest',id:q.id}); if(S.questLog.length>400) S.questLog=S.questLog.slice(-400); }catch(_){}
+      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey()}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
     } else {
       /* annullamento: togli l'ultimo log di oggi per quel titolo */
-      try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()&&(S.questLog[i].kind||'quest')==='quest'){ S.questLog.splice(i,1); break; } } }catch(_){}
+      try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()){ S.questLog.splice(i,1); break; } } }catch(_){}
     }
     save();
     if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(rerender,600); }
@@ -2541,10 +2488,10 @@ document.querySelector('#sw-sound').onclick=()=>{ S.settings.sound=!S.settings.s
 document.querySelector('#sw-music').onclick=()=>{
   S.settings.music=!S.settings.music; save(); renderSettings();
   if(S.settings.music){
-    try{ MUSIC.unlock(); }catch(_){}   /* il tocco sblocca l'audio iOS e avvia la musica */
+    try{ ATHEME.unlock(); }catch(_){}   /* il tocco sblocca l'audio iOS e precarica l'Active Theme */
     toast('Colonna sonora attiva');
   } else {
-    try{ MUSIC.stop(); }catch(_){}
+    try{ ATHEME.pause(); }catch(_){}
     toast('Colonna sonora disattivata');
   }
 };
@@ -2727,7 +2674,7 @@ try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da so
 /* rete di sicurezza audio: il primo tocco ovunque sblocca la colonna sonora (iOS esige un gesto) */
 (function(){
   function firstGesture(){
-    try{ if(S.settings.music) MUSIC.unlock(); }catch(_){}
+    try{ if(S.settings.music) ATHEME.unlock(); }catch(_){}
     window.removeEventListener('pointerdown',firstGesture);
     window.removeEventListener('touchend',firstGesture);
   }
@@ -2758,7 +2705,7 @@ try{
     setTimeout(()=>{ intro.style.display='none'; maybeOnboard(); }, fast?60:750);
   }
   /* un tocco sull'intro sblocca subito l'audio e fa entrare (oltre alla dissolvenza automatica) */
-  intro.addEventListener('click',()=>{ try{ if(S.settings.music) MUSIC.unlock(); }catch(_){} dismissIntro(); }, {once:true});
+  intro.addEventListener('click',()=>{ try{ if(S.settings.music) ATHEME.unlock(); }catch(_){} dismissIntro(); }, {once:true});
   if(S.settings.music){
     const sumEl=document.querySelector('#intro-summary');
     const notes=S.observerNotes||[];
@@ -2785,7 +2732,7 @@ function maybeOnboard(){
     const haDati=(S.diary&&S.diary.length>0)||(S.quests&&S.quests.length>0)||(Array.isArray(S.questLog)&&S.questLog.length>0);
     if(haDati){ try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){} seen=true; }
   }
-  if(seen){ try{ if(S.settings.music) MUSIC.unlock(); }catch(_){} return; }
+  if(seen){ try{ if(S.settings.music) ATHEME.unlock(); }catch(_){} return; }
   const ob=document.querySelector('#onboard');
   const note=document.querySelector('#ob-note');
   if(!isStandalone()) note.textContent='Suggerimento: Condividi → "Aggiungi alla schermata Home" per i permessi permanenti e le notifiche.';
@@ -2794,7 +2741,7 @@ function maybeOnboard(){
     try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){}
     /* chiede il microfono una volta, nel momento giusto, con un gesto utente reale */
     await primeMicPermission();
-    try{ if(S.settings.music) MUSIC.unlock(); }catch(_){}  /* dopo il microfono, sblocca e avvia la musica */
+    try{ if(S.settings.music) ATHEME.unlock(); }catch(_){}  /* dopo il microfono, sblocca e avvia la musica */
     ob.style.transition='opacity .4s ease'; ob.style.opacity='0';
     setTimeout(()=>ob.classList.add('hidden'),400);
   };

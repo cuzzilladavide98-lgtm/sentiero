@@ -1,31 +1,140 @@
 {
-  "title": "Active Quest Theme placeholder",
-  "file": "audio/active_quest_v6_bandcore.wav",
+  "name": "Active Quest Theme",
   "bpm": 128,
   "meter": "4/4",
-  "bars": 16,
   "key": "G minor / G dorian",
-  "loop_seconds": 30.0,
-  "call": "TATTA TATTA TATTA TATTAAAA",
-  "response": "suggested by guitar/bass/snare; no synthetic lead in app placeholder",
-  "roots": [
-    "G",
-    "G",
-    "F",
-    "D",
-    "G",
-    "F",
-    "Eb",
-    "D",
-    "G",
-    "F",
-    "D",
-    "G",
-    "F",
-    "Eb",
-    "D",
-    "G"
+  "bars": 16,
+  "cell_bars": 2,
+  "loop": "seamless",
+  "call": {
+    "name": "TATTA TATTA TATTA TATTAAAA",
+    "instruments": [
+      "palm_mute_guitar(F2 sample)",
+      "bass(unison/oct)",
+      "kick(accents)"
+    ],
+    "grid16": "G G - - | G G - - | F F - - | D(held) - - -",
+    "hit_steps": [
+      0,
+      1,
+      4,
+      5,
+      8,
+      9,
+      12
+    ],
+    "long_step": 12,
+    "roots_per_cell": [
+      "G",
+      "G",
+      "F",
+      "D",
+      "G",
+      "F",
+      "Eb",
+      "D"
+    ]
+  },
+  "response": {
+    "name": "DA NA NA NAA",
+    "note": "in v6 e' SUGGERITA dagli strumenti (chitarra palm-mute 3 corti+1 tenuto, basso, snare). Le note sotto sono per la produzione DAW con lead reale.",
+    "rhythm": "D5 beat1 · C5 beat2 · Bb4 beat3 · G4 held beat4",
+    "phrases_by_cell": {
+      "0": [
+        "D5",
+        "C5",
+        "Bb4",
+        "G4"
+      ],
+      "1": [
+        "F5",
+        "Eb5",
+        "D5",
+        "C5"
+      ],
+      "2": [
+        "Bb4",
+        "C5",
+        "D5",
+        "G4"
+      ],
+      "3": [
+        "D5",
+        "Eb5",
+        "F5",
+        "D5"
+      ],
+      "4": [
+        "D5",
+        "C5",
+        "Bb4",
+        "G4"
+      ],
+      "5": [
+        "F5",
+        "Eb5",
+        "D5",
+        "C5"
+      ],
+      "6": [
+        "F5",
+        "Eb5",
+        "D5",
+        "C5"
+      ],
+      "7": [
+        "D5",
+        "C5",
+        "Bb4",
+        "G4"
+      ]
+    }
+  },
+  "drums": {
+    "kick": "1,3 + sincopi (& di 2/4); piu fitto bar9-16",
+    "snare": "backbeat 2 e 4 (secco)",
+    "hihat": "ottavi (sedicesimi bar9-16)",
+    "crash": "bar 1,9,16 (basso)",
+    "riser": "reverse ride prima di bar9 e bar16"
+  },
+  "bass": {
+    "role": "ostinato incollato al kick, root ottava 1, corto/punchy",
+    "roots_per_cell": [
+      "G",
+      "G",
+      "F",
+      "D",
+      "G",
+      "F",
+      "Eb",
+      "D"
+    ]
+  },
+  "guitar": {
+    "sample": "242810__ax_grinder__f2-pmute.wav (root F2)",
+    "pitch_map_semitones": {
+      "F": 0,
+      "G": 2,
+      "Eb": -2,
+      "D": -3
+    },
+    "articulation": "palm mute secco + ghost hits"
+  },
+  "structure": {
+    "1-4": "presentazione motore + CALL/RESPONSE su G",
+    "5-8": "piu teso F/Eb, turnaround su D (bar8)",
+    "9-12": "densita maggiore, CALL pieno",
+    "13-16": "tensione Eb/D, ritorno a G (bar16)"
+  },
+  "samples_used": [
+    "242810 f2-pmute (guitar)",
+    "415993 dry-metal-kick",
+    "173191 kicksnare3 (snare slice)",
+    "591652 dr-cymbal-19 (crash)",
+    "737291 garage-hihat-137 (hat topper)",
+    "822410 gsus2 orch-hit (shadow)",
+    "635829 reverse-ride (riser)"
   ],
-  "call_grid": "1 e & a 2 e & a 3 e & a 4 e & a = G G - - | G G - - | F F - - | D---",
-  "notes": "v6_bandcore removes synthetic lead; final OST should be produced later with real instruments/DAW."
+  "bass_note": "sintetico provvisorio — sostituire con basso reale in DAW",
+  "lead_note": "NESSUN lead sintetico. In DAW usare chitarra lead / brass / archi reali per la RESPONSE."
 }
