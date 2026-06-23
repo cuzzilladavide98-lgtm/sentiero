@@ -730,9 +730,12 @@ function sanitizeQuestLog(arr){
     const titolo=clampStr(e.titolo,200).trim(); if(!titolo) continue;
     const day=(typeof e.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.day))?e.day:'';
     if(!day) continue;
-    out.push({titolo:titolo,day:day});
+    const at=(typeof e.at==='string'&&!isNaN(Date.parse(e.at)))?e.at:'';
+    const kind=(e.kind==='scheduled'||e.kind==='task_ricorrente')?'scheduled':'quest';
+    const id=clampStr(e.id,40);
+    out.push({titolo:titolo,day:day,at:at,kind:kind,id:id});
   }
-  return out.slice(-300); /* conserva gli ultimi 300 completamenti */
+  return out.slice(-400); /* conserva gli ultimi 400 completamenti: quest + task ricorrenti */
 }
 function sanitizeObserverNotes(arr){
   if(!Array.isArray(arr)) return [];
@@ -862,7 +865,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v41 · 2026-06-22';
+const APP_VERSION='v46 · 2026-06-23 · Mente Osservatrice contestuale';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1038,43 +1041,73 @@ const MUSIC=(()=>{
      ADSR morbidi, vibrato), armonia ricca, melodia composta. La minore.
      Ispirazione: l'opera sinfonica dei JRPG fatta al computer.
      ==================================================================== */
-  const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+  const NOTE={C:0,'C#':1,'Db':1,D:2,'D#':3,'Eb':3,E:4,F:5,'F#':6,'Gb':6,G:7,'G#':8,'Ab':8,A:9,'A#':10,'Bb':10,B:11};
   function f(name,oct){ const semi=NOTE[name]; return 440*Math.pow(2,(semi+(oct-4)*12-9)/12); }
-  /* progressione con colori (Am – Fmaj7 – Cmaj7 – G): voicing a 4 voci, dolce */
+  /* DNA: Sol minore/dorico, 128 BPM. Progressione Active a 16 battute (loop di lavoro).
+     L'Idle la voce in modo rarefatto; stessa tonalità → moduli compatibili e sovrapponibili. */
   const CHORDS=[
-    {root:'A',oct:2, pad:[['A',3],['C',4],['E',4],['B',4]]},   /* Am(add9) */
-    {root:'F',oct:2, pad:[['F',3],['A',3],['C',4],['E',4]]},   /* Fmaj7 */
-    {root:'C',oct:2, pad:[['C',3],['E',3],['G',3],['B',3]]},   /* Cmaj7 */
-    {root:'G',oct:2, pad:[['G',2],['B',3],['D',4],['G',4]]}    /* G */
+    {root:'G', oct:2, pad:[['G',3],['Bb',3],['D',4],['A',4]]},   /*  1 Gm(add9) */
+    {root:'G', oct:2, pad:[['G',3],['Bb',3],['D',4],['G',4]]},   /*  2 Gm */
+    {root:'F', oct:2, pad:[['F',3],['A',3],['C',4],['D',4]]},    /*  3 F(add9) */
+    {root:'F', oct:2, pad:[['F',3],['A',3],['C',4],['G',4]]},    /*  4 F */
+    {root:'G', oct:2, pad:[['G',3],['Bb',3],['D',4],['A',4]]},   /*  5 Gm */
+    {root:'F', oct:2, pad:[['F',3],['A',3],['C',4],['D',4]]},    /*  6 F */
+    {root:'Eb',oct:2, pad:[['Eb',3],['G',3],['Bb',3],['D',4]]},  /*  7 Ebmaj7 */
+    {root:'D', oct:2, pad:[['D',3],['A',3],['D',4],['F#',4]]},   /*  8 D */
+    {root:'G', oct:2, pad:[['G',3],['Bb',3],['D',4],['A',4]]},   /*  9 Gm */
+    {root:'F', oct:2, pad:[['F',3],['A',3],['C',4],['D',4]]},    /* 10 F */
+    {root:'D', oct:2, pad:[['D',3],['F',3],['A',3],['D',4]]},    /* 11 Dm */
+    {root:'G', oct:2, pad:[['G',3],['Bb',3],['D',4],['G',4]]},   /* 12 Gm */
+    {root:'F', oct:2, pad:[['F',3],['A',3],['C',4],['D',4]]},    /* 13 F */
+    {root:'Eb',oct:2, pad:[['Eb',3],['G',3],['Bb',3],['D',4]]},  /* 14 Ebmaj7 */
+    {root:'D', oct:2, pad:[['D',3],['A',3],['D',4],['F#',4]]},   /* 15 Dsus-D */
+    {root:'G', oct:2, pad:[['G',3],['Bb',3],['D',4],['A',4]]}    /* 16 Gm (→ loop) */
   ];
-  /* scala La minore naturale per la melodia (gradi → semitoni) */
-  const SCALE=[['A',0],['B',2],['C',3],['D',5],['E',7],['F',8],['G',10]];
-  function scaleNote(deg,octShift){
-    const d=((deg%7)+7)%7; const extra=Math.floor(deg/7);
-    const base=SCALE[d]; return f(base[0], 4+extra+(octShift||0));
-  }
-  /* frasi melodiche composte (grado, durata in sedicesimi) — hanno forma e risolvono */
-  const PHRASES=[
-    [[4,4],[2,2],[4,2],[7,8]],          /* E . C E . G(sopra) */
-    [[7,4],[6,2],[4,2],[2,4],[0,4]],    /* discesa cantabile */
-    [[0,2],[2,2],[4,4],[2,2],[4,2],[7,4]],
-    [[4,6],[7,2],[6,4],[4,4]],
-    [[2,4],[4,4],[7,4],[9,4]]           /* slancio verso l'alto */
+  const NBARS=16, NSTEP=NBARS*16;
+  /* TEMA MADRE (approvato): G–Bb–D–Eb–D–C–G. Versione Active ritmica (hook ogni 4 battute) */
+  const MOTHER=[
+    [0,'G',4,2],[2,'Bb',4,2],[4,'D',5,4],[8,'Eb',5,4],
+    [16,'D',5,2],[18,'C',5,2],[20,'G',4,4]
   ];
+  /* Idle: rarefatto, note lunghe e distanziate */
+  const MOTHER_IDLE=[
+    [0,'G',4,16],[32,'Bb',4,8],[40,'D',5,8],[64,'Eb',5,16],[96,'D',5,8],[104,'C',5,8],
+    [128,'G',4,16],[192,'Eb',5,16]
+  ];
+  /* pluck Idle: una nota ogni 4 battute (notifica lontana) */
+  const PLUCK_IDLE=[[16,'G',5],[80,'D',5],[144,'Bb',4],[208,'G',5]];
+  /* BASSO OSTINATO Active: 8 ottavi per battuta, nota per nota (da blueprint) */
+  const BASS_OST=[
+    ['G2','G2','G2','G2','G2','G2','G2','G2'],
+    ['G2','G2','G2','G2','Bb2','Bb2','A2','A2'],
+    ['F2','F2','F2','F2','F2','F2','F2','F2'],
+    ['F2','F2','A2','A2','C3','C3','A2','A2'],
+    ['G2','G2','G2','G2','D3','D3','Bb2','Bb2'],
+    ['F2','F2','F2','F2','C3','C3','A2','A2'],
+    ['Eb2','Eb2','Eb2','Eb2','Bb2','Bb2','G2','G2'],
+    ['D2','D2','D2','D2','A2','A2','D3','D3'],
+    ['G2','G2','G2','G2','G2','G2','G2','G2'],
+    ['F2','F2','F2','F2','C3','C3','A2','A2'],
+    ['D2','D2','D2','D2','F2','F2','A2','A2'],
+    ['G2','G2','G2','G2','D3','D3','Bb2','Bb2'],
+    ['F2','F2','F2','F2','C3','C3','A2','A2'],
+    ['Eb2','Eb2','Eb2','Eb2','Bb2','Bb2','G2','G2'],
+    ['D2','D2','D2','D2','A2','A2','D3','D3'],
+    ['G2','G2','G2','G2','G2','G2','G2','G2']
+  ];
+  /* batteria Active: kick O----O-O----O- · snare ----O-------O--- · HH ottavi */
+  const KICKP =[1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,1,0];
+  const SNAREP=[0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0];
+  const noteName=(nm)=>{ const m=nm.match(/^([A-G][#b]?)(\d)$/); return f(m[1],parseInt(m[2])); };
 
   let running=false,timer=null,step=0,nextT=0,cycle=0;
   let gain=null,filter=null,reactGain=null,percBus=null,master=null,reverb=null,duckGain=null,pump=null;
-  let gtrBus=null,gtrDist=null; /* bus chitarra distorta (anima Budokai) */
+  let gtrBus=null,gtrDist=null; /* bus chitarra distorta */
   let intensity=0,target=0,over=0,targetOver=0;
   let unlocked=false, recDuckOn=false;
   let W_STR=null,W_FLUTE=null,W_HORN=null;
   const LOOK=0.14,TICK=25;
-  /* RIFF di power-metal in La minore (originale, in stile Budokai): gradi cromatici sul giro */
-  const RIFFS=[
-    [0,0,0,3,0,0,5,0,  0,0,0,3,5,3,0,-2],   /* chugga su La con escursioni */
-    [0,0,7,0,0,5,0,3,  0,0,7,0,5,3,2,0]
-  ];
-  function bpm(){ return 88+intensity*40+over*18; }   /* marcia pesante, non una corsa: 88 → 128 → 146 */
+  function bpm(){ return 128; }   /* 128 fisso: l'Idle pare half-time per la rarefazione, non per il tempo */
   function stepDur(){ return 60/bpm()/4; }
 
   function mkWave(a,amps){
@@ -1180,9 +1213,19 @@ const MUSIC=(()=>{
     car.start(t); mod.start(t); car.stop(t+dur+0.05); mod.stop(t+dur+0.05);
   }
   function strings(freq,t,dur,vol){ note(W_STR||'sawtooth',freq,t,dur,vol,{a:0.22,d:0.2,s:0.85,r:0.7,vib:2.6,vibRate:4,lp:2100}); }
+  /* ARCHI CINEMATOGRAFICI in tremolo: re-articolati veloci → tensione drammatica che cresce */
+  function tremStrings(freq,t,dur,vol){ const a=ac(); if(!a) return; const n=Math.max(2,Math.floor(dur/0.09)); for(let i=0;i<n;i++){ note(W_STR||'sawtooth',freq,t+i*0.09,0.12,vol*(0.6+i/n*0.6),{a:0.02,d:0.04,s:0.5,r:0.06,lp:2200}); } }
   function flute(freq,t,dur,vol){ note(W_FLUTE||'triangle',freq,t,dur,vol,{a:0.06,d:0.1,s:0.8,r:0.3,vib:4,vibRate:5.4,lp:3200}); }
-  function horn(freq,t,dur,vol){ note(W_HORN||'sawtooth',freq,t,dur,vol,{a:0.08,d:0.12,s:0.8,r:0.3,vib:2,vibRate:4.5,lp:2400}); }
+  /* OTTONI: corno pieno + ottava di rinforzo per gli stab eroici */
+  function horn(freq,t,dur,vol){ note(W_HORN||'sawtooth',freq,t,dur,vol,{a:0.06,d:0.12,s:0.82,r:0.28,vib:2,vibRate:4.5,lp:2600}); }
+  function brassStab(freq,t,dur,vol){ horn(freq,t,dur,vol); note(W_HORN||'sawtooth',freq*2,t,dur,vol*0.4,{a:0.04,d:0.1,s:0.7,r:0.2,lp:3000}); }
+  /* SYNTH ATMOSFERICO: pad largo e detunato, lento, evolve — il respiro sotto a tutto */
+  function synthPad(freq,t,dur,vol){ note(W_STR||'sawtooth',freq,t,dur,vol,{a:0.6,d:0.4,s:0.9,r:1.0,lp:1400}); note(W_STR||'sawtooth',freq*1.005,t,dur,vol*0.7,{a:0.7,d:0.4,s:0.9,r:1.0,lp:1200}); }
   function bassNote(freq,t,dur,vol){ note('sine',freq,t,dur,vol,{a:0.02,d:0.14,s:0.7,r:0.2,lp:520}); note(W_STR||'triangle',freq,t,dur,vol*0.3,{a:0.03,d:0.12,s:0.6,r:0.18,lp:380}); }
+  /* RULLO DI TIMPANI (percussione orchestrale): crescendo che sfocia in un colpo — il dramma che monta */
+  function timpaniRoll(t,dur,freq,vol){ const a=ac(); if(!a) return; const n=Math.max(3,Math.floor(dur/0.06)); for(let i=0;i<n;i++){ taiko(t+i*0.06, freq, vol*(0.3+i/n*0.7)); } }
+  /* PLUCK digitale leggero (Idle): attacco rapido, decadimento corto, filtrato — una notifica lontana */
+  function pluck(freq,t,vol){ const a=ac(); if(!a) return; const o=a.createOscillator(),g=a.createGain(),fl=a.createBiquadFilter(); o.type='triangle'; o.frequency.setValueAtTime(freq,t); fl.type='lowpass'; fl.frequency.setValueAtTime(3200,t); fl.frequency.exponentialRampToValueAtTime(900,t+0.4); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t+0.6); o.connect(fl); fl.connect(g); g.connect(filter); o.start(t); o.stop(t+0.65); }
 
   function kick(t){
     const a=ac(); if(!a) return;
@@ -1209,67 +1252,66 @@ const MUSIC=(()=>{
   }
   function hat(t,vol){ const a=ac(); if(!a||!NOISEBUF) return; const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=8500; const g=a.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.025); s.connect(fl); fl.connect(g); g.connect(percBus); s.start(t); s.stop(t+0.04); }
 
-  /* ── TEMA "eroismo disperato": sale ma non si risolve. Onda: pressione→salita→sospensione→
-        nuova pressione→esplosione contenuta. Sospende su gradi tesi (F=b6, D=4, E=5), non sul tonica. ── */
-  const THEME=[
-    [0,0,2],[2,2,2],[4,4,4],[8,4,2],[10,5,2],[12,4,4],          /* bar1 Am: A C E↑ · E F(teso) E↓ — sale e ricade */
-    [16,2,2],[18,0,2],[20,2,4],[24,4,4],[28,5,4],               /* bar2 F:  C A(ricaduta) C · E F — nuova spinta, sospesa */
-    [32,4,2],[34,6,2],[36,7,4],[40,9,4],[44,7,4],               /* bar3 C:  E G A↑ · C↑(vetta) A↑ — esplosione contenuta */
-    [48,6,4],[52,4,2],[54,2,2],[56,4,8]                          /* bar4 G:  G E C · E(sospeso sul 5°, NON risolve→loop) */
-  ];
-  /* BASSO PEDALE: resta inchiodato sul La (motore), martella in ottavi con accenti che spingono.
-     1=colpo, 2=accento forte, 3=spinta di sedicesimo. Gli accordi si muovono sopra → tensione sospesa. */
-  const BASSP=[2,0,1,3,1,0,1,0, 2,0,1,3,1,0,1,3];
-  /* BATTERIA marcia "tum — ta — tum-tum — ta", con accenti nervosi (non quadrata) */
-  const KICKP =[1,0,0,0,0,0,0,0, 1,0,1,0,0,0,1,0]; /* tum · · tum-tum · ghost */
-  const SNAREP=[0,0,0,0,1,0,0,0, 0,0,0,0,1,0,0,0]; /* ta sul 2 e sul 4 */
   function schedStep(s,t){
-    const bar=Math.floor(s/16)%4,b=s%16,ch=CHORDS[bar],I=intensity,O=over;
-    const PEDAL=f('A',2);   /* il pedale: il corpo inchiodato a terra */
-    try{ filter.frequency.setTargetAtTime(680+I*2500+O*900,t,0.06); }catch(_){}
+    const bar=Math.floor(s/16)%NBARS, b=s%16, ch=CHORDS[bar], I=intensity, O=over;
+    const rootHz=f(ch.root,ch.oct);
+    try{ filter.frequency.setTargetAtTime(560+I*2300+O*1100,t,0.06); }catch(_){}
+    const sIdle=s%NSTEP;
 
-    /* ── BASSO PEDALE: il motore che preme. Sempre sul La, martellante. ── */
-    if(I>0.16){
-      const bp=BASSP[b];
-      if(bp) bassNote(PEDAL, t, stepDur()*(bp===3?0.7:1.3), (bp===2?0.2:0.14)+I*0.05);
-    } else if(b===0||b===8){ bassNote(PEDAL,t,0.6,0.13); }
+    /* ════════ MODULO 1 — IDLE (sempre presente): pad scuro, sub lungo, pluck raro, respiro ════════ */
+    /* pad scuro filtrato, una tenuta per battuta che respira (onda di 4 battute) */
+    if(b===0){ const swell=0.03+0.012*Math.sin((bar%4)/4*Math.PI*2)+I*0.02; synthPad(f(ch.root,ch.oct+1),t,stepDur()*16*1.02,Math.max(0.02,swell)); }
+    /* archi bassi filtrati tenuti */
+    if(b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.03+I*0.04)*(k===0?1:0.55))); }
+    /* sub bass morbido su note lunghe (Idle) */
+    if(I<0.4 && b===0){ bassNote(rootHz,t,stepDur()*15.5,0.12); }
+    /* respiro interno: pulse soft del sub su 1 e 3 (anche in Idle) */
+    if(I<0.45 && (b===0||b===8)){ note('sine',rootHz,t,0.5,0.05,{a:0.04,d:0.2,s:0.3,r:0.2,lp:300}); }
+    /* pluck raro, lontano: una nota ogni 4 battute */
+    if(I<0.42){ for(const [st,nm,oc] of PLUCK_IDLE){ if(st===sIdle){ pluck(f(nm,oc),t,0.055); } } }
+    /* melodia Idle: tema madre rarefatto */
+    if(I<0.4){ for(const [st,nm,oc,du] of MOTHER_IDLE){ if(st===sIdle){ const lf=f(nm,oc); pluck(lf,t,0.06); strings(lf,t,stepDur()*du*0.9,0.03); } } }
 
-    /* ── ARPEGGIO sequencer sotto, tensione che pulsa (entra presto, sommesso) ── */
-    if(I>0.2){ const nn=ch.pad[s%ch.pad.length]; note(W_FLUTE||'triangle',f(nn[0],nn[1]+1),t,stepDur()*1.2,0.025+I*0.035,{a:0.005,d:0.05,s:0.35,r:0.1,lp:1500+I*2400,dest:filter}); }
+    /* ════════ MODULO 2 — ACTIVE (I>0.34): groove, focus, avanzamento ════════ */
+    if(I>0.34){
+      const sec=bar>=8; /* sezione B: più fitta */
+      /* batteria rock/elettronica */
+      if(KICKP[b]) kick(t);
+      if(SNAREP[b]) snare(t,0.17+I*0.12);
+      if(b%2===0) hat(t,0.016+I*0.028);                       /* hi-hat ottavi */
+      if(sec && I>0.55 && b%2===1) hat(t,0.01+I*0.018);       /* sedicesimi nella sezione B */
+      if(sec && (b===0)) cymbalSwell(t,stepDur()*2,0.04+I*0.03);
+      /* basso ostinato in ottavi (nota per nota) */
+      if(b%2===0){ const idx=b/2; bassNote(noteName(BASS_OST[bar][idx]),t,stepDur()*1.8,0.14+I*0.05); }
+      /* chitarra palm-muted, bloccata sul kick (corti) + accento su 1 */
+      if(KICKP[b]){ powerChord(rootHz, t, stepDur()*(b===0?2.0:0.9), 0.05+I*0.045); }
+      /* arpeggiatore synth 1/16 filtrato sui toni dell'accordo */
+      { const nn=ch.pad[s%ch.pad.length]; note(W_STR||'sawtooth',f(nn[0],nn[1]+1),t,stepDur()*1.1,0.018+I*0.028,{a:0.004,d:0.05,s:0.3,r:0.07,lp:1300+I*2700,dest:filter}); }
+      /* archi staccati bassi su 1 e 3 */
+      if(b===0||b===8){ const nn=ch.pad[1]; note(W_STR||'sawtooth',f(nn[0],nn[1]),t,stepDur()*1.3,0.035+I*0.035,{a:0.01,d:0.07,s:0.35,r:0.1,lp:2200}); }
+    }
 
-    /* ── PAD caldo che regge la tensione quando ci sono poche quest ── */
-    if(I<0.55 && b===0){ const dur=stepDur()*16*0.99; ch.pad.forEach((nn,k)=>strings(f(nn[0],nn[1]),t,dur,(0.04+I*0.04)*(k===0?1:0.7))); }
-
-    /* ── IL TEMA: sale a onde, si sospende. Timbro che si trasforma con l'intensità. ── */
-    for(const [st,deg,dur] of THEME){
-      if(st===s){
-        const lf=scaleNote(deg,1), d=stepDur()*dur*0.96;
-        if(I<0.42){ flute(lf,t,d,0.06+I*0.05); }
-        else if(I<0.7){ horn(lf,t,d,0.06+I*0.04); flute(lf*2,t,d,0.022); }
-        else { gtr(lf,t,d,0.075+I*0.05); gtr(lf*2,t,d,0.035); horn(lf,t,d,0.04); }  /* battaglia: chitarra distorta porta il tema */
+    /* ════════ TEMA MADRE che attraversa i moduli ════════ */
+    /* Active: hook ritmico ogni 4 battute (timbro che si apre con l'intensità) */
+    if(I>=0.4){
+      const phase=s%64;  /* ogni 4 battute */
+      for(const [st,nm,oc,du] of MOTHER){
+        if(st===phase){
+          const lf=f(nm,oc), d=stepDur()*du*0.94;
+          if(I<0.7){ horn(lf,t,d,0.055+I*0.035); strings(lf,t,d,0.028); }
+          else { gtr(lf,t,d,0.06+I*0.04); gtr(lf*2,t,d,0.025); brassStab(lf,t,d,0.04); strings(lf,t,d,0.03); }
+        }
       }
     }
 
-    /* ── MARCIA: stabilizza la tensione. tum-ta-tumtum-ta + accento nervoso ── */
-    if(I>0.3){
-      if(KICKP[b]) kick(t);
-      if(SNAREP[b]) snare(t,0.18+I*0.12);
-      if(bar%2===1 && b===6) kick(t);                 /* spostamento nervoso: il pezzo non è quadrato */
-      const hd=I>0.72?1:2; if(b%hd===0) hat(t,0.018+I*0.028);
-    }
-
-    /* ── CHITARRA RITMICA: power chord sull'accordo (sotto il tema), da intensità piena ── */
-    if(I>0.6){ if(b===0||b===8) powerChord(f(ch.root,ch.oct), t, stepDur()*3.2, 0.045+I*0.04); }
-
-    /* ── OVERDRIVE: la resistenza diventa furia, doppia cassa, ma sempre trattenuta ── */
+    /* ════════ verso la VITTORIA (overdrive): apre, crash, ride ════════ */
     if(O>0.05){
       if(b%2===1) kick(t);
-      if(O>0.45&&b%4===3) kick(t);
-      if(O>0.3&&(b===4||b===12)) snare(t,0.2+O*0.15);
-      if(O>0.2&&b%2===1) hat(t,0.03+O*0.03);
-      if(s===0&&O>0.3) cymbalSwell(t,stepDur()*6,0.06+O*0.05);
+      if(O>0.4&&(b===0||b===8)) snare(t,0.2+O*0.14);
+      if(O>0.25) hat(t,0.02+O*0.03);
+      if(s%64===0 && O>0.3) cymbalSwell(t,stepDur()*4,0.06+O*0.05);
+      if(O>0.4&&(b===4||b===12)){ const nn=ch.pad[2]; brassStab(f(nn[0],nn[1]),t,stepDur()*3,0.05+O*0.04); }
     }
-    if(s===0&&I>0.5&&I<0.85) cymbalSwell(t,stepDur()*8,0.04+I*0.04);
   }
 
   function scheduler(){
@@ -1278,7 +1320,7 @@ const MUSIC=(()=>{
     intensity+=(target-intensity)*0.035; over+=(targetOver-over)*0.035;
     while(nextT < a.currentTime+LOOK){
       schedStep(step,nextT); nextT+=stepDur();
-      const prev=step; step=(step+1)%64; if(step===0&&prev!==0) cycle++;
+      const prev=step; step=(step+1)%NSTEP; if(step===0&&prev!==0) cycle++;
     }
     try{ const vol=target<=0.001?0:(0.2+intensity*0.18+over*0.05); gain.gain.setTargetAtTime(vol,a.currentTime,0.5); }catch(_){}
     if(target<=0.001 && intensity<0.02){ stop(); return; }
@@ -1311,49 +1353,64 @@ const MUSIC=(()=>{
 
   /* REAZIONE al completamento: "got item!" — arpeggio di arpa/celesta + accordo caldo che sboccia */
   /* REAZIONE al completamento: "got item!" — breve, brillante, GRATIFICANTE e variata a ogni volta */
-  let flourishN=0;
+  /* ── QUEST COMPLETED: stinger luminoso ~1.5s. D5-E5-F5-G5-Bb5-G5, accordo finale G-D-A-Bb ── */
+  /* ════ MODULO 3 — COMPLETED: jingle ~1.8s, tema madre compresso, risolve su Gm(add9) ════ */
   function flourish(lvl){
     const a=setup(); if(!a) return; const t=a.currentTime+0.02;
-    flourishN++;
-    /* tre motivi a rotazione, su radici diverse: non suonano mai due volte identici */
-    const VARS=[
-      {root:['C',5], steps:[0,4,7,12], chord:[['C',4],['E',4],['G',4]]},
-      {root:['D',5], steps:[0,3,7,10], chord:[['D',4],['F',4],['A',4]]},
-      {root:['E',5], steps:[0,5,7,12], chord:[['E',4],['G',4],['B',4]]}
-    ];
-    const v=VARS[flourishN%VARS.length];
-    const base=f(v.root[0],v.root[1]);
-    /* arpeggio luminoso che SALE e si accenta sull'ultima nota (il "ding!" che premia) */
-    v.steps.forEach((semi,i)=>{
-      const last=i===v.steps.length-1;
-      bell(base*Math.pow(2,semi/12), t+i*0.05, last?1.0:0.5, last?0.16:0.09, reactGain);
-    });
-    /* glint acuto finale + stab caldo di ottoni sotto */
-    bell(base*Math.pow(2,(v.steps[v.steps.length-1]+12)/12), t+v.steps.length*0.05+0.02, 0.9, 0.1, reactGain);
-    v.chord.forEach(nn=> horn(f(nn[0],nn[1]), t+0.02, 0.5, 0.05));
-    note('sine', f(v.chord[0][0],2), t, 0.7, 0.09, {a:0.01,d:0.15,s:0.5,r:0.3,lp:480,dest:reactGain});
-    try{ const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=7000; const g=a.createGain(); g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); s.connect(fl); fl.connect(g); g.connect(reactGain); s.start(t); s.stop(t+0.14); }catch(_){}
+    /* reverse swell brevissimo prima del colpo */
+    try{ const s=a.createBufferSource(); s.buffer=NOISEBUF; const fl=a.createBiquadFilter(); fl.type='bandpass'; fl.frequency.value=2400; const g=a.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.05,t+0.16); g.gain.exponentialRampToValueAtTime(0.0001,t+0.22); s.connect(fl); fl.connect(g); g.connect(reactGain); s.start(t); s.stop(t+0.24); }catch(_){}
+    const T=t+0.18;
+    /* sub hit morbido (poi il low-end sparisce) */
+    note('sine',f('G',2),T,0.3,0.12,{a:0.004,d:0.1,s:0.3,r:0.12,lp:300,dest:reactGain});
+    /* tema madre COMPRESSO su bell brillante: G5 Bb5 D6 Eb6 D6 */
+    const jingle=[['G',5,0.0],['Bb',5,0.07],['D',6,0.14],['Eb',6,0.24],['D',6,0.32]];
+    jingle.forEach(([nm,oc,dt])=> bell(f(nm,oc),T+dt,0.6,0.1,reactGain));
+    /* chord stab finale Gm(add9): G-Bb-D-A + shimmer */
+    const Tc=T+0.44;
+    [['G',3],['Bb',3],['D',4],['A',4]].forEach(nn=> note(W_STR||'sawtooth',f(nn[0],nn[1]),Tc,0.85,0.05,{a:0.008,d:0.14,s:0.6,r:0.5,lp:2800,dest:reactGain}));
+    bell(f('D',6),Tc+0.03,0.9,0.055,reactGain);   /* shimmer +ottava */
   }
-  /* REAZIONE al sigillo: FANFARA DI VITTORIA — lunga, eroica, piena. Nettamente diversa dall'item-get. */
+  /* ════ MODULO 4 — VICTORY: il cielo si apre. Gm-F-Eb-D → G-C-D-G, salto Bb→Si naturale ════ */
   function seal(){
     const a=setup(); if(!a) return; const t=a.currentTime+0.02;
-    /* rullo di timpani + piatto che cresce: l'attacco epico */
-    for(let i=0;i<7;i++){ taiko(t+i*0.07, 70, 0.18+i*0.04); }
-    try{ const s=a.createBufferSource(); s.buffer=NOISEBUF; s.loop=true; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=5000; const g=a.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.08,t+0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+0.9); s.connect(fl); fl.connect(g); g.connect(reactGain); s.start(t); s.stop(t+0.95); }catch(_){}
-    const T=t+0.55; /* il colpo: la fanfara parte dopo il crescendo */
-    taiko(T,64,0.7); kick(T);
-    /* melodia eroica che sale (ottoni + archi insieme) e risolve in alto */
-    const line=[['A',4],['C',5],['E',5],['G',5],['A',5]];
-    line.forEach((nn,i)=>{ const tt=T+i*0.16; horn(f(nn[0],nn[1]),tt,0.5,0.08); strings(f(nn[0],nn[1]),tt,0.6,0.05); });
-    /* grande accordo conclusivo di La (sospeso poi pieno) sotto la melodia */
-    const Tc=T+line.length*0.16+0.05;
-    [['A',2],['E',3],['A',3],['C',4],['E',4]].forEach(nn=> strings(f(nn[0],nn[1]),Tc,2.8,0.07));
-    [['A',3],['C',4],['E',4],['A',4]].forEach(nn=> horn(f(nn[0],nn[1]),Tc,1.6,0.05));
-    note('sine',f('A',1),Tc,3.0,0.11,{a:0.02,d:0.3,s:0.6,r:0.8,lp:440,dest:reactGain});
-    /* cascata di campane che scende sopra l'accordo: il sigillo brilla e si spegne */
-    [['A',6],['E',6],['C',6],['A',5],['E',5]].forEach((nn,i)=> bell(f(nn[0],nn[1]),Tc+0.2+i*0.13,1.4,0.09,reactGain));
-    taiko(Tc,58,0.6);
+    /* reverse crash + cymbal swell + timpani d'ingresso */
+    try{ const s=a.createBufferSource(); s.buffer=NOISEBUF; s.loop=true; const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=4500; const g=a.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.09,t+0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+0.95); s.connect(fl); fl.connect(g); g.connect(reactGain); s.start(t); s.stop(t+1.0); }catch(_){}
+    timpaniRoll(t,0.5,66,0.22);
+    const T=t+0.5, beat=0.42;  /* 8 accordi */
+    /* tappeto di archi alti sostenuto per tutta la fanfara: luminosità continua */
+    [['D',5],['G',5]].forEach(nn=> strings(f(nn[0],nn[1]),T,beat*8,0.045));
+    /* progressione: Gm F Eb Dsus-D | G C D G. Il 5° è SOL MAGGIORE (Bb→B): la luce. */
+    const prog=[
+      {root:['G',2],oct2:['G',3], ch:[['G',3],['Bb',3],['D',4]], mel:['Bb',4], maj:false},
+      {root:['F',2],oct2:['F',3], ch:[['F',3],['A',3],['C',4]],  mel:['A',4],  maj:false},
+      {root:['Eb',2],oct2:['Eb',3],ch:[['Eb',3],['G',3],['Bb',3]],mel:['G',4], maj:false},
+      {root:['D',2],oct2:['D',3], ch:[['D',3],['F#',3],['A',3]], mel:['F#',4], maj:false},
+      {root:['G',2],oct2:['G',3], ch:[['G',3],['B',3],['D',4]],  mel:['B',4],  maj:true},   /* SOL MAGGIORE */
+      {root:['C',3],oct2:['C',4], ch:[['C',4],['E',4],['G',4]],  mel:['E',5],  maj:true},
+      {root:['D',3],oct2:['D',4], ch:[['D',4],['F#',4],['A',4]], mel:['F#',5], maj:true},
+      {root:['G',3],oct2:['G',4], ch:[['G',4],['B',4],['D',5]],  mel:['G',5],  maj:true}
+    ];
+    prog.forEach((p,i)=>{
+      const tt=T+i*beat;
+      kick(tt); snare(tt+beat*0.5,0.18); if(i%2===1) snare(tt,0.24); hat(tt,0.035); hat(tt+beat*0.5,0.03);  /* batteria piena + ride continuo */
+      note('sine',f(p.root[0],p.root[1]),tt,beat*1.05,0.14,{a:0.01,d:0.1,s:0.7,r:0.2,lp:520,dest:reactGain});  /* basso */
+      note('sine',f(p.oct2[0],p.oct2[1]),tt,beat*1.0,0.07,{a:0.01,d:0.1,s:0.7,r:0.2,lp:600,dest:reactGain});   /* ottava */
+      p.ch.forEach(nn=> strings(f(nn[0],nn[1]),tt,beat*1.3,0.065));                           /* archi */
+      brassStab(f(p.mel[0],p.mel[1]),tt,beat*1.15,0.095);                                      /* ottoni: tema (forte) */
+      strings(f(p.mel[0],p.mel[1]+1),tt,beat*1.2,0.06);                                        /* archi alti in ottava */
+      bell(f(p.mel[0],p.mel[1]+1),tt,beat,0.055,reactGain);                                    /* celesta */
+      if(i>=4){ powerChord(f(p.root[0],p.root[1]+1),tt,beat*1.1,0.045); }                       /* chitarre aperte nella seconda metà */
+      if(p.maj){ note(W_STR||'sawtooth',f('G',4),tt,beat*1.3,0.028,{a:0.2,d:0.2,s:0.7,r:0.4,lp:1600,dest:reactGain}); } /* choir pad */
+    });
+    /* finale: grande SOL MAGGIORE lungo + crash + cymbal swell, il cielo resta aperto */
+    const Tf=T+prog.length*beat;
+    [['G',2],['D',3],['G',3],['B',3],['D',4],['G',4]].forEach(nn=> strings(f(nn[0],nn[1]),Tf,3.2,0.06));
+    [['G',3],['B',3],['D',4],['G',4]].forEach(nn=> brassStab(f(nn[0],nn[1]),Tf,2.2,0.05));
+    note('sine',f('G',1),Tf,3.4,0.12,{a:0.02,d:0.3,s:0.6,r:1.0,lp:440,dest:reactGain});
+    kick(Tf); snare(Tf,0.25); cymbalSwell(Tf,1.2,0.08); timpaniRoll(Tf,0.5,56,0.2);
+    [['G',6],['D',6],['B',5],['G',5]].forEach((nn,i)=> bell(f(nn[0],nn[1]),Tf+0.12+i*0.11,1.7,0.065,reactGain));
   }
+
   return {update,flourish,seal,start,stop,unlock,recDuck};
 })();
 
@@ -1887,16 +1944,102 @@ async function askClaude(transcript){
    MENTE OSSERVATRICE — specchio-commentatore. Solo osserva, non dialoga.
    Riusa l'IA già presente; se non c'è chiave o è offline, usa logica locale.
    ====================================================================== */
-const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido che osserva i pattern di chi usa l\'app e restituisce UNA riflessione breve e precisa. Non sei una chat, non fai domande, non dialoghi.\n'+
-'VOCE: calma, affilata, un po\' zen. Pensa a un maestro taoista che parla la lingua di oggi: cio che dici deve suonare come un cheat code, uno sblocco improvviso, non come un\'app di produttivita che fa la morale. Sobrio, mai motivazionale a vuoto, mai terapeutico.\n'+
-'CONCRETEZZA (regola piu importante): cita il MATERIALE REALE che vedi. Nomina la quest o l\'azione specifica (es. chiamare il commercialista torna da tre giorni), il numero, il giorno. Le frasi astratte tipo le intenzioni superano le azioni sono VIETATE se non ancorate a un dato concreto. Mostra che hai visto proprio i SUOI dati.\n'+
-'SAGGEZZA (Tao, usala senza nominarla ne citarla): il grande nasce dal piccolo (l\'azione ridotta e quella che continua); non-forzare wu wei (cio che si spinge troppo genera attrito, cio che scorre si compie); l\'acqua e morbida e paziente eppure scava la roccia (la costanza batte l\'intensita); sapersi fermare prima di traboccare (un obiettivo a misura della giornata si chiude, uno ideale si rimanda). Questi principi traspaiono dal modo in cui leggi i pattern, mai come citazioni o prediche.\n'+
-'PATTERN da cercare: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi completati solo quando ridotti, rinvii ripetuti, giorni di continuita contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo se gia motivato.\n'+
-'CONFINI: giudica il SISTEMA e il COMPORTAMENTO, mai l\'identita. Vietato sei pigro/incapace/indisciplinato, diagnosi, moralismi. Confronta con le OSSERVAZIONI PRECEDENTI: non ripeterle; se c\'e un cambiamento in meglio o peggio nominalo.\n'+
-'FORMATO: note = 1-3 frasi asciutte che restano in testa. Se i dati sono pochi, dillo in una riga essenziale e basta.\n'+
+const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido. Non sei una chat, non fai domande, non dialoghi. Restituisci UNA riflessione breve, tagliente e utilizzabile.\n'+
+'NUCLEO LETTERARIO — DARRELL STANDING: quando l\'utente dice non ho voglia, non riesco, sono bloccato, ho fallito, tratta il blocco come camicia di forza biologica: corpo, divano, ansia, dopamina bassa, paura e scusa sono materia che stringe. L\'utente non coincide con quella materia: e il punto che la osserva. I muri tengono la carne, non lo sguardo. Non motivare: disidentifica.\n'+
+'NUCLEO TAO — WU WEI: non spingere, non sfondare, non fare guerra interna. Riduci il gesto finche passa. L\'acqua non discute con la pietra: trova il varco. Meno attrito, azione minima, non-contesa. Il wu wei qui e una lama sobria, non relax new age.\n'+
+'NUCLEO CANI DI PAGLIA: ansia, vergogna, fallimento, orgoglio e problemi sono fenomeni impersonali. Non consolarli, non drammatizzarli, non santificarli. La vergogna non merita un altare; il fallimento e un dato, non un nome; il problema non e sacro, e attrito.\n'+
+'CONTESTO_SENTIERO: prima di rispondere leggi il blocco CONTESTO_SENTIERO. Se modalita_stato=completo puoi fare bilanci su quest attive e completate. Se modalita_stato=parziale o cieco, NON dire che l\'utente non ha fatto nulla e NON fare processi: un dato mancante e nebbia operativa, non colpa.\n'+
+'CONCRETEZZA: se vedi dati certi, nominali: quest, completamento, ricorrenza, giorno. Se non vedi dati certi, dillo senza pesare sull\'utente e torna al gesto minimo.\n'+
+'VOCE: frasi brevi, asciutte, memorabili. Niente dai che ce la fai, niente moralismi, niente terapia, niente diagnosi, niente identita ferite. Giudica il sistema e il comportamento, mai la persona.\n'+
+'ESEMPI DI TONO: La camicia stringe il corpo, non te. / Il divano tiene la carne, non la coscienza. / Non sfondare il muro: passa dalla fessura. / La vergogna chiede un altare: non darglielo.\n'+
+'FORMATO: note = 1-3 frasi. summary sintetico. detectedPatterns = pattern brevi.\n'+
 'Rispondi ESCLUSIVAMENTE con JSON: {"summary":"sintesi","detectedPatterns":["pattern brevi"],"note":"la riflessione da mostrare"}';
 
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
+function localNowLabel(){
+  try{ return new Date().toLocaleString('it-IT',{dateStyle:'full',timeStyle:'short'}); }catch(_){ return new Date().toISOString(); }
+}
+function safeLineList(arr,empty){
+  if(!Array.isArray(arr)||!arr.length) return empty||'non_disponibile';
+  return arr.map(x=>'- '+x).join('\n');
+}
+function hhmmFromIso(iso){
+  if(!iso||isNaN(Date.parse(iso))) return '';
+  try{ return new Date(iso).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; }
+}
+function buildSentieroContext(){
+  let modalita='cieco';
+  const tk=todayKey();
+  const nowIso=new Date().toISOString();
+  try{
+    const questsReadable=!!(S&&Array.isArray(S.quests));
+    const logReadable=!!(S&&Array.isArray(S.questLog));
+    if(questsReadable&&logReadable) modalita='completo';
+    else if(questsReadable) modalita='parziale';
+    else modalita='cieco';
+
+    const active=questsReadable?activeQuests(S,tk).filter(q=>!q.fatto).map(q=>{
+      const meta=[];
+      if(q.prio) meta.push('prio '+q.prio);
+      if(q.quando) meta.push(q.quando);
+      return q.titolo+(meta.length?' ('+meta.join(', ')+')':'');
+    }):null;
+
+    const log=logReadable?(S.questLog||[]).filter(e=>e&&e.day===tk):[];
+    const seen=new Set();
+    const completate=[];
+    log.forEach(e=>{
+      const label=(e.kind==='scheduled'?'Ricorrente: ':'Quest: ')+e.titolo+(e.at?' · '+hhmmFromIso(e.at):' · orario non_disponibile');
+      const key=(e.kind||'quest')+'|'+e.titolo+'|'+(e.at||'');
+      if(!seen.has(key)){ seen.add(key); completate.push(label); }
+    });
+    if(questsReadable){
+      (S.quests||[]).filter(q=>q.fatto).forEach(q=>{
+        const key='quest|'+q.titolo;
+        const already=Array.from(seen).some(k=>k.startsWith(key+'|')||k===key);
+        if(!already){ seen.add(key); completate.push('Quest: '+q.titolo+' · visibile_completata_senza_orario'); }
+      });
+    }
+    if(questsReadable){
+      const checks=(S.checks||{})[tk]||{};
+      scheduledFor(S,dowOf(new Date()),tk).forEach(t=>{
+        if(checks[t.id]===true){
+          const key='scheduled|'+t.titolo;
+          const already=Array.from(seen).some(k=>k.startsWith(key+'|')||k===key);
+          if(!already){ seen.add(key); completate.push('Ricorrente: '+t.titolo+' · orario non_disponibile'); }
+        }
+      });
+    }
+
+    let latest='non_disponibile';
+    const timed=log.filter(e=>e.at&&!isNaN(Date.parse(e.at))).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
+    if(timed.length) latest=(timed[0].kind==='scheduled'?'Ricorrente: ':'Quest: ')+timed[0].titolo+' · '+hhmmFromIso(timed[0].at);
+
+    return {
+      data_ora_locale:localNowLabel(),
+      data_ora_iso:nowIso,
+      modalita_stato:modalita,
+      quest_attive:questsReadable?active:'non_disponibile',
+      quest_completate_oggi:logReadable?completate:'non_disponibile',
+      ultima_quest_completata:latest,
+      messaggio_utente:'Osservazione richiesta: leggi lo stato visibile e restituisci una sola nota.'
+    };
+  }catch(_){
+    return {data_ora_locale:localNowLabel(),data_ora_iso:nowIso,modalita_stato:'cieco',quest_attive:'non_disponibile',quest_completate_oggi:'non_disponibile',ultima_quest_completata:'non_disponibile',messaggio_utente:'Osservazione richiesta: stato non leggibile.'};
+  }
+}
+function formatSentieroContext(ctx){
+  const att=Array.isArray(ctx.quest_attive)?safeLineList(ctx.quest_attive,'nessuna_visibile'):ctx.quest_attive;
+  const comp=Array.isArray(ctx.quest_completate_oggi)?safeLineList(ctx.quest_completate_oggi,'nessuna_visibile'):ctx.quest_completate_oggi;
+  return 'CONTESTO_SENTIERO:\n'+
+    'data_ora_locale: '+ctx.data_ora_locale+'\n'+
+    'modalità_stato: '+ctx.modalita_stato+'\n\n'+
+    'quest_attive:\n'+att+'\n\n'+
+    'quest_completate_oggi:\n'+comp+'\n\n'+
+    'ultima_quest_completata:\n'+(ctx.ultima_quest_completata||'non_disponibile')+'\n\n'+
+    'messaggio_utente:\n'+(ctx.messaggio_utente||'');
+}
+
 function buildObserverDigest(){
   const tk=todayKey();
   /* azioni reali dalle spunte toccate (questLog), raggruppate per giorno */
@@ -1920,7 +2063,8 @@ function buildObserverDigest(){
     taskCompletate:Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0)
   }));
   const osservazioniPrecedenti=(S.observerNotes||[]).slice(-4).map(n=>n.note);
-  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
+  const contestoSentiero=buildSentieroContext();
+  return {oggi:tk, contestoSentiero:contestoSentiero, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
 }
 
 async function askObserver(digest){
@@ -1933,8 +2077,8 @@ async function askObserver(digest){
       r=await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST', signal:ctrl?ctrl.signal:undefined,
         headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:model,max_tokens:400,temperature:0.6,system:OBSERVER_SYS,messages:[
-          {role:'user',content:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest)},
+        body:JSON.stringify({model:model,max_tokens:420,temperature:0.55,system:OBSERVER_SYS,messages:[
+          {role:'user',content:formatSentieroContext(digest.contestoSentiero||buildSentieroContext())+'\n\nDATI OSSERVATI DI SUPPORTO (JSON):\n'+JSON.stringify(digest)},
           {role:'assistant',content:'{'}
         ]})
       });
@@ -1960,7 +2104,13 @@ async function askObserver(digest){
 /* logica locale base: gira offline, senza chiave. Rileva i pattern essenziali. */
 function buildObserverLocal(digest){
   const d=digest.diario||[];
-  if(d.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. La prossima azione contera piu del commento. Comincia da una riga.'};
+  if(d.length<3){
+    const ctx=digest.contestoSentiero||buildSentieroContext();
+    const comp=Array.isArray(ctx.quest_completate_oggi)?ctx.quest_completate_oggi:[];
+    if(ctx.modalita_stato!=='completo') return {summary:'Stato '+ctx.modalita_stato,detectedPatterns:['nebbia operativa'],note:'Il registro e in nebbia: niente processo. Vedi la camicia, non diventarla; scegli una quest minuscola e incidila con un gesto.'};
+    if(comp.length) return {summary:comp.length+' completamenti visibili',detectedPatterns:['traccia nella materia'],note:'Falso vuoto: c\'e gia una traccia nella materia. Non discutere con la voce: passa alla prossima fessura.'};
+    return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. Il problema non e sacro: apri una fessura con una sola azione.'};
+  }
   let born=0,done=0; const bornCount={},doneCount={};
   d.forEach(e=>{
     (e.intenzioni||[]).forEach(t=>{born++; bornCount[t]=(bornCount[t]||0)+1;});
@@ -2166,7 +2316,13 @@ function renderTasks(){
       div.dataset.busy='1';
       S.checks[todayKey()]=S.checks[todayKey()]||{};
       const now=!done;
-      S.checks[todayKey()][t.id]=now; save();
+      S.checks[todayKey()][t.id]=now;
+      try{
+        if(!Array.isArray(S.questLog)) S.questLog=[];
+        if(now){ S.questLog.push({titolo:t.titolo,day:todayKey(),at:new Date().toISOString(),kind:'scheduled',id:t.id}); if(S.questLog.length>400) S.questLog=S.questLog.slice(-400); }
+        else { for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===t.titolo&&S.questLog[i].day===todayKey()&&S.questLog[i].kind==='scheduled'){ S.questLog.splice(i,1); break; } } }
+      }catch(_){}
+      save();
       if(now){ div.classList.add('done'); onComplete(div); setTimeout(renderTasks,600); }
       else { sUndo(); renderTasks(); updateRing(); }
     };
@@ -2256,10 +2412,10 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     q.fatto=!q.fatto;
     if(q.fatto){
       /* registra l'azione: così la Mente Osservatrice sa che l'hai DAVVERO compiuta */
-      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey()}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
+      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey(),at:new Date().toISOString(),kind:'quest',id:q.id}); if(S.questLog.length>400) S.questLog=S.questLog.slice(-400); }catch(_){}
     } else {
       /* annullamento: togli l'ultimo log di oggi per quel titolo */
-      try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()){ S.questLog.splice(i,1); break; } } }catch(_){}
+      try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()&&(S.questLog[i].kind||'quest')==='quest'){ S.questLog.splice(i,1); break; } } }catch(_){}
     }
     save();
     if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(rerender,600); }

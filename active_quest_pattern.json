@@ -1,0 +1,31 @@
+{
+  "title": "Active Quest Theme placeholder",
+  "file": "audio/active_quest_v6_bandcore.wav",
+  "bpm": 128,
+  "meter": "4/4",
+  "bars": 16,
+  "key": "G minor / G dorian",
+  "loop_seconds": 30.0,
+  "call": "TATTA TATTA TATTA TATTAAAA",
+  "response": "suggested by guitar/bass/snare; no synthetic lead in app placeholder",
+  "roots": [
+    "G",
+    "G",
+    "F",
+    "D",
+    "G",
+    "F",
+    "Eb",
+    "D",
+    "G",
+    "F",
+    "D",
+    "G",
+    "F",
+    "Eb",
+    "D",
+    "G"
+  ],
+  "call_grid": "1 e & a 2 e & a 3 e & a 4 e & a = G G - - | G G - - | F F - - | D---",
+  "notes": "v6_bandcore removes synthetic lead; final OST should be produced later with real instruments/DAW."
+}
