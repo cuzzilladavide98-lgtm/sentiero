@@ -106,6 +106,10 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 #mic-label{margin-top:22px;font-size:15px;color:var(--t2);text-align:center;min-height:20px;font-weight:400;letter-spacing:0}
 #ring-count{font-size:12px;color:var(--t3);margin-top:6px;letter-spacing:.04em}
+.flow{margin-top:14px;min-height:34px;text-align:center;color:var(--t3);font-size:13px;line-height:1.45;max-width:320px}
+.flow strong{display:block;color:var(--t1);font-size:14px;font-weight:500;margin-bottom:4px}
+.flow button,.empty-go{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;padding:6px 0;margin-top:2px}
+.flow:empty{display:none}
 
 #live{width:100%;margin-top:22px;font-family:var(--serif);font-size:18px;line-height:1.6;
   color:var(--t1);display:none;text-align:center}
@@ -179,6 +183,7 @@ section{margin-top:38px}
 .item.leaving{animation:leave .45s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes leave{0%{opacity:1;max-height:70px}100%{opacity:0;max-height:0;padding-top:0;padding-bottom:0}}
 .empty{font-family:var(--serif);font-style:italic;color:var(--t3);font-size:16px;padding:8px 0;line-height:1.6}
+.empty .empty-go{display:block;font-family:var(--sans);font-style:normal;font-size:15px;margin-top:10px}
 
 /* ════════ diario: prosa, niente lastre ════════ */
 .diary-font{font-family:var(--serif)}
@@ -336,7 +341,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 }
 
 @media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+  *,*::before,*::after{animation-duration:.001ms !important;transition-duration:.001ms !important}
 }
 
 /* ════════ dispositivi stretti: 13/12 mini (375), 12 Pro (390), Galaxy A14 5G (360) ════════ */
@@ -434,16 +439,6 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 .item .cal svg{width:17px;height:17px}
 .item .cal:active{color:var(--accent);transform:scale(1.12)}
 .item.future .cal{color:rgba(245,242,234,.4)}
-/* ── Motion v2.4: press-feedback (compressione breve, solo transform — GPU-safe).
-   Il resto del contratto (spunta SVG, linea scaleX testo completato, entrata sezioni .tab-in,
-   animazioni enso, hardening touch, reduced-motion) e' gia presente nell'app. ── */
-.item .chk{transition:border-color .35s ease, transform .12s cubic-bezier(.25,1,.5,1)}
-.item .chk:active{transform:scale(.92)}
-#mic{transition:transform .14s cubic-bezier(.25,1,.5,1)}
-#mic:active{transform:scale(.97)}
-@media (prefers-reduced-motion: reduce){
-  .item .chk:active,#mic:active{transform:none !important}
-}
 </style>
 </head>
 <body>
@@ -509,6 +504,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         </button>
         <div id="mic-label">Tocca il cerchio e rilascia</div>
         <div id="ring-count"></div>
+        <div id="flow" class="flow"></div>
         <div id="live"></div>
         <div class="btn-row hidden" id="confirm-row">
           <button class="act" id="btn-discard">Scarta</button>
@@ -783,7 +779,7 @@ function sanitizeState(raw,def){
       voice:!(raw.settings&&raw.settings.voice===false),
       notif:!!(raw.settings&&raw.settings.notif===true),
       geo:!!(raw.settings&&raw.settings.geo===true),
-      music:(raw.settings && raw.settings.music===false)?false:true,  /* default ON; rispetta lo spegnimento esplicito */
+      music:!!(raw.settings&&raw.settings.music===true),
       aiModel:(raw.settings&&['max','balanced','fast'].includes(raw.settings.aiModel))?raw.settings.aiModel:'balanced',
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade'
     }
@@ -847,7 +843,7 @@ function aiOutputToState(parsed){
 }
 function nextReminderDelays(state,now){
   const dow=dowOf(now),out=[];
-  const tk=now.toISOString().slice(0,10);
+  const tk=localDayKey(now);
   for(const t of scheduledFor(state,dow,tk)){
     if(!t.time) continue;
     const parts=t.time.split(':');
@@ -872,7 +868,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v47 · 2026-06-23';
+const APP_VERSION='v47 · 2026-06-24';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1432,8 +1428,8 @@ const ATHEME=(()=>{
   function preload(){
     if(loaded||loading) return; const a=ac(); if(!a) return; loading=true;
     fetch(URL).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(b=>{
-      buf=b; loaded=true; loading=false; console.log('[ATHEME] bufferLoaded', true); if(wantActive&&unlocked) play();
-    }).catch((e)=>{ loading=false; console.warn('[ATHEME] error', e); });
+      buf=b; loaded=true; loading=false; if(wantActive&&unlocked) play();
+    }).catch(()=>{ loading=false; });
   }
   function play(){
     const a=ac(); if(!a||!loaded||playing) return;
@@ -1444,14 +1440,14 @@ const ATHEME=(()=>{
       src.connect(gain); gain.connect(a.destination);
       src.start(0);
       gain.gain.linearRampToValueAtTime(VOL,a.currentTime+0.4);    /* fade in */
-      playing=true; console.log('[ATHEME] play');
+      playing=true;
     }catch(_){ playing=false; }
   }
   function stop(fade){
     if(!playing){ try{ if(src) src.stop(); }catch(_){} src=null; gain=null; return; }
     const a=ac(); const s=src,g=gain; playing=false; src=null; gain=null;
     try{
-      if(fade&&g&&a){ console.log('[ATHEME] fadeOut'); g.gain.cancelScheduledValues(a.currentTime); g.gain.setValueAtTime(g.gain.value,a.currentTime); g.gain.linearRampToValueAtTime(0.0001,a.currentTime+0.6); setTimeout(()=>{try{s.stop();}catch(_){}} ,750); }
+      if(fade&&g&&a){ g.gain.cancelScheduledValues(a.currentTime); g.gain.setValueAtTime(g.gain.value,a.currentTime); g.gain.linearRampToValueAtTime(0.0001,a.currentTime+0.6); setTimeout(()=>{try{s.stop();}catch(_){}} ,750); }
       else if(s){ try{s.stop();}catch(_){} }
     }catch(_){}
   }
@@ -1459,7 +1455,6 @@ const ATHEME=(()=>{
     unlocked=true; const a=ac(); if(!a) return;
     try{ if(a.state==='suspended') a.resume(); }catch(_){}
     try{ const b=a.createBuffer(1,1,a.sampleRate); const t=a.createBufferSource(); t.buffer=b; t.connect(a.destination); t.start(0); }catch(_){}  /* sblocco iOS */
-    console.log('[ATHEME] unlocked', true, 'bufferLoaded', !!buf);
     if(!loaded) preload(); else if(wantActive) play();
   }
   function setActive(active){
@@ -1469,20 +1464,9 @@ const ATHEME=(()=>{
   }
   function setVolume(v){ VOL=Math.max(0,Math.min(1,v)); const a=ac(); if(gain&&a) gain.gain.setTargetAtTime(VOL,a.currentTime,0.1); }
   function pause(){ stop(false); }
-  return { unlock, setActive, pause, stop, setVolume, preload, isPlaying:()=>playing, state:()=>({unlocked,loaded,playing,wantActive}) };
+  return { unlock, setActive, pause, stop, setVolume, preload, isPlaying:()=>playing };
 })();
 
-function syncActiveTheme(){
-  try{
-    const r=computeProgress(S,todayKey(),dowOf());
-    const activeCount=Math.max(0,r.total-r.done);
-    const audioOn=!!(S.settings && S.settings.music);
-    console.log('[ATHEME] audioEnabled', audioOn);
-    console.log('[ATHEME] activeCount', activeCount);
-    if(audioOn && activeCount>0){ ATHEME.setActive(true); }
-    else { ATHEME.setActive(false); }
-  }catch(e){ console.warn('[ATHEME] error', e); }
-}
 let itVoice=null;
 function pickVoice(){
   try{
@@ -1737,6 +1721,48 @@ document.querySelector('#btn-pin').onclick=()=>{
 function renderStreak(){
   $('#dateline').textContent=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 }
+function scrollToSoft(sel){
+  try{
+    const el=document.querySelector(sel);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(_){}
+}
+function handleFlowAction(action){
+  if(action==='speak'){ showPane('oggi'); try{ micBtn.click(); }catch(_){} return; }  /* sincrono: preserva il gesto utente, indispensabile per avviare il microfono su iOS */
+  if(action==='distill'){ showPane('oggi'); setTimeout(()=>{ const b=document.querySelector('#btn-save'); if(b&&!b.disabled) b.click(); },80); return; }
+  if(action==='settings'){ showPane('impostazioni'); setTimeout(()=>{ const k=document.querySelector('#apikey'); if(k) k.focus(); },120); return; }
+  if(action==='tasks'){ showPane('impostazioni'); setTimeout(()=>{ const t=document.querySelector('#new-task-txt'); if(t) t.focus(); },120); return; }
+  if(action==='observe'){ showPane('quest'); setTimeout(()=>{ try{ observe(false); }catch(_){} },120); return; }
+  if(action==='today'){ showPane('oggi'); setTimeout(()=>scrollToSoft('#sec-today-quests'),120); return; }
+}
+function renderFlow(){
+  const el=document.querySelector('#flow'); if(!el) return;
+  if(recording||distilling){ el.innerHTML=''; return; }
+  const confirm=!document.querySelector('#confirm-row').classList.contains('hidden');
+  if(confirm){ el.innerHTML='<strong>La materia e pronta.</strong><button data-flow="distill">Distilla adesso</button>'; return; }
+  const tk=todayKey(),dow=dowOf(),r=computeProgress(S,tk,dow);
+  const checks=S.checks[tk]||{};
+  const nextTask=todaysScheduled().find(t=>checks[t.id]!==true);
+  const nextQuest=sortQuests(activeQuests(S,tk)).find(q=>!q.fatto);
+  if(r.total&&r.done<r.total){
+    const next=nextQuest?nextQuest.titolo:nextTask?nextTask.titolo:'prossima azione';
+    el.innerHTML='<strong>Prossima mossa: '+escapeHtml(next)+'</strong><button data-flow="today">Vai al punto</button>';
+    return;
+  }
+  if(r.total&&r.done===r.total){ el.innerHTML='<strong>Cerchio chiuso.</strong>Lascia che il resto resti leggero.'; return; }
+  if(!S.apiKey&&S.diary.length===0&&S.quests.length===0){
+    el.innerHTML='<strong>Puoi partire anche senza chiave.</strong><button data-flow="speak">Parla ora</button> <button data-flow="settings">Aggiungi IA</button>';
+    return;
+  }
+  if(S.diary.length>=2&&!((S.observerNotes||[]).length)){
+    el.innerHTML='<strong>Ci sono gia abbastanza tracce.</strong><button data-flow="observe">Fai osservare il pattern</button>';
+    return;
+  }
+  el.innerHTML='<strong>Il difficile resta fuori.</strong><button data-flow="speak">Parla una cosa sola</button>';
+}
+document.querySelector('#flow').addEventListener('click',e=>{
+  const b=e.target.closest('[data-flow]'); if(b) handleFlowAction(b.dataset.flow);
+});
 function showPane(name){
   ['oggi','quest','diario','impostazioni'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',t!==name));
   if(name!=='impostazioni'){
@@ -1752,8 +1778,6 @@ function showPane(name){
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>showPane(b.dataset.tab);
 });
-/* Motion v2.4: blocca il menu iOS da pressione lunga su cerchio mic e checkbox (delegato → copre i task creati a runtime) */
-document.addEventListener('contextmenu',e=>{ try{ if(e.target.closest('#mic, .item .chk')) e.preventDefault(); }catch(_){} }, false);
 /* Altro è nascosto: si apre dal Diario e si torna indietro */
 document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
 document.querySelector('#close-altro').onclick=()=>showPane('diario');
@@ -1775,6 +1799,7 @@ function startRec(){
     if(!recording) return;
     micBtn.classList.remove('arming'); micBtn.classList.add('rec');
     micLabel.textContent='Rilascia… tocca di nuovo per fermare';
+    renderFlow();
     sMicOn(); haptic(); acquireWake();
     try{ if(S.settings.music) MUSIC.recDuck(true); }catch(_){}  /* la musica scende: la voce resta pulita per il riconoscimento */
   };
@@ -1802,6 +1827,7 @@ function startRec(){
   /* stato 'in avvio': enso pulsa neutro, l'utente NON è invitato a parlare finché onstart non scatta */
   micBtn.classList.add('arming');
   micLabel.textContent='Preparazione del microfono…';
+  renderFlow();
   try{ rec.start(); }
   catch(_){ recording=false; micBtn.classList.remove('arming'); toast('Impossibile avviare il microfono'); }
 }
@@ -1816,6 +1842,7 @@ function stopRec(){
     micLabel.textContent='Rileggi e distilla';
     live.textContent=txt; live.classList.add('show');
     document.querySelector('#confirm-row').classList.remove('hidden');
+    renderFlow();
   }else{
     micLabel.textContent='Silenzio. Riprova quando vuoi.';
     live.classList.remove('show');
@@ -1865,6 +1892,17 @@ function resetCapture(){
   document.querySelector('#prio-row').classList.add('hidden');
   micLabel.textContent='Tocca il cerchio e rilascia';
   updateRing();
+  renderFlow();
+}
+function guideAfterDistill(bornIds){
+  bornIds=bornIds||[];
+  if(bornIds.length){
+    micLabel.textContent='Fatto. Ora chiudi la prima quest.';
+    setTimeout(()=>scrollToSoft('#sec-today-quests'),180);
+  }else{
+    micLabel.textContent='Nota salvata. Il sentiero resta leggero.';
+  }
+  renderFlow();
 }
 
 /* ======================================================================
@@ -1879,6 +1917,7 @@ document.querySelector('#btn-save').onclick=async()=>{
   const btn=document.querySelector('#btn-save');
   btn.textContent='Distillo…'; btn.disabled=true;
   live.classList.add('distill'); micLabel.textContent='Le parole si trasformano…';
+  renderFlow();
   let wispTimer=setInterval(()=>{
     try{
       const lr=live.getBoundingClientRect();
@@ -1905,14 +1944,19 @@ document.querySelector('#btn-save').onclick=async()=>{
           });
         },60);
         toast(bornIds.length? bornIds.length+(bornIds.length===1?' nuova quest distillata':' nuove quest distillate') : 'Quest aggiornate, nota salvata');
+        resetCapture();
+        guideAfterDistill(bornIds);
         maybeAskPriority(bornIds);
+        return;
       } else throw new Error('bad');
     }else{
       addDiary(transcript,[],[]);
       save(); render();
       toast('Nota salvata nel diario (IA spenta: manca la chiave)');
+      resetCapture();
+      guideAfterDistill([]);
+      return;
     }
-    resetCapture();
   }catch(err){
     addDiary(transcript,[],[]); save(); render(); resetCapture();
     const code=(err&&err.message)||'';
@@ -1931,6 +1975,7 @@ document.querySelector('#btn-save').onclick=async()=>{
     distilling=false;
     btn.textContent='Distilla'; btn.disabled=false;
     live.classList.remove('distill');
+    renderFlow();
   }
 };
 function addDiary(testo,born,done,raw){
@@ -1998,7 +2043,7 @@ async function askClaude(transcript){
       try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
       if(r.status===401||r.status===403) throw new Error('AUTH');
       if(r.status===400&&/credit/i.test(detail)) throw new Error('CREDIT');
-      if(r.status===404||/model/i.test(detail)&&r.status===400){ lastErr=new Error('MODEL'); continue; } /* modello ritirato: prova il prossimo */
+      if(r.status===404||(r.status===400&&/model/i.test(detail))){ lastErr=new Error('MODEL'); continue; } /* modello ritirato: prova il prossimo */
       if(r.status===429) throw new Error('RATE');
       if(r.status===529||/overloaded/i.test(detail)) throw new Error('BUSY');
       throw new Error('HTTP '+r.status+(detail?' — '+detail.slice(0,80):''));
@@ -2016,12 +2061,12 @@ async function askClaude(transcript){
    Riusa l'IA già presente; se non c'è chiave o è offline, usa logica locale.
    ====================================================================== */
 const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido che osserva i pattern di chi usa l\'app e restituisce UNA riflessione breve e precisa. Non sei una chat, non fai domande, non dialoghi.\n'+
-'VOCE: calma, affilata, un po\' zen. Pensa a un maestro taoista che parla la lingua di oggi: cio che dici deve suonare come un cheat code, uno sblocco improvviso, non come un\'app di produttivita che fa la morale. Sobrio, mai motivazionale a vuoto, mai terapeutico.\n'+
+'VOCE: calma, affilata, un po\' zen. Ogni nota deve funzionare come un cheat code: nomina il meccanismo nascosto, ribaltalo in una frase memorabile, poi lascia una leva pratica minuscola. Non fare aforismi: fai sblocchi operativi ancorati ai dati.\n'+
 'CONCRETEZZA (regola piu importante): cita il MATERIALE REALE che vedi. Nomina la quest o l\'azione specifica (es. chiamare il commercialista torna da tre giorni), il numero, il giorno. Le frasi astratte tipo le intenzioni superano le azioni sono VIETATE se non ancorate a un dato concreto. Mostra che hai visto proprio i SUOI dati.\n'+
-'SAGGEZZA (Tao, usala senza nominarla ne citarla): il grande nasce dal piccolo (l\'azione ridotta e quella che continua); non-forzare wu wei (cio che si spinge troppo genera attrito, cio che scorre si compie); l\'acqua e morbida e paziente eppure scava la roccia (la costanza batte l\'intensita); sapersi fermare prima di traboccare (un obiettivo a misura della giornata si chiude, uno ideale si rimanda). Questi principi traspaiono dal modo in cui leggi i pattern, mai come citazioni o prediche.\n'+'NUCLEO (fallo trasparire, mai citarlo): (1) il corpo e una prigione temporanea e la coscienza non si identifica con i suoi fallimenti: problemi, fallimento e vergogna sono fenomeni che passano, non sentenze sull\'essere; (2) cio che oggi e prezioso domani si lascia andare senza dramma (i fallimenti sono impersonali, non si trascinano). Da qui la calma con cui leggi i pattern.\n'+'MODALITA: se i dati sono assenti o parziali (modalita cieco/parziale) NON dire mai "non hai fatto nulla", "hai fallito", "non hai completato nulla". Di\' invece che il registro e in nebbia e che vedi solo il gesto presente.\n'+
+'SAGGEZZA (Tao, usala senza nominarla ne citarla): il grande nasce dal piccolo (l\'azione ridotta e quella che continua); non-forzare wu wei (cio che si spinge troppo genera attrito, cio che scorre si compie); l\'acqua e morbida e paziente eppure scava la roccia (la costanza batte l\'intensita); sapersi fermare prima di traboccare (un obiettivo a misura della giornata si chiude, uno ideale si rimanda). Questi principi traspaiono dal modo in cui leggi i pattern, mai come citazioni o prediche.\n'+
 'PATTERN da cercare: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi completati solo quando ridotti, rinvii ripetuti, giorni di continuita contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo se gia motivato.\n'+
 'CONFINI: giudica il SISTEMA e il COMPORTAMENTO, mai l\'identita. Vietato sei pigro/incapace/indisciplinato, diagnosi, moralismi. Confronta con le OSSERVAZIONI PRECEDENTI: non ripeterle; se c\'e un cambiamento in meglio o peggio nominalo.\n'+
-'FORMATO: note = 1-3 frasi asciutte che restano in testa. Se i dati sono pochi, dillo in una riga essenziale e basta.\n'+
+'FORMATO: note = 1-3 frasi asciutte. Struttura preferita: "Non e X: e Y. Fai Z." Se i dati sono pochi, dillo in una riga essenziale e basta.\n'+
 'Rispondi ESCLUSIVAMENTE con JSON: {"summary":"sintesi","detectedPatterns":["pattern brevi"],"note":"la riflessione da mostrare"}';
 
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
@@ -2051,7 +2096,7 @@ function buildObserverDigest(){
   return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
 }
 
-async function askObserver(digest, contextText){
+async function askObserver(digest){
   let lastErr=null;
   for(const model of aiModels()){
     const ctrl=('AbortController' in window)?new AbortController():null;
@@ -2062,15 +2107,19 @@ async function askObserver(digest, contextText){
         method:'POST', signal:ctrl?ctrl.signal:undefined,
         headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body:JSON.stringify({model:model,max_tokens:400,temperature:0.6,system:OBSERVER_SYS,messages:[
-          {role:'user',content:(contextText?contextText+'\n\n':'')+'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest)},
+          {role:'user',content:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest)},
           {role:'assistant',content:'{'}
         ]})
       });
     }finally{ if(timer) clearTimeout(timer); }
     if(!r.ok){
-      if(r.status===404){ lastErr=new Error('MODEL'); continue; }
+      let detail='';
+      try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
+      if(r.status===404||(r.status===400&&/model/i.test(detail))){ lastErr=new Error('MODEL'); continue; }
       if(r.status===401||r.status===403) throw new Error('AUTH');
-      throw new Error('HTTP '+r.status);
+      if(r.status===429) throw new Error('RATE');
+      if(r.status===529||/overloaded/i.test(detail)) throw new Error('BUSY');
+      throw new Error('HTTP '+r.status+(detail?' - '+detail.slice(0,80):''));
     }
     const data=await r.json();
     const raw=(data.content||[]).map(c=>c.text||'').join('');
@@ -2085,167 +2134,75 @@ async function askObserver(digest, contextText){
   throw lastErr||new Error('MODEL');
 }
 
-/* logica locale base: gira offline, senza chiave. Varianti controllate, mai identica. Nucleo: Tao, corpo-prigione, cani di paglia. */
-function buildObserverLocal(digest, ctx){
-  ctx=ctx||{mode:'completo'};
-  const avoid=(digest.osservazioniPrecedenti||[]);
-  /* MODALITA cieco/parziale: niente "non hai fatto nulla" */
-  if(ctx.mode==='cieco'){
-    return {summary:'Registro in nebbia',detectedPatterns:['nessuna traccia'],note:obsPick([
-      'Il registro e in nebbia: niente processo. Vedo solo il gesto presente.',
-      'Nessuna traccia ancora. Non c\'e nulla da leggere, solo la prossima riga da scrivere.',
-      'Il foglio e quasi vuoto. La prossima azione conta piu di qualsiasi commento: comincia da una.',
-      'Senza dati non c\'e specchio. Solo il presente, e il presente non si giudica: si attraversa.',
-      'Nebbia sul registro. Niente fallimento, niente successo: solo l\'inizio, ancora intatto.'
-    ],avoid)};
-  }
-  if(ctx.mode==='parziale'){
-    return {summary:'Dati parziali',detectedPatterns:['poche tracce'],note:obsPick([
-      'Poche tracce, ma non zero. Troppo presto per un pattern: per ora conta solo che il gesto torni.',
-      'Il registro e parziale. Non leggo ancora una direzione: lascia depositare qualche riga in piu.',
-      'Frammenti, non un filo. Nessun giudizio: solo l\'invito a un\'altra riga.',
-      'Dati sottili. Vedo il gesto presente, non il processo. Va bene cosi: si parte da qui.',
-      'Il quadro e appena abbozzato. Niente da correggere ancora: c\'e solo da continuare a segnare.'
-    ],avoid)};
-  }
+/* logica locale base: gira offline, senza chiave. Rileva i pattern essenziali. */
+function buildObserverLocal(digest){
   const d=digest.diario||[];
   let born=0,done=0; const bornCount={},doneCount={};
   d.forEach(e=>{
     (e.intenzioni||[]).forEach(t=>{born++; bornCount[t]=(bornCount[t]||0)+1;});
     (e.azioni||[]).forEach(t=>{done++; doneCount[t]=(doneCount[t]||0)+1;});
   });
+  /* promessa ricorrente eseguita poco */
   let recurring=null,maxGap=0;
   Object.keys(bornCount).forEach(t=>{ const gap=bornCount[t]-(doneCount[t]||0); if(bornCount[t]>=2&&gap>maxGap){maxGap=gap;recurring=t;} });
+  const patterns=[]; let note='';
+  /* segnale di continuità dai completamenti reali (anche le spunte toccate) */
   const comp=digest.completamentiGiornalieri||[];
   const giorniAttivi=comp.filter(g=>g.taskCompletate>0).length;
   const giorniVuoti=comp.filter(g=>g.taskCompletate===0).length;
-  const R=recurring; let patterns=[],pool=[];
-  if(R&&maxGap>=2){
-    patterns=['promessa ricorrente non mantenuta'];
-    pool=[
-      '"'+R+'" torna spesso ma si compie di rado. Rimpiccioliscila finche parte da sola, o lasciala andare.',
-      '"'+R+'" riappare e non si chiude. Non e disciplina che manca: e troppo grande. Tagliala a meta.',
-      '"'+R+'" e una promessa che il corpo non raccoglie. Riducila al gesto minimo, o liberala: un peso che oggi e prezioso domani si lascia andare.',
-      '"'+R+'" ritorna come un\'onda e si ritira uguale. Cio che si forza genera attrito: lascia che scorra piu piccola.',
-      '"'+R+'" pesa piu della giornata che la deve contenere. Rendila cosi piccola da non poter fallire.',
-      '"'+R+'" torna nel registro ma non nel fatto. Non sei tu il problema: e la misura. Accorciala.',
-      '"'+R+'" insiste. La coscienza promette, il corpo resta fermo: accorcia la distanza, un gesto solo.'
-    ];
-  } else if(comp.length>=5&&giorniVuoti>giorniAttivi){
-    patterns=['ritmo interrotto'];
-    pool=[
-      'Piu giorni vuoti che pieni. Non serve un giorno grande: serve un\'azione piccola che non salti mai.',
-      'Il filo si spezza spesso. L\'acqua non scava a scatti: scava perche non smette. Una riga al giorno basta.',
-      'I vuoti vincono sui pieni. Il piccolo che continua batte il grande che parte e si ferma.',
-      'La continuita e rotta piu del previsto. Scegli un gesto cosi minimo da reggere anche nei giorni storti.',
-      'Piu assenze che presenze. Non un\'impennata: un battito costante, anche debole.',
-      'Il ritmo cade. Cio che riparte ogni volta da zero costa piu di cio che non si ferma mai.'
-    ];
-  } else if(born>0&&done/born<0.5){
-    patterns=['intenzione oltre l\'azione'];
-    pool=[
-      born+' intenzioni, '+done+' azioni. L\'obiettivo pesa piu della giornata: tagliane meta e quella meta si chiude.',
-      born+' nate, '+done+' compiute. Tra il dire e il corpo c\'e attrito: riduci finche l\'azione parte da sola.',
-      born+' intenzioni contro '+done+' azioni. Non manca volonta, manca misura: il grande nasce dal piccolo, non viceversa.',
-      born+' promesse, '+done+' fatti. Le intenzioni si accumulano e poi si lasciano andare: tienine una sola e falla facile.',
-      born+' pensate, '+done+' agite: il divario e il messaggio. Scegli una cosa e rendila quasi automatica.',
-      born+' intenzioni, '+done+' azioni. La coscienza corre, il corpo resta indietro: accorcia la distanza a un gesto.'
-    ];
-  } else if((born>0&&done/born>=0.8)||(giorniAttivi>=5&&giorniAttivi>giorniVuoti)){
-    patterns=['struttura a basso attrito'];
-    pool=[
-      'Qui l\'azione segue l\'intenzione con poco attrito. Ripeti la struttura, non l\'emozione: e cosi che l\'acqua scava.',
-      'Il corpo raccoglie cio che la mente posa. Non cambiare nulla: la costanza e gia il metodo.',
-      'Poco attrito tra detto e fatto. Tieni la misura piccola: cio che scorre si compie senza sforzo.',
-      'Le azioni seguono. Non e motivazione, e struttura: ripetuta, diventa invisibile e potente.',
-      'Qui funziona. L\'acqua morbida ha trovato la sua crepa: continua a passare di li.'
-    ];
-  } else {
-    patterns=['ritmo medio incostante'];
-    pool=[
-      'Non manca la forza, manca la costanza nei giorni medi. Il piccolo che continua batte il grande che parte e si ferma.',
-      'I giorni pieni ci sono, ma a sbalzi. L\'acqua non scava a ondate: scava perche torna sempre.',
-      'Il ritmo c\'e e si interrompe. Riduci l\'ambizione del singolo giorno, alza la frequenza.',
-      'Forza si, regolarita no. Cio che si forza un giorno e salta il dopo lascia poco segno.',
-      'Medio e altalenante. Scegli la versione minima del gesto e rendila non negoziabile.'
-    ];
+  if(d.length<3&&comp.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. Non serve capirlo: serve sporcarlo. Una riga, una spunta, poi il pattern appare.'};
+  if(d.length<3&&giorniAttivi){
+    patterns.push('azioni senza diario');
+    return {summary:giorniAttivi+' giorni attivi, poche note',detectedPatterns:patterns,note:'Le spunte stanno parlando piu del diario. Non aggiungere teoria: dopo ogni azione lascia una riga, cosi il maestro vede il trucco.'};
   }
-  return {summary:born+' intenzioni, '+done+' azioni, '+giorniAttivi+' giorni attivi',detectedPatterns:patterns,note:obsPick(pool,avoid)};
+  if(recurring&&maxGap>=2){
+    patterns.push('promessa ricorrente non mantenuta');
+    note='Non e mancanza di volonta: "'+recurring+'" e troppo grande per partire. Riducila alla prima mossa visibile, oppure cancellala senza debito.';
+  } else if(comp.length>=5&&giorniVuoti>giorniAttivi){
+    patterns.push('ritmo interrotto');
+    note='Non ti serve un giorno eroico: ti serve un giorno che non si rompa. Con '+giorniVuoti+' giorni vuoti contro '+giorniAttivi+' attivi, scegli una spunta ridicola e proteggila.';
+  } else if(born>0&&done/born<0.5){
+    patterns.push('intenzione oltre l\'azione');
+    note=born+' intenzioni, '+done+' azioni. Il bug non e sognare grande: e caricare la giornata come se fosse infinita. Taglia meta, chiudi il resto.';
+  } else if((born>0&&done/born>=0.8)||(giorniAttivi>=5&&giorniAttivi>giorniVuoti)){
+    patterns.push('struttura a basso attrito');
+    note='Qui l\'azione segue l\'intenzione con poco attrito. Non inseguire l\'umore: copia la struttura che ha gia funzionato.';
+  } else {
+    patterns.push('ritmo medio incostante');
+    note='Non manca la forza: manca una modalita per i giorni medi. Il cheat code e abbassare la soglia prima che la giornata chieda il conto.';
+  }
+  return {summary:born+' intenzioni, '+done+' azioni, '+giorniAttivi+' giorni attivi',detectedPatterns:patterns,note:note};
 }
 
-/* contesto fresco a ogni click: ricostruito da zero, niente cache */
-function buildSentieroContext(){
-  const tk=todayKey(); const now=new Date();
-  const checksToday=(S.checks||{})[tk]||{};
-  const openQuests=(S.quests||[]).filter(q=>!q.fatto).map(q=>q.titolo);
-  const schedActive=(S.scheduled||[]).map(t=>t.titolo).filter(t=>checksToday[t]!==true);
-  const activeQuests=Array.from(new Set([...openQuests,...schedActive]));
-  const log=Array.isArray(S.questLog)?S.questLog:[];
-  const completedToday=Array.from(new Set([
-    ...log.filter(e=>e.day===tk).map(e=>e.titolo),
-    ...Object.keys(checksToday).filter(k=>checksToday[k]===true)
-  ]));
-  const lastCompleted=log.length?log[log.length-1].titolo:null;
-  const lastDiary=(S.diary&&S.diary.length)?S.diary[0]:null;
-  const userMessage=lastDiary?clampStr(lastDiary.testo||'',280):'';
-  const diaryN=(S.diary||[]).length;
-  let mode='completo';
-  const hasAny=activeQuests.length>0||completedToday.length>0||diaryN>0;
-  if(!hasAny) mode='cieco';
-  else if(diaryN<3 && completedToday.length===0 && log.length===0) mode='parziale';
-  return {dateTime:now.toLocaleString('it-IT'),mode,activeQuests,completedToday,lastCompleted,userMessage};
-}
-function buildContextText(ctx){
-  const list=a=>a&&a.length?a.map(x=>'- '+x).join('\n'):'(nessuna)';
-  return 'CONTESTO_SENTIERO:\n'+
-    'data_ora_locale: '+ctx.dateTime+'\n'+
-    'modalita_stato: '+ctx.mode+'\n\n'+
-    'quest_attive:\n'+list(ctx.activeQuests)+'\n\n'+
-    'quest_completate_oggi:\n'+list(ctx.completedToday)+'\n\n'+
-    'ultima_quest_completata:\n'+(ctx.lastCompleted||'(nessuna)')+'\n\n'+
-    'messaggio_utente:\n'+(ctx.userMessage||'(nessuno)');
-}
-/* sceglie una variante ruotando per click+tempo, evitando le ultime mostrate */
-function obsPick(pool,avoid){
-  const base=(S.observerNotes?S.observerNotes.length:0)+Math.floor(Date.now()/30000);
-  for(let k=0;k<pool.length;k++){
-    const c=pool[((base+k)%pool.length+pool.length)%pool.length];
-    if(!avoid||avoid.indexOf(c)<0) return c;
-  }
-  return pool[((base%pool.length)+pool.length)%pool.length];
-}
 let observing=false;
 async function observe(silent){
   if(observing) return; observing=true;
   const btn=document.querySelector('#btn-observe');
   const noteEl=document.querySelector('#observer-note');
-  const digest=buildObserverDigest();
-  const ctx=buildSentieroContext();                 /* ricostruito da zero a ogni click */
-  const contextText=buildContextText(ctx);
-  console.log('[OBSERVER] context', contextText);
-  console.log('[OBSERVER] mode', ctx.mode);
-  console.log('[OBSERVER] completedToday', ctx.completedToday);
-  console.log('[OBSERVER] activeQuests', ctx.activeQuests);
-  const range={from:(digest.diario.length?digest.diario[digest.diario.length-1].giorno:null),to:digest.oggi};
-  let result=null;
-  if(S.apiKey){
-    if(!silent){ if(btn){ btn.textContent='Osservo…'; btn.disabled=true; } if(noteEl) noteEl.classList.add('observing'); }
-    try{ result=await askObserver(digest, contextText); }catch(err){ console.warn('[OBSERVER] fallback reason', err); result=null; }
+  try{
+    const digest=buildObserverDigest();
+    const range={from:(digest.diario.length?digest.diario[digest.diario.length-1].giorno:null),to:digest.oggi};
+    let result=null;
+    if(S.apiKey){
+      if(!silent){ if(btn){ btn.textContent='Osservo...'; btn.disabled=true; } if(noteEl) noteEl.classList.add('observing'); }
+      try{ result=await askObserver(digest); }catch(_){ result=null; }
+    }
+    if(!result) result=buildObserverLocal(digest); /* fallback: offline o IA non disponibile */
+    const entry={
+      id:'o'+Date.now().toString(36),
+      createdAt:new Date().toISOString(),
+      sourceRange:range,
+      summary:result.summary||'',
+      detectedPatterns:result.detectedPatterns||[],
+      note:result.note
+    };
+    S.observerNotes.push(entry);
+    S.observerNotes=sanitizeObserverNotes(S.observerNotes);
+    save(); renderObserver(); if(!silent){ try{ haptic(); }catch(_){} }
+  }finally{
     if(!silent){ if(btn){ btn.textContent='Osserva'; btn.disabled=false; } if(noteEl) noteEl.classList.remove('observing'); }
-  } else { console.warn('[OBSERVER] fallback reason', 'no apiKey'); }
-  if(!result) result=buildObserverLocal(digest, ctx); /* fallback variato: offline o IA non disponibile */
-  const entry={
-    id:'o'+Date.now().toString(36),
-    createdAt:new Date().toISOString(),
-    sourceRange:range,
-    summary:result.summary||'',
-    detectedPatterns:result.detectedPatterns||[],
-    note:result.note
-  };
-  S.observerNotes.push(entry);
-  S.observerNotes=sanitizeObserverNotes(S.observerNotes);
-  save(); renderObserver(); if(!silent){ try{ haptic(); }catch(_){} }
-  observing=false;
+    observing=false;
+  }
 }
 /* osservazione AUTOMATICA: una volta al giorno, se c'è abbastanza materiale e non si è già osservato oggi */
 function maybeObserveAuto(){
@@ -2318,7 +2275,7 @@ function updateRing(){
   const ensoEl=document.querySelector('#enso');
   ensoEl.style.strokeDashoffset=500-460*r.p;
   ensoEl.style.filter='drop-shadow(0 0 '+(4+12*r.p)+'px var(--jade-glow))'; /* il bagliore cresce col cerchio */
-  syncActiveTheme();  /* Active Theme: parte solo con quest attive */
+  try{ ATHEME.setActive((r.total-r.done)>0); }catch(_){}  /* Active Theme: parte solo con quest attive */
   const res=sealIfComplete(S,tk,dow);
   if(res==='sealed'){
     save();
@@ -2340,6 +2297,7 @@ function updateRing(){
     micBtn.classList.remove('sealed');
     document.querySelector('#ring-count').textContent= r.total? (r.done+' / '+r.total+' · il cerchio si chiude') : '';
   }
+  try{ renderFlow(); }catch(_){}
 }
 
 /* ======================================================================
@@ -2356,7 +2314,7 @@ document.addEventListener('visibilitychange',()=>{
   }
   scheduleReminders();
   capturePos();
-  syncActiveTheme();
+  if(S.settings.music){ try{ const r=computeProgress(S,todayKey(),dowOf()); ATHEME.setActive((r.total-r.done)>0); }catch(_){} } else { try{ATHEME.stop(false);}catch(_){} }
 });
 
 /* ======================================================================
@@ -2372,13 +2330,19 @@ function render(bornIds){
   S_(()=>renderStreak());
   S_(()=>renderObserver());
   S_(()=>updateRing());
+  S_(()=>renderFlow());
 }
 function todaysScheduled(){ return scheduledFor(S,dowOf(),todayKey()); }
+function setEmpty(el,text,action,label){
+  el.innerHTML='<p class="empty">'+escapeHtml(text)+(action&&label?'<button class="empty-go" data-flow="'+action+'">'+escapeHtml(label)+'</button>':'')+'</p>';
+  const b=el.querySelector('[data-flow]');
+  if(b) b.onclick=()=>handleFlowAction(b.dataset.flow);
+}
 
 function renderTasks(){
   const el=document.querySelector('#list-task'); const list=todaysScheduled();
   const checks=S.checks[todayKey()]||{};
-  if(!list.length){ el.innerHTML='<p class="empty">Nessuna task pianificata per oggi. Aggiungile in Altro.</p>'; return; }
+  if(!list.length){ setEmpty(el,'Nessuna task pianificata per oggi. Se vuoi un appiglio fisso, crealo una volta e poi non pensarci piu.','tasks','Crea una task'); return; }
   el.innerHTML='';
   list.forEach(t=>{
     const done=checks[t.id]===true;
@@ -2501,7 +2465,7 @@ function renderTodayQuests(bornIds){
   const tk=todayKey();
   const domani=localDayKey(new Date(Date.now()+86400000));
   const list=sortQuests(activeQuests(S,tk));
-  if(!list.length){ el.innerHTML='<p class="empty">Nessuna quest per oggi. Parla al cerchio: l\u2019IA le distiller\u00e0 da ci\u00f2 che dici.</p>'; return; }
+  if(!list.length){ setEmpty(el,'Nessuna quest per oggi. Una frase detta bene basta a far comparire il prossimo passo.','speak','Parla al cerchio'); return; }
   el.innerHTML='';
   list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>renderTodayQuests([]))));
 }
@@ -2511,13 +2475,13 @@ function renderQuests(bornIds){
   const tk=todayKey();
   const domani=localDayKey(new Date(Date.now()+86400000));
   const list=sortQuests(futureQuests(S,tk));
-  if(!list.length){ el.innerHTML='<p class="empty">Nessuna quest in programma. Quelle con una data futura compaiono qui.</p>'; return; }
+  if(!list.length){ setEmpty(el,'Nessuna quest in programma. Il futuro resta pulito finche non gli dai una data.','speak','Detta una quest'); return; }
   el.innerHTML='';
   list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>{renderQuests([]);renderTodayQuests([]);})));
 }
 function renderDiary(){
   const el=document.querySelector('#list-diario');
-  if(!S.diary.length){ el.innerHTML='<p class="empty">Il diario \u00e8 vuoto. \u00c8 la conseguenza, non lo scopo: ogni rilascio distillato aggiunge una nota qui.</p>'; return; }
+  if(!S.diary.length){ setEmpty(el,'Il diario e vuoto. Non va riempito: va lasciato dietro ogni azione vera.','speak','Registra la prima nota'); return; }
   el.innerHTML='';
   S.diary.forEach(e=>{
     const div=document.createElement('div'); div.className='entry';
@@ -2611,8 +2575,7 @@ document.querySelector('#sw-sound').onclick=()=>{ S.settings.sound=!S.settings.s
 document.querySelector('#sw-music').onclick=()=>{
   S.settings.music=!S.settings.music; save(); renderSettings();
   if(S.settings.music){
-    try{ ATHEME.unlock(); }catch(_){}   /* sblocca iOS e precarica */
-    syncActiveTheme();
+    try{ ATHEME.unlock(); }catch(_){}   /* il tocco sblocca l'audio iOS e precarica l'Active Theme */
     toast('Colonna sonora attiva');
   } else {
     try{ ATHEME.pause(); }catch(_){}

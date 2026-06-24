@@ -1,8 +1,18 @@
-const CACHE = 'sentiero-v47-motion';
+const CACHE = 'sentiero-v19';
 const ASSETS = ['./audio/active_quest_v6_bandcore.wav', './', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-180.png', 'splash-1290x2796.png', 'splash-1179x2556.png', 'splash-1170x2532.png', 'splash-1125x2436.png', 'splash-828x1792.png', 'splash-750x1334.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    await Promise.all(ASSETS.map(async asset => {
+      try {
+        const res = await fetch(asset, { cache: 'reload' });
+        if (res && res.ok) await c.put(asset, res);
+      } catch (_) {
+        // Un asset pesante o mancante non deve bloccare l'installazione della PWA.
+      }
+    }));
+  })());
   self.skipWaiting();
 });
 
