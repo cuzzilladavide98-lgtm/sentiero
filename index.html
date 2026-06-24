@@ -906,7 +906,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v52 · 2026-06-24';
+const APP_VERSION='v53 · 2026-06-24';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1565,135 +1565,109 @@ const BOOTBED=(()=>{
   return {start,stop,duck,isPlaying,hasFailed:()=>failed};
 })();
 
-/* ORCH: engine sample-based. No oscillator melody, no MIDI fake: it layers the
-   local audio material as a dramatic, urgent bed. The SAMPLE reference informs
-   structure only: accents, breath, pressure, and arc. No audio is copied. */
+/* ORCH v53: motore a SCENE musicali (non più stratificazione di loop a volume).
+   Il CORE è il campione band reale (chitarra palm-mute + batteria vera, Sol minore);
+   attorno, atmosfera e colore armonico reali. Le scene cambiano con remainingWork
+   con crossfade veri, pulsazione a tempo e un accento breve al completamento.
+   Nessun oscillatore, nessun MIDI finto: solo materiale audio reale. */
 const ORCH=(()=>{
   const BASE='audio/orchestra/';
-  const LAYERS=[
-    {id:'tension',file:'atomic-tension.mp3',role:'bed',gain:0.22,min:1,offset:0},
-    {id:'sewer',file:'sewer-tension.mp3',role:'bed',gain:0.11,min:2,offset:0.31},
-    {id:'motion',file:'daw-loop.mp3',role:'motion',gain:0.13,min:3,offset:0.12},
-    {id:'drums1',file:'tribal-drive.mp3',role:'drums',gain:0.21,min:1,offset:0},
-    {id:'drums2',file:'low-drums.mp3',role:'drums',gain:0.14,min:4,offset:0.18},
-    {id:'drums3',file:'east-drums.mp3',role:'drums',gain:0.10,min:6,offset:0.27},
-    {id:'dmaj',file:'d-major.mp3',role:'harmony',gain:0.10,min:1,offset:0},
-    {id:'fmaj',file:'f-major.mp3',role:'harmony',gain:0.085,min:3,offset:0.08},
-    {id:'amaj',file:'a-major.mp3',role:'harmony',gain:0.07,min:5,offset:0.16},
-    {id:'bmaj',file:'b-major.mp3',role:'harmony',gain:0.06,min:7,offset:0.24}
+  const CORE_URL='audio/active_quest_v6_bandcore.wav';
+  // base gain di ogni strato (timbro), poi modulato dalle scene
+  const L=[
+    {id:'core', url:CORE_URL,            base:0.52, bus:'main'},
+    {id:'atmos',url:BASE+'atomic-tension.mp3', base:0.22, bus:'bed'},
+    {id:'tex',  url:BASE+'sewer-tension.mp3',  base:0.14, bus:'bed'},
+    {id:'colD', url:BASE+'d-major.mp3',  base:0.12, bus:'main'},  // dominante in Gm
+    {id:'colF', url:BASE+'f-major.mp3',  base:0.11, bus:'main'}   // bVII in Gm
   ];
-  let unlocked=false,ready=false,loading=false,failed=false,playing=false,ducked=false,targetRemaining=0;
-  let buffers={},nodes={},master=null,timer=null,startedAt=0,lastRemaining=-1;
+  const BPM=128, BEAT=60/BPM, BAR=BEAT*4;
+  let unlocked=false,ready=false,loading=false,failed=false,playing=false,ducked=false;
+  let targetRemaining=0,lastRemaining=0,accentUntil=0;
+  let buffers={},nodes={},master=null,bed=null,timer=null,startedAt=0;
+  const cur={core:0,atmos:0,tex:0,colD:0,colF:0,cut:240}; // livelli scena smussati in JS
   function audio(){ return ac(); }
   function decode(a,b){
     try{ const out=a.decodeAudioData(b); if(out&&typeof out.then==='function') return out; }catch(_){}
-    return new Promise((resolve,reject)=>{ try{ a.decodeAudioData(b,resolve,reject); }catch(e){ reject(e); } });
+    return new Promise((res,rej)=>{ try{ a.decodeAudioData(b,res,rej); }catch(e){ rej(e); } });
   }
   function preload(){
     if(ready||loading||failed) return; const a=audio(); if(!a) return; loading=true;
-    Promise.all(LAYERS.map(l=>fetch(BASE+l.file).then(r=>{ if(!r.ok) throw new Error(l.file); return r.arrayBuffer(); }).then(b=>decode(a,b)).then(buf=>{ buffers[l.id]=buf; })))
+    Promise.all(L.map(l=>fetch(l.url).then(r=>{ if(!r.ok) throw new Error(l.id); return r.arrayBuffer(); }).then(b=>decode(a,b)).then(buf=>{ buffers[l.id]=buf; })))
       .then(()=>{ ready=true; loading=false; failed=false; if(unlocked&&targetRemaining>0) start(); })
       .catch(()=>{ loading=false; failed=true; });
   }
   function ensureMaster(a){
     if(master) return master;
-    master=a.createGain(); master.gain.value=0.0001;
-    master.connect(BUS||a.destination);
+    master=a.createGain(); master.gain.value=0.0001; master.connect(BUS||a.destination);
+    bed=a.createBiquadFilter(); bed.type='lowpass'; bed.frequency.value=240; bed.Q.value=0.4; bed.connect(master);
     return master;
   }
   function mkLayer(a,l,when){
+    if(!buffers[l.id]) return;
     const src=a.createBufferSource(),g=a.createGain();
-    src.buffer=buffers[l.id]; src.loop=true;
-    g.gain.value=0.0001;
-    src.connect(g); g.connect(ensureMaster(a));
-    const dur=src.buffer&&src.buffer.duration?src.buffer.duration:0;
-    const off=dur?((l.offset||0)*dur)%dur:0;
-    try{ src.start(when,off); }catch(_){}
+    src.buffer=buffers[l.id]; src.loop=true; g.gain.value=0.0001;
+    src.connect(g); g.connect(l.bus==='bed'?bed:master);
+    try{ src.start(when,0); }catch(_){}
     nodes[l.id]={src,g,l};
   }
   function start(){
     const a=audio(); if(!a||!S.settings.music||playing) return;
     if(!ready){ preload(); return; }
     ensureMaster(a);
-    const when=a.currentTime+0.04;
-    startedAt=a.currentTime;
-    LAYERS.forEach(l=>{ if(buffers[l.id]) mkLayer(a,l,when); });
+    const when=a.currentTime+0.04; startedAt=a.currentTime;
+    L.forEach(l=>mkLayer(a,l,when));
     playing=true;
-    try{ BOOTBED.stop(true); }catch(_){}
+    try{ master.gain.cancelScheduledValues(a.currentTime); master.gain.setValueAtTime(0.0001,a.currentTime);
+         master.gain.linearRampToValueAtTime(0.9,a.currentTime+0.5); }catch(_){}
+    // il CORE è udibile: lascio il BOOTBED solo come ponte, poi lo spengo
+    setTimeout(()=>{ try{ BOOTBED.stop(true); }catch(_){} },480);
     if(timer) clearInterval(timer);
-    timer=setInterval(()=>shape(targetRemaining),720);
-    shape(targetRemaining);
+    timer=setInterval(tick,140); tick();
   }
   function stop(fade){
     const a=audio(); const old=nodes; nodes={}; playing=false;
     if(timer){ clearInterval(timer); timer=null; }
-    try{
-      if(master&&a){
-        master.gain.cancelScheduledValues(a.currentTime);
-        master.gain.setValueAtTime(master.gain.value,a.currentTime);
-        master.gain.linearRampToValueAtTime(0.0001,a.currentTime+(fade?0.7:0.02));
-      }
-    }catch(_){}
+    try{ if(master&&a){ master.gain.cancelScheduledValues(a.currentTime); master.gain.setValueAtTime(master.gain.value,a.currentTime); master.gain.linearRampToValueAtTime(0.0001,a.currentTime+(fade?0.7:0.02)); } }catch(_){}
+    for(const k in cur){ if(k!=='cut') cur[k]=0; }
     setTimeout(()=>{ Object.keys(old).forEach(k=>{ try{ old[k].src.stop(); }catch(_){} }); }, fade?780:40);
   }
-  function sceneRole(role,t){
-    const phase=(t%64)/64; /* 64s arc: stalk -> rise -> break -> desperation */
-    const breathe=0.86+0.14*Math.sin(t*0.72);
-    if(phase<0.25){
-      if(role==='bed') return 0.85*breathe;
-      if(role==='motion') return 0.35;
-      if(role==='drums') return 0.55;
-      return 0.52;
-    }
-    if(phase<0.50){
-      if(role==='bed') return 0.98;
-      if(role==='motion') return 0.75;
-      if(role==='drums') return 0.95;
-      return 0.72;
-    }
-    if(phase<0.75){
-      if(role==='bed') return 1.08;
-      if(role==='motion') return 0.92;
-      if(role==='drums') return 1.16;
-      return 0.90;
-    }
-    if(role==='bed') return 1.16;
-    if(role==='motion') return 1.08;
-    if(role==='drums') return 1.30;
-    return 1.04;
+  // ── definizione delle SCENE: cosa suona, non solo quanto forte ──
+  function scene(r){
+    if(r<=0)  return {core:0,   atmos:0,   tex:0,   colD:0,   colF:0,   cut:240,  pulse:0,   beat:0};
+    if(r===1) return {core:0,   atmos:0.64,tex:0.30,colD:0.34,colF:0,   cut:900,  pulse:0.10,beat:0};   // respiro
+    if(r<=3)  return {core:0.66,atmos:0.50,tex:0.34,colD:0.30,colF:0.30,cut:1500, pulse:0.10,beat:0};   // movimento
+    if(r<=6)  return {core:0.98,atmos:0.56,tex:0.46,colD:0.40,colF:0.56,cut:2600, pulse:0.12,beat:0.16};// spinta/ostinato
+    return        {core:1.16,atmos:0.72,tex:0.60,colD:0.62,colF:0.70,cut:4200, pulse:0.14,beat:0.22};  // desperation
   }
-  function cueShape(role,t,remaining){
-    const hit=Math.pow(Math.max(0,Math.sin(t*Math.PI/4)),8);       /* recurring battle accent */
-    const preDrop=((t%16)>14.55&&(t%16)<15.45)?0.58:1;             /* breath before impact */
-    const surge=((t%16)>=15.45||((t%16)<1.2))?1.22:1;             /* impact/re-entry */
-    const panic=remaining>=6?(1+0.08*Math.sin(t*2.7)):1;
-    if(role==='drums') return preDrop*(1+hit*0.26)*surge*panic;
-    if(role==='motion') return preDrop*(0.92+hit*0.12)*surge;
-    if(role==='bed') return (0.96+hit*0.06)*(preDrop<1?0.82:1);
-    return preDrop*(0.9+hit*0.16)*surge;
-  }
-  function layerGain(l,remaining,t){
-    if(remaining<l.min) return 0;
-    const intensity=Math.min(1,remaining/7);
-    const over=Math.max(0,Math.min(1,(remaining-7)/6));
-    const entrance=Math.min(1,(remaining-l.min+1)/3);
-    const urgency=1+Math.min(0.42,remaining*0.035);
-    const drama=l.role==='drums'?(0.46+intensity*0.95+over*0.5):(0.54+intensity*0.62+over*0.3);
-    const stinger=(l.role==='drums'&&lastRemaining>remaining)?1.18:1;
-    return l.gain*entrance*drama*sceneRole(l.role,t)*cueShape(l.role,t,remaining)*urgency*stinger*(ducked?0.10:1);
-  }
-  function shape(remaining){
-    targetRemaining=Math.max(0,remaining||0);
-    if(!S.settings.music||targetRemaining<=0){ stop(true); return; }
-    if(unlocked&&!playing) start();
+  function tick(){
     const a=audio(); if(!a) return;
-    const t=startedAt?a.currentTime-startedAt:0;
-    if(master){ try{ master.gain.setTargetAtTime(0.78+Math.min(0.18,targetRemaining*0.015),a.currentTime,0.22); }catch(_){} }
-    Object.keys(nodes).forEach(k=>{
-      const n=nodes[k],v=layerGain(n.l,targetRemaining,t);
-      try{ n.g.gain.setTargetAtTime(v,a.currentTime,n.l.role==='drums'?0.22:0.55); }catch(_){}
-    });
+    if(!S.settings.music||targetRemaining<=0){ stop(true); return; }
+    if(unlocked&&!playing){ start(); return; }
+    const sc=scene(targetRemaining);
+    // accento musicale breve al completamento (remaining sceso)
+    if(targetRemaining<lastRemaining && targetRemaining>0) accentUntil=a.currentTime+0.85;
     lastRemaining=targetRemaining;
+    const accent=a.currentTime<accentUntil;
+    const accK=accent?Math.max(0,(accentUntil-a.currentTime)/0.85):0; // 1→0
+    // crossfade di scena: lerp lento in JS (≈2s) = cambio scena, non scatto di volume
+    const k=0.07;
+    cur.core+=(sc.core-cur.core)*k; cur.atmos+=(sc.atmos-cur.atmos)*k; cur.tex+=(sc.tex-cur.tex)*k;
+    cur.colD+=(sc.colD-cur.colD)*k; cur.colF+=(sc.colF-cur.colF)*k;
+    const cutTarget=sc.cut+(accent?2200*accK:0);
+    cur.cut+=(cutTarget-cur.cut)*0.12;
+    const t=startedAt?a.currentTime-startedAt:0;
+    const barSwell=1+sc.pulse*Math.sin(2*Math.PI*(t/BAR));                         // respiro a battuta
+    const beatHit =1+sc.beat*Math.pow(Math.max(0,Math.sin(Math.PI*t/BEAT)),6);     // accento a battito
+    const dk=ducked?0.12:1;
+    const set=(id,val,tc)=>{ const n=nodes[id]; if(n){ try{ n.g.gain.setTargetAtTime(Math.max(0.0001,val),a.currentTime,tc); }catch(_){} } };
+    set('core', L[0].base*cur.core*beatHit*(1+0.18*accK)*dk, 0.10);
+    set('atmos',L[1].base*cur.atmos*barSwell*dk, 0.20);
+    set('tex',  L[2].base*cur.tex*barSwell*(1+0.5*accK)*dk, 0.18);
+    set('colD', L[3].base*cur.colD*dk, 0.30);
+    set('colF', L[4].base*cur.colF*dk, 0.30);
+    try{ if(bed) bed.frequency.setTargetAtTime(cur.cut,a.currentTime,0.20); }catch(_){}
+    try{ if(master) master.gain.setTargetAtTime(0.78+Math.min(0.18,targetRemaining*0.015),a.currentTime,0.25); }catch(_){}
   }
   function unlock(){
     if(!S.settings.music) return; const a=audio(); if(!a) return;
@@ -1705,9 +1679,9 @@ const ORCH=(()=>{
     targetRemaining=active?Math.max(1,remaining||remainingWork()):0;
     if(!active){ stop(true); return; }
     if(unlocked){ if(ready) start(); else preload(); }
-    shape(targetRemaining);
+    tick();
   }
-  function duck(on){ ducked=!!on; shape(targetRemaining); }
+  function duck(on){ ducked=!!on; if(playing) tick(); }
   return {unlock,setActive,stop,pause:()=>stop(false),duck,preload,isPlaying:()=>playing,hasFailed:()=>failed};
 })();
 
