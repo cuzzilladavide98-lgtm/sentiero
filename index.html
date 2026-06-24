@@ -740,13 +740,51 @@ function sanitizeQuestLog(arr){
   }
   return out.slice(-300); /* conserva gli ultimi 300 completamenti */
 }
+function closeJsonFragment(text){
+  let s=String(text||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/```$/,'').trim();
+  if(!s) return '';
+  if(!/^[\[{]/.test(s)&&/^\s*"(summary|detectedPatterns|note)"\s*:/.test(s)) s='{'+s;
+  const stack=[]; let inStr=false,esc=false;
+  for(const ch of s){
+    if(inStr){ if(esc) esc=false; else if(ch==='\\') esc=true; else if(ch==='"') inStr=false; continue; }
+    if(ch==='"'){ inStr=true; continue; }
+    if(ch==='{'||ch==='[') stack.push(ch);
+    else if(ch==='}'&&stack[stack.length-1]==='{') stack.pop();
+    else if(ch===']'&&stack[stack.length-1]==='[') stack.pop();
+  }
+  while(stack.length&&stack.length<8){ const ch=stack.pop(); s+=ch==='{'?'}':']'; }
+  return s;
+}
+function parseLooseJson(text){
+  const raw=String(text||'').trim();
+  const candidates=[raw,raw.startsWith('{')?raw:'{'+raw,closeJsonFragment(raw),closeJsonFragment(raw.startsWith('{')?raw:'{'+raw)];
+  for(const c of candidates){
+    if(!c) continue;
+    try{ return JSON.parse(c); }catch(_){}
+  }
+  return null;
+}
+function observerPayloadFromText(text){
+  const p=parseLooseJson(text);
+  if(!p||typeof p!=='object'||Array.isArray(p)) return null;
+  const summary=clampStr(p.summary,300).trim();
+  const detectedPatterns=Array.isArray(p.detectedPatterns)?p.detectedPatterns.slice(0,8).map(x=>clampStr(x,80).trim()).filter(Boolean):[];
+  const note=clampStr((typeof p.note==='string'&&p.note.trim())?p.note:summary,600).trim();
+  return note?{summary,detectedPatterns,note}:null;
+}
+function observerLooksJsonish(text){
+  return /^\s*[\{"]/.test(String(text||''))&&/"(summary|detectedPatterns|note)"\s*:/.test(String(text||''));
+}
 function sanitizeObserverNotes(arr){
   if(!Array.isArray(arr)) return [];
   const out=[];
   for(const n of arr){
     if(!n||typeof n!=='object') continue;
-    const note=clampStr(n.note,600).trim();
+    const payload=observerPayloadFromText(n.note);
+    const note=clampStr(payload?payload.note:n.note,600).trim();
     if(!note) continue;
+    const savedPatterns=Array.isArray(n.detectedPatterns)?n.detectedPatterns.slice(0,8).map(p=>clampStr(p,80).trim()).filter(Boolean):[];
+    const patterns=savedPatterns.length?savedPatterns:(payload?payload.detectedPatterns:[]);
     out.push({
       id:clampStr(n.id,40)||('o'+Math.random().toString(36).slice(2,9)),
       createdAt:(typeof n.createdAt==='string')?n.createdAt.slice(0,40):new Date().toISOString(),
@@ -754,8 +792,8 @@ function sanitizeObserverNotes(arr){
         from:(n.sourceRange&&typeof n.sourceRange.from==='string')?n.sourceRange.from.slice(0,40):null,
         to:(n.sourceRange&&typeof n.sourceRange.to==='string')?n.sourceRange.to.slice(0,40):null
       },
-      summary:clampStr(n.summary,300).trim(),
-      detectedPatterns:Array.isArray(n.detectedPatterns)?n.detectedPatterns.slice(0,8).map(p=>clampStr(p,80).trim()).filter(Boolean):[],
+      summary:clampStr(n.summary||(payload&&payload.summary)||'',300).trim(),
+      detectedPatterns:patterns,
       note:note
     });
   }
@@ -868,7 +906,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v47 · 2026-06-24';
+const APP_VERSION='v51 · 2026-06-24';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1423,18 +1461,26 @@ const ATHEME=(()=>{
   const URL='audio/active_quest_v6_bandcore.wav';
   let VOL=0.40;                       /* volume gestibile da codice (0.35–0.45) */
   let ctx=null,buf=null,src=null,gain=null;
-  let loaded=false,loading=false,playing=false,unlocked=false,wantActive=false;
+  let loaded=false,loading=false,playing=false,unlocked=false,wantActive=false,failed=false;
   function ac(){ if(!ctx){ try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(_){ ctx=null; } } return ctx; }
+  function decode(a,b){
+    try{
+      const out=a.decodeAudioData(b);
+      if(out&&typeof out.then==='function') return out;
+    }catch(_){}
+    return new Promise((resolve,reject)=>{ try{ a.decodeAudioData(b,resolve,reject); }catch(e){ reject(e); } });
+  }
   function preload(){
-    if(loaded||loading) return; const a=ac(); if(!a) return; loading=true;
-    fetch(URL).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(b=>{
-      buf=b; loaded=true; loading=false; if(wantActive&&unlocked) play();
-    }).catch(()=>{ loading=false; });
+    if(loaded||loading||failed) return; const a=ac(); if(!a) return; loading=true;
+    fetch(URL).then(r=>{ if(!r.ok) throw new Error('audio '+r.status); return r.arrayBuffer(); }).then(b=>decode(a,b)).then(b=>{
+      buf=b; loaded=true; loading=false; failed=false; if(wantActive&&unlocked) play();
+    }).catch(()=>{ loading=false; failed=true; try{ if(S.settings.music) MUSIC.update(remainingWork()); }catch(_){} });
   }
   function play(){
     const a=ac(); if(!a||!loaded||playing) return;
     if(!S.settings || !S.settings.music) return;       /* rispetta l'impostazione audio */
     try{
+      try{ MUSIC.stop(); }catch(_){}                    /* il campione è la via primaria; il generativo resta fallback */
       src=a.createBufferSource(); src.buffer=buf; src.loop=true;   /* loop gapless */
       gain=a.createGain(); gain.gain.setValueAtTime(0.0001,a.currentTime);
       src.connect(gain); gain.connect(a.destination);
@@ -1453,19 +1499,191 @@ const ATHEME=(()=>{
   }
   function unlock(){
     unlocked=true; const a=ac(); if(!a) return;
-    try{ if(a.state==='suspended') a.resume(); }catch(_){}
+    try{ if(a.state==='suspended') a.resume().catch(()=>{}); }catch(_){}
     try{ const b=a.createBuffer(1,1,a.sampleRate); const t=a.createBufferSource(); t.buffer=b; t.connect(a.destination); t.start(0); }catch(_){}  /* sblocco iOS */
     if(!loaded) preload(); else if(wantActive) play();
   }
   function setActive(active){
     wantActive=!!active;
-    if(wantActive){ if(unlocked){ if(loaded) play(); else preload(); } }
-    else { stop(true); }
+    if(wantActive){
+      if(unlocked){ if(loaded) play(); else preload(); }
+      if(failed){ try{ MUSIC.update(remainingWork()); }catch(_){} }
+    } else { stop(true); try{ MUSIC.update(0); }catch(_){} }
   }
   function setVolume(v){ VOL=Math.max(0,Math.min(1,v)); const a=ac(); if(gain&&a) gain.gain.setTargetAtTime(VOL,a.currentTime,0.1); }
   function pause(){ stop(false); }
-  return { unlock, setActive, pause, stop, setVolume, preload, isPlaying:()=>playing };
+  function duck(on){ setVolume(on?0.045:0.40); }
+  return { unlock, setActive, pause, stop, setVolume, preload, duck, isPlaying:()=>playing, hasFailed:()=>failed };
 })();
+
+/* ORCH: engine sample-based. No oscillator melody, no MIDI fake: it layers the
+   local audio material as a dramatic, urgent bed. The SAMPLE reference informs
+   structure only: accents, breath, pressure, and arc. No audio is copied. */
+const ORCH=(()=>{
+  const BASE='audio/orchestra/';
+  const LAYERS=[
+    {id:'tension',file:'atomic-tension.mp3',role:'bed',gain:0.22,min:1,offset:0},
+    {id:'sewer',file:'sewer-tension.mp3',role:'bed',gain:0.11,min:2,offset:0.31},
+    {id:'motion',file:'daw-loop.mp3',role:'motion',gain:0.13,min:3,offset:0.12},
+    {id:'drums1',file:'tribal-drive.mp3',role:'drums',gain:0.21,min:1,offset:0},
+    {id:'drums2',file:'low-drums.mp3',role:'drums',gain:0.14,min:4,offset:0.18},
+    {id:'drums3',file:'east-drums.mp3',role:'drums',gain:0.10,min:6,offset:0.27},
+    {id:'dmaj',file:'d-major.mp3',role:'harmony',gain:0.10,min:1,offset:0},
+    {id:'fmaj',file:'f-major.mp3',role:'harmony',gain:0.085,min:3,offset:0.08},
+    {id:'amaj',file:'a-major.mp3',role:'harmony',gain:0.07,min:5,offset:0.16},
+    {id:'bmaj',file:'b-major.mp3',role:'harmony',gain:0.06,min:7,offset:0.24}
+  ];
+  let unlocked=false,ready=false,loading=false,failed=false,playing=false,ducked=false,targetRemaining=0;
+  let buffers={},nodes={},master=null,timer=null,startedAt=0,lastRemaining=-1;
+  function audio(){ return ac(); }
+  function decode(a,b){
+    try{ const out=a.decodeAudioData(b); if(out&&typeof out.then==='function') return out; }catch(_){}
+    return new Promise((resolve,reject)=>{ try{ a.decodeAudioData(b,resolve,reject); }catch(e){ reject(e); } });
+  }
+  function preload(){
+    if(ready||loading||failed) return; const a=audio(); if(!a) return; loading=true;
+    Promise.all(LAYERS.map(l=>fetch(BASE+l.file).then(r=>{ if(!r.ok) throw new Error(l.file); return r.arrayBuffer(); }).then(b=>decode(a,b)).then(buf=>{ buffers[l.id]=buf; })))
+      .then(()=>{ ready=true; loading=false; failed=false; if(unlocked&&targetRemaining>0) start(); })
+      .catch(()=>{ loading=false; failed=true; });
+  }
+  function ensureMaster(a){
+    if(master) return master;
+    master=a.createGain(); master.gain.value=0.0001;
+    master.connect(BUS||a.destination);
+    return master;
+  }
+  function mkLayer(a,l,when){
+    const src=a.createBufferSource(),g=a.createGain();
+    src.buffer=buffers[l.id]; src.loop=true;
+    g.gain.value=0.0001;
+    src.connect(g); g.connect(ensureMaster(a));
+    const dur=src.buffer&&src.buffer.duration?src.buffer.duration:0;
+    const off=dur?((l.offset||0)*dur)%dur:0;
+    try{ src.start(when,off); }catch(_){}
+    nodes[l.id]={src,g,l};
+  }
+  function start(){
+    const a=audio(); if(!a||!S.settings.music||playing) return;
+    if(!ready){ preload(); return; }
+    ensureMaster(a);
+    const when=a.currentTime+0.04;
+    startedAt=a.currentTime;
+    LAYERS.forEach(l=>{ if(buffers[l.id]) mkLayer(a,l,when); });
+    playing=true;
+    if(timer) clearInterval(timer);
+    timer=setInterval(()=>shape(targetRemaining),720);
+    shape(targetRemaining);
+  }
+  function stop(fade){
+    const a=audio(); const old=nodes; nodes={}; playing=false;
+    if(timer){ clearInterval(timer); timer=null; }
+    try{
+      if(master&&a){
+        master.gain.cancelScheduledValues(a.currentTime);
+        master.gain.setValueAtTime(master.gain.value,a.currentTime);
+        master.gain.linearRampToValueAtTime(0.0001,a.currentTime+(fade?0.7:0.02));
+      }
+    }catch(_){}
+    setTimeout(()=>{ Object.keys(old).forEach(k=>{ try{ old[k].src.stop(); }catch(_){} }); }, fade?780:40);
+  }
+  function sceneRole(role,t){
+    const phase=(t%64)/64; /* 64s arc: stalk -> rise -> break -> desperation */
+    const breathe=0.86+0.14*Math.sin(t*0.72);
+    if(phase<0.25){
+      if(role==='bed') return 0.85*breathe;
+      if(role==='motion') return 0.35;
+      if(role==='drums') return 0.55;
+      return 0.52;
+    }
+    if(phase<0.50){
+      if(role==='bed') return 0.98;
+      if(role==='motion') return 0.75;
+      if(role==='drums') return 0.95;
+      return 0.72;
+    }
+    if(phase<0.75){
+      if(role==='bed') return 1.08;
+      if(role==='motion') return 0.92;
+      if(role==='drums') return 1.16;
+      return 0.90;
+    }
+    if(role==='bed') return 1.16;
+    if(role==='motion') return 1.08;
+    if(role==='drums') return 1.30;
+    return 1.04;
+  }
+  function cueShape(role,t,remaining){
+    const hit=Math.pow(Math.max(0,Math.sin(t*Math.PI/4)),8);       /* recurring battle accent */
+    const preDrop=((t%16)>14.55&&(t%16)<15.45)?0.58:1;             /* breath before impact */
+    const surge=((t%16)>=15.45||((t%16)<1.2))?1.22:1;             /* impact/re-entry */
+    const panic=remaining>=6?(1+0.08*Math.sin(t*2.7)):1;
+    if(role==='drums') return preDrop*(1+hit*0.26)*surge*panic;
+    if(role==='motion') return preDrop*(0.92+hit*0.12)*surge;
+    if(role==='bed') return (0.96+hit*0.06)*(preDrop<1?0.82:1);
+    return preDrop*(0.9+hit*0.16)*surge;
+  }
+  function layerGain(l,remaining,t){
+    if(remaining<l.min) return 0;
+    const intensity=Math.min(1,remaining/7);
+    const over=Math.max(0,Math.min(1,(remaining-7)/6));
+    const entrance=Math.min(1,(remaining-l.min+1)/3);
+    const urgency=1+Math.min(0.42,remaining*0.035);
+    const drama=l.role==='drums'?(0.46+intensity*0.95+over*0.5):(0.54+intensity*0.62+over*0.3);
+    const stinger=(l.role==='drums'&&lastRemaining>remaining)?1.18:1;
+    return l.gain*entrance*drama*sceneRole(l.role,t)*cueShape(l.role,t,remaining)*urgency*stinger*(ducked?0.10:1);
+  }
+  function shape(remaining){
+    targetRemaining=Math.max(0,remaining||0);
+    if(!S.settings.music||targetRemaining<=0){ stop(true); return; }
+    if(unlocked&&!playing) start();
+    const a=audio(); if(!a) return;
+    const t=startedAt?a.currentTime-startedAt:0;
+    if(master){ try{ master.gain.setTargetAtTime(0.78+Math.min(0.18,targetRemaining*0.015),a.currentTime,0.22); }catch(_){} }
+    Object.keys(nodes).forEach(k=>{
+      const n=nodes[k],v=layerGain(n.l,targetRemaining,t);
+      try{ n.g.gain.setTargetAtTime(v,a.currentTime,n.l.role==='drums'?0.22:0.55); }catch(_){}
+    });
+    lastRemaining=targetRemaining;
+  }
+  function unlock(){
+    if(!S.settings.music) return; const a=audio(); if(!a) return;
+    try{ if(a.state==='suspended') a.resume().catch(()=>{}); }catch(_){}
+    try{ const b=a.createBuffer(1,1,a.sampleRate),s=a.createBufferSource(); s.buffer=b; s.connect(a.destination); s.start(0); }catch(_){}
+    unlocked=true; preload(); if(targetRemaining>0) start();
+  }
+  function setActive(active,remaining){
+    targetRemaining=active?Math.max(1,remaining||remainingWork()):0;
+    if(!active){ stop(true); return; }
+    if(unlocked){ if(ready) start(); else preload(); }
+    shape(targetRemaining);
+  }
+  function duck(on){ ducked=!!on; shape(targetRemaining); }
+  return {unlock,setActive,stop,pause:()=>stop(false),duck,preload,isPlaying:()=>playing,hasFailed:()=>failed};
+})();
+
+function remainingWork(){
+  try{ const r=computeProgress(S,todayKey(),dowOf()); return Math.max(0,r.total-r.done); }catch(_){ return 0; }
+}
+function syncAdaptiveMusic(fromGesture){
+  const remaining=remainingWork();
+  if(!S.settings.music){
+    try{ ORCH.stop(false); }catch(_){}
+    try{ ATHEME.stop(false); }catch(_){}
+    try{ MUSIC.stop(); }catch(_){}
+    return remaining;
+  }
+  if(fromGesture){
+    try{ ORCH.unlock(); }catch(_){}
+  }
+  try{ ORCH.setActive(remaining>0,remaining); }catch(_){}
+  try{
+    if(remaining>0){
+      if(ORCH.isPlaying()){ try{ ATHEME.stop(false); }catch(_){} try{ MUSIC.stop(); }catch(_){} }
+      else if(ORCH.hasFailed()){ try{ ATHEME.unlock(); ATHEME.setActive(true); }catch(_){} }
+    } else { try{ ATHEME.setActive(false); }catch(_){} MUSIC.update(0); }
+  }catch(_){}
+  return remaining;
+}
 
 let itVoice=null;
 function pickVoice(){
@@ -1802,6 +2020,8 @@ function startRec(){
     renderFlow();
     sMicOn(); haptic(); acquireWake();
     try{ if(S.settings.music) MUSIC.recDuck(true); }catch(_){}  /* la musica scende: la voce resta pulita per il riconoscimento */
+    try{ if(S.settings.music) ORCH.duck(true); }catch(_){}
+    try{ if(S.settings.music) ATHEME.duck(true); }catch(_){}
   };
   rec.onresult=e=>{
     const arr=[];
@@ -1837,6 +2057,8 @@ function stopRec(){
   micBtn.classList.remove('rec','arming');
   sMicOff(); releaseWake();
   try{ if(S.settings.music) MUSIC.recDuck(false); }catch(_){}  /* la musica risale dopo la dettatura */
+  try{ if(S.settings.music) ORCH.duck(false); }catch(_){}
+  try{ if(S.settings.music) ATHEME.duck(false); }catch(_){}
   const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
   if(txt){
     micLabel.textContent='Rileggi e distilla';
@@ -2066,8 +2288,8 @@ const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido c
 'SAGGEZZA (Tao, usala senza nominarla ne citarla): il grande nasce dal piccolo (l\'azione ridotta e quella che continua); non-forzare wu wei (cio che si spinge troppo genera attrito, cio che scorre si compie); l\'acqua e morbida e paziente eppure scava la roccia (la costanza batte l\'intensita); sapersi fermare prima di traboccare (un obiettivo a misura della giornata si chiude, uno ideale si rimanda). Questi principi traspaiono dal modo in cui leggi i pattern, mai come citazioni o prediche.\n'+
 'PATTERN da cercare: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi completati solo quando ridotti, rinvii ripetuti, giorni di continuita contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo se gia motivato.\n'+
 'CONFINI: giudica il SISTEMA e il COMPORTAMENTO, mai l\'identita. Vietato sei pigro/incapace/indisciplinato, diagnosi, moralismi. Confronta con le OSSERVAZIONI PRECEDENTI: non ripeterle; se c\'e un cambiamento in meglio o peggio nominalo.\n'+
-'FORMATO: note = 1-3 frasi asciutte. Struttura preferita: "Non e X: e Y. Fai Z." Se i dati sono pochi, dillo in una riga essenziale e basta.\n'+
-'Rispondi ESCLUSIVAMENTE con JSON: {"summary":"sintesi","detectedPatterns":["pattern brevi"],"note":"la riflessione da mostrare"}';
+'FORMATO: note = 1-3 frasi asciutte, massimo 280 caratteri. Struttura preferita: "Non e X: e Y. Fai Z." Se devi tagliare, taglia summary e pattern: la note e obbligatoria.\n'+
+'Rispondi ESCLUSIVAMENTE con JSON compatto, niente markdown. Metti note come primo campo: {"note":"la riflessione da mostrare","detectedPatterns":["pattern brevi"],"summary":"sintesi"}';
 
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
 function buildObserverDigest(){
@@ -2106,7 +2328,7 @@ async function askObserver(digest){
       r=await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST', signal:ctrl?ctrl.signal:undefined,
         headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:model,max_tokens:400,temperature:0.6,system:OBSERVER_SYS,messages:[
+        body:JSON.stringify({model:model,max_tokens:700,temperature:0.55,system:OBSERVER_SYS,messages:[
           {role:'user',content:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest)},
           {role:'assistant',content:'{'}
         ]})
@@ -2123,12 +2345,9 @@ async function askObserver(digest){
     }
     const data=await r.json();
     const raw=(data.content||[]).map(c=>c.text||'').join('');
-    const text=raw.trim().startsWith('{')?raw:'{'+raw;   /* prefill: completa la graffa */
-    const p=extractJson(text);
-    if(p&&typeof p.note==='string'&&p.note.trim()){
-      return {summary:clampStr(p.summary||'',300),detectedPatterns:Array.isArray(p.detectedPatterns)?p.detectedPatterns.slice(0,8).map(x=>clampStr(x,80)):[],note:clampStr(p.note,600)};
-    }
-    if(raw.trim()) return {summary:'',detectedPatterns:[],note:clampStr(raw.trim(),600)}; /* parsing robusto: testo grezzo */
+    const payload=observerPayloadFromText(raw);
+    if(payload) return payload;
+    if(raw.trim()&&!observerLooksJsonish(raw)) return {summary:'',detectedPatterns:[],note:clampStr(raw.trim(),600)}; /* solo se e prosa vera */
     lastErr=new Error('EMPTY');
   }
   throw lastErr||new Error('MODEL');
@@ -2275,7 +2494,7 @@ function updateRing(){
   const ensoEl=document.querySelector('#enso');
   ensoEl.style.strokeDashoffset=500-460*r.p;
   ensoEl.style.filter='drop-shadow(0 0 '+(4+12*r.p)+'px var(--jade-glow))'; /* il bagliore cresce col cerchio */
-  try{ ATHEME.setActive((r.total-r.done)>0); }catch(_){}  /* Active Theme: parte solo con quest attive */
+  try{ syncAdaptiveMusic(false); }catch(_){}  /* musica adattiva: WAV primario, generativo come fallback */
   const res=sealIfComplete(S,tk,dow);
   if(res==='sealed'){
     save();
@@ -2306,7 +2525,7 @@ function updateRing(){
 let renderedDay=todayKey();
 function initDay(){ if(rolloverDay(S,todayKey())) save(); }
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState!=='visible'){ try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} return; }
+  if(document.visibilityState!=='visible'){ try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
   try{FX.resume();}catch(_){}
   if(renderedDay!==todayKey()){
     renderedDay=todayKey();
@@ -2314,7 +2533,7 @@ document.addEventListener('visibilitychange',()=>{
   }
   scheduleReminders();
   capturePos();
-  if(S.settings.music){ try{ const r=computeProgress(S,todayKey(),dowOf()); ATHEME.setActive((r.total-r.done)>0); }catch(_){} } else { try{ATHEME.stop(false);}catch(_){} }
+  try{ syncAdaptiveMusic(false); }catch(_){}
 });
 
 /* ======================================================================
@@ -2519,7 +2738,7 @@ function renderSettings(){
   document.querySelector('#sw-music').classList.toggle('on',!!S.settings.music);
   const mn=document.querySelector('#music-note');
   if(mn) mn.textContent=S.settings.music
-    ? 'La musica sale con le quest rimaste e tace quando il cerchio si chiude. In questa modalità i suoni normali, la voce e i suoni personali sono in pausa: completamenti e sigillo suonano dalla colonna sonora.'
+    ? 'La musica usa campioni locali e sale con le quest rimaste; tace quando il cerchio si chiude. In questa modalità suoni normali, voce e suoni personali restano in pausa.'
     : '';
   document.querySelector('#sw-voice').classList.toggle('on',S.settings.voice);
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
@@ -2575,10 +2794,10 @@ document.querySelector('#sw-sound').onclick=()=>{ S.settings.sound=!S.settings.s
 document.querySelector('#sw-music').onclick=()=>{
   S.settings.music=!S.settings.music; save(); renderSettings();
   if(S.settings.music){
-    try{ ATHEME.unlock(); }catch(_){}   /* il tocco sblocca l'audio iOS e precarica l'Active Theme */
-    toast('Colonna sonora attiva');
+    const remaining=syncAdaptiveMusic(true);   /* gesto utente: sblocca davvero Web Audio su iOS */
+    toast(remaining?'Colonna sonora attiva':'Colonna sonora pronta: partirà alla prossima quest');
   } else {
-    try{ ATHEME.pause(); }catch(_){}
+    try{ syncAdaptiveMusic(false); }catch(_){}
     toast('Colonna sonora disattivata');
   }
 };
@@ -2761,7 +2980,7 @@ try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da so
 /* rete di sicurezza audio: il primo tocco ovunque sblocca la colonna sonora (iOS esige un gesto) */
 (function(){
   function firstGesture(){
-    try{ if(S.settings.music) ATHEME.unlock(); }catch(_){}
+    try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){}
     window.removeEventListener('pointerdown',firstGesture);
     window.removeEventListener('touchend',firstGesture);
   }
@@ -2792,7 +3011,7 @@ try{
     setTimeout(()=>{ intro.style.display='none'; maybeOnboard(); }, fast?60:750);
   }
   /* un tocco sull'intro sblocca subito l'audio e fa entrare (oltre alla dissolvenza automatica) */
-  intro.addEventListener('click',()=>{ try{ if(S.settings.music) ATHEME.unlock(); }catch(_){} dismissIntro(); }, {once:true});
+  intro.addEventListener('click',()=>{ try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){} dismissIntro(); }, {once:true});
   if(S.settings.music){
     const sumEl=document.querySelector('#intro-summary');
     const notes=S.observerNotes||[];
@@ -2819,7 +3038,7 @@ function maybeOnboard(){
     const haDati=(S.diary&&S.diary.length>0)||(S.quests&&S.quests.length>0)||(Array.isArray(S.questLog)&&S.questLog.length>0);
     if(haDati){ try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){} seen=true; }
   }
-  if(seen){ try{ if(S.settings.music) ATHEME.unlock(); }catch(_){} return; }
+  if(seen){ try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){} return; }
   const ob=document.querySelector('#onboard');
   const note=document.querySelector('#ob-note');
   if(!isStandalone()) note.textContent='Suggerimento: Condividi → "Aggiungi alla schermata Home" per i permessi permanenti e le notifiche.';
@@ -2828,7 +3047,7 @@ function maybeOnboard(){
     try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){}
     /* chiede il microfono una volta, nel momento giusto, con un gesto utente reale */
     await primeMicPermission();
-    try{ if(S.settings.music) ATHEME.unlock(); }catch(_){}  /* dopo il microfono, sblocca e avvia la musica */
+    try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){}  /* dopo il microfono, sblocca e avvia la musica */
     ob.style.transition='opacity .4s ease'; ob.style.opacity='0';
     setTimeout(()=>ob.classList.add('hidden'),400);
   };
