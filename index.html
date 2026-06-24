@@ -906,7 +906,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v51 · 2026-06-24';
+const APP_VERSION='v52 · 2026-06-24';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1516,6 +1516,55 @@ const ATHEME=(()=>{
   return { unlock, setActive, pause, stop, setVolume, preload, duck, isPlaying:()=>playing, hasFailed:()=>failed };
 })();
 
+/* BOOTBED: attacco mobile-first.
+   Parte nel gesto utente con un vero file audio locale, cosi iOS/Safari non
+   resta muto mentre l'orchestra Web Audio carica e decodifica i campioni. */
+const BOOTBED=(()=>{
+  const URL='audio/orchestra/tribal-drive.mp3';
+  let el=null,fade=null,failed=false,want=false;
+  function ensure(){
+    if(el) return el;
+    try{
+      el=new Audio(URL);
+      el.preload='auto'; el.loop=true; el.volume=0.0001;
+      try{ el.playsInline=true; el.setAttribute('playsinline',''); }catch(_){}
+      el.addEventListener('error',()=>{ failed=true; }, {passive:true});
+    }catch(_){ el=null; failed=true; }
+    return el;
+  }
+  function fadeTo(v,ms,done){
+    const e=ensure(); if(!e) return;
+    if(fade){ clearInterval(fade); fade=null; }
+    const start=e.volume, target=Math.max(0,Math.min(1,v)), t0=performance.now();
+    fade=setInterval(()=>{
+      const p=Math.min(1,(performance.now()-t0)/Math.max(1,ms||1));
+      try{ e.volume=start+(target-start)*p; }catch(_){}
+      if(p>=1){ clearInterval(fade); fade=null; if(done) done(); }
+    },40);
+  }
+  function start(remaining){
+    if(!S.settings.music||remaining<=0) return;
+    const e=ensure(); if(!e) return;
+    want=true; failed=false;
+    try{
+      e.muted=false;
+      if(e.paused){ try{ e.currentTime=0; }catch(_){} }
+      e.volume=Math.max(e.volume||0,0.0001);
+      const p=e.play();
+      if(p&&p.catch) p.catch(()=>{ failed=true; });
+      fadeTo(0.13,360);
+    }catch(_){ failed=true; }
+  }
+  function stop(smooth){
+    want=false; const e=el; if(!e) return;
+    const pause=()=>{ try{ e.pause(); e.currentTime=0; }catch(_){} };
+    if(smooth) fadeTo(0.0001,650,pause); else { if(fade){ clearInterval(fade); fade=null; } pause(); }
+  }
+  function duck(on){ const e=el; if(!e||e.paused) return; fadeTo(on?0.025:0.13,on?160:360); }
+  function isPlaying(){ return !!(el&&want&&!el.paused&&!el.ended); }
+  return {start,stop,duck,isPlaying,hasFailed:()=>failed};
+})();
+
 /* ORCH: engine sample-based. No oscillator melody, no MIDI fake: it layers the
    local audio material as a dramatic, urgent bed. The SAMPLE reference informs
    structure only: accents, breath, pressure, and arc. No audio is copied. */
@@ -1570,6 +1619,7 @@ const ORCH=(()=>{
     startedAt=a.currentTime;
     LAYERS.forEach(l=>{ if(buffers[l.id]) mkLayer(a,l,when); });
     playing=true;
+    try{ BOOTBED.stop(true); }catch(_){}
     if(timer) clearInterval(timer);
     timer=setInterval(()=>shape(targetRemaining),720);
     shape(targetRemaining);
@@ -1668,22 +1718,41 @@ function syncAdaptiveMusic(fromGesture){
   const remaining=remainingWork();
   if(!S.settings.music){
     try{ ORCH.stop(false); }catch(_){}
+    try{ BOOTBED.stop(false); }catch(_){}
     try{ ATHEME.stop(false); }catch(_){}
     try{ MUSIC.stop(); }catch(_){}
     return remaining;
   }
   if(fromGesture){
+    try{ BOOTBED.start(remaining); }catch(_){}
     try{ ORCH.unlock(); }catch(_){}
+    try{ ATHEME.unlock(); }catch(_){}
+    try{ MUSIC.unlock(); }catch(_){}
   }
   try{ ORCH.setActive(remaining>0,remaining); }catch(_){}
   try{
     if(remaining>0){
-      if(ORCH.isPlaying()){ try{ ATHEME.stop(false); }catch(_){} try{ MUSIC.stop(); }catch(_){} }
-      else if(ORCH.hasFailed()){ try{ ATHEME.unlock(); ATHEME.setActive(true); }catch(_){} }
-    } else { try{ ATHEME.setActive(false); }catch(_){} MUSIC.update(0); }
+      if(ORCH.isPlaying()){ try{ BOOTBED.stop(true); }catch(_){} try{ ATHEME.stop(false); }catch(_){} try{ MUSIC.stop(); }catch(_){} }
+      else if(ORCH.hasFailed()){
+        if(!BOOTBED.isPlaying()){ try{ ATHEME.setActive(true); }catch(_){} try{ MUSIC.update(remaining); }catch(_){} }
+      }
+    } else { try{ BOOTBED.stop(true); }catch(_){} try{ ATHEME.setActive(false); }catch(_){} MUSIC.update(0); }
   }catch(_){}
   return remaining;
 }
+
+function kickAdaptiveMusicFromGesture(){
+  try{
+    if(!S.settings.music) return;
+    const remaining=remainingWork();
+    if(remaining<=0) return;
+    if(ORCH.isPlaying()||BOOTBED.isPlaying()) return;
+    syncAdaptiveMusic(true);
+  }catch(_){}
+}
+['pointerdown','touchstart','click','keydown'].forEach(ev=>{
+  try{ window.addEventListener(ev,kickAdaptiveMusicFromGesture,{capture:true,passive:true}); }catch(_){}
+});
 
 let itVoice=null;
 function pickVoice(){
