@@ -410,9 +410,19 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 
 /* ═══════════ Mente Osservatrice — specchio sobrio ═══════════ */
 #observer-card{padding:2px 0}
-#observer-note{font-family:var(--serif);font-size:19px;line-height:1.55;color:var(--t1);
+#observer-note{font-family:var(--serif);font-size:19px;line-height:1.62;color:var(--t1);
   font-style:italic;letter-spacing:-.01em;min-height:28px;transition:opacity .3s}
 #observer-note.observing{opacity:.4}
+/* "il pensiero che si forma": streaming + cursore che respira — la firma di Claude, qui di casa */
+.obs-caret{display:inline-block;width:2px;height:1.05em;margin-left:1px;vertical-align:-2px;
+  background:var(--accent);border-radius:2px;animation:obsCaret 1s steps(1) infinite}
+@keyframes obsCaret{0%,49%{opacity:.85}50%,100%{opacity:0}}
+.obs-thinking{font-style:normal;color:var(--t3);letter-spacing:.03em}
+.obs-thinking i{display:inline-block;width:4px;height:4px;margin-left:3px;border-radius:50%;
+  background:var(--t3);vertical-align:middle;animation:obsDot 1.3s ease-in-out infinite}
+.obs-thinking i:nth-child(2){animation-delay:.18s}
+.obs-thinking i:nth-child(3){animation-delay:.36s}
+@keyframes obsDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
 #observer-meta{font-size:12px;color:var(--t3);margin-top:10px;letter-spacing:.02em}
 #observer-patterns{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
 .obs-tag{font-size:11px;color:var(--accent);border:.5px solid rgba(232,168,76,.4);
@@ -614,7 +624,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="switchrow"><span>Suoni dell'app</span><button class="sw" id="sw-appaudio"></button></div>
         <div class="group" id="list-snd-events"></div>
         <input type="file" id="snd-file" accept=".mp3,.m4a,.wav,.ogg,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg" class="hidden">
-        <p class="note">Ogni evento è uno slot personalizzabile. Carica un tuo file (max 2 MB, meglio sotto 3 s) e assegnalo: il predefinito è silenzio. I file restano solo su questo telefono.</p>
+        <p class="note">La «Canzone di base» suona in loop durante l'uso (max 8 MB). Gli altri sono slot una-tantum (max 2 MB); predefinito = silenzio. Se usi la canzone di base, conviene spegnere la «Colonna sonora adattiva» qui sopra. Tutto resta solo su questo telefono.</p>
       </section>
 
       <section>
@@ -928,7 +938,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v55 · 2026-06-25';
+const APP_VERSION='v59 · 2026-06-25';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2255,10 +2265,10 @@ function resetCapture(){
 function guideAfterDistill(bornIds){
   bornIds=bornIds||[];
   if(bornIds.length){
-    micLabel.textContent='Fatto. Ora chiudi la prima quest.';
+    streamInto(micLabel,'Fatto. Ora chiudi la prima quest.',{speed:34});   /* il risultato prende forma */
     setTimeout(()=>scrollToSoft('#sec-today-quests'),180);
   }else{
-    micLabel.textContent='Nota salvata. Il sentiero resta leggero.';
+    streamInto(micLabel,'Nota salvata. Il sentiero resta leggero.',{speed:34});
   }
   renderFlow();
 }
@@ -2539,7 +2549,7 @@ async function observe(silent){
     const range={from:(digest.diario.length?digest.diario[digest.diario.length-1].giorno:null),to:digest.oggi};
     let result=null;
     if(S.apiKey){
-      if(!silent){ if(btn){ btn.textContent='Osservo...'; btn.disabled=true; } if(noteEl) noteEl.classList.add('observing'); }
+      if(!silent){ if(btn){ btn.textContent='Osservo...'; btn.disabled=true; } if(noteEl) noteEl.innerHTML='<span class="obs-thinking">sto osservando<i></i><i></i><i></i></span>'; }
       try{ result=await askObserver(digest); }catch(_){ result=null; }
     }
     if(!result||!result.note||!String(result.note).trim()) result=buildObserverLocal(digest); /* fallback: offline, IA non disponibile o nota vuota */
@@ -2554,7 +2564,7 @@ async function observe(silent){
     };
     S.observerNotes.push(entry);
     S.observerNotes=sanitizeObserverNotes(S.observerNotes);
-    save(); renderObserver(); if(!silent){ try{ playEventSound('observerReady'); }catch(_){} try{ haptic(); }catch(_){} }
+    save(); if(!silent) _streamObs=true; renderObserver(); if(!silent){ try{ playEventSound('observerReady'); }catch(_){} try{ haptic(); }catch(_){} }
   }finally{
     if(!silent){ if(btn){ btn.textContent='Osserva'; btn.disabled=false; } if(noteEl) noteEl.classList.remove('observing'); }
     observing=false;
@@ -2572,6 +2582,25 @@ function maybeObserveAuto(){
   }catch(_){}
 }
 function fmtObsDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
+let _streamObs=false;
+function streamInto(el,text,opt){
+  if(!el) return;
+  opt=opt||{};
+  const tok=(el.__stok=(el.__stok||0)+1);   /* token per-elemento: ogni reveal è annullabile da solo */
+  el.classList.remove('observing');
+  const parts=String(text||'').split(/(\s+)/);          /* conserva gli spazi tra le parole */
+  el.textContent='';
+  const caret=document.createElement('span'); caret.className='obs-caret'; el.appendChild(caret);
+  const base=opt.speed||28; let i=0;
+  (function step(){
+    if(tok!==el.__stok || caret.parentNode!==el) return; /* annullato da un nuovo reveal o dal contenuto sostituito sotto */
+    if(i>=parts.length){ try{ caret.remove(); }catch(_){} return; }
+    const w=parts[i++]; if(w) caret.insertAdjacentText('beforebegin',w);
+    const pause=/[.,;:!?…—]$/.test((w||'').trim())?(base*6):base;   /* respira sulla punteggiatura */
+    setTimeout(step,pause);
+  })();
+}
+function streamObserverNote(text){ streamInto(document.querySelector('#observer-note'),text,{speed:28}); }
 function renderObserver(){
   const noteEl=document.querySelector('#observer-note'); if(!noteEl) return;
   const metaEl=document.querySelector('#observer-meta');
@@ -2585,7 +2614,8 @@ function renderObserver(){
     if(metaEl) metaEl.textContent=''; if(patEl) patEl.innerHTML=''; if(histEl) histEl.innerHTML=''; return;
   }
   const last=notes[notes.length-1];
-  noteEl.textContent=last.note;
+  if(_streamObs){ _streamObs=false; streamObserverNote(last.note); }
+  else { noteEl.textContent=last.note; }
   if(metaEl) metaEl.textContent=fmtObsDate(last.createdAt);
   if(patEl) patEl.innerHTML=(last.detectedPatterns||[]).map(p=>'<span class="obs-tag">'+escapeHtml(p)+'</span>').join('');
   if(histEl){
@@ -2646,8 +2676,8 @@ function updateRing(){
       floatWord('Cerchio chiuso',6); shake(true);
       try{ FX.bloom(); }catch(_){}
       try{ const f=document.querySelector('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }catch(_){}
+      try{ streamInto(document.querySelector('#ring-count'),'Cerchio chiuso · a domani',{speed:46}); }catch(_){ try{ document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani'; }catch(_){} }
     },350);
-    document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani';
     try{ setTimeout(()=>observe(true),1500); }catch(_){}   /* a cerchio chiuso, la Mente osserva la giornata */
   } else if(res==='already'){
     micBtn.classList.add('sealed');
@@ -3001,7 +3031,9 @@ document.querySelector('#btn-clearsfx').onclick=()=>{ if(!SFX.length) return; SF
    ====================================================================== */
 const SND_LS='sentiero-snd-v1';
 const SND_MAX_FILE=2*1024*1024;
+const SND_MAX_BASE=8*1024*1024;   /* la canzone di base è un brano: cap più alto */
 const SOUND_EVENTS=[
+  {id:'baseLoop',       label:'Canzone di base', description:'Suona di continuo, in loop, mentre usi l\'app. La scegli tu (max 8 MB).', category:'base', loop:true},
   {id:'questCompleted', label:'Quest completata', description:'Quando spunti una quest o una task come fatta.', category:'azione'},
   {id:'observerReady',  label:'Mente Osservatrice pronta', description:'Quando l\'app genera una nuova osservazione sul tuo comportamento.', category:'mente'},
   {id:'nextMoveReady',  label:'Prossima Mossa pronta', description:'Quando l\'app propone l\'azione concreta da fare adesso.', category:'mente'},
@@ -3112,10 +3144,11 @@ function previewSound(soundId){
   if(cached) return Promise.resolve(playBuffer(cached,vol));
   return decodeSound(soundId).then(buf=>buf?playBuffer(buf,vol):(toast('Anteprima non disponibile'),false));
 }
-function validateAudioFile(file){
+function validateAudioFile(file,maxBytes){
   return new Promise(res=>{
     if(!file){ res({ok:false,reason:'Nessun file'}); return; }
-    if(file.size>SND_MAX_FILE){ res({ok:false,reason:'File troppo grande (max 2 MB)'}); return; }
+    const lim=maxBytes||SND_MAX_FILE;
+    if(file.size>lim){ res({ok:false,reason:'File troppo grande (max '+Math.round(lim/1048576)+' MB)'}); return; }
     const okExt=/\.(mp3|m4a|wav|ogg)$/i.test(file.name||'');
     const okType=/(mpeg|mp4|m4a|aac|wav|wave|ogg)/i.test(file.type||'');
     if(!okExt&&!okType){ res({ok:false,reason:'Formato non riconosciuto: usa mp3, m4a, wav o ogg'}); return; }
@@ -3130,7 +3163,7 @@ function validateAudioFile(file){
 function sndUid(){ return 'snd-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function assignSoundToEvent(eventName,soundId){ SND.eventSoundMap=SND.eventSoundMap||{}; SND.eventSoundMap[eventName]=soundId; saveSoundSettings(); }
 function uploadSoundForEvent(eventName,file){
-  return validateAudioFile(file).then(v=>{
+  return validateAudioFile(file, eventName==='baseLoop'?SND_MAX_BASE:SND_MAX_FILE).then(v=>{
     if(!v.ok){ try{ toast(v.reason); }catch(_){} return null; }
     const rec={ id:sndUid(), name:(file.name||'suono').slice(0,60), fileName:(file.name||'').slice(0,120), mimeType:file.type||'', size:file.size, durationMs:v.durationMs||null, createdAt:new Date().toISOString(), blob:file };
     return idbPutSound(rec).then(()=>{ assignSoundToEvent(eventName,rec.id); _bufCache.delete(rec.id); return rec.id; })
@@ -3149,6 +3182,26 @@ function removePersonalSound(soundId){
   saveSoundSettings(); _bufCache.delete(soundId); return idbDelSound(soundId).catch(()=>{});
 }
 function initSoundSystem(){ try{ Object.values(SND.eventSoundMap||{}).forEach(id=>{ if(id) decodeSound(id); }); }catch(_){} }
+
+/* --- Canzone di base: un loop continuo, scelto dall'utente, indipendente dalla colonna sonora adattiva --- */
+let _baseSrc=null;
+function stopBaseLoop(){ try{ if(_baseSrc){ _baseSrc.onended=null; _baseSrc.stop(); _baseSrc.disconnect(); } }catch(_){} _baseSrc=null; }
+function startBaseLoop(){
+  stopBaseLoop();
+  if(!SND.audioEnabled||!eventEnabled('baseLoop')) return;
+  const id=getSoundForEvent('baseLoop'); if(!id) return;
+  if(!_audioUnlocked) return;                 /* iOS: parte al primo gesto */
+  decodeSound(id).then(buf=>{
+    if(!buf||getSoundForEvent('baseLoop')!==id||!_audioUnlocked) return;   /* potrebbe essere cambiata/sbloccata nel frattempo */
+    const ctx=audioCtx(); if(!ctx) return;
+    try{
+      if(ctx.state==='suspended') ctx.resume();
+      const g=ctx.createGain(); g.gain.value=Math.max(0,Math.min(1,(SND.masterVolume==null?1:SND.masterVolume)*eventVolume('baseLoop')));
+      const s=ctx.createBufferSource(); s.buffer=buf; s.loop=true; s.connect(g); g.connect(ctx.destination); s.start(0);
+      _baseSrc=s;
+    }catch(_){}
+  });
+}
 
 /* --- UI: lista eventi nelle impostazioni --- */
 let _pendingSndEvent=null;
@@ -3171,22 +3224,22 @@ function renderSoundEvents(){
           '<button data-a="change">Cambia</button>'+
           '<button data-a="reset"'+(snd?'':' disabled')+'>Reset</button>'+
         '</div>';
-      div.querySelector('[data-a="preview"]').onclick=()=>{ if(id) previewSound(id); };
+      div.querySelector('[data-a="preview"]').onclick=()=>{ if(!id) return; if(ev.loop){ unlockAudioOnUserGesture(); startBaseLoop(); } else previewSound(id); };
       div.querySelector('[data-a="change"]').onclick=()=>{ unlockAudioOnUserGesture(); _pendingSndEvent=ev.id; const inp=document.querySelector('#snd-file'); if(inp){ inp.value=''; inp.click(); } };
-      div.querySelector('[data-a="reset"]').onclick=()=>{ if(!id) return; resetEventSound(ev.id); renderSoundEvents(); try{ toast('Tornato al predefinito'); }catch(_){} };
+      div.querySelector('[data-a="reset"]').onclick=()=>{ if(!id) return; if(ev.loop) stopBaseLoop(); resetEventSound(ev.id); renderSoundEvents(); try{ toast('Tornato al predefinito'); }catch(_){} };
       host.appendChild(div);
     });
   }).catch(()=>{ host.innerHTML='<p class="empty">Archivio suoni non disponibile su questo browser.</p>'; });
 }
 (function(){
   const sw=document.querySelector('#sw-appaudio');
-  if(sw) sw.onclick=()=>{ SND.audioEnabled=!SND.audioEnabled; saveSoundSettings(); renderSoundEvents(); };
+  if(sw) sw.onclick=()=>{ SND.audioEnabled=!SND.audioEnabled; saveSoundSettings(); renderSoundEvents(); if(SND.audioEnabled){ try{ startBaseLoop(); }catch(_){} } else { try{ stopBaseLoop(); }catch(_){} } };
   const inp=document.querySelector('#snd-file');
   if(inp) inp.onchange=e=>{
     const f=e.target.files&&e.target.files[0]; e.target.value='';
     const ev=_pendingSndEvent; _pendingSndEvent=null;
     if(!f||!ev) return;
-    uploadSoundForEvent(ev,f).then(id=>{ if(id){ renderSoundEvents(); previewSound(id); try{ toast('Suono assegnato'); }catch(_){} } });
+    uploadSoundForEvent(ev,f).then(id=>{ if(id){ renderSoundEvents(); if(ev==='baseLoop'){ unlockAudioOnUserGesture(); startBaseLoop(); } else previewSound(id); try{ toast(ev==='baseLoop'?'Canzone di base impostata':'Suono assegnato'); }catch(_){} } });
   };
 })();
 
@@ -3323,6 +3376,7 @@ window.addEventListener('pointerdown',()=>{ _lastUserAct=Date.now(); },{passive:
   function firstGesture(){
     try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){}
     try{ unlockAudioOnUserGesture(); }catch(_){}   /* sblocca anche i Suoni dell'app */
+    try{ startBaseLoop(); }catch(_){}              /* avvia la canzone di base scelta dall'utente, se impostata */
     window.removeEventListener('pointerdown',firstGesture);
     window.removeEventListener('touchend',firstGesture);
   }
