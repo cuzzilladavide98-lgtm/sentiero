@@ -73,8 +73,8 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
 #mic-wrap{display:flex;flex-direction:column;align-items:center;padding:40px 0 28px;position:relative}
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
-#mic{width:236px;height:236px;border:none;background:transparent;position:relative}
-#mic svg{width:100%;height:100%;display:block;overflow:visible}
+#mic{width:236px;height:236px;border:none;background:transparent;position:relative;touch-action:none}
+#mic svg{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:1}
 .ring-track{fill:none;stroke:rgba(245,242,234,.07);stroke-width:2.5}
 .enso{
   fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;
@@ -99,6 +99,13 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 #mic.rec .mic-glyph{fill:var(--ember);animation:recpulse 1.5s ease-in-out infinite}
 @keyframes listen{0%{stroke-dashoffset:540}100%{stroke-dashoffset:0}}
 @keyframes recpulse{0%,100%{opacity:.7}50%{opacity:1}}
+/* ── COSTOLA voice-mode: mentre tieni premuto, il cerchio respira e manda un'onda calma, come quando ascolto ── */
+#mic.rec::before{content:'';position:absolute;inset:9%;border-radius:50%;z-index:0;pointer-events:none;
+  background:radial-gradient(circle,rgba(232,168,76,.16),transparent 66%);animation:listenHalo 2.4s ease-in-out infinite}
+#mic.rec::after{content:'';position:absolute;inset:13%;border-radius:50%;z-index:0;pointer-events:none;
+  border:1.5px solid rgba(232,168,76,.4);animation:listenPing 2.4s ease-out infinite}
+@keyframes listenHalo{0%,100%{opacity:.45;transform:scale(.95)}50%{opacity:.95;transform:scale(1.05)}}
+@keyframes listenPing{0%{opacity:.5;transform:scale(.92)}70%{opacity:0;transform:scale(1.45)}100%{opacity:0;transform:scale(1.45)}}
 
 /* ── sigillo: il cerchio si chiude pieno con un soffio di luce ── */
 #mic.sealed .enso{stroke-dashoffset:0 !important;stroke-width:3.5;animation:sealglow 1.4s ease-out}
@@ -525,7 +532,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
           </svg>
           <div id="seal-dot"></div>
         </button>
-        <div id="mic-label">Tocca il cerchio e rilascia</div>
+        <div id="mic-label">Tieni premuto il cerchio per parlare</div>
         <div id="ring-count"></div>
         <div id="flow" class="flow"></div>
         <div id="live"></div>
@@ -938,7 +945,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v59 · 2026-06-25';
+const APP_VERSION='v60S · 2026-06-25';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2026,7 +2033,7 @@ function scrollToSoft(sel){
   }catch(_){}
 }
 function handleFlowAction(action,extra){
-  if(action==='speak'){ showPane('oggi'); try{ micBtn.click(); }catch(_){} return; }  /* sincrono: preserva il gesto utente, indispensabile per avviare il microfono su iOS */
+  if(action==='speak'){ showPane('oggi'); setTimeout(()=>{ try{ micBtn.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} try{ micLabel.textContent='Tieni premuto il cerchio per parlare'; }catch(_){} },120); return; }  /* press-to-rec: non si può "premere" via codice, quindi guido al gesto */
   if(action==='distill'){ showPane('oggi'); setTimeout(()=>{ const b=document.querySelector('#btn-save'); if(b&&!b.disabled) b.click(); },80); return; }
   if(action==='settings'){ showPane('impostazioni'); setTimeout(()=>{ const k=document.querySelector('#apikey'); if(k) k.focus(); },120); return; }
   if(action==='tasks'){ showPane('impostazioni'); setTimeout(()=>{ const t=document.querySelector('#new-task-txt'); if(t) t.focus(); },120); return; }
@@ -2162,7 +2169,7 @@ function startRec(){
     /* il microfono è DAVVERO attivo: solo ora invitiamo a parlare ed entriamo in rosso */
     if(!recording) return;
     micBtn.classList.remove('arming'); micBtn.classList.add('rec');
-    micLabel.textContent='Rilascia… tocca di nuovo per fermare';
+    micLabel.textContent='Parla… rilascia per fermare';
     renderFlow();
     sMicOn(); haptic(); acquireWake();
     try{ if(S.settings.music) MUSIC.recDuck(true); }catch(_){}  /* la musica scende: la voce resta pulita per il riconoscimento */
@@ -2187,7 +2194,7 @@ function startRec(){
   };
   rec.onend=()=>{
     committedText+=sessionFinal; sessionFinal=''; interimText='';
-    if(recording){ try{rec.start()}catch(_){ recording=false; micBtn.classList.remove('rec','arming'); micLabel.textContent='Microfono interrotto. Tocca per riprendere.'; } }
+    if(recording){ try{rec.start()}catch(_){ recording=false; micBtn.classList.remove('rec','arming'); micLabel.textContent='Microfono interrotto. Tieni premuto per riprendere.'; } }
   };
   recording=true;
   /* stato 'in avvio': enso pulsa neutro, l'utente NON è invitato a parlare finché onstart non scatta */
@@ -2217,18 +2224,27 @@ function stopRec(){
     updateRing();
   }
 }
-let micBusy=false; /* anti-doppio-tap durante l'avvio del microfono */
-micBtn.addEventListener('click',()=>{
-  if(!SR){
-    const txt=live.textContent.trim();
-    if(txt) document.querySelector('#confirm-row').classList.remove('hidden');
-    return;
-  }
-  if(micBusy) return;            /* tap ravvicinati ignorati: niente stato incoerente */
-  micBusy=true;
-  setTimeout(()=>{ micBusy=false; }, 450);
-  recording?stopRec():startRec();
+/* ── PRESS-TO-REC (stile WhatsApp): tieni premuto il cerchio per dettare, rilascia per fermare.
+     pointer-capture: il gesto resta legato al mic anche se il dito si sposta. ── */
+let _holdActive=false,_pressT0=0;
+micBtn.addEventListener('pointerdown',e=>{
+  if(!SR){ const txt=live.textContent.trim(); if(txt) document.querySelector('#confirm-row').classList.remove('hidden'); return; }
+  if(_holdActive) return;
+  e.preventDefault();
+  try{ micBtn.setPointerCapture(e.pointerId); }catch(_){}
+  _holdActive=true; _pressT0=Date.now();
+  if(!recording) startRec();
 });
+function _endHold(e){
+  if(!_holdActive) return;
+  _holdActive=false;
+  try{ micBtn.releasePointerCapture(e.pointerId); }catch(_){}
+  const held=Date.now()-_pressT0;
+  if(recording) stopRec();
+  if(held<350) micLabel.textContent='Tieni premuto il cerchio per parlare';   /* tap troppo breve: era un errore */
+}
+micBtn.addEventListener('pointerup',_endHold);
+micBtn.addEventListener('pointercancel',_endHold);
 document.querySelector('#btn-discard').onclick=resetCapture;
 /* domanda priorità: se l'IA rileva quest urgenti/importanti, l'utente conferma */
 let pendingPrioIds=[];
@@ -2242,14 +2258,14 @@ function maybeAskPriority(bornIds){
 }
 document.querySelector('#btn-prio-yes').onclick=()=>{
   document.querySelector('#prio-row').classList.add('hidden');
-  pendingPrioIds=[]; micLabel.textContent='Tocca il cerchio e rilascia';
+  pendingPrioIds=[]; micLabel.textContent='Tieni premuto il cerchio per parlare';
   haptic();
 };
 document.querySelector('#btn-prio-no').onclick=()=>{
   pendingPrioIds.forEach(id=>{ const q=S.quests.find(x=>x.id===id); if(q) q.prio=3; });
   save(); render();
   document.querySelector('#prio-row').classList.add('hidden');
-  pendingPrioIds=[]; micLabel.textContent='Tocca il cerchio e rilascia';
+  pendingPrioIds=[]; micLabel.textContent='Tieni premuto il cerchio per parlare';
   toast('Priorità azzerate: tutte normali');
 };
 function resetCapture(){
@@ -2258,7 +2274,7 @@ function resetCapture(){
   if(!SR) live.classList.add('show');
   document.querySelector('#confirm-row').classList.add('hidden');
   document.querySelector('#prio-row').classList.add('hidden');
-  micLabel.textContent='Tocca il cerchio e rilascia';
+  micLabel.textContent='Tieni premuto il cerchio per parlare';
   updateRing();
   renderFlow();
 }
@@ -3340,10 +3356,14 @@ function scheduleReminders(){
    BACKUP
    ====================================================================== */
 document.querySelector('#btn-export').onclick=()=>{
-  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='sentiero-backup-'+todayKey()+'.json'; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  try{
+    const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='sentiero-backup-'+todayKey()+'.json'; a.rel='noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast('Backup pronto: salvalo in File o condividilo');
+  }catch(_){ toast('Esportazione non riuscita'); }
 };
 document.querySelector('#btn-import').onclick=()=>document.querySelector('#import-file').click();
 document.querySelector('#import-file').onchange=e=>{
@@ -3352,10 +3372,18 @@ document.querySelector('#import-file').onchange=e=>{
   r.onload=()=>{
     try{
       const parsed=JSON.parse(r.result);
+      if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)) throw new Error('shape');
+      const nq=Array.isArray(parsed.quests)?parsed.quests.length:0;
+      const nd=Array.isArray(parsed.diary)?parsed.diary.length:0;
+      const when=parsed.lastSealed||parsed.lastDayInit||'';
+      const ok=confirm('Importare questo backup?\n\n'+nq+' quest · '+nd+' voci di diario'+(when?('\nUltimo giorno: '+when):'')+'\n\nSostituirà TUTTI i dati attuali su questo telefono. Operazione non annullabile.');
+      if(!ok){ toast('Import annullato: dati intatti'); return; }
+      try{ localStorage.setItem('sentiero-pre-import',JSON.stringify(S)); }catch(_){}   /* rete di sicurezza: lo stato precedente resta a disposizione */
       S=sanitizeState(parsed,defaultState);
       initDay(); save(); render(); toast('Backup importato');
-    }catch(_){ toast('File non valido'); }
+    }catch(_){ toast('File non valido o non leggibile'); }
   };
+  r.onerror=()=>{ toast('Lettura del file non riuscita'); };
   r.readAsText(f);
   e.target.value='';
 };
