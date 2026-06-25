@@ -444,6 +444,14 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 .item.flash{animation:flashTarget 1.7s ease-out;border-radius:12px}
 /* il "perché" della prossima mossa: l'urgenza che la rende essenziale */
 #flow .flow-why{display:block;font-size:12px;color:var(--t3);margin-top:3px;letter-spacing:.02em;opacity:.9}
+/* Suoni dell'app: righe evento compatte, una sotto l'altra, leggibili su schermi piccoli */
+.snd-ev{padding:14px 0;border-bottom:.5px solid rgba(245,242,234,.07)}
+.snd-ev .snd-label{font-weight:600;color:var(--t1)}
+.snd-ev .snd-cur{font-size:12px;color:var(--t2);margin-top:3px;word-break:break-word}
+.snd-ev .snd-desc{font-size:12px;color:var(--t3);margin-top:3px;line-height:1.45;opacity:.85}
+.snd-ev .snd-acts{display:flex;gap:18px;margin-top:9px}
+.snd-ev .snd-acts button{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;font-size:14px;padding:3px 0}
+.snd-ev .snd-acts button[disabled]{color:var(--t3);opacity:.45}
 </style>
 </head>
 <body>
@@ -599,6 +607,14 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="btn-row"><button class="act primary" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
         <input type="file" id="sfx-file" accept="audio/*,.m4r" class="hidden">
         <p class="note">In ordine di intensità crescente: il combo livello 1 suona il primo, e così via. L'ultimo suona anche al sigillo. Restano solo su questo telefono.</p>
+      </section>
+
+      <section>
+        <div class="sec-head">Suoni dell'app</div>
+        <div class="switchrow"><span>Suoni dell'app</span><button class="sw" id="sw-appaudio"></button></div>
+        <div class="group" id="list-snd-events"></div>
+        <input type="file" id="snd-file" accept=".mp3,.m4a,.wav,.ogg,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg" class="hidden">
+        <p class="note">Ogni evento è uno slot personalizzabile. Carica un tuo file (max 2 MB, meglio sotto 3 s) e assegnalo: il predefinito è silenzio. I file restano solo su questo telefono.</p>
       </section>
 
       <section>
@@ -912,7 +928,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v54 · 2026-06-25';
+const APP_VERSION='v55 · 2026-06-25';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2065,6 +2081,8 @@ function observerToMove(){
     setTimeout(()=>{ if(mv){ if(!focusTarget({target:mv.targetId,kind:mv.kind})) scrollToSoft('#sec-today-quests'); } else { try{ toast('Il cerchio e gia leggero: niente da forzare ora.'); }catch(_){} } },140);
   }catch(_){}
 }
+let _lastNextMoveKey='';   /* anti-ripetizione: nextMoveReady suona solo quando la mossa cambia */
+let _lastUserAct=0;        /* timestamp dell'ultimo gesto reale: i suoni automatici partono solo dietro un'azione, mai a freddo */
 function renderFlow(){
   const el=document.querySelector('#flow'); if(!el) return;
   if(recording||distilling){ el.innerHTML=''; return; }
@@ -2076,6 +2094,7 @@ function renderFlow(){
   const nextQuest=sortQuests(activeQuests(S,tk)).find(q=>!q.fatto);
   if(r.total&&r.done<r.total){
     const mv=pickNextMove(tk,dow);
+    if(mv){ const _k=mv.kind+':'+mv.targetId; if(_k!==_lastNextMoveKey){ _lastNextMoveKey=_k; if(Date.now()-_lastUserAct<2000){ try{ playEventSound('nextMoveReady'); }catch(_){} } } }
     const next=mv?mv.label:(nextQuest?nextQuest.titolo:nextTask?nextTask.titolo:'prossima azione');
     const tId=mv?escapeHtml(mv.targetId):'';
     const tKind=mv?mv.kind:'';
@@ -2535,7 +2554,7 @@ async function observe(silent){
     };
     S.observerNotes.push(entry);
     S.observerNotes=sanitizeObserverNotes(S.observerNotes);
-    save(); renderObserver(); if(!silent){ try{ haptic(); }catch(_){} }
+    save(); renderObserver(); if(!silent){ try{ playEventSound('observerReady'); }catch(_){} try{ haptic(); }catch(_){} }
   }finally{
     if(!silent){ if(btn){ btn.textContent='Osserva'; btn.disabled=false; } if(noteEl) noteEl.classList.remove('observing'); }
     observing=false;
@@ -2587,6 +2606,7 @@ function onComplete(el){
   const lvl=Math.min(combo,6);
   const word=COMBO_WORDS[lvl-1];
   haptic(true);  /* tocco tattile deciso a ogni completamento */
+  try{ playEventSound('questCompleted'); }catch(_){}   /* suono personale dell'utente, se assegnato */
   floatWord(word,lvl);  /* niente suono sintetico di Completed: solo visivo+tattile + voce TTS se attiva */
   try{ say(word,lvl); }catch(_){}   /* voce reale solo se music off & voice on; nessun synth */
   try{
@@ -2884,6 +2904,7 @@ function renderSettings(){
   }
   document.querySelector('#btn-addsfx').textContent=SFX.length>=SFX_MAX_N?'Massimo 6 suoni':'Aggiungi suono (livello '+(SFX.length+1)+')';
   document.querySelector('#btn-addsfx').disabled=SFX.length>=SFX_MAX_N;
+  try{ renderSoundEvents(); }catch(_){}   /* lista eventi dei Suoni dell'app */
   const dd=document.querySelector('#new-task-days'); dd.innerHTML='';
   DAYS_IT.forEach((lbl,i)=>{
     const b=document.createElement('button');
@@ -2972,6 +2993,203 @@ document.querySelector('#sfx-file').onchange=e=>{
   r.readAsDataURL(f);
 };
 document.querySelector('#btn-clearsfx').onclick=()=>{ if(!SFX.length) return; SFX=[]; saveSFX(); renderSettings(); toast('Suoni rimossi: si torna al tema sonoro'); };
+
+/* ======================================================================
+   SUONI DELL'APP — "Firma sonora": ogni evento dell'app è uno slot.
+   Isolato e reversibile: chiave localStorage propria + IndexedDB per i blob.
+   Non tocca il sistema SFX/THEMES esistente. Default di ogni evento = silenzio.
+   ====================================================================== */
+const SND_LS='sentiero-snd-v1';
+const SND_MAX_FILE=2*1024*1024;
+const SOUND_EVENTS=[
+  {id:'questCompleted', label:'Quest completata', description:'Quando spunti una quest o una task come fatta.', category:'azione'},
+  {id:'observerReady',  label:'Mente Osservatrice pronta', description:'Quando l\'app genera una nuova osservazione sul tuo comportamento.', category:'mente'},
+  {id:'nextMoveReady',  label:'Prossima Mossa pronta', description:'Quando l\'app propone l\'azione concreta da fare adesso.', category:'mente'},
+  {id:'appOpened',      label:'Apertura app', description:'All\'avvio dell\'app.', category:'sistema'},
+  {id:'questCreated',   label:'Quest creata', description:'Quando nasce una nuova quest.', category:'azione'},
+  {id:'questDiscarded', label:'Quest scartata', description:'Quando elimini una quest.', category:'azione'},
+  {id:'distillStart',   label:'Distillazione avviata', description:'Quando parte la distillazione del parlato.', category:'diario'},
+  {id:'distillSuccess', label:'Distillazione riuscita', description:'Quando la distillazione produce le quest.', category:'diario'},
+  {id:'diarySaved',     label:'Diario salvato', description:'Quando una voce di diario viene salvata.', category:'diario'},
+  {id:'offlineSaved',   label:'Salvato offline', description:'Quando salvi qualcosa senza connessione.', category:'sistema'},
+  {id:'softError',      label:'Errore lieve', description:'Su un errore non bloccante o quando vai offline.', category:'sistema'}
+];
+function defaultSoundSettings(){ return {audioEnabled:true, masterVolume:1, eventEnabledMap:{}, eventVolumes:{}, eventSoundMap:{}}; }
+let SND=loadSoundSettings();
+function loadSoundSettings(){
+  try{
+    const r=JSON.parse(localStorage.getItem(SND_LS)||'null'); const d=defaultSoundSettings();
+    if(!r||typeof r!=='object'||Array.isArray(r)) return d;
+    return {
+      audioEnabled: r.audioEnabled!==false,
+      masterVolume: (typeof r.masterVolume==='number'&&r.masterVolume>=0&&r.masterVolume<=1)?r.masterVolume:1,
+      eventEnabledMap: (r.eventEnabledMap&&typeof r.eventEnabledMap==='object')?r.eventEnabledMap:{},
+      eventVolumes: (r.eventVolumes&&typeof r.eventVolumes==='object')?r.eventVolumes:{},
+      eventSoundMap: (r.eventSoundMap&&typeof r.eventSoundMap==='object')?r.eventSoundMap:{}
+    };
+  }catch(_){ return defaultSoundSettings(); }
+}
+function saveSoundSettings(){ try{ localStorage.setItem(SND_LS,JSON.stringify(SND)); return true; }catch(_){ return false; } }
+
+/* --- IndexedDB minimale per i blob audio personali --- */
+const SND_DB='sentiero-audio', SND_STORE='sounds';
+let _sndDbP=null;
+function sndDb(){
+  if(_sndDbP) return _sndDbP;
+  _sndDbP=new Promise((res,rej)=>{
+    let req; try{ req=indexedDB.open(SND_DB,1); }catch(e){ rej(e); return; }
+    req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains(SND_STORE)) db.createObjectStore(SND_STORE,{keyPath:'id'}); };
+    req.onsuccess=()=>res(req.result);
+    req.onerror=()=>rej(req.error);
+  });
+  return _sndDbP;
+}
+function sndTx(mode,fn){
+  return sndDb().then(db=>new Promise((res,rej)=>{
+    let tx; try{ tx=db.transaction(SND_STORE,mode); }catch(e){ rej(e); return; }
+    const st=tx.objectStore(SND_STORE); let req;
+    try{ req=fn(st); }catch(e){ rej(e); return; }
+    tx.oncomplete=()=>res(req?req.result:undefined);
+    tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error);
+  }));
+}
+function idbPutSound(rec){ return sndTx('readwrite',st=>st.put(rec)); }
+function idbGetSound(id){ return sndTx('readonly',st=>st.get(id)).then(r=>r||null); }
+function idbDelSound(id){ return sndTx('readwrite',st=>st.delete(id)); }
+function idbListSounds(){ return sndTx('readonly',st=>st.getAll()).then(a=>Array.isArray(a)?a:[]); }
+
+/* --- motore di riproduzione (Web Audio: su iOS l'audio va sbloccato da un gesto) --- */
+let _actx=null, _audioUnlocked=false; const _bufCache=new Map();
+function audioCtx(){ if(_actx) return _actx; try{ const C=window.AudioContext||window.webkitAudioContext; _actx=C?new C():null; }catch(_){ _actx=null; } return _actx; }
+function unlockAudioOnUserGesture(){
+  if(_audioUnlocked) return;
+  const ctx=audioCtx(); if(!ctx){ _audioUnlocked=true; return; }
+  try{
+    if(ctx.state==='suspended') ctx.resume();
+    const b=ctx.createBuffer(1,1,22050), s=ctx.createBufferSource(); s.buffer=b; s.connect(ctx.destination); s.start(0);
+    _audioUnlocked=true;
+  }catch(_){}
+}
+function decodeSound(soundId){
+  if(_bufCache.has(soundId)) return Promise.resolve(_bufCache.get(soundId));
+  const ctx=audioCtx(); if(!ctx) return Promise.resolve(null);
+  return idbGetSound(soundId).then(rec=>{
+    if(!rec||!rec.blob||!rec.blob.arrayBuffer) return null;
+    return rec.blob.arrayBuffer().then(ab=>new Promise(res=>{
+      try{ ctx.decodeAudioData(ab.slice(0), buf=>{ _bufCache.set(soundId,buf); res(buf); }, ()=>res(null)); }
+      catch(_){ res(null); }
+    }));
+  }).catch(()=>null);
+}
+function playBuffer(buf,gain){
+  const ctx=audioCtx(); if(!ctx||!buf) return false;
+  try{
+    if(ctx.state==='suspended') ctx.resume();
+    const g=ctx.createGain(); g.gain.value=Math.max(0,Math.min(1,gain==null?1:gain));
+    const s=ctx.createBufferSource(); s.buffer=buf; s.connect(g); g.connect(ctx.destination); s.start(0);
+    return true;
+  }catch(_){ return false; }
+}
+function getSoundForEvent(eventName){ return (SND.eventSoundMap||{})[eventName]||null; }
+function eventEnabled(eventName){ return (SND.eventEnabledMap||{})[eventName]!==false; }
+function eventVolume(eventName){ const v=(SND.eventVolumes||{})[eventName]; return (typeof v==='number'&&v>=0&&v<=1)?v:1; }
+function playEventSound(eventName){
+  try{
+    if(!SND.audioEnabled||!eventEnabled(eventName)) return false;
+    const id=getSoundForEvent(eventName); if(!id) return false;   /* predefinito = silenzio finché l'utente non assegna il suo */
+    if(!_audioUnlocked) return false;                              /* iOS: nessun audio prima del primo gesto */
+    const gain=(SND.masterVolume==null?1:SND.masterVolume)*eventVolume(eventName);
+    const cached=_bufCache.get(id);
+    if(cached) return playBuffer(cached,gain);
+    decodeSound(id).then(buf=>{ if(buf) playBuffer(buf,gain); });
+    return true;
+  }catch(_){ return false; }
+}
+function previewSound(soundId){
+  unlockAudioOnUserGesture();
+  const vol=(SND.masterVolume==null?1:SND.masterVolume);
+  const cached=_bufCache.get(soundId);
+  if(cached) return Promise.resolve(playBuffer(cached,vol));
+  return decodeSound(soundId).then(buf=>buf?playBuffer(buf,vol):(toast('Anteprima non disponibile'),false));
+}
+function validateAudioFile(file){
+  return new Promise(res=>{
+    if(!file){ res({ok:false,reason:'Nessun file'}); return; }
+    if(file.size>SND_MAX_FILE){ res({ok:false,reason:'File troppo grande (max 2 MB)'}); return; }
+    const okExt=/\.(mp3|m4a|wav|ogg)$/i.test(file.name||'');
+    const okType=/(mpeg|mp4|m4a|aac|wav|wave|ogg)/i.test(file.type||'');
+    if(!okExt&&!okType){ res({ok:false,reason:'Formato non riconosciuto: usa mp3, m4a, wav o ogg'}); return; }
+    const ctx=audioCtx();
+    if(!ctx||!file.arrayBuffer){ res({ok:true,durationMs:null}); return; }
+    file.arrayBuffer().then(ab=>{
+      try{ ctx.decodeAudioData(ab.slice(0), buf=>res({ok:true,durationMs:Math.round(buf.duration*1000)}), ()=>res({ok:false,reason:'Audio non leggibile su questo dispositivo (su iPhone evita .ogg)'})); }
+      catch(_){ res({ok:false,reason:'Audio non leggibile su questo dispositivo'}); }
+    }).catch(()=>res({ok:false,reason:'Lettura del file non riuscita'}));
+  });
+}
+function sndUid(){ return 'snd-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function assignSoundToEvent(eventName,soundId){ SND.eventSoundMap=SND.eventSoundMap||{}; SND.eventSoundMap[eventName]=soundId; saveSoundSettings(); }
+function uploadSoundForEvent(eventName,file){
+  return validateAudioFile(file).then(v=>{
+    if(!v.ok){ try{ toast(v.reason); }catch(_){} return null; }
+    const rec={ id:sndUid(), name:(file.name||'suono').slice(0,60), fileName:(file.name||'').slice(0,120), mimeType:file.type||'', size:file.size, durationMs:v.durationMs||null, createdAt:new Date().toISOString(), blob:file };
+    return idbPutSound(rec).then(()=>{ assignSoundToEvent(eventName,rec.id); _bufCache.delete(rec.id); return rec.id; })
+      .catch(()=>{ try{ toast('Salvataggio del suono non riuscito'); }catch(_){} return null; });
+  });
+}
+function _soundStillUsed(soundId){ return Object.values(SND.eventSoundMap||{}).includes(soundId); }
+function resetEventSound(eventName){
+  const id=getSoundForEvent(eventName);
+  if(SND.eventSoundMap) delete SND.eventSoundMap[eventName];
+  saveSoundSettings();
+  if(id&&!_soundStillUsed(id)){ _bufCache.delete(id); idbDelSound(id).catch(()=>{}); }   /* niente file orfani */
+}
+function removePersonalSound(soundId){
+  Object.keys(SND.eventSoundMap||{}).forEach(ev=>{ if(SND.eventSoundMap[ev]===soundId) delete SND.eventSoundMap[ev]; });
+  saveSoundSettings(); _bufCache.delete(soundId); return idbDelSound(soundId).catch(()=>{});
+}
+function initSoundSystem(){ try{ Object.values(SND.eventSoundMap||{}).forEach(id=>{ if(id) decodeSound(id); }); }catch(_){} }
+
+/* --- UI: lista eventi nelle impostazioni --- */
+let _pendingSndEvent=null;
+function renderSoundEvents(){
+  const sw=document.querySelector('#sw-appaudio'); if(sw) sw.classList.toggle('on',!!SND.audioEnabled);
+  const host=document.querySelector('#list-snd-events'); if(!host) return;
+  host.innerHTML='<p class="empty">Carico…</p>';
+  idbListSounds().then(all=>{
+    const byId={}; all.forEach(s=>{ byId[s.id]=s; });
+    host.innerHTML='';
+    SOUND_EVENTS.forEach(ev=>{
+      const id=getSoundForEvent(ev.id); const snd=id?byId[id]:null;
+      const div=document.createElement('div'); div.className='snd-ev';
+      div.innerHTML=
+        '<div class="snd-label">'+escapeHtml(ev.label)+'</div>'+
+        '<div class="snd-cur">Suono: '+(snd?escapeHtml(snd.name):'predefinito (silenzio)')+'</div>'+
+        '<div class="snd-desc">'+escapeHtml(ev.description)+'</div>'+
+        '<div class="snd-acts">'+
+          '<button data-a="preview"'+(snd?'':' disabled')+'>Anteprima</button>'+
+          '<button data-a="change">Cambia</button>'+
+          '<button data-a="reset"'+(snd?'':' disabled')+'>Reset</button>'+
+        '</div>';
+      div.querySelector('[data-a="preview"]').onclick=()=>{ if(id) previewSound(id); };
+      div.querySelector('[data-a="change"]').onclick=()=>{ unlockAudioOnUserGesture(); _pendingSndEvent=ev.id; const inp=document.querySelector('#snd-file'); if(inp){ inp.value=''; inp.click(); } };
+      div.querySelector('[data-a="reset"]').onclick=()=>{ if(!id) return; resetEventSound(ev.id); renderSoundEvents(); try{ toast('Tornato al predefinito'); }catch(_){} };
+      host.appendChild(div);
+    });
+  }).catch(()=>{ host.innerHTML='<p class="empty">Archivio suoni non disponibile su questo browser.</p>'; });
+}
+(function(){
+  const sw=document.querySelector('#sw-appaudio');
+  if(sw) sw.onclick=()=>{ SND.audioEnabled=!SND.audioEnabled; saveSoundSettings(); renderSoundEvents(); };
+  const inp=document.querySelector('#snd-file');
+  if(inp) inp.onchange=e=>{
+    const f=e.target.files&&e.target.files[0]; e.target.value='';
+    const ev=_pendingSndEvent; _pendingSndEvent=null;
+    if(!f||!ev) return;
+    uploadSoundForEvent(ev,f).then(id=>{ if(id){ renderSoundEvents(); previewSound(id); try{ toast('Suono assegnato'); }catch(_){} } });
+  };
+})();
+
 document.querySelector('#sw-notif').onclick=async()=>{
   if(!S.settings.notif){
     if(!('Notification' in window)){ toast('Notifiche non supportate qui. Installa l\u2019app sulla Home.'); return; }
@@ -3098,10 +3316,13 @@ try{ initDay(); }catch(_){}
 try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
+try{ initSoundSystem(); }catch(_){}    /* Suoni dell'app: pre-decodifica i suoni già assegnati */
+window.addEventListener('pointerdown',()=>{ _lastUserAct=Date.now(); },{passive:true});  /* ogni tocco reale: i suoni automatici partono solo dietro un'azione */
 /* rete di sicurezza audio: il primo tocco ovunque sblocca la colonna sonora (iOS esige un gesto) */
 (function(){
   function firstGesture(){
     try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){}
+    try{ unlockAudioOnUserGesture(); }catch(_){}   /* sblocca anche i Suoni dell'app */
     window.removeEventListener('pointerdown',firstGesture);
     window.removeEventListener('touchend',firstGesture);
   }
