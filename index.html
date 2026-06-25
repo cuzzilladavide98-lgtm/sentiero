@@ -945,7 +945,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S · 2026-06-25';
+const APP_VERSION='v60S.1 · 2026-06-25';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2225,26 +2225,25 @@ function stopRec(){
   }
 }
 /* ── PRESS-TO-REC (stile WhatsApp): tieni premuto il cerchio per dettare, rilascia per fermare.
-     pointer-capture: il gesto resta legato al mic anche se il dito si sposta. ── */
+     Niente preventDefault né pointer-capture (su iOS bloccavano l'audio del microfono / lanciavano
+     un pointercancel immediato). Il rilascio si ascolta su window: non lo perdiamo mai. ── */
 let _holdActive=false,_pressT0=0;
-micBtn.addEventListener('pointerdown',e=>{
+function _startHold(){
   if(!SR){ const txt=live.textContent.trim(); if(txt) document.querySelector('#confirm-row').classList.remove('hidden'); return; }
   if(_holdActive) return;
-  e.preventDefault();
-  try{ micBtn.setPointerCapture(e.pointerId); }catch(_){}
   _holdActive=true; _pressT0=Date.now();
-  if(!recording) startRec();
-});
-function _endHold(e){
+  if(!recording) startRec();   /* avviato dentro il gesto: l'audio di iOS si attiva */
+}
+function _endHold(){
   if(!_holdActive) return;
   _holdActive=false;
-  try{ micBtn.releasePointerCapture(e.pointerId); }catch(_){}
   const held=Date.now()-_pressT0;
   if(recording) stopRec();
-  if(held<350) micLabel.textContent='Tieni premuto il cerchio per parlare';   /* tap troppo breve: era un errore */
+  if(held<350) micLabel.textContent='Tieni premuto il cerchio per parlare';   /* pressione troppo breve */
 }
-micBtn.addEventListener('pointerup',_endHold);
-micBtn.addEventListener('pointercancel',_endHold);
+micBtn.addEventListener('pointerdown',_startHold);
+window.addEventListener('pointerup',_endHold);
+window.addEventListener('pointercancel',_endHold);
 document.querySelector('#btn-discard').onclick=resetCapture;
 /* domanda priorità: se l'IA rileva quest urgenti/importanti, l'utente conferma */
 let pendingPrioIds=[];
