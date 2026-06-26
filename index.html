@@ -469,6 +469,12 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 .snd-ev .snd-acts{display:flex;gap:18px;margin-top:9px}
 .snd-ev .snd-acts button{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;font-size:14px;padding:3px 0}
 .snd-ev .snd-acts button[disabled]{color:var(--t3);opacity:.45}
+/* "Più tardi": le azioni future restano ripiegate, presenti ma non invadenti */
+.later-head{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:15px 2px;color:var(--t3);font-size:13px;letter-spacing:.02em;cursor:pointer;
+  border-top:.5px solid rgba(245,242,234,.06);-webkit-user-select:none;user-select:none}
+.later-head .later-chev{opacity:.55;font-size:12px;flex:none}
+.item.later-item{opacity:.4}
 </style>
 </head>
 <body>
@@ -945,7 +951,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.1 · 2026-06-25';
+const APP_VERSION='v60S.2 · 2026-06-26';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2050,12 +2056,12 @@ function fmtMinGap(n){ n=Math.max(0,Math.round(n)); if(n>=60){ const h=Math.floo
 function pickNextMove(tk,dow){
   tk=tk||todayKey(); dow=(dow==null?dowOf():dow);
   const checks=S.checks[tk]||{};
-  const sched=todaysScheduled().filter(t=>checks[t.id]!==true);
+  const nm=nowMin();
+  const sched=todaysScheduled().filter(t=>{ if(checks[t.id]===true) return false; const tm=hmToMin(t.time); return tm==null||tm<=nm; });  /* solo azioni già affiorate */
   const quests=sortQuests(activeQuests(S,tk)).filter(q=>!q.fatto);
   const r=computeProgress(S,tk,dow);
   const lastOne=(r.total>0 && (r.total-r.done)===1);          /* resta UNA sola cosa: la penna si vende da sola */
   const close='chiudi questa e il cerchio si chiude';
-  const nm=nowMin();
   /* 1) task con orario gia passato: il ritardo e' l'urgenza piu' forte */
   let od=null,odGap=-1;
   sched.forEach(t=>{ const tm=hmToMin(t.time); if(tm!=null&&tm<nm){ const g=nm-tm; if(g>odGap){odGap=g;od=t;} } });
@@ -2100,6 +2106,7 @@ function observerToMove(){
 }
 let _lastNextMoveKey='';   /* anti-ripetizione: nextMoveReady suona solo quando la mossa cambia */
 let _lastUserAct=0;        /* timestamp dell'ultimo gesto reale: i suoni automatici partono solo dietro un'azione, mai a freddo */
+let _laterOpen=false;      /* pannello "Più tardi": ripiegato di default */
 function renderFlow(){
   const el=document.querySelector('#flow'); if(!el) return;
   if(recording||distilling){ el.innerHTML=''; return; }
@@ -2743,30 +2750,48 @@ function setEmpty(el,text,action,label){
   if(b) b.onclick=()=>handleFlowAction(b.dataset.flow);
 }
 
+function buildTaskRow(t,checks){
+  const done=checks[t.id]===true;
+  const div=document.createElement('div');
+  div.className='item'+(done?' done':'');
+  div.dataset.tid=t.id;
+  div.innerHTML='<span class="prio prio-0"></span>'+
+    '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
+    '<span class="txt"><span class="ttl">'+escapeHtml(t.titolo)+'</span>'+(t.time?'<span class="meta">'+t.time+'</span>':'')+'</span>';
+  div.querySelector('.chk').onclick=()=>{
+    if(div.dataset.busy) return;
+    div.dataset.busy='1';
+    S.checks[todayKey()]=S.checks[todayKey()]||{};
+    const now=!done;
+    S.checks[todayKey()][t.id]=now; save();
+    if(now){ div.classList.add('done'); onComplete(div); setTimeout(renderTasks,600); }
+    else { sUndo(); renderTasks(); updateRing(); }
+  };
+  return div;
+}
 function renderTasks(){
-  const el=document.querySelector('#list-task'); const list=todaysScheduled();
+  const el=document.querySelector('#list-task'); const all=todaysScheduled();
   const checks=S.checks[todayKey()]||{};
-  if(!list.length){ setEmpty(el,'Nessuna task pianificata per oggi. Se vuoi un appiglio fisso, crealo una volta e poi non pensarci piu.','tasks','Crea una task'); return; }
-  el.innerHTML='';
-  list.forEach(t=>{
-    const done=checks[t.id]===true;
-    const div=document.createElement('div');
-    div.className='item'+(done?' done':'');
-    div.dataset.tid=t.id;
-    div.innerHTML='<span class="prio prio-0"></span>'+
-      '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
-      '<span class="txt"><span class="ttl">'+escapeHtml(t.titolo)+'</span>'+(t.time?'<span class="meta">'+t.time+'</span>':'')+'</span>';
-    div.querySelector('.chk').onclick=()=>{
-      if(div.dataset.busy) return;
-      div.dataset.busy='1';
-      S.checks[todayKey()]=S.checks[todayKey()]||{};
-      const now=!done;
-      S.checks[todayKey()][t.id]=now; save();
-      if(now){ div.classList.add('done'); onComplete(div); setTimeout(renderTasks,600); }
-      else { sUndo(); renderTasks(); updateRing(); }
-    };
-    el.appendChild(div);
+  if(!all.length){ setEmpty(el,'Nessuna task pianificata per oggi. Se vuoi un appiglio fisso, crealo una volta e poi non pensarci piu.','tasks','Crea una task'); return; }
+  const now=nowMin();
+  /* azioni con orario: affiorano quando è la loro ora (e restano se in ritardo); senza orario: sempre presenti */
+  const due=[], later=[];
+  all.forEach(t=>{
+    const tm=hmToMin(t.time);
+    if(checks[t.id]===true || tm==null || tm<=now) due.push(t); else later.push(t);
   });
+  due.sort((a,b)=>{ const x=hmToMin(a.time),y=hmToMin(b.time); return (x==null?9999:x)-(y==null?9999:y); });   /* orari prima, in ordine; senza orario in fondo */
+  later.sort((a,b)=>(hmToMin(a.time)||0)-(hmToMin(b.time)||0));
+  el.innerHTML='';
+  due.forEach(t=>el.appendChild(buildTaskRow(t,checks)));
+  if(later.length){
+    const head=document.createElement('div');
+    head.className='later-head'+(_laterOpen?' open':'');
+    head.innerHTML='<span>Più tardi · '+later.length+(later.length===1?' azione':' azioni')+' · dalle '+later[0].time+'</span><span class="later-chev">'+(_laterOpen?'∧':'∨')+'</span>';
+    head.onclick=()=>{ _laterOpen=!_laterOpen; renderTasks(); };
+    el.appendChild(head);
+    if(_laterOpen) later.forEach(t=>{ const row=buildTaskRow(t,checks); row.classList.add('later-item'); el.appendChild(row); });
+  }
 }
 function questWhen(q,tk,domani){
   const future=q.quando&&q.quando>tk;
@@ -3398,6 +3423,15 @@ try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
 try{ initSoundSystem(); }catch(_){}    /* Suoni dell'app: pre-decodifica i suoni già assegnati */
 window.addEventListener('pointerdown',()=>{ _lastUserAct=Date.now(); },{passive:true});  /* ogni tocco reale: i suoni automatici partono solo dietro un'azione */
+/* orologio del giorno: ogni minuto, se una task con orario è appena affiorata, aggiorna la lista da sola */
+let _lastDueSig='';
+setInterval(()=>{
+  try{
+    const checks=S.checks[todayKey()]||{}; const nm=nowMin();
+    const sig=todaysScheduled().filter(t=>{ const tm=hmToMin(t.time); return tm!=null&&tm<=nm&&checks[t.id]!==true; }).map(t=>t.id).join(',');
+    if(sig!==_lastDueSig){ _lastDueSig=sig; try{ renderTasks(); }catch(_){} try{ renderFlow(); }catch(_){} }
+  }catch(_){}
+},60000);
 /* rete di sicurezza audio: il primo tocco ovunque sblocca la colonna sonora (iOS esige un gesto) */
 (function(){
   function firstGesture(){
