@@ -951,7 +951,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.4 · 2026-06-26';
+const APP_VERSION='v60S.5 · 2026-06-26';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1981,15 +1981,31 @@ function loadSFX(){
   }catch(_){ return []; }
 }
 function saveSFX(){
-  try{ localStorage.setItem(SFX_LS,JSON.stringify(SFX)); return true; }
+  try{ localStorage.setItem(SFX_LS,JSON.stringify(SFX)); _sfxBuf.length=0; return true; }   /* invalida la cache: gli indici possono essere cambiati */
   catch(_){ toast('Spazio insufficiente per i suoni: usa file pi\u00f9 piccoli (es. .m4r)'); return false; }
+}
+const _sfxBuf=[];   /* idx -> AudioBuffer decodificato (riuso del motore Web Audio) */
+function _durlToArrayBuffer(durl){
+  const b64=(durl.split(',')[1]||''); const bin=atob(b64); const u8=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  return u8.buffer;
 }
 function playSFX(idx){
   try{
     if(!S.settings.sound||!SFX.length) return false;
     const i=Math.max(0,Math.min(idx,SFX.length-1));
-    const a=new Audio(SFX[i].data);
-    a.volume=1; a.play().catch(()=>{});
+    const ctx=audioCtx();
+    /* percorso affidabile: stesso motore Web Audio dei Suoni dell'app (iOS: l'elemento <audio> resta muto nelle PWA) */
+    if(ctx&&_audioUnlocked){
+      if(_sfxBuf[i]) return playBuffer(_sfxBuf[i],1,1);
+      try{
+        ctx.decodeAudioData(_durlToArrayBuffer(SFX[i].data),
+          buf=>{ _sfxBuf[i]=buf; playBuffer(buf,1,1); },
+          ()=>{ try{ const a=new Audio(SFX[i].data); a.volume=1; a.play().catch(()=>{}); }catch(_){} });
+        return true;
+      }catch(_){ /* ripiego sotto */ }
+    }
+    const a=new Audio(SFX[i].data); a.volume=1; a.play().catch(()=>{});   /* ripiego (desktop / motore non pronto) */
     return true;
   }catch(_){ return false; }
 }
