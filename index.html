@@ -628,7 +628,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="sec-head">Suoni personali</div>
         <div class="group" id="list-sfx"></div>
         <div class="btn-row"><button class="act primary" id="btn-cerchio">Usa i suoni Cerchio</button><button class="act" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
-        <input type="file" id="sfx-file" accept="audio/*,.m4r" class="hidden">
+        <input type="file" id="sfx-file" accept="audio/*,.m4r,.m4a,.mp4,.aac,.caf" class="hidden">
         <p class="note">Tocca <b>Usa i suoni Cerchio</b> per attivare in un colpo gli 8 livelli incorporati + il sigillo (niente file da scaricare). Oppure carica i tuoi: fino a 8 livelli in intensità crescente — il combo 1 suona il primo, e così via su per la scala. Al sigillo suona il suono dedicato. Restano solo su questo telefono.</p>
       </section>
 
@@ -951,7 +951,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.6 · 2026-06-26';
+const APP_VERSION='v60S.7 · 2026-06-26';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
