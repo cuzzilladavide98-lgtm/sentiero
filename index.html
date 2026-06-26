@@ -629,7 +629,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="group" id="list-sfx"></div>
         <div class="btn-row"><button class="act primary" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
         <input type="file" id="sfx-file" accept="audio/*,.m4r" class="hidden">
-        <p class="note">In ordine di intensità crescente: il combo livello 1 suona il primo, e così via. L'ultimo suona anche al sigillo. Restano solo su questo telefono.</p>
+        <p class="note">Fino a 8 livelli in intensità crescente: il combo 1 suona il primo, il combo 2 il secondo, e così via su per la scala. Al sigillo suona il suono «Cerchio chiuso» (o, se non assegnato, l'ultimo livello). Restano solo su questo telefono.</p>
       </section>
 
       <section>
@@ -951,7 +951,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.2 · 2026-06-26';
+const APP_VERSION='v60S.4 · 2026-06-26';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -963,7 +963,7 @@ try{
 }catch(_){}
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
-const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Tao'];
+const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Maestria','Pieno','Tao'];
 const todayKey=()=>localDayKey(new Date());
 const defaultState={
   apiKey:'',quests:[],diary:[],
@@ -1972,7 +1972,7 @@ function releaseWake(){
    SUONI PERSONALIZZATI — file dell'utente, solo su questo telefono
    ====================================================================== */
 const SFX_LS='sentiero-sfx-v1';
-const SFX_MAX_FILE=400*1024, SFX_MAX_TOTAL=2*1024*1024, SFX_MAX_N=6;
+const SFX_MAX_FILE=400*1024, SFX_MAX_TOTAL=2*1024*1024, SFX_MAX_N=8;
 let SFX=loadSFX();
 function loadSFX(){
   try{
@@ -1986,7 +1986,6 @@ function saveSFX(){
 }
 function playSFX(idx){
   try{
-    if(S.settings.music) return false;
     if(!S.settings.sound||!SFX.length) return false;
     const i=Math.max(0,Math.min(idx,SFX.length-1));
     const a=new Audio(SFX[i].data);
@@ -2655,10 +2654,13 @@ function onComplete(el){
   const now=Date.now();
   combo=(now-lastCheck<10000)?combo+1:1;
   lastCheck=now;
-  const lvl=Math.min(combo,6);
+  const lvl=Math.min(combo,8);
   const word=COMBO_WORDS[lvl-1];
   haptic(true);  /* tocco tattile deciso a ogni completamento */
-  try{ playEventSound('questCompleted'); }catch(_){}   /* suono personale dell'utente, se assegnato */
+  /* suono del combo: i livelli personali hanno priorità (livello = combo); altrimenti il singolo suono con pitch crescente */
+  let sfxPlayed=false;
+  try{ if(SFX.length) sfxPlayed=playSFX(lvl-1); }catch(_){}
+  if(!sfxPlayed){ try{ playEventSound('questCompleted',{semitones:Math.min((combo||1)-1,7)}); }catch(_){} }
   floatWord(word,lvl);  /* niente suono sintetico di Completed: solo visivo+tattile + voce TTS se attiva */
   try{ say(word,lvl); }catch(_){}   /* voce reale solo se music off & voice on; nessun synth */
   try{
@@ -2696,6 +2698,7 @@ function updateRing(){
       try{ATHEME.stop(true);}catch(_){}   /* ultima quest completata → fade out dell'Active Theme; niente Victory sintetica */
       try{ say('Tao',6); }catch(_){}     /* voce reale se attiva; nessun gong/synth */
       floatWord('Cerchio chiuso',6); shake(true);
+      try{ if(!playEventSound('cerchioChiuso') && SFX.length) playSFX(SFX.length-1); }catch(_){}   /* sigillo: suono dedicato, o l'ultimo livello come ripiego */
       try{ FX.bloom(); }catch(_){}
       try{ const f=document.querySelector('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }catch(_){}
       try{ streamInto(document.querySelector('#ring-count'),'Cerchio chiuso · a domani',{speed:46}); }catch(_){ try{ document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani'; }catch(_){} }
@@ -2972,7 +2975,7 @@ function renderSettings(){
       sfxEl.appendChild(div);
     });
   }
-  document.querySelector('#btn-addsfx').textContent=SFX.length>=SFX_MAX_N?'Massimo 6 suoni':'Aggiungi suono (livello '+(SFX.length+1)+')';
+  document.querySelector('#btn-addsfx').textContent=SFX.length>=SFX_MAX_N?'Massimo 8 suoni':'Aggiungi suono (livello '+(SFX.length+1)+')';
   document.querySelector('#btn-addsfx').disabled=SFX.length>=SFX_MAX_N;
   try{ renderSoundEvents(); }catch(_){}   /* lista eventi dei Suoni dell'app */
   const dd=document.querySelector('#new-task-days'); dd.innerHTML='';
@@ -3075,6 +3078,7 @@ const SND_MAX_BASE=8*1024*1024;   /* la canzone di base è un brano: cap più al
 const SOUND_EVENTS=[
   {id:'baseLoop',       label:'Canzone di base', description:'Suona di continuo, in loop, mentre usi l\'app. La scegli tu (max 8 MB).', category:'base', loop:true},
   {id:'questCompleted', label:'Quest completata', description:'Quando spunti una quest o una task come fatta.', category:'azione'},
+  {id:'cerchioChiuso',  label:'Cerchio chiuso', description:'Il suono del giorno completato, quando chiudi tutte le azioni.', category:'rito'},
   {id:'observerReady',  label:'Mente Osservatrice pronta', description:'Quando l\'app genera una nuova osservazione sul tuo comportamento.', category:'mente'},
   {id:'nextMoveReady',  label:'Prossima Mossa pronta', description:'Quando l\'app propone l\'azione concreta da fare adesso.', category:'mente'},
   {id:'appOpened',      label:'Apertura app', description:'All\'avvio dell\'app.', category:'sistema'},
@@ -3153,27 +3157,28 @@ function decodeSound(soundId){
     }));
   }).catch(()=>null);
 }
-function playBuffer(buf,gain){
+function playBuffer(buf,gain,rate){
   const ctx=audioCtx(); if(!ctx||!buf) return false;
   try{
     if(ctx.state==='suspended') ctx.resume();
     const g=ctx.createGain(); g.gain.value=Math.max(0,Math.min(1,gain==null?1:gain));
-    const s=ctx.createBufferSource(); s.buffer=buf; s.connect(g); g.connect(ctx.destination); s.start(0);
+    const s=ctx.createBufferSource(); s.buffer=buf; if(rate&&rate>0) s.playbackRate.value=rate; s.connect(g); g.connect(ctx.destination); s.start(0);
     return true;
   }catch(_){ return false; }
 }
 function getSoundForEvent(eventName){ return (SND.eventSoundMap||{})[eventName]||null; }
 function eventEnabled(eventName){ return (SND.eventEnabledMap||{})[eventName]!==false; }
 function eventVolume(eventName){ const v=(SND.eventVolumes||{})[eventName]; return (typeof v==='number'&&v>=0&&v<=1)?v:1; }
-function playEventSound(eventName){
+function playEventSound(eventName,opts){
   try{
     if(!SND.audioEnabled||!eventEnabled(eventName)) return false;
     const id=getSoundForEvent(eventName); if(!id) return false;   /* predefinito = silenzio finché l'utente non assegna il suo */
     if(!_audioUnlocked) return false;                              /* iOS: nessun audio prima del primo gesto */
     const gain=(SND.masterVolume==null?1:SND.masterVolume)*eventVolume(eventName);
+    const rate=(opts&&opts.semitones)?Math.pow(2,opts.semitones/12):1;   /* combo: ogni spunta ravvicinata sale di un semitono (alla Candy Crush) */
     const cached=_bufCache.get(id);
-    if(cached) return playBuffer(cached,gain);
-    decodeSound(id).then(buf=>{ if(buf) playBuffer(buf,gain); });
+    if(cached) return playBuffer(cached,gain,rate);
+    decodeSound(id).then(buf=>{ if(buf) playBuffer(buf,gain,rate); });
     return true;
   }catch(_){ return false; }
 }
