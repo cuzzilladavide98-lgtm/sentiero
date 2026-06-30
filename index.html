@@ -581,6 +581,11 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
           <div class="btn-row" style="justify-content:flex-start">
             <button class="act primary" id="btn-observe">Osserva</button>
             <button class="act hidden" id="btn-obs-act">Trasforma in mossa</button>
+            <button class="act" id="btn-distill">Scrivi il dono</button>
+          </div>
+          <div id="distill-out" class="hidden" style="margin-top:14px;padding:16px;border:1px solid rgba(159,216,196,.20);border-radius:14px;background:rgba(10,16,15,.5)">
+            <p id="distill-text" style="font-style:italic;line-height:1.65;color:#cfe8de;margin:0 0 12px">—</p>
+            <div class="btn-row" style="justify-content:flex-start"><button class="act" id="btn-distill-share">Condividi</button><button class="act" id="btn-distill-close">Chiudi</button></div>
           </div>
           <div id="observer-history"></div>
         </div>
@@ -618,6 +623,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
             </div>
           </div>
           <div class="switchrow"><span>Voce ai completamenti</span><button class="sw" id="sw-voice"></button></div>
+          <div class="switchrow"><span>Osservatrice sui task<small style="display:block;opacity:.6;font-size:11px">una riga vera a ogni spunta (serve la chiave)</small></span><button class="sw" id="sw-obsline"></button></div>
           <div class="switchrow"><span>Posizione nelle note</span><button class="sw" id="sw-geo"></button></div>
           <div class="switchrow"><span>Promemoria</span><button class="sw" id="sw-notif"></button></div>
         </div>
@@ -628,7 +634,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         <div class="sec-head">Suoni personali</div>
         <div class="group" id="list-sfx"></div>
         <div class="btn-row"><button class="act primary" id="btn-cerchio">Usa i suoni Cerchio</button><button class="act" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
-        <input type="file" id="sfx-file" accept="audio/*,.m4r,.m4a,.mp4,.aac,.caf" class="hidden">
+        <input type="file" id="sfx-file" accept=".mp3,.m4a,.mp4,.m4r,.aac,.caf,.wav,.ogg,audio/*" class="hidden">
         <p class="note">Tocca <b>Usa i suoni Cerchio</b> per attivare in un colpo gli 8 livelli incorporati + il sigillo (niente file da scaricare). Oppure carica i tuoi: fino a 8 livelli in intensità crescente — il combo 1 suona il primo, e così via su per la scala. Al sigillo suona il suono dedicato. Restano solo su questo telefono.</p>
       </section>
 
@@ -856,10 +862,13 @@ function sanitizeState(raw,def){
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
     lastSealed:(typeof raw.lastSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastSealed))?raw.lastSealed:'',
+    lastFullSealed:(typeof raw.lastFullSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastFullSealed))?raw.lastFullSealed:'',
+    essentials:Array.isArray(raw.essentials)?raw.essentials.filter(x=>typeof x==='string').slice(0,40):[],
     lastDayInit:(typeof raw.lastDayInit==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastDayInit))?raw.lastDayInit:'',
     settings:{
       sound:!(raw.settings&&raw.settings.sound===false),
       voice:!(raw.settings&&raw.settings.voice===false),
+      obsLine:!(raw.settings&&raw.settings.obsLine===false),
       notif:!!(raw.settings&&raw.settings.notif===true),
       geo:!!(raw.settings&&raw.settings.geo===true),
       music:!!(raw.settings&&raw.settings.music===true),
@@ -900,12 +909,28 @@ function rolloverDay(state,tk){
   state.lastDayInit=tk;
   return true;
 }
+function essentialStatus(state,tk,dow){
+  const sched=scheduledFor(state,dow,tk);
+  const checks=state.checks[tk]||{};
+  const ess=sched.filter(t=>(state.essentials||[]).includes(t.id));
+  return {total:ess.length, done:ess.filter(t=>checks[t.id]===true).length};
+}
+function closeDay(state,tk){               /* chiude il giorno una volta sola e aggiorna lo streak (consecutività via lastSealed) */
+  if(state.lastSealed===tk) return;
+  if(state.lastSealed && dayGap(state.lastSealed,tk)===1) state.streak=(state.streak||0)+1;
+  else state.streak=1;
+  state.lastSealed=tk;
+}
 function sealIfComplete(state,tk,dow){
   const r=computeProgress(state,tk,dow);
-  if(!(r.p===1&&r.total>0)) return 'open';
+  const es=essentialStatus(state,tk,dow);
+  const full = r.total>0 && r.p===1;
+  /* soft = essenziali fatti; se non ne hai segnati, ripiego su una soglia raggiungibile (≥2/3) così il cerchio si chiude comunque */
+  const soft = (es.total>0) ? (es.done===es.total) : (r.total>=2 && r.p>=0.667);
+  if(full && state.lastFullSealed!==tk){ state.lastFullSealed=tk; closeDay(state,tk); return 'full'; }   /* jackpot: anche dopo un soft già fatto */
+  if(soft && state.lastSealed!==tk){ closeDay(state,tk); return 'soft'; }
   if(state.lastSealed===tk) return 'already';
-  state.lastSealed=tk;
-  return 'sealed';
+  return 'open';
 }
 function accumFromResults(results){
   /* iOS può rispedire gli stessi finali in più eventi: si ricostruisce, mai si accumula */
@@ -951,7 +976,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.7 · 2026-06-26';
+const APP_VERSION='v60S.15 · 2026-06-29';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -975,10 +1000,23 @@ const defaultState={
   settings:{sound:true,voice:true,notif:false}
 };
 let S=load();
+function safeGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
 function load(){
-  let raw={};
-  try{ raw=JSON.parse(localStorage.getItem(LS)||'{}'); }catch(_){}
-  return sanitizeState(raw,defaultState);
+  const txt=safeGet(LS);
+  let raw=null, fromBak=false;
+  if(txt!=null){
+    try{ raw=JSON.parse(txt); }
+    catch(_){ try{ localStorage.setItem(LS+'-corrupt-'+Date.now(), txt.slice(0,400000)); }catch(__){} raw=null; }   /* illeggibile: conserva una copia, non perderlo in silenzio */
+  }
+  if(raw===null){                                            /* principale assente o rotto → prova il backup */
+    const bak=safeGet(LS+'-bak');
+    if(bak!=null){ try{ raw=JSON.parse(bak); fromBak=true; }catch(_){ raw=null; } }
+  }
+  const st=sanitizeState(raw||{},defaultState);
+  if(txt!=null&&raw!=null&&!fromBak){ try{ localStorage.setItem(LS+'-bak',txt); }catch(_){} }   /* avvio pulito: backup = ultimo stato buono */
+  if(fromBak) setTimeout(()=>{ try{ toast('Dati ripristinati da un backup recente'); }catch(_){} },900);
+  else if(txt!=null&&raw===null) setTimeout(()=>{ try{ toast('Salvataggio illeggibile: ripartito pulito, copia di emergenza conservata'); }catch(_){} },900);
+  return st;
 }
 function save(){
   try{ localStorage.setItem(LS,JSON.stringify(S)); }
@@ -989,6 +1027,7 @@ function save(){
     toast('Memoria piena o navigazione privata: dati non salvati');
   }
 }
+try{ window.addEventListener('pagehide',()=>{ try{ save(); }catch(_){} }); }catch(_){}   /* iOS: salva anche se chiudi con lo swipe */
 const uid=coreUid;
 const $=s=>document.querySelector(s);
 function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2600); }
@@ -998,12 +1037,17 @@ function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':
    AUDIO — mai un crash per un suono: ogni via è protetta
    ====================================================================== */
 let AC=null,BUS=null,NOISEBUF=null;
+function sharedAC(){   /* UN solo AudioContext per tutti i motori: iOS ne tollera pochissimi, più contesti = silenzi intermittenti */
+  try{
+    if(!AC){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; AC=new C(); }
+    if(AC.state==='suspended') AC.resume();
+    return AC;
+  }catch(_){ return null; }
+}
 function ac(){
   if(!S.settings.sound && !S.settings.music) return null;
   try{
-    const Ctor=window.AudioContext||window.webkitAudioContext;
-    if(!Ctor) return null;
-    if(!AC) AC=new Ctor();
+    if(!sharedAC()) return null;
     if(AC.state==='suspended') AC.resume();
     if(!BUS){
       /* compressore master: le combo accavallano molti suoni, qui non distorcono mai */
@@ -1507,7 +1551,7 @@ const ATHEME=(()=>{
   let VOL=0.40;                       /* volume gestibile da codice (0.35–0.45) */
   let ctx=null,buf=null,src=null,gain=null;
   let loaded=false,loading=false,playing=false,unlocked=false,wantActive=false,failed=false;
-  function ac(){ if(!ctx){ try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(_){ ctx=null; } } return ctx; }
+  function ac(){ if(!ctx) ctx=sharedAC(); return ctx; }
   function decode(a,b){
     try{
       const out=a.decodeAudioData(b);
@@ -2427,49 +2471,19 @@ async function askClaude(transcript){
 '8. "diario": il trascritto ripulito SOLO dagli errori evidenti di riconoscimento vocale (omofoni, nomi: "Justin case"→"just in case"). Punteggiatura minima. NON aggiungere, togliere o reinterpretare: restano le parole dell\'utente, in prima persona. Se non serve, identico.\n'+
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
 '{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}]}';
-  let lastErr=null;
-  for(const model of aiModels()){
-    const ctrl=('AbortController' in window)?new AbortController():null;
-    const timer=ctrl?setTimeout(()=>ctrl.abort(),45000):null; /* mai un'attesa infinita */
-    let r;
-    try{
-      r=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        signal:ctrl?ctrl.signal:undefined,
-        headers:{
-          'Content-Type':'application/json',
-          'x-api-key':S.apiKey,
-          'anthropic-version':'2023-06-01',
-          'anthropic-dangerous-direct-browser-access':'true'
-        },
-        body:JSON.stringify({
-          model:model,
-          max_tokens:1500,
-          temperature:0.2,                                    /* estrazione precisa e ripetibile */
-          system:sys,
-          messages:[
-            {role:'user',content:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript},
-            {role:'assistant',content:'{'}                    /* prefill: forza il JSON, niente preamboli */
-          ]
-        })
-      });
-    }finally{ if(timer) clearTimeout(timer); }
-    if(!r.ok){
-      let detail='';
-      try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
-      if(r.status===401||r.status===403) throw new Error('AUTH');
-      if(r.status===400&&/credit/i.test(detail)) throw new Error('CREDIT');
-      if(r.status===404||(r.status===400&&/model/i.test(detail))){ lastErr=new Error('MODEL'); continue; } /* modello ritirato: prova il prossimo */
-      if(r.status===429) throw new Error('RATE');
-      if(r.status===529||/overloaded/i.test(detail)) throw new Error('BUSY');
-      throw new Error('HTTP '+r.status+(detail?' — '+detail.slice(0,80):''));
-    }
-    const data=await r.json();
-    const text=(data.content||[]).map(c=>c.text||'').join('');
-    const full=text.trim().startsWith('{')?text:'{'+text;   /* prefill: completa la graffa iniziale */
-    return aiOutputToState(extractJson(full));
+  const res=await callAnthropic({system:sys,user:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
+  if(res.err){ const e=res.err;
+    if(e==='chiave') throw new Error('AUTH');
+    if(e==='credito') throw new Error('CREDIT');
+    if(e==='limite') throw new Error('RATE');
+    if(e==='occupato') throw new Error('BUSY');
+    if(e==='modello') throw new Error('MODEL');
+    if(e==='offline'||e==='rete') throw new TypeError('rete');
+    throw new Error('HTTP '+e);
   }
-  throw lastErr||new Error('MODEL');
+  const text=res.text||'';
+  const full=text.trim().startsWith('{')?text:'{'+text;
+  return aiOutputToState(extractJson(full));
 }
 
 /* ======================================================================
@@ -2513,38 +2527,20 @@ function buildObserverDigest(){
 }
 
 async function askObserver(digest){
-  let lastErr=null;
-  for(const model of aiModels()){
-    const ctrl=('AbortController' in window)?new AbortController():null;
-    const timer=ctrl?setTimeout(()=>ctrl.abort(),45000):null;
-    let r;
-    try{
-      r=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST', signal:ctrl?ctrl.signal:undefined,
-        headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:model,max_tokens:700,temperature:0.55,system:OBSERVER_SYS,messages:[
-          {role:'user',content:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest)},
-          {role:'assistant',content:'{'}
-        ]})
-      });
-    }finally{ if(timer) clearTimeout(timer); }
-    if(!r.ok){
-      let detail='';
-      try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
-      if(r.status===404||(r.status===400&&/model/i.test(detail))){ lastErr=new Error('MODEL'); continue; }
-      if(r.status===401||r.status===403) throw new Error('AUTH');
-      if(r.status===429) throw new Error('RATE');
-      if(r.status===529||/overloaded/i.test(detail)) throw new Error('BUSY');
-      throw new Error('HTTP '+r.status+(detail?' - '+detail.slice(0,80):''));
-    }
-    const data=await r.json();
-    const raw=(data.content||[]).map(c=>c.text||'').join('');
-    const payload=observerPayloadFromText(raw);
-    if(payload) return payload;
-    if(raw.trim()&&!observerLooksJsonish(raw)) return {summary:'',detectedPatterns:[],note:clampStr(raw.trim(),600)}; /* solo se e prosa vera */
-    lastErr=new Error('EMPTY');
+  const res=await callAnthropic({system:OBSERVER_SYS,user:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest),assistantPrefix:'{',max_tokens:700,temperature:0.55,timeout:45000});
+  if(res.err){ const e=res.err;
+    if(e==='chiave') throw new Error('AUTH');
+    if(e==='limite') throw new Error('RATE');
+    if(e==='occupato') throw new Error('BUSY');
+    if(e==='modello') throw new Error('MODEL');
+    if(e==='offline'||e==='rete') throw new TypeError('rete');
+    throw new Error('HTTP '+e);
   }
-  throw lastErr||new Error('MODEL');
+  const raw=res.text||'';
+  const payload=observerPayloadFromText(raw);
+  if(payload) return payload;
+  if(raw.trim()&&!observerLooksJsonish(raw)) return {summary:'',detectedPatterns:[],note:clampStr(raw.trim(),600)};
+  throw new Error('EMPTY');
 }
 
 /* logica locale base: gira offline, senza chiave. Rileva i pattern essenziali. */
@@ -2676,7 +2672,166 @@ const _btnObs=document.querySelector('#btn-observe'); if(_btnObs) _btnObs.onclic
 /* ======================================================================
    COMBO & SIGILLO
    ====================================================================== */
+/* ── Motore IA unico: timeout, ripiego tra modelli, grazia offline, un retry sul sovraccarico ── */
+async function callAnthropic(opt){
+  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return {err:'chiave'};
+  if(('onLine' in navigator)&&navigator.onLine===false) return {err:'offline'};
+  const to=opt.timeout||25000; const chain=aiModels(); let overloadRetried=false;
+  for(let mi=0; mi<chain.length; mi++){
+    const model=chain[mi];
+    const ctrl=('AbortController' in window)?new AbortController():null;
+    const timer=ctrl?setTimeout(()=>ctrl.abort(),to):null;
+    const messages=[{role:'user',content:opt.user}];
+    if(opt.assistantPrefix) messages.push({role:'assistant',content:opt.assistantPrefix});
+    let r;
+    try{
+      r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ctrl?ctrl.signal:undefined,
+        headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:model,max_tokens:opt.max_tokens||300,temperature:(opt.temperature==null?0.7:opt.temperature),system:opt.system,messages:messages})});
+    }catch(e){ if(timer)clearTimeout(timer); return {err:(e&&e.name==='AbortError')?'timeout':'rete'}; }
+    if(timer) clearTimeout(timer);
+    if(r.ok){
+      let data; try{ data=await r.json(); }catch(_){ return {err:'rete'}; }
+      const text=((data.content||[]).map(c=>c.text||'').join('')||'').trim();
+      return {text:text, model:model};
+    }
+    let detail=''; try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
+    if(r.status===400&&/credit/i.test(detail)) return {err:'credito'};
+    if(r.status===404||(r.status===400&&/model/i.test(detail))) continue;        /* modello assente → prossimo */
+    if(r.status===401||r.status===403) return {err:'chiave'};
+    if(r.status===429) return {err:'limite'};
+    if(r.status===529||/overloaded/i.test(detail)){
+      if(!overloadRetried){ overloadRetried=true; await new Promise(s=>setTimeout(s,1200)); mi--; continue; }   /* un solo retry, stesso modello */
+      return {err:'occupato'};
+    }
+    return {err:'http '+r.status};
+  }
+  return {err:'modello'};
+}
+/* ── Voce dell'osservatrice sul singolo task (battito "riga") ── */
+const OBSERVER_LINE_SYS=
+"Sei la Mente Osservatrice di Sentiero: un testimone, non un coach. Hai appena visto la persona completare un task. Dille UNA cosa vera che hai notato, parlandole in seconda persona, al presente.\n"+
+"REGOLE:\n"+
+"- Cita sempre almeno un particolare reale dai dati: un numero, l'ultima volta, un confronto, o una frase del suo diario. MAI una massima: se la frase la potresti dire a chiunque, riscrivila.\n"+
+"- Scegli UN solo confronto: lei-oggi contro lei-passato; le sue parole del diario contro le sue azioni; una sua costanza contro un'altra.\n"+
+"- Non sei un tifoso: a volte asciutta, a volte nomina una mancanza senza colpa. Niente lode generica, niente esclamazioni.\n"+
+"- Se nei dati c'e nota_utente non vuota, rispondi a QUELLA.\n"+
+"- Una frase, due al massimo. Italiano. Niente emoji, niente virgolette, nessun preambolo: solo la frase.";
+function _titleById(id){
+  const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
+  const q=(S.quests||[]).find(x=>x&&x.id===id); if(q) return q.titolo;
+  return null;
+}
+function buildLinePackage(id,title){
+  const tk=todayKey(); const today=new Date(tk+'T12:00:00');
+  let hit7=0,lastPrev=null;
+  for(const k of Object.keys(S.checks||{})){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+    if(!(S.checks[k]&&S.checks[k][id]===true)) continue;
+    const diff=Math.round((today-new Date(k+'T12:00:00'))/86400000);
+    if(diff>=0&&diff<=6) hit7++;
+    if(diff>0&&(lastPrev===null||diff<lastPrev)) lastPrev=diff;
+  }
+  const oggi=S.checks[tk]||{};
+  const oggiFatto=Object.keys(oggi).filter(k=>oggi[k]===true).map(_titleById).filter(Boolean);
+  const stop=new Set(['dopo','della','delle','sono','essere','questo','questa','molto','anche','come','quando','perche','niente','ogni','pagine','gram']);
+  const kws=(title||'').toLowerCase().split(/[^a-zàèéìòùé]+/).filter(w=>w.length>=4&&!stop.has(w));
+  const dia=[]; const arr=(S.diary||[]);
+  for(let i=arr.length-1;i>=0&&dia.length<3;i--){
+    const t=(arr[i]&&arr[i].testo||'').toLowerCase();
+    if(kws.some(w=>t.includes(w))) dia.push(clampStr(arr[i].testo,220));
+  }
+  const sealGap=S.lastSealed?Math.round((today-new Date(S.lastSealed+'T12:00:00'))/86400000):null;
+  return {battito:'riga',task:title,costanza:hit7+' su 7',
+    ultima_volta:lastPrev===null?'di recente solo oggi':(lastPrev===1?'ieri':lastPrev+' giorni fa'),
+    oggi_fatto:oggiFatto,streak:S.streak||0,
+    ultimo_sigillo:S.lastSealed?(sealGap===0?'oggi':sealGap+' giorni fa'):'mai',
+    diario_pertinente:dia,nota_utente:null};
+}
+async function askObserverLine(pkg){
+  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:120,temperature:0.7,timeout:20000});
+  return (res&&res.text)?clampStr(res.text,400):null;   /* errori in silenzio: una riga mancata non rompe la spunta */
+}
+let _whisperEl=null,_whisperTimer=null;
+function _whisper(text){
+  if(!text) return;
+  if(!_whisperEl){
+    const d=document.createElement('div'); d.id='obs-whisper';
+    d.style.cssText='position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);transform:translateX(-50%);max-width:90%;width:max-content;z-index:70;font-style:italic;font-size:15px;line-height:1.55;color:#a9e0cd;text-align:center;background:rgba(8,13,12,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(159,216,196,.20);border-radius:14px;padding:11px 16px;opacity:0;transition:opacity .5s ease;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,.45)';
+    document.body.appendChild(d); _whisperEl=d;
+  }
+  clearTimeout(_whisperTimer);
+  _whisperEl.textContent=''; _whisperEl.style.opacity='1';
+  try{ streamInto(_whisperEl,text,{speed:30}); }catch(_){ _whisperEl.textContent=text; }
+  _whisperTimer=setTimeout(()=>{ if(_whisperEl) _whisperEl.style.opacity='0'; }, Math.min(11000,3200+text.length*55));
+}
+let _lineTimer=null,_lineToken=0;
+function observerLineFor(el){
+  try{
+    if(S.settings&&S.settings.obsLine===false) return;                 /* spento dall'utente */
+    if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;             /* serve la chiave; in silenzio se manca */
+    const id=el&&(el.dataset.tid||el.dataset.qid); if(!id) return;
+    const title=((el.querySelector('.ttl')||{}).textContent||'').trim(); if(!title) return;
+    const token=++_lineToken; clearTimeout(_lineTimer);
+    _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
+      const line=await askObserverLine(buildLinePackage(id,title));
+      if(line&&token===_lineToken) _whisper(line);
+    },800);
+  }catch(_){}
+}
 let combo=0,lastCheck=0;
+
+/* ── Scritto distillato (battito "distillato"): un dono, nella voce dell'osservatrice ── */
+const OBSERVER_DISTILL_SYS=
+"Sei la Mente Osservatrice di Sentiero. Rileggi un periodo del cammino di una persona e scrivine UNO scritto breve, da custodire e magari donare a una sola persona. Le parli in seconda persona, con la tua voce di testimone: ti ho guardato...\n"+
+"REGOLE:\n"+
+"- Parti da UN particolare reale del periodo: un numero, una sua frase di diario, una svolta. Niente massime.\n"+
+"- Arriva a UNA verita non ovvia su di lei: un punto cieco, lo scarto tra cio che dice e cio che fa, una cosa cambiata.\n"+
+"- Chiudi con UNA riga trasferibile, qualcosa che possa servire a un altro sulla stessa salita. Niente trofeo, niente metriche esibite.\n"+
+"- 3-6 frasi. Italiano. Niente emoji, niente virgolette, nessun titolo ne preambolo: solo lo scritto.";
+function buildPeriodPackage(){
+  const tk=todayKey(); const today=new Date(tk+'T12:00:00');
+  const win=Object.keys(S.checks||{}).filter(k=>{ if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return false; const d=Math.round((today-new Date(k+'T12:00:00'))/86400000); return d>=0&&d<=29; });
+  const cons={};
+  (S.scheduled||[]).forEach(s=>{ if(!s||!s.id||!s.titolo) return; let c=0; win.forEach(k=>{ if(S.checks[k]&&S.checks[k][s.id]===true) c++; }); cons[s.titolo]=c; });
+  const ranked=Object.entries(cons).sort((a,b)=>b[1]-a[1]);
+  const n=win.length||1;
+  const dia=(S.diary||[]).slice(-6).map(e=>clampStr(e&&e.testo||'',200)).filter(Boolean);
+  return {battito:'distillato', periodo:'ultimi '+win.length+' giorni attivi', giorni_attivi:win.length,
+    piu_costanti:ranked.slice(0,2).map(([t,c])=>t+' '+c+'/'+n),
+    meno_costanti:ranked.slice(-2).map(([t,c])=>t+' '+c+'/'+n),
+    streak:S.streak||0, ultimo_sigillo:S.lastSealed||'mai', diario:dia};
+}
+async function askObserverDistill(pkg){
+  const res=await callAnthropic({system:OBSERVER_DISTILL_SYS,user:'DATI DEL PERIODO (JSON):\n'+JSON.stringify(pkg),max_tokens:600,temperature:0.7,timeout:45000});
+  if(res&&res.text) return {text:clampStr(res.text,1400)};
+  return {err:(res&&res.err)||'modello'};
+}
+let _lastDistill='';
+async function runDistill(){
+  const out=document.querySelector('#distill-out'), txt=document.querySelector('#distill-text'), btn=document.querySelector('#btn-distill');
+  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')){ toast('Serve la chiave per scrivere il dono'); return; }
+  out.classList.remove('hidden'); txt.textContent=''; if(btn){ btn.disabled=true; btn.textContent='Sto rileggendo…'; }
+  try{ playEventSound('distillStart'); }catch(_){}
+  let res; try{ res=await askObserverDistill(buildPeriodPackage()); }catch(_){ res={err:'rete'}; }
+  if(btn){ btn.disabled=false; btn.textContent='Scrivi il dono'; }
+  if(res&&res.text){
+    _lastDistill=res.text;
+    try{ streamInto(txt,res.text,{speed:24}); }catch(_){ txt.textContent=res.text; }
+    try{ playEventSound('distillSuccess'); }catch(_){}
+  } else {
+    const m={chiave:'Chiave non valida: ricontrolla in Impostazioni.',limite:'Troppe richieste ora: riprova tra poco.',occupato:'I server sono molto carichi: riprova tra poco.',timeout:'Ci ha messo troppo: riprova.',offline:'Sei offline: riprova quando torni in rete.',rete:'Niente rete: riprova quando sei online.'}[res&&res.err]||'Non è riuscita a scrivere ora. Riprova.';
+    txt.textContent=m; _lastDistill='';
+  }
+}
+document.querySelector('#btn-distill').onclick=runDistill;
+document.querySelector('#btn-distill-close').onclick=()=>{ document.querySelector('#distill-out').classList.add('hidden'); };
+document.querySelector('#btn-distill-share').onclick=async()=>{
+  if(!_lastDistill) return;
+  try{ if(navigator.share){ await navigator.share({text:_lastDistill}); return; } }catch(_){}
+  try{ await navigator.clipboard.writeText(_lastDistill); toast('Copiato: incollalo dove vuoi'); }
+  catch(_){ toast('Copia non riuscita'); }
+};
 function onComplete(el){
   const now=Date.now();
   combo=(now-lastCheck<10000)?combo+1:1;
@@ -2697,6 +2852,7 @@ function onComplete(el){
   if(lvl>=5) shake(false);
   el.classList.add('justdone');
   ink(el);
+  try{ observerLineFor(el); }catch(_){}   /* la mente osservatrice dice una riga vera sul task (IA, ~1-2s, in sottofondo) */
   updateRing();
 }
 function ink(itemEl){
@@ -2717,20 +2873,30 @@ function updateRing(){
   ensoEl.style.filter='drop-shadow(0 0 '+(4+12*r.p)+'px var(--jade-glow))'; /* il bagliore cresce col cerchio */
   try{ syncAdaptiveMusic(false); }catch(_){}  /* musica adattiva: WAV primario, generativo come fallback */
   const res=sealIfComplete(S,tk,dow);
-  if(res==='sealed'){
+  if(res==='soft'){
     save();
-    haptic(true); setTimeout(()=>haptic(true),160); setTimeout(()=>haptic(true),320);  /* tre pulsazioni decise: il cerchio si è chiuso */
+    micBtn.classList.add('sealed');
+    haptic(true); setTimeout(()=>haptic(true),150);   /* due pulsazioni morbide: sei tornato a casa */
+    floatWord('Cerchio del giorno',4);
+    ensoEl.style.filter='drop-shadow(0 0 22px var(--jade-glow))';   /* un respiro di bagliore, non la fioritura */
+    try{ document.querySelector('#ring-count').textContent='Cerchio del giorno · gli essenziali ci sono'; }catch(_){}
+    try{ renderStreak(); }catch(_){}
+    try{ setTimeout(()=>observe(true),1200); }catch(_){}   /* la Mente osserva la giornata chiusa */
+  } else if(res==='full'){
+    save();
+    haptic(true); setTimeout(()=>haptic(true),160); setTimeout(()=>haptic(true),320);  /* tre pulsazioni decise: il cerchio è pieno */
     micBtn.classList.add('sealed');
     setTimeout(()=>{
       try{ATHEME.stop(true);}catch(_){}   /* ultima quest completata → fade out dell'Active Theme; niente Victory sintetica */
       try{ say('Tao',6); }catch(_){}     /* voce reale se attiva; nessun gong/synth */
-      floatWord('Cerchio chiuso',6); shake(true);
+      floatWord('Cerchio pieno',6); shake(true);
       try{ if(!playEventSound('cerchioChiuso') && !playBuiltinSeal() && SFX.length) playSFX(SFX.length-1); }catch(_){}   /* sigillo: suono dedicato, o sigillo incorporato, o l'ultimo livello */
       try{ FX.bloom(); }catch(_){}
       try{ const f=document.querySelector('#flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }catch(_){}
-      try{ streamInto(document.querySelector('#ring-count'),'Cerchio chiuso · a domani',{speed:46}); }catch(_){ try{ document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani'; }catch(_){} }
+      try{ streamInto(document.querySelector('#ring-count'),'Cerchio pieno · niente è rimasto fuori',{speed:46}); }catch(_){ try{ document.querySelector('#ring-count').textContent='Cerchio pieno · niente è rimasto fuori'; }catch(_){} }
+      try{ renderStreak(); }catch(_){}
     },350);
-    try{ setTimeout(()=>observe(true),1500); }catch(_){}   /* a cerchio chiuso, la Mente osserva la giornata */
+    try{ setTimeout(()=>observe(true),1500); }catch(_){}   /* a cerchio pieno, la Mente osserva la giornata */
   } else if(res==='already'){
     micBtn.classList.add('sealed');
     document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani';
@@ -2747,8 +2913,9 @@ function updateRing(){
 let renderedDay=todayKey();
 function initDay(){ if(rolloverDay(S,todayKey())) save(); }
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState!=='visible'){ try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
+  if(document.visibilityState!=='visible'){ try{ save(); }catch(_){}  try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
   try{FX.resume();}catch(_){}
+  try{ const c=(typeof audioCtx==='function')&&audioCtx(); if(c&&c.state==='suspended') c.resume(); }catch(_){}   /* iOS sospende l'audio in background: lo risveglio */
   if(renderedDay!==todayKey()){
     renderedDay=todayKey();
     initDay(); resetCapture(); render();
@@ -2782,20 +2949,31 @@ function setEmpty(el,text,action,label){
 
 function buildTaskRow(t,checks){
   const done=checks[t.id]===true;
+  const isEss=(S.essentials||[]).includes(t.id);
   const div=document.createElement('div');
   div.className='item'+(done?' done':'');
   div.dataset.tid=t.id;
   div.innerHTML='<span class="prio prio-0"></span>'+
     '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
-    '<span class="txt"><span class="ttl">'+escapeHtml(t.titolo)+'</span>'+(t.time?'<span class="meta">'+t.time+'</span>':'')+'</span>';
+    '<span class="txt"><span class="ttl">'+escapeHtml(t.titolo)+'</span>'+(t.time?'<span class="meta">'+t.time+'</span>':'')+'</span>'+
+    '<button class="essbtn" aria-label="Essenziale" title="Essenziale: chiude il Cerchio del giorno" style="margin-left:auto;background:none;border:none;font-size:16px;padding:6px 8px;cursor:pointer;line-height:1;color:'+(isEss?'#e0a33a':'rgba(200,210,205,.22)')+'">&#9670;</button>';
+  div.querySelector('.essbtn').onclick=(e)=>{
+    e.stopPropagation();
+    S.essentials=S.essentials||[];
+    const i=S.essentials.indexOf(t.id);
+    if(i>=0) S.essentials.splice(i,1);
+    else { S.essentials.push(t.id); if(S.essentials.length===1) toast('Essenziale segnato: il giorno si chiuderà su questi'); }
+    save(); renderTasks(); updateRing();
+  };
   div.querySelector('.chk').onclick=()=>{
     if(div.dataset.busy) return;
     div.dataset.busy='1';
-    S.checks[todayKey()]=S.checks[todayKey()]||{};
-    const now=!done;
-    S.checks[todayKey()][t.id]=now; save();
-    if(now){ div.classList.add('done'); onComplete(div); setTimeout(renderTasks,600); }
-    else { sUndo(); renderTasks(); updateRing(); }
+    const tk=todayKey();
+    S.checks[tk]=S.checks[tk]||{};
+    const now=!(S.checks[tk][t.id]===true);   /* stato LIVE: non ricostruiamo più la riga, quindi 'done' catturato sarebbe vecchio */
+    S.checks[tk][t.id]=now; save();
+    if(now){ div.classList.add('done'); onComplete(div); setTimeout(()=>{ div.classList.remove('justdone'); delete div.dataset.busy; },650); }   /* mirato: aggiorna la riga, non l'intera lista */
+    else { div.classList.remove('done'); sUndo(); delete div.dataset.busy; updateRing(); }
   };
   return div;
 }
@@ -2982,6 +3160,7 @@ function renderSettings(){
     ? 'La musica usa campioni locali e sale con le quest rimaste; tace quando il cerchio si chiude. In questa modalità suoni normali, voce e suoni personali restano in pausa.'
     : '';
   document.querySelector('#sw-voice').classList.toggle('on',S.settings.voice);
+  { const sw=document.querySelector('#sw-obsline'); if(sw) sw.classList.toggle('on',S.settings.obsLine!==false); }
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
   document.querySelector('#sw-geo').classList.toggle('on',S.settings.geo);
   document.querySelectorAll('#seg-theme button').forEach(b=>b.classList.toggle('on',b.dataset.theme===S.settings.theme));
@@ -3058,6 +3237,7 @@ document.querySelectorAll('#seg-model button').forEach(b=>{
   };
 });
 document.querySelector('#sw-voice').onclick=()=>{ S.settings.voice=!S.settings.voice; save(); renderSettings(); if(S.settings.voice) say('Voce attiva'); };
+document.querySelector('#sw-obsline').onclick=()=>{ S.settings.obsLine=!(S.settings.obsLine!==false); save(); renderSettings(); if(S.settings.obsLine&&(!S.apiKey||!S.apiKey.startsWith('sk-ant-'))) toast('Aggiungi la chiave per farla parlare'); };
 document.querySelector('#sw-geo').onclick=()=>{
   if(!S.settings.geo){
     if(!('geolocation' in navigator)){ toast('Posizione non supportata qui'); return; }
@@ -3171,7 +3351,7 @@ function idbListSounds(){ return sndTx('readonly',st=>st.getAll()).then(a=>Array
 
 /* --- motore di riproduzione (Web Audio: su iOS l'audio va sbloccato da un gesto) --- */
 let _actx=null, _audioUnlocked=false; const _bufCache=new Map();
-function audioCtx(){ if(_actx) return _actx; try{ const C=window.AudioContext||window.webkitAudioContext; _actx=C?new C():null; }catch(_){ _actx=null; } return _actx; }
+function audioCtx(){ if(!_actx) _actx=sharedAC(); return _actx; }   /* stesso contesto unico degli altri motori */
 function unlockAudioOnUserGesture(){
   if(_audioUnlocked) return;
   const ctx=audioCtx(); if(!ctx){ _audioUnlocked=true; return; }
