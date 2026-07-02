@@ -850,6 +850,16 @@ function sanitizeObserverNotes(arr){
   }
   return out.slice(-50); /* conserva al massimo gli ultimi 50 commenti */
 }
+function sanitizeObsLines(arr){   /* memoria del sussurro: le ultime righe dette, perche l'osservatrice non si ripeta */
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  for(const n of arr){
+    if(!n||typeof n!=='object') continue;
+    const riga=clampStr(n.riga,400).trim(); if(!riga) continue;
+    out.push({iso:(typeof n.iso==='string')?n.iso.slice(0,40):new Date().toISOString(),task:clampStr(n.task,120).trim(),riga:riga});
+  }
+  return out.slice(-12); /* memoria di lavoro, non archivio: le ultime 12 bastano */
+}
 function sanitizeState(raw,def){
   raw=(raw&&typeof raw==='object'&&!Array.isArray(raw))?raw:{};
   const st={
@@ -858,6 +868,7 @@ function sanitizeState(raw,def){
     diary:sanitizeDiary(raw.diary),
     scheduled:('scheduled' in raw)?sanitizeScheduled(raw.scheduled):JSON.parse(JSON.stringify(def.scheduled)),
     observerNotes:sanitizeObserverNotes(raw.observerNotes),
+    obsLines:sanitizeObsLines(raw.obsLines),
     questLog:sanitizeQuestLog(raw.questLog),
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
@@ -976,7 +987,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.15 · 2026-06-29';
+const APP_VERSION='v60S.16 · 2026-07-02';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -996,7 +1007,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00'}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],questLog:[],
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],questLog:[],
   settings:{sound:true,voice:true,notif:false}
 };
 let S=load();
@@ -2710,13 +2721,17 @@ async function callAnthropic(opt){
 }
 /* ── Voce dell'osservatrice sul singolo task (battito "riga") ── */
 const OBSERVER_LINE_SYS=
-"Sei la Mente Osservatrice di Sentiero: un testimone, non un coach. Hai appena visto la persona completare un task. Dille UNA cosa vera che hai notato, parlandole in seconda persona, al presente.\n"+
-"REGOLE:\n"+
-"- Cita sempre almeno un particolare reale dai dati: un numero, l'ultima volta, un confronto, o una frase del suo diario. MAI una massima: se la frase la potresti dire a chiunque, riscrivila.\n"+
-"- Scegli UN solo confronto: lei-oggi contro lei-passato; le sue parole del diario contro le sue azioni; una sua costanza contro un'altra.\n"+
-"- Non sei un tifoso: a volte asciutta, a volte nomina una mancanza senza colpa. Niente lode generica, niente esclamazioni.\n"+
+"Sei la Mente Osservatrice di Sentiero: un testimone, non un coach. Hai appena visto la persona completare un task. Se hai UNA cosa vera e nuova da dirle, dilla in seconda persona, al presente. Altrimenti taci.\n"+
+"SILENZIO:\n"+
+"- Se i dati non offrono nulla che tu non abbia gia detto di recente, o se la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere fa parte del tuo modo di osservare: usalo senza esitare.\n"+
+"NON RIPETERTI:\n"+
+"- In righe_recenti ci sono le tue ultime frasi. Non riusare la loro struttura, le loro immagini, il loro attacco. Se il dato e lo stesso gia commentato (es. la stessa costanza), trova un angolo diverso o taci.\n"+
+"QUANDO PARLI:\n"+
+"- Asciutta e leggera. UNA frase, corta. Anche un dato nudo basta: a volte il numero, da solo, dice tutto.\n"+
+"- Cita sempre almeno un particolare reale dai dati: un numero, l'ultima volta, un confronto, una frase del suo diario. Se la frase la potresti dire a chiunque, riscrivila o taci.\n"+
+"- Non sei un tifoso: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda.\n"+
 "- Se nei dati c'e nota_utente non vuota, rispondi a QUELLA.\n"+
-"- Una frase, due al massimo. Italiano. Niente emoji, niente virgolette, nessun preambolo: solo la frase.";
+"- Italiano. Niente emoji, niente virgolette, nessun preambolo: solo la frase, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
   const q=(S.quests||[]).find(x=>x&&x.id===id); if(q) return q.titolo;
@@ -2746,11 +2761,14 @@ function buildLinePackage(id,title){
     ultima_volta:lastPrev===null?'di recente solo oggi':(lastPrev===1?'ieri':lastPrev+' giorni fa'),
     oggi_fatto:oggiFatto,streak:S.streak||0,
     ultimo_sigillo:S.lastSealed?(sealGap===0?'oggi':sealGap+' giorni fa'):'mai',
-    diario_pertinente:dia,nota_utente:null};
+    diario_pertinente:dia,nota_utente:null,
+    righe_recenti:(S.obsLines||[]).slice(-6).map(n=>({task:n.task,riga:n.riga}))};
 }
 async function askObserverLine(pkg){
   const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:120,temperature:0.7,timeout:20000});
-  return (res&&res.text)?clampStr(res.text,400):null;   /* errori in silenzio: una riga mancata non rompe la spunta */
+  const line=(res&&res.text)?clampStr(res.text,400).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
+  if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return null;      /* il silenzio scelto dal modello si rispetta: nessun sussurro */
+  return line;
 }
 let _whisperEl=null,_whisperTimer=null;
 function _whisper(text){
@@ -2775,7 +2793,11 @@ function observerLineFor(el){
     const token=++_lineToken; clearTimeout(_lineTimer);
     _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
       const line=await askObserverLine(buildLinePackage(id,title));
-      if(line&&token===_lineToken) _whisper(line);
+      if(line&&token===_lineToken){
+        _whisper(line);
+        S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
+        save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
+      }
     },800);
   }catch(_){}
 }
