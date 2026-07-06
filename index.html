@@ -194,7 +194,10 @@ section{margin-top:38px}
 
 /* ════════ diario: prosa, niente lastre ════════ */
 .diary-font{font-family:var(--serif)}
-.entry{padding:24px 0;border-bottom:.5px solid rgba(245,242,234,.07)}
+.entry{padding:24px 0;border-bottom:.5px solid rgba(245,242,234,.07);position:relative}
+.e-del{position:absolute;top:22px;right:0;border:none;background:none;color:var(--t3);font-size:19px;line-height:1;padding:6px 2px 6px 10px;opacity:.55;font-family:inherit}
+.e-del:active{opacity:.35}
+.e-del.armed{color:var(--accent);opacity:1;font-size:12px;letter-spacing:.04em}
 .entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
 .ed-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;color:var(--t1);letter-spacing:-.02em}
 .ed-mo{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);text-transform:lowercase}
@@ -958,7 +961,10 @@ function extractJson(text){
 function aiOutputToState(parsed){
   if(!parsed||typeof parsed!=='object') return null;
   if(!Array.isArray(parsed.quests)) return null;
-  return {quests:sanitizeQuests(parsed.quests),diario:clampStr(parsed.diario,LIMITS.DIARY).trim()};
+  /* rituali dettati a voce: stessa validazione di quelli creati a mano (id, days 0-6, orario) */
+  const rituali=sanitizeScheduled(Array.isArray(parsed.rituali)?parsed.rituali.map(r=>({titolo:r&&r.titolo,days:r&&r.days,time:r&&r.time})):[]);
+  return {quests:sanitizeQuests(parsed.quests),diario:clampStr(parsed.diario,LIMITS.DIARY).trim(),
+    rituali:rituali,non_eseguibile:clampStr(parsed.non_eseguibile,160).trim()};
 }
 function nextReminderDelays(state,now){
   const dow=dowOf(now),out=[];
@@ -987,7 +993,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.16 · 2026-07-02';
+const APP_VERSION='v60S.19 · 2026-07-03';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2401,11 +2407,19 @@ document.querySelector('#btn-save').onclick=async()=>{
       const out=await askClaude(transcript);
       if(out){
         S.quests=sortQuests(out.quests);
+        /* rituali nati a voce: fusione in scheduled, con guardia client-side sui titoli gia esistenti */
+        const bornRit=[];
+        for(const r of (out.rituali||[])){
+          if((S.scheduled||[]).length>=LIMITS.SMAX) break;
+          if(S.scheduled.some(t=>t.titolo.trim().toLowerCase()===r.titolo.trim().toLowerCase())) continue;
+          S.scheduled.push(r);
+          bornRit.push(r.titolo+' ('+r.days.map(d=>DAYS_IT[d]).join('')+(r.time?' '+r.time:'')+')');
+        }
         /* collegamenti nota↔quest calcolati in locale, per diff: esatti, non interpretati */
         const bornIds=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.id);
         const bornTitles=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.titolo);
         const doneTitles=S.quests.filter(q=>{const b=beforeMap.get(q.id);return b&&!b.fatto&&q.fatto;}).map(q=>q.titolo);
-        addDiary(out.diario||transcript,bornTitles,doneTitles,transcript);
+        addDiary(out.diario||transcript,bornTitles.concat(bornRit.map(t=>'Rituale: '+t)),doneTitles,transcript);
         save(); render(bornIds);
         bornIds.forEach((_,i)=>sAppear(i));
         setTimeout(()=>{ /* scintille su ogni quest appena nata, a cascata */
@@ -2414,7 +2428,14 @@ document.querySelector('#btn-save').onclick=async()=>{
             if(qel){ const r=qel.getBoundingClientRect(); setTimeout(()=>{ try{FX.sparkle(r.left+26,r.top+r.height/2);}catch(_){} }, i*130); }
           });
         },60);
-        toast(bornIds.length? bornIds.length+(bornIds.length===1?' nuova quest distillata':' nuove quest distillate') : 'Quest aggiornate, nota salvata');
+        const nq=bornIds.length,nr=bornRit.length;
+        let msg;
+        if(nq&&nr) msg=nq+' quest e '+nr+(nr===1?' rituale distillati':' rituali distillati');
+        else if(nq) msg=nq+(nq===1?' nuova quest distillata':' nuove quest distillate');
+        else if(nr) msg=nr+(nr===1?' nuovo rituale distillato':' nuovi rituali distillati');
+        else msg='Quest aggiornate, nota salvata';
+        if(out.non_eseguibile) msg+=' · Non posso: '+out.non_eseguibile;
+        toast(msg);
         resetCapture();
         guideAfterDistill(bornIds);
         maybeAskPriority(bornIds);
@@ -2470,7 +2491,7 @@ async function askClaude(transcript){
   const oggiStr=giorni[oggi.getDay()]+' '+todayKey();
   const sched=todaysScheduled().map(t=>t.titolo);
   const sys='Sei il motore di distillazione di "Sentiero", diario vocale personale in italiano. OGGI è '+oggiStr+', ora locale '+oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+'.\n'+
-'Ricevi: (1) le quest esistenti in JSON, (2) le task già pianificate per oggi, (3) il trascritto vocale grezzo (può contenere errori di riconoscimento).\n'+
+'Ricevi: (1) le quest esistenti in JSON, (2) le task già pianificate per oggi, (3) i rituali ricorrenti esistenti, (4) il trascritto vocale grezzo (può contenere errori di riconoscimento).\n'+
 'COMPITI:\n'+
 '1. Estrai OGNI attività distinta come quest separata. Ignora riempitivi, esitazioni, divagazioni.\n'+
 '2. Titolo: imperativo, conciso, iniziale maiuscola, senza "devo/dovrei". Es. "devo chiamare il commercialista per la fattura" → titolo "Chiamare il commercialista", note "per la fattura". Metti il contesto utile in "note", non nel titolo.\n'+
@@ -2480,9 +2501,11 @@ async function askClaude(transcript){
 '6. ANTI-DUPLICATI: se un\'attività combacia con una quest esistente o con una task già pianificata per oggi, NON crearne una nuova: aggiorna l\'esistente o ometti.\n'+
 '7. Mantieni invariate le quest esistenti non menzionate.\n'+
 '8. "diario": il trascritto ripulito SOLO dagli errori evidenti di riconoscimento vocale (omofoni, nomi: "Justin case"→"just in case"). Punteggiatura minima. NON aggiungere, togliere o reinterpretare: restano le parole dell\'utente, in prima persona. Se non serve, identico.\n'+
+'9. RITUALI: se l\'utente chiede ESPLICITAMENTE di ripetere o pianificare un\'attività in modo ricorrente ("ogni martedì", "tutti i giorni", "dal lunedì al venerdì", "segna come ricorrente"), NON creare una quest: mettila in "rituali" con "days" (0=lunedì, 1=martedì, 2=mercoledì, 3=giovedì, 4=venerdì, 5=sabato, 6=domenica) ed eventuale "time" HH:MM. SOLO su istruzione esplicita: mai dedurre un rituale da come racconta le sue abitudini ("in questo periodo mi alleno tutti i giorni" è racconto, non istruzione). Se tra i RITUALI ESISTENTI ce n\'è già uno equivalente, non crearlo.\n'+
+'10. Se chiede di MODIFICARE o ELIMINARE un rituale esistente, non puoi: lascia tutto intatto e scrivi in "non_eseguibile" una frase breve su cosa non puoi fare (es. "modificare i rituali: si fa a mano dalla lista"). Usa "non_eseguibile" SOLO per questo, altrimenti lascialo vuoto.\n'+
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
-'{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}]}';
-  const res=await callAnthropic({system:sys,user:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
+'{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"non_eseguibile":""}';
+  const res=await callAnthropic({system:sys,user:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
   if(res.err){ const e=res.err;
     if(e==='chiave') throw new Error('AUTH');
     if(e==='credito') throw new Error('CREDIT');
@@ -2728,7 +2751,9 @@ const OBSERVER_LINE_SYS=
 "- In righe_recenti ci sono le tue ultime frasi. Non riusare la loro struttura, le loro immagini, il loro attacco. Se il dato e lo stesso gia commentato (es. la stessa costanza), trova un angolo diverso o taci.\n"+
 "QUANDO PARLI:\n"+
 "- Asciutta e leggera. UNA frase, corta. Anche un dato nudo basta: a volte il numero, da solo, dice tutto.\n"+
-"- Cita sempre almeno un particolare reale dai dati: un numero, l'ultima volta, un confronto, una frase del suo diario. Se la frase la potresti dire a chiunque, riscrivila o taci.\n"+
+"- Cita sempre almeno un particolare reale dai dati: un numero, l'ultima occasione, un confronto, una frase del suo diario. Se la frase la potresti dire a chiunque, riscrivila o taci.\n"+
+"- I dati dicono se il task e un rituale ricorrente, un appuntamento o una quest singola, e la costanza e misurata SOLO sui giorni previsti dal piano: non leggere assenze nei giorni in cui il task non era previsto.\n"+
+"- diario_pertinente e un accostamento per parola chiave, non per senso: guarda data e testo, e usalo solo se e davvero legato a questo task; altrimenti ignoralo.\n"+
 "- Non sei un tifoso: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda.\n"+
 "- Se nei dati c'e nota_utente non vuota, rispondi a QUELLA.\n"+
 "- Italiano. Niente emoji, niente virgolette, nessun preambolo: solo la frase, oppure SILENZIO.";
@@ -2739,30 +2764,56 @@ function _titleById(id){
 }
 function buildLinePackage(id,title){
   const tk=todayKey(); const today=new Date(tk+'T12:00:00');
-  let hit7=0,lastPrev=null;
-  for(const k of Object.keys(S.checks||{})){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
-    if(!(S.checks[k]&&S.checks[k][id]===true)) continue;
-    const diff=Math.round((today-new Date(k+'T12:00:00'))/86400000);
-    if(diff>=0&&diff<=6) hit7++;
-    if(diff>0&&(lastPrev===null||diff<lastPrev)) lastPrev=diff;
+  const NOMI=['lunedi','martedi','mercoledi','giovedi','venerdi','sabato','domenica'];
+  const sched=(S.scheduled||[]).find(t=>t&&t.id===id)||null;
+  const quest=sched?null:((S.quests||[]).find(q=>q&&q.id===id)||null);
+  const pkg={battito:'riga',task:title};
+  if(sched&&sched.days&&sched.days.length){
+    pkg.tipo='rituale ricorrente ('+sched.days.map(d=>NOMI[d]).join(', ')+')';
+    /* la costanza si misura contro il piano, non contro il calendario:
+       contare i giorni in cui il task NON era previsto come assenze era il punto cieco dell'osservatrice */
+    let planned=0,doneOnPlan=0,extra=0,lastPlan=null;
+    for(let diff=0;diff<=6;diff++){
+      const d=new Date(today); d.setDate(d.getDate()-diff);
+      const k=localDayKey(d);
+      const isPlan=sched.days.includes(dowOf(d));
+      const isDone=!!(S.checks[k]&&S.checks[k][id]===true);
+      if(isPlan){ planned++; if(isDone) doneOnPlan++; if(diff>0&&lastPlan===null) lastPlan={diff,done:isDone,giorno:NOMI[dowOf(d)]}; }
+      else if(isDone) extra++;
+    }
+    pkg.costanza=doneOnPlan+' fatte su '+planned+' previste negli ultimi 7 giorni';
+    if(extra) pkg.fuori_piano=extra+' volte in giorni non previsti (in piu rispetto al piano)';
+    pkg.occasione_precedente=lastPlan
+      ?('la precedente prevista era '+(lastPlan.diff===1?'ieri':lastPlan.giorno+', '+lastPlan.diff+' giorni fa')+': '+(lastPlan.done?'fatta':'mancata'))
+      :'nessuna occasione prevista nei 6 giorni precedenti';
+  }else if(sched&&sched.date){
+    pkg.tipo='appuntamento con data fissa ('+sched.date+'): non ha costanza settimanale';
+  }else if(quest){
+    pkg.tipo='quest singola: non ha costanza settimanale';
+    if(quest.prio===1) pkg.priorita='alta'; else if(quest.prio===2) pkg.priorita='media';
+  }else{
+    pkg.tipo='task';
   }
+  /* la forma del giorno: quante previste, quante fatte, le essenziali — prima l'osservatrice tirava a indovinare */
+  const dow=dowOf(today);
+  const pr=computeProgress(S,tk,dow); const es=essentialStatus(S,tk,dow);
   const oggi=S.checks[tk]||{};
-  const oggiFatto=Object.keys(oggi).filter(k=>oggi[k]===true).map(_titleById).filter(Boolean);
+  pkg.oggi={fatte:pr.done,previste:pr.total,titoli_fatte:Object.keys(oggi).filter(k=>oggi[k]===true).map(_titleById).filter(Boolean)};
+  if(es.total) pkg.oggi.essenziali=es.done+' su '+es.total;
+  pkg.streak=S.streak||0;
+  const sealGap=S.lastSealed?Math.round((today-new Date(S.lastSealed+'T12:00:00'))/86400000):null;
+  pkg.ultimo_sigillo=S.lastSealed?(sealGap===0?'oggi':sealGap+' giorni fa'):'mai';
+  /* diario: accostamento per parola chiave; la data serve al modello per pesare la distanza nel tempo */
   const stop=new Set(['dopo','della','delle','sono','essere','questo','questa','molto','anche','come','quando','perche','niente','ogni','pagine','gram']);
   const kws=(title||'').toLowerCase().split(/[^a-zàèéìòùé]+/).filter(w=>w.length>=4&&!stop.has(w));
   const dia=[]; const arr=(S.diary||[]);
   for(let i=arr.length-1;i>=0&&dia.length<3;i--){
     const t=(arr[i]&&arr[i].testo||'').toLowerCase();
-    if(kws.some(w=>t.includes(w))) dia.push(clampStr(arr[i].testo,220));
+    if(kws.some(w=>t.includes(w))) dia.push({quando:String(arr[i].iso||'').slice(0,10),testo:clampStr(arr[i].testo,220)});
   }
-  const sealGap=S.lastSealed?Math.round((today-new Date(S.lastSealed+'T12:00:00'))/86400000):null;
-  return {battito:'riga',task:title,costanza:hit7+' su 7',
-    ultima_volta:lastPrev===null?'di recente solo oggi':(lastPrev===1?'ieri':lastPrev+' giorni fa'),
-    oggi_fatto:oggiFatto,streak:S.streak||0,
-    ultimo_sigillo:S.lastSealed?(sealGap===0?'oggi':sealGap+' giorni fa'):'mai',
-    diario_pertinente:dia,nota_utente:null,
-    righe_recenti:(S.obsLines||[]).slice(-6).map(n=>({task:n.task,riga:n.riga}))};
+  pkg.diario_pertinente=dia; pkg.nota_utente=null;
+  pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>({task:n.task,riga:n.riga}));
+  return pkg;
 }
 async function askObserverLine(pkg){
   const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:120,temperature:0.7,timeout:20000});
@@ -3164,6 +3215,22 @@ function renderDiary(){
       '<p>'+escapeHtml(txt)+'</p>'+
       (born.length?'<p class="tags born-t">✦ '+born.map(escapeHtml).join(' · ')+'</p>':'')+
       (done.length?'<p class="tags done-t">✓ '+done.map(escapeHtml).join(' · ')+'</p>':'');
+    /* eliminazione a due tocchi: una voce di diario e irripetibile, un tocco solo non basta */
+    const del=document.createElement('button');
+    del.className='e-del'; del.setAttribute('aria-label','Elimina la voce'); del.innerHTML='&#215;';
+    let armTimer=null;
+    del.onclick=(ev)=>{
+      ev.stopPropagation();
+      if(!del.classList.contains('armed')){
+        del.classList.add('armed'); del.textContent='Elimina?';
+        armTimer=setTimeout(()=>{ del.classList.remove('armed'); del.innerHTML='&#215;'; },3000);
+        return;
+      }
+      clearTimeout(armTimer);
+      S.diary=S.diary.filter(x=>x!==e);
+      save(); renderDiary(); toast('Voce eliminata');
+    };
+    div.appendChild(del);
     el.appendChild(div);
   });
 }
