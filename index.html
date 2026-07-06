@@ -114,6 +114,10 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 #mic-label{margin-top:22px;font-size:15px;color:var(--t2);text-align:center;min-height:20px;font-weight:400;letter-spacing:0}
 #ring-count{font-size:12px;color:var(--t3);margin-top:6px;letter-spacing:.04em}
+#gb-dow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;min-height:13px}
+#btn-pin{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);background:rgba(245,242,234,.05);border:.5px solid rgba(245,242,234,.10);border-radius:999px;padding:6px 12px;font-family:inherit}
+#btn-pin svg{width:13px;height:13px;stroke:var(--jade);flex:none}
+#btn-pin svg.share{stroke:var(--t2);opacity:.65}
 #giorno-bar{display:flex;align-items:center;gap:10px;padding:2px 0 13px;margin-bottom:6px;border-bottom:.5px solid rgba(245,242,234,.08)}
 #gb-ring{width:30px;height:30px;flex:none}
 #gb-ring circle{fill:none;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.22,1,.36,1)}
@@ -490,21 +494,35 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   border-top:.5px solid rgba(245,242,234,.06);-webkit-user-select:none;user-select:none}
 .later-head .later-chev{opacity:.55;font-size:12px;flex:none}
 .item.later-item{opacity:.4}
-/* ══════ TEMA INCHIOSTRO — selezionabile da Impostazioni ══════ */
-body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t2:rgba(245,242,234,.62);--t3:rgba(245,242,234,.40)}
-body.theme-inchiostro .sec-head,body.theme-inchiostro #gb-data,body.theme-inchiostro .ed-num,body.theme-inchiostro #distill-text{font-family:ui-serif,Georgia,'Times New Roman',serif}
-body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
-body.theme-inchiostro #enso2{display:inline}
-body.theme-inchiostro .enso{stroke:rgba(159,216,196,.50)}
+/* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
+body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
+body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro #distill-text,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
+body.theme-inchiostro #dateline{font-size:clamp(28px,8.6vw,34px);font-weight:400;line-height:1.05;letter-spacing:.01em;color:var(--t1)}
+body.theme-inchiostro .sec-head{font-size:15px;color:var(--t2);letter-spacing:.05em;font-weight:400}
+body.theme-inchiostro .ed-num{font-size:24px;font-weight:400}
+/* ensō doppio: esterno giada (tutto), interno ambra (essenziali ◆) con bagliore */
+body.theme-inchiostro #enso2{display:inline;filter:drop-shadow(0 0 10px rgba(217,164,65,.45))}
+body.theme-inchiostro .enso{stroke:rgba(159,216,196,.50);stroke-width:5}
 body.theme-inchiostro #mic.sealed .enso{stroke:#9FD8C4}
-body.theme-inchiostro #gb-r1{stroke:rgba(159,216,196,.42)}
-body.theme-inchiostro #dateline{color:#F5F2EA;letter-spacing:-.01em}
-body.theme-inchiostro .sec-head{color:rgba(245,242,234,.55);letter-spacing:.06em}
-body.theme-inchiostro .btn-row .act.distilla-cta{box-shadow:0 6px 22px rgba(217,164,65,.30)}
 body.theme-inchiostro #mic.rec::before{background:radial-gradient(circle,rgba(217,164,65,.16),transparent 66%)}
 body.theme-inchiostro #mic.rec::after{border-color:rgba(217,164,65,.4)}
+/* barra del giorno: mini doppio anello + eco */
+body.theme-inchiostro #gb-r1{stroke:rgba(159,216,196,.42)}
+body.theme-inchiostro #day-line{letter-spacing:.04em}
+/* card del flusso come nel mockup */
+body.theme-inchiostro .flow{background:#18211E;border:.5px solid rgba(245,242,234,.08);border-radius:16px;padding:14px 16px;color:var(--t2);text-align:left;max-width:100%}
+body.theme-inchiostro .flow:empty{display:none;padding:0;border:none}
+body.theme-inchiostro .flow strong{color:var(--t1);font-weight:600}
+body.theme-inchiostro .flow button{color:var(--jade)}
+/* il dono: card giada del mockup */
+body.theme-inchiostro #sec-dono{background:linear-gradient(160deg,rgba(159,216,196,.14),transparent 70%);border:.5px solid rgba(159,216,196,.25);border-radius:18px;padding:16px;margin-top:22px}
+body.theme-inchiostro #sec-dono .sec-head{color:var(--jade);margin-bottom:6px}
+body.theme-inchiostro #btn-distill{background:var(--jade);color:#0B0F0E;border-radius:999px;padding:9px 18px;font-weight:600;border:none}
+/* sussurro: ciano del mockup anche sulla bolla */
+body.theme-inchiostro #obs-whisper{color:#9BD9E4 !important;border-color:rgba(127,212,224,.25) !important;font-style:italic}
 body.theme-inchiostro .obs-tag{border-color:rgba(217,164,65,.4)}
 body.theme-inchiostro #prio-row .act.primary{background:rgba(217,164,65,.16)}
+body.theme-inchiostro .btn-row .act.distilla-cta{box-shadow:0 6px 22px rgba(217,164,65,.30)}
 </style>
 </head>
 <body>
@@ -543,9 +561,11 @@ body.theme-inchiostro #prio-row .act.primary{background:rgba(217,164,65,.16)}
 <div id="app">
   <header>
     <div class="hd-row">
-      <div id="dateline"></div>
+      <div id="date-wrap"><div id="gb-dow"></div><div id="dateline"></div></div>
       <button id="btn-pin" aria-label="Condividi la mia posizione">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <span>dove sono</span>
+        <svg class="share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>
       </button>
     </div>
   </header>
@@ -1037,7 +1057,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.27 · 2026-07-06';
+const APP_VERSION='v60S.28 · 2026-07-06';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2161,7 +2181,8 @@ document.querySelector('#btn-pin').onclick=()=>{
    HEADER / TABS
    ====================================================================== */
 function renderStreak(){
-  $('#dateline').textContent=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+  $('#dateline').textContent=new Date().toLocaleDateString('it-IT',{day:'numeric',month:'long'});
+  try{ const gd=$('#gb-dow'); if(gd) gd.textContent=new Date().toLocaleDateString('it-IT',{weekday:'long'}); }catch(_){}
 }
 function scrollToSoft(sel){
   try{
