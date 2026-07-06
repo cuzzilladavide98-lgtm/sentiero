@@ -114,14 +114,7 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 #mic-label{margin-top:22px;font-size:15px;color:var(--t2);text-align:center;min-height:20px;font-weight:400;letter-spacing:0}
 #ring-count{font-size:12px;color:var(--t3);margin-top:6px;letter-spacing:.04em}
-#giorno-bar{padding:4px 0 15px;border-bottom:.5px solid rgba(245,242,234,.08);margin-bottom:14px}
-#gb-dow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:1px}
-#gb-data{font-size:31px;line-height:1.05;color:var(--t1)}
-.gb-riga{display:flex;align-items:center;gap:10px;margin-top:11px}
-#gb-pos{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);background:rgba(245,242,234,.05);border:.5px solid rgba(245,242,234,.10);border-radius:999px;padding:6px 12px;font-family:inherit}
-#gb-pos svg{width:13px;height:13px;stroke:var(--jade);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-#gb-pos svg.share{stroke:var(--t2);opacity:.65}
-#gb-stato{display:inline-flex;align-items:center;gap:8px;margin-left:auto;min-width:0}
+#giorno-bar{display:flex;align-items:center;gap:10px;padding:2px 0 13px;margin-bottom:6px;border-bottom:.5px solid rgba(245,242,234,.08)}
 #gb-ring{width:30px;height:30px;flex:none}
 #gb-ring circle{fill:none;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.22,1,.36,1)}
 #gb-r1{stroke:rgba(127,184,164,.35);stroke-width:2.4;transform:rotate(-100deg);transform-origin:50% 50%}
@@ -505,68 +498,13 @@ body.theme-inchiostro #enso2{display:inline}
 body.theme-inchiostro .enso{stroke:rgba(159,216,196,.50)}
 body.theme-inchiostro #mic.sealed .enso{stroke:#9FD8C4}
 body.theme-inchiostro #gb-r1{stroke:rgba(159,216,196,.42)}
-/* ══════ TEMA CARTA DI RISO — chiaro di giorno, carta di notte (automatico) ══════ */
-body.theme-carta{
-  --bg:#F2EDE2;--t1:#201F1B;--t2:rgba(32,31,27,.62);--t3:rgba(32,31,27,.42);
-  --accent:#B9402E;--jade:#3E7A66;--ember:#8C2F22;
-  --linea:rgba(32,31,27,.12);--velo:rgba(32,31,27,.05);--chkb:rgba(32,31,27,.32);--inkp:rgba(32,31,27,.88);
-}
-body.theme-carta.carta-notte{
-  --bg:#191512;--t1:#EDE5D3;--t2:rgba(237,229,211,.64);--t3:rgba(237,229,211,.42);
-  --accent:#C9503C;--jade:#6FA890;--ember:#D9744B;
-  --linea:rgba(237,229,211,.11);--velo:rgba(237,229,211,.06);--chkb:rgba(237,229,211,.32);--inkp:rgba(237,229,211,.90);
-}
-body.theme-carta{background-image:radial-gradient(rgba(32,31,27,.028) 1px,transparent 1.2px);background-size:5px 5px}
-body.theme-carta.carta-notte{background-image:radial-gradient(rgba(237,229,211,.02) 1px,transparent 1.2px)}
-body.theme-carta .sec-head,body.theme-carta #gb-data,body.theme-carta .ed-num,body.theme-carta #distill-text{font-family:var(--serif)}
-body.theme-carta .entry p{font-family:var(--serif);color:var(--inkp)}
-body.theme-carta .sec-head{color:var(--t2)}
-body.theme-carta .ring-track{stroke:var(--linea)}
-body.theme-carta #giorno-bar{border-bottom-color:var(--linea)}
-body.theme-carta #gb-pos{background:var(--velo);border-color:var(--linea)}
-body.theme-carta .item:not(:last-child),body.theme-carta .entry,body.theme-carta .switchrow,body.theme-carta .obs-hist,body.theme-carta .snd-ev{border-bottom-color:var(--linea)}
-body.theme-carta .later-head{border-top-color:var(--linea)}
-body.theme-carta .item .chk{border-color:var(--chkb)}
-body.theme-carta .chk-mark path{stroke:#F6EFE1}
-body.theme-carta input[type=text],body.theme-carta input[type=password],body.theme-carta input[type=time]{border-bottom-color:var(--chkb)}
-body.theme-carta .sw{background:rgba(32,31,27,.18)}
-body.theme-carta.carta-notte .sw{background:rgba(237,229,211,.18)}
-body.theme-carta .sw::after{background:#FBF8F1}
-body.theme-carta .days button{border-color:var(--chkb)}
-body.theme-carta .days button.on{color:#F6EFE1}
-body.theme-carta #btn-pin{color:var(--t2) !important}
-body.theme-carta .ed-meta{color:var(--t3) !important}
-body.theme-carta .item .meta{color:var(--t3)}
-body.theme-carta .item.future .cal{color:var(--t3)}
-body.theme-carta .btn-row .act.distilla-cta{color:#F6EFE1;box-shadow:0 6px 22px rgba(185,64,46,.28)}
-body.theme-carta #prio-row .act.primary{background:rgba(185,64,46,.12);color:var(--accent)}
-body.theme-carta .obs-tag{border-color:rgba(185,64,46,.4)}
-body.theme-carta #distill-out{background:rgba(62,122,102,.07) !important;border-color:rgba(62,122,102,.30) !important}
-body.theme-carta #distill-text{color:#2F4A40 !important}
-body.theme-carta.carta-notte #distill-out{background:rgba(111,168,144,.08) !important;border-color:rgba(111,168,144,.28) !important}
-body.theme-carta.carta-notte #distill-text{color:#BCD9CC !important}
-/* la china non brilla: sull\'ensō di carta niente bagliori, solo tratto */
-body.theme-carta .enso{stroke:#201F1B;filter:none !important}
-body.theme-carta.carta-notte .enso{stroke:#EDE5D3}
-body.theme-carta #mic:not(.rec):not(.arming):not(.sealed) .enso{animation:none}
-body.theme-carta #mic.sealed .enso{animation:none}
-body.theme-carta #mic:not(.rec):not(.arming):not(.sealed) svg{animation:none}
-body.theme-carta #mic.rec::before{background:radial-gradient(circle,rgba(185,64,46,.13),transparent 66%)}
-body.theme-carta #mic.rec::after{border-color:rgba(185,64,46,.4)}
-body.theme-carta #mic.rec .enso{stroke:var(--ember)}
-/* il sussurro su carta: inchiostro di petrolio su un foglietto chiaro */
-body.theme-carta:not(.carta-notte) #obs-whisper{color:#2E7D8A !important;background:rgba(242,237,226,.93) !important;border-color:rgba(46,125,138,.30) !important;box-shadow:0 8px 28px rgba(32,31,27,.18) !important}
-body.theme-carta.carta-notte #obs-whisper{color:#9ED3DD !important;background:rgba(25,21,18,.90) !important;border-color:rgba(158,211,221,.22) !important}
-/* ── hanko: il sigillo-timbro del tema Carta ── */
-#gb-hanko,#mic-hanko{display:none}
-body.theme-carta #gb-ring{display:none}
-body.theme-carta #gb-hanko{display:flex;width:26px;height:26px;background:var(--accent);border-radius:5px;align-items:center;justify-content:center;flex:none;transform:rotate(-4deg);opacity:.28;transition:opacity .5s ease,transform .5s ease}
-body.theme-carta #gb-hanko svg{width:16px;height:16px;fill:none;stroke:#F6EFE1;stroke-width:2.2;stroke-linecap:round}
-body.theme-carta #gb-hanko.on{opacity:1}
-body.theme-carta #mic-hanko{display:flex;position:absolute;right:5%;bottom:3%;width:36px;height:36px;background:var(--accent);border-radius:7px;align-items:center;justify-content:center;transform:rotate(-4deg);opacity:.22;transition:opacity .6s ease;box-shadow:0 1px 3px rgba(32,31,27,.25);z-index:3}
-body.theme-carta #mic-hanko svg{width:23px;height:23px;fill:none;stroke:#F6EFE1;stroke-width:2.2;stroke-linecap:round}
-body.theme-carta #mic.sealed #mic-hanko{opacity:1;animation:stampa .55s cubic-bezier(.2,1.4,.4,1)}
-@keyframes stampa{0%{transform:rotate(-14deg) scale(1.45);opacity:0}62%{transform:rotate(-2deg) scale(.94);opacity:1}100%{transform:rotate(-4deg) scale(1)}}
+body.theme-inchiostro #dateline{color:#F5F2EA;letter-spacing:-.01em}
+body.theme-inchiostro .sec-head{color:rgba(245,242,234,.55);letter-spacing:.06em}
+body.theme-inchiostro .btn-row .act.distilla-cta{box-shadow:0 6px 22px rgba(217,164,65,.30)}
+body.theme-inchiostro #mic.rec::before{background:radial-gradient(circle,rgba(217,164,65,.16),transparent 66%)}
+body.theme-inchiostro #mic.rec::after{border-color:rgba(217,164,65,.4)}
+body.theme-inchiostro .obs-tag{border-color:rgba(217,164,65,.4)}
+body.theme-inchiostro #prio-row .act.primary{background:rgba(217,164,65,.16)}
 </style>
 </head>
 <body>
@@ -616,20 +554,8 @@ body.theme-carta #mic.sealed #mic-hanko{opacity:1;animation:stampa .55s cubic-be
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
       <div id="giorno-bar">
-        <div id="gb-dow"></div>
-        <div id="gb-data"></div>
-        <div class="gb-riga">
-          <button id="gb-pos" class="hidden" aria-label="Condividi la posizione">
-            <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.6-7-11.4A7 7 0 0 1 19 9.6C19 14.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>
-            <span>dove sono</span>
-            <svg class="share" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>
-          </button>
-          <span id="gb-stato">
-            <svg id="gb-ring" viewBox="0 0 40 40" aria-hidden="true"><circle id="gb-r1" cx="20" cy="20" r="16"/><circle id="gb-r2" cx="20" cy="20" r="10.5"/></svg>
-            <span id="gb-hanko" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" stroke-dasharray="30 14"/></svg></span>
-            <span id="day-line"></span>
-          </span>
-        </div>
+        <svg id="gb-ring" viewBox="0 0 40 40" aria-hidden="true"><circle id="gb-r1" cx="20" cy="20" r="16"/><circle id="gb-r2" cx="20" cy="20" r="10.5"/></svg>
+        <span id="day-line"></span>
       </div>
 
       <section id="sec-task">
@@ -665,7 +591,6 @@ body.theme-carta #mic.sealed #mic-hanko{opacity:1;animation:stampa .55s cubic-be
             </g>
           </svg>
           <div id="seal-dot"></div>
-          <div id="mic-hanko" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" stroke-dasharray="30 14"/></svg></div>
         </button>
         <div id="mic-label">Tieni premuto il cerchio per parlare</div>
         <div id="ring-count"></div>
@@ -740,10 +665,9 @@ body.theme-carta #mic.sealed #mic-hanko{opacity:1;animation:stampa .55s cubic-be
           </div>
           <div class="switchrow"><span>Aspetto</span>
             <div class="seg" id="seg-uitheme">
-              <button data-uitheme="classico">Attuale</button><button data-uitheme="inchiostro">Inchiostro</button><button data-uitheme="carta">Carta</button>
+              <button data-uitheme="classico">Attuale</button><button data-uitheme="inchiostro">Inchiostro</button>
             </div>
           </div>
-          <p class="note" id="carta-note" style="margin:4px 0 10px">Carta segue la luce: chiara di giorno, carta di notte dopo il tramonto.</p>
           <div class="switchrow"><span>Voce ai completamenti</span><button class="sw" id="sw-voice"></button></div>
           <div class="switchrow"><span>Osservatrice sui task<small style="display:block;opacity:.6;font-size:11px">una riga vera a ogni spunta (serve la chiave)</small></span><button class="sw" id="sw-obsline"></button></div>
           <div class="switchrow"><span>Posizione nelle note</span><button class="sw" id="sw-geo"></button></div>
@@ -1007,7 +931,7 @@ function sanitizeState(raw,def){
       music:!!(raw.settings&&raw.settings.music===true),
       aiModel:(raw.settings&&['max','balanced','fast'].includes(raw.settings.aiModel))?raw.settings.aiModel:'balanced',
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade',
-      uiTheme:(raw.settings&&['inchiostro','carta'].includes(raw.settings.uiTheme))?raw.settings.uiTheme:'classico'
+      uiTheme:(raw.settings&&raw.settings.uiTheme==='inchiostro')?'inchiostro':'classico'
     }
   };
   if(raw.checks&&typeof raw.checks==='object'&&!Array.isArray(raw.checks)){
@@ -1113,7 +1037,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.26 · 2026-07-06';
+const APP_VERSION='v60S.27 · 2026-07-06';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2370,12 +2294,7 @@ document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
   b.onclick=()=>{ S.settings.uiTheme=(b.dataset.uitheme==='inchiostro')?'inchiostro':'classico'; save(); applyTheme(); renderSettings(); };
 });
-{ const pb=document.querySelector('#gb-pos'); if(pb) pb.onclick=async()=>{
-    const p=freshPos(); if(!p){ toast('Posizione non ancora rilevata'); return; }
-    const u=mapsUrl(p);
-    try{ if(navigator.share){ await navigator.share({title:'Dove sono',url:u}); return; } }catch(_){ return; }
-    try{ window.open(u,'_blank'); }catch(_){}
-}; }
+
 document.querySelector('#close-altro').onclick=()=>showPane('diario');
 
 /* ======================================================================
@@ -3077,51 +2996,21 @@ function ink(itemEl){
   itemEl.appendChild(d);
   setTimeout(()=>d.remove(),600);
 }
-function sunWindow(){  /* alba e tramonto approssimati (declinazione solare, ±15 min): quanto basta a un tema */
-  try{
-    const p=(typeof freshPos==='function'&&freshPos())||lastPos||null;
-    const lat=(p&&p.lat)||44.65, lon=(p&&p.lon)||7.65;   /* fallback: Piemonte */
-    const d=new Date(), rad=Math.PI/180;
-    const N=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
-    const decl=-23.44*Math.cos(rad*(360/365)*(N+10));
-    const cosH=(Math.sin(-0.83*rad)-Math.sin(lat*rad)*Math.sin(decl*rad))/(Math.cos(lat*rad)*Math.cos(decl*rad));
-    if(cosH<=-1) return {rise:0,set:1440};
-    if(cosH>=1)  return {rise:720,set:720};
-    const H=Math.acos(cosH)/rad/15;
-    const noon=(12 - lon/15 - d.getTimezoneOffset()/60)*60;
-    return {rise:noon-H*60,set:noon+H*60};
-  }catch(_){ return {rise:390,set:1230}; }
-}
-function isNotte(){ const w=sunWindow(); const m=new Date().getHours()*60+new Date().getMinutes(); return m<w.rise||m>w.set; }
-function applyTheme(){ try{
-  const t=S.settings.uiTheme||'classico';
-  document.body.classList.toggle('theme-inchiostro',t==='inchiostro');
-  document.body.classList.toggle('theme-carta',t==='carta');
-  document.body.classList.toggle('carta-notte',t==='carta'&&isNotte());
-}catch(_){} }
-function syncDayLine(){   /* barra del giorno: eco del cerchio + data + doppio anello + posizione */
+function applyTheme(){ try{ document.body.classList.toggle('theme-inchiostro',S.settings.uiTheme==='inchiostro'); }catch(_){} }
+function syncDayLine(){   /* striscia di stato in pagina Oggi: eco del cerchio + doppio mini-anello */
   const dl=document.querySelector('#day-line'); if(!dl) return;
   const rc=document.querySelector('#ring-count');
   dl.textContent=rc?rc.textContent:'';
   try{ dl.classList.toggle('sealed',micBtn.classList.contains('sealed')); }catch(_){}
   try{
-    const d=new Date();
-    const gd=document.querySelector('#gb-dow'), gt=document.querySelector('#gb-data');
-    if(gd) gd.textContent=d.toLocaleDateString('it-IT',{weekday:'long'});
-    if(gt) gt.textContent=d.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
     const tk=todayKey(),dw=dowOf();
     const r=computeProgress(S,tk,dw), es=essentialStatus(S,tk,dw);
-    const C1=100.53,C2=65.97;   /* 2πr per r=16 e r=10.5 */
+    const C1=100.53,C2=65.97;
     const r1=document.querySelector('#gb-r1'), r2=document.querySelector('#gb-r2');
     if(r1){ r1.style.strokeDasharray=C1; r1.style.strokeDashoffset=(S.lastFullSealed===tk)?0:(C1-(C1*0.90)*r.p); }
     if(r2){ const p2=es.total?(es.done/es.total):0; r2.style.strokeDasharray=C2;
       r2.style.strokeDashoffset=(p2>=1||S.lastSealed===tk)?0:(C2-(C2*0.88)*p2);
       r2.style.opacity=es.total?1:.25; }
-    const pb=document.querySelector('#gb-pos');
-    if(pb) pb.classList.toggle('hidden',!(S.settings.geo&&freshPos()));
-    const gh=document.querySelector('#gb-hanko');
-    if(gh) gh.classList.toggle('on',dl.classList.contains('sealed'));
-    applyTheme();   /* se il sole tramonta mentre l'app e aperta, la carta si scurisce da sola */
   }catch(_){}
 }
 function updateRing(){
@@ -3178,7 +3067,6 @@ function initDay(){ if(rolloverDay(S,todayKey())) save(); }
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible'){ try{ save(); }catch(_){}  try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
   try{FX.resume();}catch(_){}
-  try{ applyTheme(); }catch(_){}
   try{ const c=(typeof audioCtx==='function')&&audioCtx(); if(c&&c.state==='suspended') c.resume(); }catch(_){}   /* iOS sospende l'audio in background: lo risveglio */
   if(renderedDay!==todayKey()){
     renderedDay=todayKey();
