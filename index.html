@@ -113,6 +113,12 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 #mic-label{margin-top:22px;font-size:15px;color:var(--t2);text-align:center;min-height:20px;font-weight:400;letter-spacing:0}
 #ring-count{font-size:12px;color:var(--t3);margin-top:6px;letter-spacing:.04em}
+#day-line{font-size:12px;color:var(--t3);letter-spacing:.04em;margin:2px 0 16px;min-height:15px}
+#day-line.sealed{color:var(--accent)}
+.sec-toggle{cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;justify-content:space-between;align-items:center}
+.sec-toggle .chev{font-size:12px;opacity:.55;transition:transform .25s ease}
+#sec-programma.collapsed .chev{transform:rotate(-90deg)}
+#sec-programma.collapsed .group{display:none}
 .flow{margin-top:14px;min-height:34px;text-align:center;color:var(--t3);font-size:13px;line-height:1.45;max-width:320px}
 .flow strong{display:block;color:var(--t1);font-size:14px;font-weight:500;margin-bottom:4px}
 .flow button,.empty-go{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;padding:6px 0;margin-top:2px}
@@ -526,6 +532,26 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   <main>
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
+      <div id="day-line"></div>
+
+      <section id="sec-task">
+        <div class="sec-head">Oggi</div>
+        <div class="group" id="list-task"></div>
+      </section>
+
+      <section id="sec-today-quests">
+        <div class="sec-head">Quest di oggi</div>
+        <div class="group" id="list-quest-today"></div>
+      </section>
+
+      <section id="sec-programma" class="collapsed">
+        <div class="sec-head sec-toggle" id="prog-head">In programma <span class="chev">&#9662;</span></div>
+        <div class="group" id="list-quest"></div>
+      </section>
+    </div>
+
+    <!-- ===== QUEST (secondarie) ===== -->
+    <div id="tab-quest" class="hidden">
       <div id="mic-wrap">
         <div class="mist" id="mist-a"></div>
         <div class="mist" id="mist-b"></div>
@@ -557,25 +583,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
         </div>
       </div>
 
-      <section id="sec-task">
-        <div class="sec-head">Oggi</div>
-        <div class="group" id="list-task"></div>
-      </section>
-
-      <section id="sec-today-quests">
-        <div class="sec-head">Quest di oggi</div>
-        <div class="group" id="list-quest-today"></div>
-      </section>
-    </div>
-
-    <!-- ===== QUEST (secondarie) ===== -->
-    <div id="tab-quest" class="hidden">
-      <section>
-        <div class="sec-head">In programma</div>
-        <div class="group" id="list-quest"></div>
-      </section>
-
-      <section id="sec-observer">
+      <section id="sec-observer" class="hidden">
         <div class="sec-head">Mente Osservatrice</div>
         <div id="observer-card">
           <p id="observer-note">—</p>
@@ -584,11 +592,6 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
           <div class="btn-row" style="justify-content:flex-start">
             <button class="act primary" id="btn-observe">Osserva</button>
             <button class="act hidden" id="btn-obs-act">Trasforma in mossa</button>
-            <button class="act" id="btn-distill">Scrivi il dono</button>
-          </div>
-          <div id="distill-out" class="hidden" style="margin-top:14px;padding:16px;border:1px solid rgba(159,216,196,.20);border-radius:14px;background:rgba(10,16,15,.5)">
-            <p id="distill-text" style="font-style:italic;line-height:1.65;color:#cfe8de;margin:0 0 12px">—</p>
-            <div class="btn-row" style="justify-content:flex-start"><button class="act" id="btn-distill-share">Condividi</button><button class="act" id="btn-distill-close">Chiudi</button></div>
           </div>
           <div id="observer-history"></div>
         </div>
@@ -606,6 +609,16 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
       </div>
       <section style="margin-top:14px">
         <div id="list-diario" class="diary-font"></div>
+      </section>
+
+      <section id="sec-dono" style="margin-top:26px">
+        <div class="sec-head">Mente Osservatrice</div>
+        <p class="note" style="margin-top:0">Rilegge un mese di diario e azioni, e scrive nella sua voce.</p>
+        <div class="btn-row" style="justify-content:flex-start"><button class="act primary" id="btn-distill">Scrivi il dono</button></div>
+        <div id="distill-out" class="hidden" style="margin-top:14px;padding:16px;border:1px solid rgba(159,216,196,.20);border-radius:14px;background:rgba(10,16,15,.5)">
+            <p id="distill-text" style="font-style:italic;line-height:1.65;color:#cfe8de;margin:0 0 12px">—</p>
+            <div class="btn-row" style="justify-content:flex-start"><button class="act" id="btn-distill-share">Condividi</button><button class="act" id="btn-distill-close">Chiudi</button></div>
+          </div>
       </section>
     </div>
 
@@ -695,7 +708,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   <nav>
     <div class="inner">
       <button data-tab="oggi" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/></svg>Oggi</button>
-      <button data-tab="quest"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>Quest</button>
+      <button data-tab="quest"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Voce</button>
       <button data-tab="diario"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Diario</button>
     </div>
   </nav>
@@ -993,7 +1006,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.19 · 2026-07-03';
+const APP_VERSION='v60S.20 · 2026-07-03';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2126,11 +2139,12 @@ function scrollToSoft(sel){
   }catch(_){}
 }
 function handleFlowAction(action,extra){
-  if(action==='speak'){ showPane('oggi'); setTimeout(()=>{ try{ micBtn.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} try{ micLabel.textContent='Tieni premuto il cerchio per parlare'; }catch(_){} },120); return; }  /* press-to-rec: non si può "premere" via codice, quindi guido al gesto */
-  if(action==='distill'){ showPane('oggi'); setTimeout(()=>{ const b=document.querySelector('#btn-save'); if(b&&!b.disabled) b.click(); },80); return; }
+  if(action==='speak'){ showPane('quest'); setTimeout(()=>{ try{ micBtn.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} try{ micLabel.textContent='Tieni premuto il cerchio per parlare'; }catch(_){} },120); return; }  /* press-to-rec: non si può "premere" via codice, quindi guido al gesto */
+  if(action==='distill'){ showPane('quest'); setTimeout(()=>{ const b=document.querySelector('#btn-save'); if(b&&!b.disabled) b.click(); },80); return; }
   if(action==='settings'){ showPane('impostazioni'); setTimeout(()=>{ const k=document.querySelector('#apikey'); if(k) k.focus(); },120); return; }
   if(action==='tasks'){ showPane('impostazioni'); setTimeout(()=>{ const t=document.querySelector('#new-task-txt'); if(t) t.focus(); },120); return; }
   if(action==='observe'){ showPane('quest'); setTimeout(()=>{ try{ observe(false); }catch(_){} },120); return; }
+  if(action==='dono'){ showPane('diario'); setTimeout(()=>{ try{ document.querySelector('#sec-dono').scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} },140); return; }
   if(action==='today'){ showPane('oggi'); setTimeout(()=>{ if(!focusTarget(extra)) scrollToSoft('#sec-today-quests'); },140); return; }
 }
 /* ── PROSSIMA MOSSA: non la prima in lista, ma l'UNICA che conta adesso ──
@@ -2220,7 +2234,7 @@ function renderFlow(){
     return;
   }
   if(S.diary.length>=2&&!((S.observerNotes||[]).length)){
-    el.innerHTML='<strong>Ci sono gia abbastanza tracce.</strong><button data-flow="observe">Fai osservare il pattern</button>';
+    el.innerHTML='<strong>Ci sono gia abbastanza tracce.</strong><button data-flow="dono">Fatti scrivere il dono</button>';
     return;
   }
   el.innerHTML='<strong>Il difficile resta fuori.</strong><button data-flow="speak">Parla una cosa sola</button>';
@@ -2245,6 +2259,7 @@ document.querySelectorAll('nav button').forEach(b=>{
 });
 /* Altro è nascosto: si apre dal Diario e si torna indietro */
 document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
+{ const ph=document.querySelector('#prog-head'); if(ph) ph.onclick=()=>document.querySelector('#sec-programma').classList.toggle('collapsed'); }
 document.querySelector('#close-altro').onclick=()=>showPane('diario');
 
 /* ======================================================================
@@ -2938,6 +2953,12 @@ function ink(itemEl){
   itemEl.appendChild(d);
   setTimeout(()=>d.remove(),600);
 }
+function syncDayLine(){   /* pagina Oggi: eco testuale del cerchio, ora che l'enso vive nella pagina Voce */
+  const dl=document.querySelector('#day-line'); if(!dl) return;
+  const rc=document.querySelector('#ring-count');
+  dl.textContent=rc?rc.textContent:'';
+  try{ dl.classList.toggle('sealed',micBtn.classList.contains('sealed')); }catch(_){}
+}
 function updateRing(){
   const tk=todayKey(),dow=dowOf();
   const r=computeProgress(S,tk,dow);
@@ -2977,6 +2998,7 @@ function updateRing(){
     micBtn.classList.remove('sealed');
     document.querySelector('#ring-count').textContent= r.total? (r.done+' / '+r.total+' · il cerchio si chiude') : '';
   }
+  try{ syncDayLine(); setTimeout(syncDayLine,2400); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno */
   try{ renderFlow(); }catch(_){}
 }
 
