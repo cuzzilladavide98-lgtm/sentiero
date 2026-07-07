@@ -133,6 +133,23 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 .flow strong{display:block;color:var(--t1);font-size:14px;font-weight:500;margin-bottom:4px}
 .flow button,.empty-go{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;padding:6px 0;margin-top:2px}
 .flow:empty{display:none}
+#letture{width:100%;max-width:340px;margin-top:12px;background:rgba(245,242,234,.04);border:.5px solid rgba(245,242,234,.09);border-radius:16px;padding:12px 14px;text-align:left}
+.lett-head{font-size:12px;color:var(--t3);letter-spacing:.05em;margin-bottom:6px}
+.lett-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(245,242,234,.06)}
+.lett-row:last-of-type{border-bottom:none}
+.lett-chk{flex:none;width:19px;height:19px;border-radius:50%;border:1.6px solid var(--t3);margin-top:1px;position:relative}
+.lett-row.on .lett-chk{border-color:var(--accent);background:rgba(232,168,76,.15)}
+.lett-row.on .lett-chk::after{content:'';position:absolute;inset:5px 4px 6px 5px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-48deg)}
+.lett-row:not(.on){opacity:.45}
+.lett-txt{flex:1;font-size:13.5px;color:var(--t1);line-height:1.4}
+.lett-txt em{display:block;font-size:12px;color:var(--t3);font-style:italic;margin-top:1px}
+.lett-upd{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--jade);background:none;border:1px solid rgba(127,184,164,.35);border-radius:999px;padding:3px 10px}
+.lett-upd.sel{background:rgba(127,184,164,.18)}
+#lascito{width:100%;max-width:340px;margin-top:10px;background:rgba(232,168,76,.05);border:.5px solid rgba(232,168,76,.22);border-radius:16px;padding:12px 14px;text-align:left}
+.lasc-txt{font-size:13px;color:var(--t2);line-height:1.5;font-style:italic}
+#rivelazione{width:100%;max-width:340px;margin-top:12px;background:linear-gradient(160deg,rgba(232,168,76,.10),rgba(127,184,164,.06) 70%);border:1px solid rgba(232,168,76,.35);border-radius:18px;padding:14px 16px;text-align:left;box-shadow:0 8px 30px rgba(232,168,76,.10)}
+.riv-head{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+.riv-txt{font-size:14px;color:var(--t1);line-height:1.6;font-family:ui-serif,Georgia,serif;font-style:italic}
 
 #live{width:100%;margin-top:22px;font-family:var(--serif);font-size:18px;line-height:1.6;
   color:var(--t1);display:none;text-align:center}
@@ -523,6 +540,17 @@ body.theme-inchiostro #obs-whisper{color:#9BD9E4 !important;border-color:rgba(12
 body.theme-inchiostro .obs-tag{border-color:rgba(217,164,65,.4)}
 body.theme-inchiostro #prio-row .act.primary{background:rgba(217,164,65,.16)}
 body.theme-inchiostro .btn-row .act.distilla-cta{box-shadow:0 6px 22px rgba(217,164,65,.30)}
+/* ── geometria del mockup: densita, misure, nav ── */
+body.theme-inchiostro main{padding-left:20px;padding-right:20px}
+body.theme-inchiostro section{margin-top:20px}
+body.theme-inchiostro .sec-head{font-size:15px;text-transform:none;margin:0 0 9px}
+body.theme-inchiostro .item{gap:12px;padding:12px 0}
+body.theme-inchiostro .item .chk{width:23px;height:23px}
+body.theme-inchiostro .entry{padding:16px 0}
+body.theme-inchiostro nav button{font-size:10px;letter-spacing:.05em;padding:8px 16px}
+body.theme-inchiostro nav button .ico{width:21px;height:21px}
+body.theme-inchiostro nav button.on{color:var(--accent)}
+body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 </style>
 </head>
 <body>
@@ -615,6 +643,9 @@ body.theme-inchiostro .btn-row .act.distilla-cta{box-shadow:0 6px 22px rgba(217,
         <div id="mic-label">Tieni premuto il cerchio per parlare</div>
         <div id="ring-count"></div>
         <div id="flow" class="flow"></div>
+        <div id="letture" class="hidden"></div>
+        <div id="lascito" class="hidden"></div>
+        <div id="rivelazione" class="hidden"></div>
         <div id="live"></div>
         <div class="btn-row hidden" id="confirm-row">
           <button class="act" id="btn-discard">Scarta</button>
@@ -934,6 +965,7 @@ function sanitizeState(raw,def){
     diary:sanitizeDiary(raw.diary),
     scheduled:('scheduled' in raw)?sanitizeScheduled(raw.scheduled):JSON.parse(JSON.stringify(def.scheduled)),
     observerNotes:sanitizeObserverNotes(raw.observerNotes),
+    mastery:sanitizeMastery(raw.mastery),
     obsLines:sanitizeObsLines(raw.obsLines),
     questLog:sanitizeQuestLog(raw.questLog),
     checks:{},
@@ -1022,6 +1054,139 @@ function extractJson(text){
   if(a<0||b<=a) return null;
   try{ return JSON.parse(text.slice(a,b+1)); }catch(_){ return null; }
 }
+function recoveryStats(S,tk,giorni){  /* asse 3: non lo streak, la velocita di rientro dopo un buco */
+  giorni=giorni||60;
+  const today=new Date(tk+'T12:00:00');
+  const stati=[];
+  for(let d=giorni-1;d>=0;d--){
+    const dt=new Date(today); dt.setDate(dt.getDate()-d);
+    const k=dt.toISOString().slice(0,10);
+    const dw=dowOf(dt);
+    const plan=scheduledFor(S,dw,k).length;
+    let done=0; const ck=S.checks&&S.checks[k];
+    if(ck) Object.keys(ck).forEach(id=>{ if(ck[id]===true) done++; });
+    stati.push(plan===0?'vuoto':(done>0?'attivo':'buco'));
+  }
+  const rientri=[]; let run=0;
+  stati.forEach(s=>{
+    if(s==='buco') run++;
+    else if(s==='attivo'){ if(run>0) rientri.push(run); run=0; }
+  });
+  const media=rientri.length?rientri.reduce((a,b)=>a+b,0)/rientri.length:0;
+  return {buchi:rientri.length+(run>0?1:0), rientri, rientroMedio:Math.round(media*10)/10,
+          bucoAperto:run, giorniAttivi:stati.filter(s=>s==='attivo').length};
+}
+function lascitoCandidate(S,tk){  /* fase 2: il client decide quando le prove sono mature */
+  const m=S.mastery; if(!m||!m.quest) return null;
+  let best=null,score=-1;
+  Object.keys(m.quest).forEach(id=>{
+    const q=m.quest[id];
+    const vive=(S.scheduled||[]).some(t=>t.id===id)||(S.quests||[]).some(t=>t.id===id&&!t.fatto);
+    if(!vive) return;
+    if(q.taciFino&&q.taciFino>=tk) return;
+    const matura=q.assenze>=12||q.attriti>=3;
+    if(!matura) return;
+    const s=q.assenze+q.attriti*4;
+    if(s>score){ score=s; best={id,assenze:q.assenze,attriti:q.attriti,frase:q.fraseAttrito||'',
+      motivo:q.attriti>=3?'attrito':'assenza'}; }
+  });
+  return best;
+}
+const RIV={A1_GG_MIN:6,A1_ORA:0.85,A1_PRIMA:0.55,A2_MIN:8,A2_SOGLIA_PRIMA:0.34,A2_SOGLIA_ORA:0.6,
+  A3_RIENTRI_MIN:2,A3_PRIMA_MEDIA:3,A3_ORA_MAX:1,COOL_GLOBALE:7,COOL_ASSE:30};
+function _rivCool(S,tk,asse){  /* scarsita dura: mai piu di ~3 al mese */
+  const riv=(S.mastery&&S.mastery.riv)||[];
+  for(const r of riv){
+    const gg=Math.round((new Date(tk+'T12:00:00')-new Date(r.iso.slice(0,10)+'T12:00:00'))/86400000);
+    if(gg<RIV.COOL_GLOBALE) return true;
+    if(r.asse===asse&&gg<RIV.COOL_ASSE) return true;
+  }
+  return false;
+}
+function _mediaFinestra(giorni,keys){
+  let p=0,f=0,n=0;
+  keys.forEach(k=>{ const g=giorni[k]; if(g&&g.pianificate>0){ p+=g.pianificate; f+=Math.min(g.fatte,g.pianificate); n++; } });
+  return n?{p:p/n,f:f/n,prec:f/p,n}:{p:0,f:0,prec:0,n:0};
+}
+function rivelazioneCandidate(S,tk){
+  const m=S.mastery; if(!m) return null;
+  const today=new Date(tk+'T12:00:00');
+  const gg=d=>{ const x=new Date(today); x.setDate(x.getDate()-d); return x.toISOString().slice(0,10); };
+  /* ASSE 1: precisione dell'intenzione — ultime 2 settimane vs le 2-4 prima */
+  if(!_rivCool(S,tk,1)&&m.giorni){
+    const ora=[],prima=[];
+    Object.keys(m.giorni).forEach(k=>{
+      const d=Math.round((today-new Date(k+'T12:00:00'))/86400000);
+      if(d>=0&&d<=13) ora.push(k); else if(d>=14&&d<=41) prima.push(k);
+    });
+    const A=_mediaFinestra(m.giorni,ora),B=_mediaFinestra(m.giorni,prima);
+    if(A.n>=RIV.A1_GG_MIN&&B.n>=RIV.A1_GG_MIN&&A.prec>=RIV.A1_ORA&&B.prec<=RIV.A1_PRIMA&&A.p<=B.p)
+      return {asse:1,dati:{p1:Math.round(B.p*10)/10,f1:Math.round(B.f*10)/10,p2:Math.round(A.p*10)/10,f2:Math.round(A.f*10)/10}};
+  }
+  /* ASSE 2: profondita dello sguardo — ultimi 10 racconti vs i 10 prima */
+  if(!_rivCool(S,tk,2)&&Array.isArray(m.sguardo)&&m.sguardo.length>=RIV.A2_MIN*2){
+    const sg=m.sguardo;
+    const ora=sg.slice(-10),prima=sg.slice(-20,-10);
+    const q=a=>a.filter(e=>e.livello>=2).length/a.length;
+    const q1=q(prima),q2=q(ora);
+    if(prima.length>=RIV.A2_MIN&&ora.length>=RIV.A2_MIN&&q1<=RIV.A2_SOGLIA_PRIMA&&q2>=RIV.A2_SOGLIA_ORA)
+      return {asse:2,dati:{n1:prima.length,q1:Math.round(q1*100),n2:ora.length,q2:Math.round(q2*100)}};
+  }
+  /* ASSE 3: recupero — i rientri di prima vs l'ultimo */
+  if(!_rivCool(S,tk,3)){
+    const rs=recoveryStats(S,tk,60);
+    if(rs.rientri.length>=RIV.A3_RIENTRI_MIN+1){
+      const ultimo=rs.rientri[rs.rientri.length-1];
+      const primaArr=rs.rientri.slice(0,-1);
+      const mPrima=primaArr.reduce((a,b)=>a+b,0)/primaArr.length;
+      if(primaArr.length>=RIV.A3_RIENTRI_MIN&&mPrima>=RIV.A3_PRIMA_MEDIA&&ultimo<=RIV.A3_ORA_MAX&&rs.bucoAperto===0)
+        return {asse:3,dati:{m1:Math.round(mPrima*10)/10,m2:ultimo}};
+    }
+  }
+  return null;
+}
+function rivTesto(c){
+  if(!c) return '';
+  if(c.asse===1) return 'Un mese fa pianificavi in media '+c.dati.p1+' cose al giorno e ne facevi '+c.dati.f1+'. Nelle ultime due settimane: '+c.dati.p2+' pianificate, '+c.dati.f2+' fatte. Hai smesso di chiederti piu tempo di quanto ne hai.';
+  if(c.asse===2) return 'Nei tuoi primi '+c.dati.n1+' racconti, il '+c.dati.q1+'% delle voci andava oltre la cronaca. Negli ultimi '+c.dati.n2+': il '+c.dati.q2+'%. Stai iniziando a vederti mentre agisci, non solo dopo.';
+  return 'Prima, dopo un buco, restavi fermo in media '+c.dati.m1+' giorni. Dall\'ultimo sei rientrato in '+c.dati.m2+'. I vuoti non ti trattengono piu.';
+}
+function sanitizeMotore(p){
+  const out={letture:[],menzioni:[],attriti:[],sguardo:null};
+  if(!p||typeof p!=='object') return out;
+  (Array.isArray(p.letture)?p.letture:[]).slice(0,10).forEach(l=>{
+    if(!l||typeof l.id!=='string') return;
+    const stato=(l.stato==='trasformata')?'trasformata':(l.stato==='completata'?'completata':null);
+    if(!stato) return;
+    out.letture.push({id:clampStr(l.id,40),stato,prova:clampStr(l.prova||'',120),
+      variante:l.variante?clampStr(l.variante,120):null,
+      nuovo_titolo:(stato==='trasformata'&&typeof l.nuovo_titolo==='string'&&l.nuovo_titolo.trim())?clampStr(l.nuovo_titolo,80):null});
+  });
+  out.menzioni=(Array.isArray(p.menzioni)?p.menzioni:[]).filter(x=>typeof x==='string').slice(0,24).map(x=>clampStr(x,40));
+  (Array.isArray(p.attriti)?p.attriti:[]).slice(0,6).forEach(a=>{
+    if(a&&typeof a.id==='string'&&typeof a.frase==='string') out.attriti.push({id:clampStr(a.id,40),frase:clampStr(a.frase,140)});
+  });
+  if(p.sguardo&&Number.isInteger(p.sguardo.livello)&&p.sguardo.livello>=1&&p.sguardo.livello<=3)
+    out.sguardo={livello:p.sguardo.livello,segnale:clampStr((p.sguardo.segnale||''),140)};
+  return out;
+}
+function sanitizeMastery(raw){
+  const m={quest:{},giorni:{},sguardo:[],riv:[]};
+  if(!raw||typeof raw!=='object') return m;
+  if(raw.quest&&typeof raw.quest==='object') Object.keys(raw.quest).slice(0,220).forEach(id=>{
+    const q=raw.quest[id]; if(!q||typeof q!=='object') return;
+    m.quest[clampStr(id,40)]={assenze:Math.max(0,Math.min(999,q.assenze|0)),attriti:Math.max(0,Math.min(99,q.attriti|0)),
+      fraseAttrito:clampStr(q.fraseAttrito||'',140),taciFino:clampStr(q.taciFino||'',12)};
+  });
+  if(raw.giorni&&typeof raw.giorni==='object') Object.keys(raw.giorni).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).slice(-120).forEach(k=>{
+    const g=raw.giorni[k]; if(g&&typeof g==='object') m.giorni[k]={pianificate:Math.max(0,g.pianificate|0),fatte:Math.max(0,g.fatte|0)};
+  });
+  if(Array.isArray(raw.sguardo)) m.sguardo=raw.sguardo.filter(e=>e&&typeof e.iso==='string'&&Number.isInteger(e.livello))
+    .slice(-180).map(e=>({iso:clampStr(e.iso,20),livello:Math.max(1,Math.min(3,e.livello))}));
+  if(Array.isArray(raw.riv)) m.riv=raw.riv.filter(e=>e&&typeof e.iso==='string'&&Number.isInteger(e.asse))
+    .slice(-24).map(e=>({iso:clampStr(e.iso,20),asse:Math.max(1,Math.min(3,e.asse))})); else m.riv=[];
+  return m;
+}
 function aiOutputToState(parsed){
   if(!parsed||typeof parsed!=='object') return null;
   if(!Array.isArray(parsed.quests)) return null;
@@ -1057,7 +1222,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.28 · 2026-07-06';
+const APP_VERSION='v60S.33 · 2026-07-07';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1077,7 +1242,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],questLog:[],
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -2507,6 +2672,9 @@ document.querySelector('#btn-save').onclick=async()=>{
         else msg='Quest aggiornate, nota salvata';
         if(out.non_eseguibile) msg+=' · Non posso: '+out.non_eseguibile;
         toast(msg);
+        try{ processMastery(out.motore); }catch(_){}
+        try{ renderLetture(out.motore); }catch(_){}
+        try{ if(!maybeRivelazione()) maybeLascito(); }catch(_){}
         resetCapture();
         guideAfterDistill(bornIds);
         maybeAskPriority(bornIds);
@@ -2560,7 +2728,7 @@ async function askClaude(transcript){
   const oggi=new Date();
   const giorni=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
   const oggiStr=giorni[oggi.getDay()]+' '+todayKey();
-  const sched=todaysScheduled().map(t=>t.titolo);
+  const sched=todaysScheduled().map(t=>({id:t.id,titolo:t.titolo}));
   const sys='Sei il motore di distillazione di "Sentiero", diario vocale personale in italiano. OGGI è '+oggiStr+', ora locale '+oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+'.\n'+
 'Ricevi: (1) le quest esistenti in JSON, (2) le task già pianificate per oggi, (3) i rituali ricorrenti esistenti, (4) il trascritto vocale grezzo (può contenere errori di riconoscimento).\n'+
 'COMPITI:\n'+
@@ -2574,9 +2742,13 @@ async function askClaude(transcript){
 '8. "diario": il trascritto ripulito SOLO dagli errori evidenti di riconoscimento vocale (omofoni, nomi: "Justin case"→"just in case"). Punteggiatura minima. NON aggiungere, togliere o reinterpretare: restano le parole dell\'utente, in prima persona. Se non serve, identico.\n'+
 '9. RITUALI: se l\'utente chiede ESPLICITAMENTE di ripetere o pianificare un\'attività in modo ricorrente ("ogni martedì", "tutti i giorni", "dal lunedì al venerdì", "segna come ricorrente"), NON creare una quest: mettila in "rituali" con "days" (0=lunedì, 1=martedì, 2=mercoledì, 3=giovedì, 4=venerdì, 5=sabato, 6=domenica) ed eventuale "time" HH:MM. SOLO su istruzione esplicita: mai dedurre un rituale da come racconta le sue abitudini ("in questo periodo mi alleno tutti i giorni" è racconto, non istruzione). Se tra i RITUALI ESISTENTI ce n\'è già uno equivalente, non crearlo.\n'+
 '10. Se chiede di MODIFICARE o ELIMINARE un rituale esistente, non puoi: lascia tutto intatto e scrivi in "non_eseguibile" una frase breve su cosa non puoi fare (es. "modificare i rituali: si fa a mano dalla lista"). Usa "non_eseguibile" SOLO per questo, altrimenti lascialo vuoto.\n'+
+'11. LETTURE (motore di riconoscimento): i RITUALI/TASK DI OGGI e le QUEST hanno un id. Per ogni attivita di cui il racconto dice che E STATA FATTA oggi, aggiungi a "letture" {"id","stato":"completata","prova":parole esatte del trascritto, max 12}. Se ha fatto una VARIANTE reale, "stato":"trasformata" con "variante" e, SOLO se pare la nuova forma stabile, "nuovo_titolo" (altrimenti null). IL SILENZIO NON E UN NO: se un id non e nel racconto, NIENTE riga. In dubbio ometti: un riconoscimento mancato costa un tocco, uno inventato costa la fiducia.\n'+
+'12. MENZIONI: array degli id toccati dal racconto in QUALUNQUE modo, anche negati o al futuro.\n'+
+'13. ATTRITI: frasi con tono di debito verso un id ("dovrei", "prima o poi", "non ho ancora", sfoghi): [{"id","frase" esatta}].\n'+
+'14. SGUARDO: classifica il diario: 1=cronaca, 2=osservazione su di se, 3=pattern/connessione causale su di se. Vale il livello massimo presente: {"livello":N,"segnale":"frase"}.\n'+
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
-'{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"non_eseguibile":""}';
-  const res=await callAnthropic({system:sys,user:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
+'{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"non_eseguibile":""}';
+  const res=await callAnthropic({system:sys,user:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
   if(res.err){ const e=res.err;
     if(e==='chiave') throw new Error('AUTH');
     if(e==='credito') throw new Error('CREDIT');
@@ -2588,7 +2760,115 @@ async function askClaude(transcript){
   }
   const text=res.text||'';
   const full=text.trim().startsWith('{')?text:'{'+text;
-  return aiOutputToState(extractJson(full));
+  const _ext=extractJson(full);
+  const plan=aiOutputToState(_ext);
+  if(plan) plan.motore=sanitizeMotore(_ext);
+  return plan;
+}
+
+/* ══════ MOTORE MAESTRIA fase 1: il modello legge, il client conta ══════ */
+function processMastery(mo){
+  if(!mo) return;
+  if(!S.mastery) S.mastery={quest:{},giorni:{},sguardo:[],riv:[]};
+  const tk=todayKey(), dw=dowOf();
+  const attivi=scheduledFor(S,dw,tk).map(t=>t.id).concat(activeQuests(S.quests).map(q=>q.id));
+  const toccati=new Set((mo.menzioni||[]).concat((mo.letture||[]).map(l=>l.id)));
+  attivi.forEach(id=>{
+    if(!S.mastery.quest[id]) S.mastery.quest[id]={assenze:0,attriti:0,fraseAttrito:'',taciFino:''};
+    const q=S.mastery.quest[id];
+    if(toccati.has(id)) q.assenze=0; else q.assenze++;
+  });
+  (mo.attriti||[]).forEach(a=>{
+    if(!S.mastery.quest[a.id]) S.mastery.quest[a.id]={assenze:0,attriti:0,fraseAttrito:'',taciFino:''};
+    S.mastery.quest[a.id].attriti++; S.mastery.quest[a.id].fraseAttrito=a.frase;
+  });
+  if(mo.sguardo){ S.mastery.sguardo.push({iso:new Date().toISOString().slice(0,16),livello:mo.sguardo.livello}); if(S.mastery.sguardo.length>180) S.mastery.sguardo=S.mastery.sguardo.slice(-180); }
+  try{ const pr=computeProgress(S,tk,dw); S.mastery.giorni[tk]={pianificate:pr.total,fatte:pr.done}; }catch(_){}
+  save();
+}
+let _pendingLetture=null;
+function _titoloDiId(id){
+  const s=(S.scheduled||[]).find(t=>t.id===id); if(s) return s.titolo;
+  const q=(S.quests||[]).find(t=>t.id===id); return q?q.titolo:null;
+}
+function renderLetture(mo){
+  const box=document.querySelector('#letture'); if(!box) return;
+  const valide=(mo&&mo.letture||[]).filter(l=>_titoloDiId(l.id));
+  if(!valide.length){ box.classList.add('hidden'); box.innerHTML=''; _pendingLetture=null; return; }
+  _pendingLetture=valide;
+  let htm='<div class="lett-head">Il racconto dice:</div>';
+  valide.forEach((l,i)=>{
+    const tit=escapeHtml(_titoloDiId(l.id));
+    const sub=l.stato==='trasformata'?('trasformata: '+escapeHtml(l.variante||'variante')):('\u00ab'+escapeHtml(l.prova||'')+'\u00bb');
+    htm+='<div class="lett-row on" data-i="'+i+'"><span class="lett-chk"></span><span class="lett-txt">'+tit+'<em>'+sub+'</em>'+
+      (l.nuovo_titolo?'<button class="lett-upd" data-i="'+i+'">aggiorna in: '+escapeHtml(l.nuovo_titolo)+'</button>':'')+'</span></div>';
+  });
+  htm+='<div class="btn-row" style="margin-top:10px"><button class="act" id="lett-no">Ignora</button><button class="act primary" id="lett-ok">Conferma</button></div>';
+  box.innerHTML=htm; box.classList.remove('hidden');
+  box.querySelectorAll('.lett-row').forEach(r=>{ r.onclick=e=>{ if(e.target.classList.contains('lett-upd')) return; r.classList.toggle('on'); }; });
+  box.querySelectorAll('.lett-upd').forEach(b=>{ b.onclick=e=>{ e.stopPropagation(); b.classList.toggle('sel'); }; });
+  document.querySelector('#lett-no').onclick=()=>{ box.classList.add('hidden'); box.innerHTML=''; _pendingLetture=null; };
+  document.querySelector('#lett-ok').onclick=()=>{
+    const tk=todayKey(); if(!S.checks[tk]) S.checks[tk]={};
+    let n=0;
+    box.querySelectorAll('.lett-row.on').forEach(r=>{
+      const l=_pendingLetture[+r.dataset.i]; if(!l) return;
+      const upd=r.querySelector('.lett-upd');
+      if(upd&&upd.classList.contains('sel')&&l.nuovo_titolo){
+        const s=(S.scheduled||[]).find(t=>t.id===l.id); const q=(S.quests||[]).find(t=>t.id===l.id);
+        if(s) s.titolo=l.nuovo_titolo; if(q) q.titolo=l.nuovo_titolo;
+      }
+      S.checks[tk][l.id]=true; n++;
+    });
+    box.classList.add('hidden'); box.innerHTML=''; _pendingLetture=null;
+    save(); render(); try{ updateRing(); }catch(_){}
+    toast(n?(n+(n===1?' confermata dal racconto':' confermate dal racconto')):'Nessuna conferma');
+  };
+}
+function _isoPlus(gg){ const d=new Date(); d.setDate(d.getDate()+gg); return d.toISOString().slice(0,10); }
+function maybeLascito(){
+  const box=document.querySelector('#lascito'); if(!box) return;
+  const tk=todayKey();
+  const c=lascitoCandidate(S,tk);
+  if(!c){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  const tit=_titoloDiId(c.id); if(!tit){ box.classList.add('hidden'); return; }
+  const prova=c.motivo==='attrito'
+    ? 'ne parli come di un debito: \u00ab'+escapeHtml(c.frase)+'\u00bb, per la '+c.attriti+'\u00aa volta'
+    : 'non entra nei tuoi racconti da '+c.assenze+' racconti';
+  box.innerHTML='<div class="lasc-txt">\u00ab'+escapeHtml(tit)+'\u00bb '+prova+' \u2014 \u00e8 ancora tua?'+
+    '</div><div class="btn-row" style="margin-top:10px"><button class="act" id="lasc-si">\u00c8 ancora mia</button>'+
+    '<button class="act" id="lasc-no">La lascio andare</button></div>';
+  box.classList.remove('hidden');
+  /* mostrata: silenzio breve anche senza risposta, per non assillare */
+  if(S.mastery&&S.mastery.quest[c.id]){ S.mastery.quest[c.id].taciFino=_isoPlus(2); save(); }
+  document.querySelector('#lasc-si').onclick=()=>{
+    if(S.mastery&&S.mastery.quest[c.id]){ const q=S.mastery.quest[c.id]; q.taciFino=_isoPlus(45); q.assenze=0; q.attriti=0; q.fraseAttrito=''; }
+    save(); box.classList.add('hidden'); box.innerHTML='';
+  };
+  document.querySelector('#lasc-no').onclick=()=>{
+    S.scheduled=(S.scheduled||[]).filter(t=>t.id!==c.id);
+    S.quests=(S.quests||[]).filter(t=>t.id!==c.id);
+    if(S.mastery&&S.mastery.quest[c.id]) delete S.mastery.quest[c.id];
+    save(); render(); try{ updateRing(); }catch(_){}
+    box.classList.add('hidden'); box.innerHTML='';
+    toast('Deposta. Senza colpa.');
+  };
+}
+function maybeRivelazione(){
+  const box=document.querySelector('#rivelazione'); if(!box) return false;
+  const tk=todayKey();
+  const c=rivelazioneCandidate(S,tk);
+  if(!c){ box.classList.add('hidden'); box.innerHTML=''; return false; }
+  box.innerHTML='<div class="riv-head">Rivelazione</div><div class="riv-txt">'+escapeHtml(rivTesto(c))+
+    '</div><div class="btn-row" style="margin-top:10px;justify-content:flex-end"><button class="act primary" id="riv-ok">Ho visto</button></div>';
+  box.classList.remove('hidden');
+  if(!S.mastery.riv) S.mastery.riv=[];
+  S.mastery.riv.push({iso:new Date().toISOString().slice(0,16),asse:c.asse});
+  if(S.mastery.riv.length>24) S.mastery.riv=S.mastery.riv.slice(-24);
+  save();
+  try{ playEventSound('distillStart'); }catch(_){}
+  document.querySelector('#riv-ok').onclick=()=>{ box.classList.add('hidden'); box.innerHTML=''; };
+  return true;
 }
 
 /* ======================================================================
@@ -2944,14 +3224,24 @@ const OBSERVER_DISTILL_SYS=
 function buildPeriodPackage(){
   const tk=todayKey(); const today=new Date(tk+'T12:00:00');
   const win=Object.keys(S.checks||{}).filter(k=>{ if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return false; const d=Math.round((today-new Date(k+'T12:00:00'))/86400000); return d>=0&&d<=29; });
+  /* plan-aware (.30): fatte/previste sui giorni in cui il task era DAVVERO in piano, come il sussurro .17 */
   const cons={};
-  (S.scheduled||[]).forEach(s=>{ if(!s||!s.id||!s.titolo) return; let c=0; win.forEach(k=>{ if(S.checks[k]&&S.checks[k][s.id]===true) c++; }); cons[s.titolo]=c; });
-  const ranked=Object.entries(cons).sort((a,b)=>b[1]-a[1]);
-  const n=win.length||1;
+  (S.scheduled||[]).forEach(s=>{ if(!s||!s.id||!s.titolo) return;
+    let fatte=0,prev=0;
+    win.forEach(k=>{
+      const dw=dowOf(new Date(k+'T12:00:00'));
+      const inPlan=(Array.isArray(s.days)&&s.days.includes(dw))||(s.date&&s.date===k);
+      if(!inPlan) return;
+      prev++;
+      if(S.checks[k]&&S.checks[k][s.id]===true) fatte++;
+    });
+    if(prev>=3) cons[s.titolo]={fatte,prev,r:fatte/prev};
+  });
+  const ranked=Object.entries(cons).sort((a,b)=>b[1].r-a[1].r);
   const dia=(S.diary||[]).slice(-6).map(e=>clampStr(e&&e.testo||'',200)).filter(Boolean);
   return {battito:'distillato', periodo:'ultimi '+win.length+' giorni attivi', giorni_attivi:win.length,
-    piu_costanti:ranked.slice(0,2).map(([t,c])=>t+' '+c+'/'+n),
-    meno_costanti:ranked.slice(-2).map(([t,c])=>t+' '+c+'/'+n),
+    piu_costanti:ranked.slice(0,2).map(([t,c])=>t+' '+c.fatte+'/'+c.prev+' previste'),
+    meno_costanti:ranked.slice(-2).map(([t,c])=>t+' '+c.fatte+'/'+c.prev+' previste'),
     streak:S.streak||0, ultimo_sigillo:S.lastSealed||'mai', diario:dia};
 }
 async function askObserverDistill(pkg){
