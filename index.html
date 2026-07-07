@@ -155,15 +155,15 @@ body[data-pane="diario"] header .hd-row,body[data-pane="impostazioni"] header .h
 /* ══════ CANTIERE SPARKING — S1: MATERIA E LUCE ══════
    Stesso gioco, resa nuova: profondita, luce ambientale, superfici che esistono. */
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(120% 85% at 50% -12%,rgba(232,168,76,.055),transparent 55%),
-             radial-gradient(150% 100% at 50% 118%,rgba(127,184,164,.05),transparent 62%)}
+  background:radial-gradient(120% 85% at 50% -12%,rgba(232,168,76,.11),transparent 58%),
+             radial-gradient(150% 100% at 50% 118%,rgba(127,184,164,.09),transparent 64%)}
 header,main{position:relative;z-index:1}
 /* la navbar diventa vetro: sfocatura reale, velo, filo di luce in cima */
 nav{background:linear-gradient(0deg,rgba(0,0,0,.82) 40%,rgba(0,0,0,.35) 80%,transparent);
   backdrop-filter:blur(16px) saturate(1.15);-webkit-backdrop-filter:blur(16px) saturate(1.15)}
 nav .inner{position:relative}
 nav .inner::before{content:'';position:absolute;top:-6px;left:12%;right:12%;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(245,242,234,.10),transparent)}
+  background:linear-gradient(90deg,transparent,rgba(245,242,234,.20),transparent)}
 /* superfici con corpo: ombra ambientale + chiave, filo di luce interno in alto */
 #letture,#lascito,#rivelazione{
   box-shadow:inset 0 1px 0 rgba(245,242,234,.06),0 2px 6px rgba(0,0,0,.30),0 16px 40px rgba(0,0,0,.35)}
@@ -172,7 +172,7 @@ nav .inner::before{content:'';position:absolute;top:-6px;left:12%;right:12%;heig
 /* la barra del giorno: il filo sotto diventa luce che sfuma, non una riga */
 #giorno-bar{border-bottom:none;position:relative}
 #giorno-bar::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;
-  background:linear-gradient(90deg,rgba(232,168,76,.28),rgba(245,242,234,.10) 40%,transparent 85%)}
+  background:linear-gradient(90deg,rgba(232,168,76,.55),rgba(245,242,234,.14) 45%,transparent 88%)}
 /* separatori delle liste: da grigio piatto a luce fredda quasi impercettibile */
 .item:not(:last-child){border-bottom-color:rgba(200,225,215,.075)}
 .entry{border-bottom-color:rgba(200,225,215,.065)}
@@ -183,8 +183,8 @@ nav .inner::before{content:'';position:absolute;top:-6px;left:12%;right:12%;heig
 #gb-ring circle{filter:drop-shadow(0 0 3px rgba(232,168,76,.25))}
 /* Inchiostro: la stessa luce, temperatura giada-ambra piu profonda */
 body.theme-inchiostro::before{
-  background:radial-gradient(120% 85% at 50% -12%,rgba(217,164,65,.07),transparent 55%),
-             radial-gradient(150% 100% at 50% 118%,rgba(159,216,196,.06),transparent 62%)}
+  background:radial-gradient(120% 85% at 50% -12%,rgba(217,164,65,.13),transparent 58%),
+             radial-gradient(150% 100% at 50% 118%,rgba(159,216,196,.10),transparent 64%)}
 body.theme-inchiostro nav{background:linear-gradient(0deg,rgba(11,15,14,.85) 40%,rgba(11,15,14,.35) 80%,transparent)}
 
 #live{width:100%;margin-top:22px;font-family:var(--serif);font-size:18px;line-height:1.6;
@@ -263,15 +263,15 @@ section{margin-top:38px}
 
 /* ════════ diario: prosa, niente lastre ════════ */
 .diary-font{font-family:var(--serif)}
-.entry{padding:24px 0;border-bottom:.5px solid rgba(245,242,234,.07);position:relative;padding-right:40px}
-.e-del{position:absolute;top:18px;right:0;border:none;background:none;color:var(--t3);font-size:19px;line-height:1;padding:10px 4px 10px 14px;opacity:.55;font-family:inherit}
+.entry{padding:24px 0;border-bottom:.5px solid rgba(245,242,234,.07);position:relative}
+.e-del{position:absolute;top:14px;right:0;border:none;background:none;color:var(--t3);font-size:19px;line-height:1;padding:12px 6px 12px 18px;opacity:.55;font-family:inherit;min-width:44px;text-align:right}
 .e-del:active{opacity:.35}
 .e-del.armed{color:var(--accent);opacity:1;font-size:12px;letter-spacing:.04em}
-.entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-right:64px}
 .ed-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;color:var(--t1);letter-spacing:-.02em}
 .ed-mo{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);text-transform:lowercase}
 .ed-meta{font-family:var(--sans);font-size:12px;color:var(--t3);letter-spacing:.02em;margin-left:auto;align-self:center;text-transform:lowercase}
-.ed-meta .posa{color:var(--jade);text-decoration:none}
+.ed-meta .posa{color:var(--jade);text-decoration:none;display:inline-block;padding:8px 6px;margin:-8px -2px -8px 0}
 .entry p{margin-top:0;font-size:18px;line-height:1.75;color:rgba(245,242,234,.92)}
 .entry .tags{margin-top:12px;font-size:13px;line-height:1.6;font-family:var(--sans)}
 .entry .tags.born-t{color:var(--accent)}
@@ -1236,7 +1236,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.35 · 2026-07-07';
+const APP_VERSION='v60S.36 · 2026-07-07';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
