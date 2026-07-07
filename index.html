@@ -186,6 +186,31 @@ body.theme-inchiostro::before{
   background:radial-gradient(120% 85% at 50% -12%,rgba(217,164,65,.13),transparent 58%),
              radial-gradient(150% 100% at 50% 118%,rgba(159,216,196,.10),transparent 64%)}
 body.theme-inchiostro nav{background:linear-gradient(0deg,rgba(11,15,14,.85) 40%,rgba(11,15,14,.35) 80%,transparent)}
+/* ══════ CANTIERE SPARKING — S2: GIRO VIVO ══════ */
+.item:active{transform:scale(.982);transition:transform .08s ease}
+.item{transition:transform .18s ease}
+.act:active{transform:scale(.95)}
+.act{transition:transform .15s ease,opacity .2s,background .2s}
+nav button:active .ico{transform:scale(.86)}
+nav button .ico{transition:transform .16s ease}
+#btn-pin:active{transform:scale(.94)}
+#btn-pin{transition:transform .15s ease}
+.chk:active{transform:scale(.9)}
+@keyframes nasce{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+#letture:not(.hidden),#lascito:not(.hidden){animation:nasce .38s cubic-bezier(.22,1,.36,1)}
+#rivelazione:not(.hidden){animation:nasce .7s cubic-bezier(.22,1,.36,1)}
+#obs-whisper{animation:nasce .5s cubic-bezier(.22,1,.36,1)}
+.tabpane:not(.hidden) .item,.tabpane:not(.hidden) .entry{animation:nasce .26s cubic-bezier(.22,1,.36,1) both}
+.tabpane:not(.hidden) .item:nth-child(1),.tabpane:not(.hidden) .entry:nth-child(1){animation-delay:.02s}
+.tabpane:not(.hidden) .item:nth-child(2),.tabpane:not(.hidden) .entry:nth-child(2){animation-delay:.06s}
+.tabpane:not(.hidden) .item:nth-child(3),.tabpane:not(.hidden) .entry:nth-child(3){animation-delay:.10s}
+.tabpane:not(.hidden) .item:nth-child(4),.tabpane:not(.hidden) .entry:nth-child(4){animation-delay:.14s}
+.tabpane:not(.hidden) .item:nth-child(n+5),.tabpane:not(.hidden) .entry:nth-child(n+5){animation-delay:.17s}
+#day-line.perla{color:var(--accent);font-style:italic;letter-spacing:.02em;animation:nasce .6s ease}
+@media (prefers-reduced-motion:reduce){
+  .item,.act,.chk,#btn-pin,nav button .ico{transition:none}
+  #letture:not(.hidden),#lascito:not(.hidden),#rivelazione:not(.hidden),#obs-whisper,.tabpane:not(.hidden) .item,.tabpane:not(.hidden) .entry,#day-line.perla{animation:none}
+}
 
 #live{width:100%;margin-top:22px;font-family:var(--serif);font-size:18px;line-height:1.6;
   color:var(--t1);display:none;text-align:center}
@@ -1236,7 +1261,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.36 · 2026-07-07';
+const APP_VERSION='v60S.37 · 2026-07-07';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3347,6 +3372,29 @@ function ink(itemEl){
   setTimeout(()=>d.remove(),600);
 }
 function applyTheme(){ try{ document.body.classList.toggle('theme-inchiostro',S.settings.uiTheme==='inchiostro'); }catch(_){} }
+/* ══ LE PERLE: dettagli rari, mai a caso, max una al giorno ══ */
+function perle(){
+  const tk=todayKey();
+  try{ if(localStorage.getItem('sentiero-perla')===tk) return; }catch(_){}
+  const d=new Date(); const pr=computeProgress(S,tk,dowOf());
+  const sealed=S.lastSealed===tk, full=S.lastFullSealed===tk;
+  const L=[];
+  if(full&&S.streak===7)  L.push('sette giorni. il tratto non si e mai staccato dal foglio.');
+  if(full&&S.streak===30) L.push('trenta cerchi. la via si fa camminando.');
+  if(full&&S.streak===42) L.push('quarantadue. la risposta, a quanto pare, era la costanza.');
+  if(full&&S.streak===100)L.push('cento. a questo punto sei tu che disegni il cerchio, non il contrario.');
+  if(pr.done===1&&d.getHours()<6) L.push('prima dell\'alba. il mondo dorme, tu hai gia un segno.');
+  if(sealed&&d.getDay()===5&&d.getHours()>=20) L.push('cerchio chiuso, venerdi sera. shine on.');
+  if((S.diary||[]).length===100) L.push('cento voci. fatti non foste a viver come bruti.');
+  if(full&&d.getDate()===1) L.push('primo del mese, cerchio pieno: ben cominciato e mezzo fatto.');
+  if(sealed&&d.getMonth()===11&&d.getDate()===21) L.push('la notte piu lunga dell\'anno, e il tuo cerchio e chiuso lo stesso.');
+  if(sealed&&d.getMonth()===5&&d.getDate()===21) L.push('solstizio: oggi anche il sole ha fatto il giro largo.');
+  if(!L.length) return;
+  const dl=document.querySelector('#day-line'); if(!dl) return;
+  try{ localStorage.setItem('sentiero-perla',tk); }catch(_){}
+  dl.textContent=L[0]; dl.classList.add('perla');
+  setTimeout(()=>{ dl.classList.remove('perla'); try{ syncDayLine(); }catch(_){} },9000);
+}
 function syncDayLine(){   /* striscia di stato in pagina Oggi: eco del cerchio + doppio mini-anello */
   const dl=document.querySelector('#day-line'); if(!dl) return;
   const rc=document.querySelector('#ring-count');
@@ -3403,7 +3451,8 @@ function updateRing(){
     micBtn.classList.remove('sealed');
     document.querySelector('#ring-count').textContent= r.total? (r.done+' / '+r.total+' · il cerchio si chiude') : '';
   }
-  try{ syncDayLine(); setTimeout(syncDayLine,2400); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno */
+  try{ syncDayLine(); setTimeout(syncDayLine,2400); }catch(_){}
+  try{ setTimeout(perle,2800); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno */
   try{ renderFlow(); }catch(_){}
 }
 
