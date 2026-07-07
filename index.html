@@ -211,7 +211,6 @@ nav button .ico{transition:transform .16s ease}
 @keyframes nasce{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 #letture:not(.hidden),#lascito:not(.hidden){animation:nasce .38s cubic-bezier(.22,1,.36,1)}
 #rivelazione:not(.hidden){animation:nasce .7s cubic-bezier(.22,1,.36,1)}
-#obs-whisper{animation:nasce .5s cubic-bezier(.22,1,.36,1)}
 .tabpane:not(.hidden) .item,.tabpane:not(.hidden) .entry{animation:nasce .26s cubic-bezier(.22,1,.36,1) both}
 .tabpane:not(.hidden) .item:nth-child(1),.tabpane:not(.hidden) .entry:nth-child(1){animation-delay:.02s}
 .tabpane:not(.hidden) .item:nth-child(2),.tabpane:not(.hidden) .entry:nth-child(2){animation-delay:.06s}
@@ -673,6 +672,22 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 @media (prefers-reduced-motion:reduce){
   #mic.sealed:not(.rec)::after,#mic.sealed .fs1,#mic.sealed .fs2,#mic.sealed .fs3,#mic.pieno svg,
   .lett-row.stamped .lett-chk::before,.lett-row.stamped,#letture.via{animation:none}
+}
+/* ══════ FRAME-LAVORO 3: IL SUSSURRO CHE SI SCRIVE ══════
+   0-220ms la bolla affiora (13 frame) · dal frame 8 i caratteri emergono UNO PER FRAME (16ms)
+   · una riga di 45 caratteri si scrive in ~720ms · il congedo esala in 27 frame */
+#obs-whisper .w{display:inline-block;white-space:pre}
+#obs-whisper .c{display:inline-block;opacity:0;transform:translateY(5px);
+  animation:sus-c .24s cubic-bezier(.22,1,.36,1) both}
+@keyframes sus-c{to{opacity:1;transform:translateY(0)}}
+#obs-whisper.entra{animation:sus-in .22s cubic-bezier(.22,1,.36,1) both}
+@keyframes sus-in{from{opacity:0;transform:translate(-50%,9px) scale(.965)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+#obs-whisper.esce{animation:sus-out .45s ease both}
+@keyframes sus-out{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-8px)}}
+@media (prefers-reduced-motion:reduce){
+  #obs-whisper .c{animation:none;opacity:1;transform:none}
+  #obs-whisper.entra{animation:none;opacity:1}
+  #obs-whisper.esce{animation:none;opacity:0;transition:opacity .3s}
 }
 </style>
 </head>
@@ -1331,7 +1346,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.43 · 2026-07-07';
+const APP_VERSION='v60S.44 · 2026-07-07';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3323,19 +3338,39 @@ async function askObserverLine(pkg){
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return null;      /* il silenzio scelto dal modello si rispetta: nessun sussurro */
   return line;
 }
-let _whisperEl=null,_whisperTimer=null;
+let _whisperEl=null,_whisperTimer=null,_whisperTimer2=null;
 function _whisper(text){
   if(!text) return;
   if(!_whisperEl){
     const d=document.createElement('div'); d.id='obs-whisper';
-    d.style.cssText='position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);transform:translateX(-50%);max-width:90%;width:max-content;z-index:70;font-style:italic;font-size:15px;line-height:1.55;color:#a9e0cd;text-align:center;background:rgba(8,13,12,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(159,216,196,.20);border-radius:14px;padding:11px 16px;opacity:0;transition:opacity .5s ease;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,.45)';
+    d.style.cssText='position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);transform:translateX(-50%);max-width:90%;width:max-content;z-index:70;font-style:italic;font-size:15px;line-height:1.55;color:#a9e0cd;text-align:center;background:rgba(8,13,12,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(159,216,196,.20);border-radius:14px;padding:11px 16px;opacity:0;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,.45)';
     document.body.appendChild(d); _whisperEl=d;
   }
-  clearTimeout(_whisperTimer);
-  _whisperEl.textContent=''; _whisperEl.style.opacity='1';
-  try{ streamInto(_whisperEl,text,{speed:30}); }catch(_){ _whisperEl.textContent=text; }
-  _whisperTimer=setTimeout(()=>{ if(_whisperEl) _whisperEl.style.opacity='0'; }, Math.min(11000,3200+text.length*55));
+  clearTimeout(_whisperTimer); clearTimeout(_whisperTimer2);
+  const el=_whisperEl;
+  el.classList.remove('esce'); el.classList.remove('entra');
+  el.innerHTML='';
+  /* un carattere per frame: 16ms di stacco, il ritmo del pannello a 60Hz.
+     parole intere come blocchi a capo, caratteri animati uno a uno dentro */
+  let i=0;
+  const parole=String(text).split(' ');
+  parole.forEach((wd,wi)=>{
+    const w=document.createElement('span'); w.className='w';
+    for(const ch of wd){
+      const c=document.createElement('span'); c.className='c'; c.textContent=ch;
+      c.style.animationDelay=(130+i*16)+'ms'; i++;
+      w.appendChild(c);
+    }
+    el.appendChild(w);
+    if(wi<parole.length-1){ el.appendChild(document.createTextNode(' ')); i++; }  /* anche lo spazio costa un frame */
+  });
+  void el.offsetWidth;   /* riavvia le animazioni al giro successivo */
+  el.classList.add('entra');
+  const durata=Math.min(11000, 3400 + String(text).length*70);
+  _whisperTimer=setTimeout(()=>{ el.classList.remove('entra'); el.classList.add('esce'); }, durata);
+  _whisperTimer2=setTimeout(()=>{ el.classList.remove('esce'); el.innerHTML=''; }, durata+520);
 }
+
 let _lineTimer=null,_lineToken=0;
 function observerLineFor(el){
   try{
