@@ -75,30 +75,38 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
 #mic{width:236px;height:236px;border:none;background:transparent;position:relative;touch-action:none}
 #mic svg{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:1}
-.ring-track{fill:none;stroke:rgba(245,242,234,.07);stroke-width:2.5}
-.enso{
-  fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;
-  stroke-dasharray:540;stroke-dashoffset:500;
-  transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1),stroke .4s,stroke-width .4s;
-}
-.enso2{display:none;fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-dasharray:402;stroke-dashoffset:380;transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)}
+.ring-track{fill:none;stroke:rgba(245,242,234,.10);stroke-width:4.5}
+.enso{fill:none;stroke:#fff;stroke-width:44;stroke-linecap:butt;
+  stroke-dasharray:497;stroke-dashoffset:497;
+  transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)}
+.secco-enso{fill:rgba(11,15,14,.5)}
+#punta-viva{transform-origin:100px 100px;opacity:0;transition:transform 1.1s cubic-bezier(.22,1,.36,1),opacity .5s}
+.pv-punta{fill:#F7D389}.pv-scia{fill:rgba(242,197,107,.28)}
+#firma{fill:#B9402E;opacity:0;transform-origin:14px 60px}
+#mic.sealed #firma{opacity:1;animation:timbroensa .7s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes timbroensa{0%{transform:scale(2.4);opacity:0}70%{transform:scale(.92);opacity:1}100%{transform:scale(1)}}
 .mic-glyph{fill:none;stroke:var(--t1);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round;
   transition:stroke .3s;animation:glifobreathe 6s ease-in-out infinite}
 .mic-glyph .mg-capsula{fill:transparent;transition:fill .35s ease}
 
 /* ── a riposo: respiro lentissimo, l'arco ambra ha un bagliore che va e viene ── */
 #mic:not(.rec):not(.arming):not(.sealed) svg{animation:breathe 6s ease-in-out infinite}
-#mic:not(.rec):not(.arming):not(.sealed) .enso{animation:glow 6s ease-in-out infinite}
-@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.014)}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+#mic::before{content:'';position:absolute;inset:6%;border-radius:50%;z-index:0;pointer-events:none;
+  background:radial-gradient(circle,rgba(232,168,76,.16) 0%,rgba(232,168,76,.05) 45%,transparent 68%);
+  animation:alone 5s ease-in-out infinite}
+@keyframes alone{0%,100%{opacity:.4;transform:scale(.96)}50%{opacity:1;transform:scale(1.05)}}
+#mic.sealed::before{background:radial-gradient(circle,rgba(232,168,76,.26) 0%,rgba(232,168,76,.08) 48%,transparent 70%);animation:alone 6s ease-in-out infinite}
 @keyframes glow{0%,100%{opacity:.85;filter:drop-shadow(0 0 0 transparent)}50%{opacity:1;filter:drop-shadow(0 0 5px rgba(232,168,76,.4))}}
 
 /* ── in avvio (consenso microfono): l'arco pulsa neutro, in attesa ── */
-#mic.arming .enso{stroke:var(--accent);animation:armpulse 1.3s ease-in-out infinite}
+#mic.arming .corpo-enso{fill:var(--accent);animation:armpulse 1.3s ease-in-out infinite}
 #mic.arming .mic-glyph{stroke:var(--accent);animation:armpulse 1.3s ease-in-out infinite}
 @keyframes armpulse{0%,100%{opacity:.35}50%{opacity:1}}
 
 /* ── in ascolto: l'arco ember scorre attorno al cerchio, come il suono che entra ── */
-#mic.rec .enso{stroke:var(--ember);stroke-width:3;stroke-dasharray:120 420;animation:listen 2.6s linear infinite}
+#mic.rec .corpo-enso{fill:var(--ember)}
+#mic.rec .secco-enso{fill:rgba(11,15,14,.35)}
 #mic.rec .mic-glyph{stroke:var(--ember);animation:recpulse 1.5s ease-in-out infinite}
 #mic.rec .mic-glyph .mg-capsula{fill:var(--ember)}
 @keyframes listen{0%{stroke-dashoffset:540}100%{stroke-dashoffset:0}}
@@ -112,7 +120,8 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 @keyframes listenPing{0%{opacity:.5;transform:scale(.92)}70%{opacity:0;transform:scale(1.45)}100%{opacity:0;transform:scale(1.45)}}
 
 /* ── sigillo: il cerchio si chiude pieno con un soffio di luce ── */
-#mic.sealed .enso{stroke-dashoffset:0 !important;stroke-width:3.5;animation:sealglow 1.4s ease-out,sigillovivo 7s ease-in-out 1.5s infinite}
+#mic.sealed .enso{stroke-dashoffset:0 !important}
+#mic.sealed #punta-viva{opacity:0 !important}
 @keyframes sealglow{0%{filter:drop-shadow(0 0 0 transparent)}40%{filter:drop-shadow(0 0 16px rgba(232,168,76,.8))}100%{filter:drop-shadow(0 0 6px rgba(232,168,76,.3))}}
 
 #mic-label{margin-top:22px;font-size:15px;color:var(--t2);text-align:center;min-height:20px;font-weight:400;letter-spacing:0}
@@ -210,6 +219,26 @@ nav button .ico{transition:transform .16s ease}
 .tabpane:not(.hidden) .item:nth-child(4),.tabpane:not(.hidden) .entry:nth-child(4){animation-delay:.14s}
 .tabpane:not(.hidden) .item:nth-child(n+5),.tabpane:not(.hidden) .entry:nth-child(n+5){animation-delay:.17s}
 #day-line.perla{color:var(--accent);font-style:italic;letter-spacing:.02em;animation:nasce .6s ease}
+/* ══════ CASELLE VIVE — il colpo di timbro, per tutte ══════ */
+.item .chk{overflow:visible}
+.item.done .chk{border-color:transparent;background:transparent}
+.item.done .chk::after{content:'';position:absolute;inset:-1px;z-index:0;border-radius:24%;
+  background:linear-gradient(160deg,#C9503C,#9E2F1F);transform:rotate(-4deg);
+  box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.item.done .chk-mark path{stroke:#F2EDE2}
+/* coreografia solo al tocco vivo (justdone), mai ai re-render: 600ms ≈ 36 frame */
+.item.justdone .chk::after{animation:colpo .42s cubic-bezier(.3,0,.2,1.35) both}
+@keyframes colpo{0%{opacity:0;transform:translateY(-14px) rotate(-13deg) scale(1.12)}
+ 26%{opacity:1;transform:translateY(0) rotate(-2deg) scale(.9,.86)}
+ 40%{transform:translateY(-1.5px) rotate(-5.5deg) scale(1.04)}
+ 62%{transform:rotate(-3.6deg) scale(.985)}
+ 100%{transform:rotate(-4deg) scale(1)}}
+.item.justdone .chk{animation:sanguina .5s ease-out .12s both}
+@keyframes sanguina{0%{box-shadow:0 0 0 0 rgba(185,64,46,.45)}100%{box-shadow:0 0 0 10px rgba(185,64,46,0)}}
+.item.justdone .chk-mark path{transition-delay:.3s !important}
+@media (prefers-reduced-motion:reduce){
+  .item.justdone .chk::after,.item.justdone .chk{animation:none}
+}
 @keyframes glifobreathe{0%,100%{opacity:.9}50%{opacity:1}}
 @keyframes sigillovivo{0%,100%{filter:drop-shadow(0 0 5px rgba(232,168,76,.28))}50%{filter:drop-shadow(0 0 11px rgba(232,168,76,.5))}}
 @keyframes rivalone{0%,100%{box-shadow:inset 0 1px 0 rgba(245,242,234,.09),0 2px 8px rgba(0,0,0,.30),0 18px 50px rgba(0,0,0,.40),0 0 30px rgba(232,168,76,.09)}50%{box-shadow:inset 0 1px 0 rgba(245,242,234,.09),0 2px 8px rgba(0,0,0,.30),0 18px 50px rgba(0,0,0,.40),0 0 46px rgba(232,168,76,.17)}}
@@ -587,9 +616,6 @@ body.theme-inchiostro #dateline{font-size:clamp(31px,9.5vw,38px);font-weight:400
 body.theme-inchiostro .sec-head{font-size:15px;color:var(--t2);letter-spacing:.05em;font-weight:400}
 body.theme-inchiostro .ed-num{font-size:24px;font-weight:400}
 /* ensō doppio: esterno giada (tutto), interno ambra (essenziali ◆) con bagliore */
-body.theme-inchiostro #enso2{display:inline;filter:drop-shadow(0 0 10px rgba(217,164,65,.45))}
-body.theme-inchiostro .enso{stroke:rgba(159,216,196,.50);stroke-width:5}
-body.theme-inchiostro #mic.sealed .enso{stroke:#9FD8C4}
 body.theme-inchiostro #mic.rec::before{background:radial-gradient(circle,rgba(217,164,65,.16),transparent 66%)}
 body.theme-inchiostro #mic.rec::after{border-color:rgba(217,164,65,.4)}
 /* barra del giorno: mini doppio anello + eco */
@@ -699,14 +725,22 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
         <button id="mic" aria-label="Avvia o ferma la dettatura">
           <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
           <svg viewBox="0 0 200 200" aria-hidden="true">
-            <circle class="ring-track" cx="100" cy="100" r="86"/>
-            <circle class="enso" id="enso" cx="100" cy="100" r="86" transform="rotate(-100 100 100)"/>
-            <circle class="enso2" id="enso2" cx="100" cy="100" r="64" transform="rotate(-100 100 100)"/>
-            <g class="mic-glyph" transform="translate(100 100)">
-              <rect class="mg-capsula" x="-11" y="-40" width="22" height="46" rx="11"/>
-              <path d="M -25 -8 a 25 25 0 0 0 50 0"/>
-              <path d="M 0 17 v 13 M -13 30 h 26"/>
+            <defs>
+              <linearGradient id="enso-brush" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F2C56B"/>
+                <stop offset="55%" stop-color="#E8A84C"/>
+                <stop offset="100%" stop-color="#C97F2E"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-track" cx="100" cy="100" r="79"/>
+            <mask id="enso-mask"><circle class="enso" id="enso" cx="100" cy="100" r="79" transform="rotate(-100 100 100)"/></mask>
+            <g mask="url(#enso-mask)">
+              <path class="corpo-enso" fill="url(#enso-brush)" d="M 86.1 21.0 L 90.6 19.2 L 95.4 17.9 L 100.2 17.0 L 105.2 16.6 L 110.1 16.7 L 115.1 17.2 L 120.0 18.1 L 124.8 19.4 L 129.5 21.1 L 134.1 23.0 L 138.6 25.1 L 143.0 27.5 L 147.3 30.0 L 151.5 32.8 L 155.5 35.8 L 159.3 39.1 L 162.9 42.5 L 166.4 46.2 L 169.6 50.2 L 172.5 54.3 L 175.2 58.6 L 177.6 63.1 L 179.7 67.7 L 181.5 72.5 L 183.0 77.3 L 184.2 82.3 L 185.1 87.3 L 185.7 92.3 L 185.9 97.4 L 185.9 102.5 L 185.5 107.6 L 184.8 112.6 L 183.9 117.6 L 182.6 122.5 L 181.1 127.3 L 179.2 132.0 L 177.1 136.6 L 174.8 141.1 L 172.2 145.4 L 169.3 149.6 L 166.3 153.6 L 163.0 157.4 L 159.5 161.0 L 155.8 164.4 L 151.9 167.6 L 147.8 170.5 L 143.5 173.2 L 139.1 175.7 L 134.6 177.9 L 129.9 179.8 L 125.2 181.5 L 120.3 182.8 L 115.4 183.9 L 110.4 184.6 L 105.4 185.1 L 100.3 185.2 L 95.3 185.0 L 90.3 184.5 L 85.3 183.7 L 80.4 182.6 L 75.6 181.1 L 70.9 179.4 L 66.4 177.4 L 61.9 175.1 L 57.7 172.5 L 53.6 169.7 L 49.7 166.6 L 46.0 163.3 L 42.5 159.8 L 39.3 156.2 L 36.3 152.3 L 33.6 148.3 L 31.1 144.1 L 28.8 139.8 L 26.8 135.4 L 25.1 130.9 L 23.7 126.4 L 22.5 121.7 L 21.5 117.1 L 20.9 112.4 L 20.5 107.7 L 20.4 102.9 L 20.6 98.2 L 21.0 93.6 L 21.5 88.9 L 22.3 84.3 L 23.3 79.7 L 24.6 75.2 L 26.2 70.8 L 28.0 66.4 L 28.9 66.8 L 27.1 71.1 L 25.6 75.5 L 24.3 80.0 L 23.3 84.5 L 22.5 89.0 L 22.0 93.6 L 21.9 98.3 L 22.2 102.9 L 22.6 107.4 L 23.3 112.0 L 24.3 116.5 L 25.4 120.9 L 26.9 125.3 L 28.5 129.5 L 30.4 133.7 L 32.5 137.7 L 34.9 141.7 L 37.5 145.4 L 40.2 149.1 L 43.2 152.5 L 46.4 155.8 L 49.8 158.9 L 53.4 161.7 L 57.1 164.4 L 61.0 166.8 L 65.0 168.9 L 69.2 170.8 L 73.5 172.5 L 77.8 173.8 L 82.2 174.9 L 86.7 175.7 L 91.2 176.3 L 95.8 176.5 L 100.3 176.5 L 104.8 176.2 L 109.3 175.6 L 113.7 174.7 L 118.0 173.6 L 122.3 172.2 L 126.5 170.6 L 130.5 168.7 L 134.5 166.7 L 138.3 164.4 L 141.9 161.9 L 145.4 159.2 L 148.7 156.3 L 151.9 153.2 L 154.9 150.0 L 157.7 146.6 L 160.3 143.1 L 162.7 139.4 L 164.9 135.7 L 166.9 131.8 L 168.7 127.8 L 170.3 123.7 L 171.6 119.5 L 172.7 115.2 L 173.6 110.9 L 174.2 106.6 L 174.5 102.2 L 174.6 97.8 L 174.5 93.3 L 174.1 88.9 L 173.4 84.6 L 172.4 80.2 L 171.2 75.9 L 169.8 71.7 L 168.0 67.6 L 166.1 63.6 L 163.8 59.8 L 161.4 56.0 L 158.7 52.5 L 155.8 49.1 L 152.7 45.9 L 149.4 42.8 L 145.9 40.1 L 142.2 37.6 L 138.4 35.3 L 134.4 33.4 L 130.2 31.7 L 126.0 30.3 L 121.8 29.2 L 117.5 28.4 L 113.2 27.6 L 108.9 27.0 L 104.6 26.4 L 100.2 25.9 L 95.8 25.5 L 91.3 25.1 L 86.7 24.8 Z"/>
+              <path class="secco-enso" d="M 162.1 47.9 L 165.8 52.2 L 169.1 56.8 L 172.0 61.7 L 174.6 66.8 L 176.8 72.1 L 178.6 77.5 L 180.1 83.0 L 181.2 88.6 L 182.0 94.3 L 182.3 100.0 L 182.3 105.8 L 181.8 111.5 L 180.9 117.2 L 179.5 122.8 L 177.7 128.3 L 175.6 133.6 L 173.0 138.8 L 170.1 143.8 L 166.8 148.5 L 163.2 153.0 L 159.3 157.2 L 155.1 161.2 L 150.6 164.8 L 146.0 168.2 L 141.1 171.2 L 136.0 173.9 L 130.8 176.2 L 125.4 178.2 L 119.9 179.8 L 114.3 181.1 L 108.6 182.0 L 102.9 182.4 L 97.1 182.5 L 91.4 182.1 L 85.7 181.3 L 80.0 180.0 L 74.5 178.4 L 69.2 176.3 L 64.0 173.9 L 59.0 171.1 L 54.2 167.9 L 49.7 164.4 L 45.4 160.6 L 41.5 156.5 L 37.8 152.2 L 34.4 147.7 L 31.3 142.9 L 28.5 138.0 L 26.1 132.9 L 24.0 127.7 L 24.2 127.6 L 26.4 132.8 L 28.8 137.9 L 31.6 142.8 L 34.7 147.5 L 38.1 151.9 L 41.8 156.2 L 45.8 160.2 L 50.1 163.9 L 54.6 167.3 L 59.4 170.4 L 64.3 173.1 L 69.5 175.5 L 74.8 177.5 L 80.3 179.1 L 85.9 180.2 L 91.5 181.0 L 97.2 181.3 L 102.8 181.2 L 108.5 180.7 L 114.1 179.8 L 119.6 178.6 L 125.0 176.9 L 130.3 174.9 L 135.4 172.6 L 140.4 169.9 L 145.1 166.9 L 149.7 163.6 L 154.1 160.0 L 158.2 156.2 L 162.0 152.0 L 165.5 147.6 L 168.7 143.0 L 171.6 138.1 L 174.2 133.0 L 176.3 127.8 L 178.1 122.4 L 179.4 116.9 L 180.3 111.3 L 180.8 105.7 L 180.9 100.0 L 180.6 94.4 L 179.9 88.8 L 178.8 83.2 L 177.3 77.8 L 175.4 72.5 L 173.2 67.4 L 170.7 62.4 L 167.9 57.6 L 164.9 52.9 L 161.6 48.3 Z"/>
+              <path class="secco-enso" d="M 175.2 113.3 L 174.3 118.0 L 173.1 122.6 L 171.5 127.2 L 169.6 131.6 L 167.5 135.9 L 165.1 140.0 L 162.4 144.0 L 159.6 147.9 L 156.5 151.6 L 153.2 155.1 L 149.7 158.4 L 146.0 161.5 L 142.1 164.4 L 138.1 167.0 L 133.8 169.4 L 129.4 171.5 L 124.9 173.2 L 120.3 174.7 L 115.6 175.8 L 110.8 176.6 L 105.9 177.1 L 101.1 177.3 L 96.2 177.1 L 91.4 176.6 L 86.6 175.9 L 81.9 174.8 L 77.3 173.4 L 72.7 171.8 L 68.3 169.9 L 64.0 167.7 L 59.8 165.3 L 55.8 162.7 L 51.9 159.8 L 48.2 156.7 L 44.7 153.4 L 41.4 149.8 L 38.4 146.1 L 35.6 142.1 L 33.1 138.0 L 30.9 133.7 L 28.9 129.3 L 27.3 124.8 L 26.0 120.1 L 25.0 115.4 L 24.3 110.6 L 23.9 105.9 L 23.8 101.1 L 24.0 96.3 L 24.5 91.5 L 25.3 86.8 L 25.5 86.9 L 24.7 91.6 L 24.2 96.3 L 24.0 101.1 L 24.1 105.8 L 24.6 110.6 L 25.3 115.3 L 26.3 120.0 L 27.7 124.6 L 29.4 129.1 L 31.3 133.5 L 33.6 137.7 L 36.1 141.8 L 38.9 145.7 L 42.0 149.4 L 45.2 152.9 L 48.7 156.1 L 52.4 159.2 L 56.2 162.0 L 60.3 164.6 L 64.4 167.0 L 68.7 169.1 L 73.1 170.9 L 77.6 172.5 L 82.1 173.8 L 86.8 174.8 L 91.5 175.6 L 96.3 176.1 L 101.1 176.2 L 105.9 176.0 L 110.6 175.5 L 115.3 174.7 L 120.0 173.6 L 124.6 172.2 L 129.0 170.4 L 133.4 168.4 L 137.6 166.1 L 141.6 163.5 L 145.4 160.7 L 149.1 157.7 L 152.6 154.4 L 155.8 151.0 L 158.9 147.3 L 161.7 143.5 L 164.3 139.5 L 166.6 135.4 L 168.7 131.2 L 170.5 126.8 L 172.2 122.3 L 173.6 117.8 L 174.7 113.2 Z"/>
             </g>
+            <g id="punta-viva"><ellipse class="pv-scia" cx="100" cy="19" rx="9" ry="5" transform="rotate(-100 100 100)"/><ellipse class="pv-punta" cx="100" cy="20" rx="4.5" ry="3" transform="rotate(-100 100 100)"/></g>
+            <circle id="firma" cx="14" cy="60" r="5"/>
           </svg>
           <div id="seal-dot"></div>
         </button>
@@ -1270,7 +1304,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.38 · 2026-07-07';
+const APP_VERSION='v60S.40 · 2026-07-07';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3424,10 +3458,9 @@ function updateRing(){
   const tk=todayKey(),dow=dowOf();
   const r=computeProgress(S,tk,dow);
   const ensoEl=document.querySelector('#enso');
-  ensoEl.style.strokeDashoffset=500-460*r.p;
-  try{ const e2=document.querySelector('#enso2');
-    if(e2){ const es=essentialStatus(S,tk,dow); const p2=es.total?(es.done/es.total):0;
-      e2.style.strokeDashoffset=(p2>=1)?0:(380-348*p2); e2.style.opacity=es.total?1:.3; } }catch(_){}
+  ensoEl.style.strokeDashoffset=497-497*r.p;   /* la maschera dipinge la pennellata: testa per prima, punta ultima */
+  try{ const pv=document.querySelector('#punta-viva');
+    if(pv){ pv.style.transform='rotate('+Math.round(305*r.p)+'deg)'; pv.style.opacity=(r.p>0&&r.p<1)?'1':'0'; } }catch(_){}
   ensoEl.style.filter='drop-shadow(0 0 '+(4+12*r.p)+'px var(--jade-glow))'; /* il bagliore cresce col cerchio */
   try{ syncAdaptiveMusic(false); }catch(_){}  /* musica adattiva: WAV primario, generativo come fallback */
   const res=sealIfComplete(S,tk,dow);
