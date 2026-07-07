@@ -638,6 +638,42 @@ body.theme-inchiostro nav button{font-size:10px;letter-spacing:.05em;padding:8px
 body.theme-inchiostro nav button .ico{width:21px;height:21px}
 body.theme-inchiostro nav button.on{color:var(--accent)}
 body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
+/* ══════ FRAME-LAVORO 1: LA CERIMONIA DEL SIGILLO ══════
+   ~66 frame dal tocco: 0-1100ms il tratto corre a chiudersi · 1100 la firma si imprime
+   · 1120-1600 tre schizzi vermigli · 950-2000 l'onda d'inchiostro · (pieno) 900-2400 l'inchino */
+#mic.sealed:not(.rec)::after{content:'';position:absolute;inset:8%;border-radius:50%;pointer-events:none;z-index:0;
+  border:2px solid rgba(232,168,76,.55);opacity:0;animation:onda-sigillo 1.05s ease-out .95s both}
+@keyframes onda-sigillo{0%{opacity:.85;transform:scale(.9)}100%{opacity:0;transform:scale(1.24)}}
+#mic.pieno:not(.rec)::after{animation:onda-sigillo 1.05s ease-out .95s both,onda-doppia 1.15s ease-out 1.55s both}
+@keyframes onda-doppia{0%{opacity:.6;transform:scale(.95)}100%{opacity:0;transform:scale(1.34)}}
+.fs{fill:#B9402E;opacity:0;transform-origin:14px 60px}
+#mic.sealed .fs1{animation:fs-v .5s ease-out 1.12s both}
+#mic.sealed .fs2{animation:fs-v .55s ease-out 1.15s both}
+#mic.sealed .fs3{animation:fs-v .45s ease-out 1.13s both}
+.fs1{--fx:-9px;--fy:-5px}.fs2{--fx:7px;--fy:-8px}.fs3{--fx:-4px;--fy:9px}
+@keyframes fs-v{0%{opacity:0;transform:translate(0,0) scale(.4)}22%{opacity:.95}100%{opacity:0;transform:translate(var(--fx),var(--fy)) scale(1)}}
+#mic.pieno svg{animation:inchino 1.5s cubic-bezier(.22,1,.36,1) .9s 1,breathe 6s ease-in-out 2.6s infinite}
+@keyframes inchino{0%{transform:scale(1)}38%{transform:scale(1.05)}70%{transform:scale(.99)}100%{transform:scale(1)}}
+/* ══════ FRAME-LAVORO 2: LA CASCATA DI TIMBRI (letture del racconto) ══════
+   un timbro ogni 90ms — 5-6 frame di stacco, il ritmo di una mano vera */
+.lett-row{transition:opacity .3s}
+.lett-row.stamped .lett-chk{border-color:transparent;background:transparent}
+.lett-row.stamped .lett-chk::before{content:'';position:absolute;inset:-1px;border-radius:26%;
+  background:linear-gradient(160deg,#C9503C,#9E2F1F);box-shadow:0 1px 2px rgba(0,0,0,.35);
+  animation:colpo-mini .34s cubic-bezier(.3,0,.2,1.35) both}
+@keyframes colpo-mini{0%{opacity:0;transform:translateY(-9px) rotate(-13deg) scale(1.15)}
+ 30%{opacity:1;transform:translateY(0) rotate(-2deg) scale(.88)}
+ 55%{transform:rotate(-5.5deg) scale(1.05)}100%{transform:rotate(-4deg) scale(1)}}
+.lett-row.stamped .lett-chk::after{border-left-color:#F2EDE2;border-bottom-color:#F2EDE2;opacity:0;animation:app-tick .01s linear .2s both;z-index:1}
+@keyframes app-tick{to{opacity:1}}
+.lett-row.stamped{animation:riga-batte .3s ease-out}
+@keyframes riga-batte{35%{transform:translateY(1.5px)}}
+#letture.via{animation:esce .28s ease-in both}
+@keyframes esce{to{opacity:0;transform:translateY(-8px)}}
+@media (prefers-reduced-motion:reduce){
+  #mic.sealed:not(.rec)::after,#mic.sealed .fs1,#mic.sealed .fs2,#mic.sealed .fs3,#mic.pieno svg,
+  .lett-row.stamped .lett-chk::before,.lett-row.stamped,#letture.via{animation:none}
+}
 </style>
 </head>
 <body>
@@ -733,6 +769,7 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
             </g>
             <g id="punta-viva"><ellipse class="pv-scia" cx="100" cy="19" rx="9" ry="5" transform="rotate(-100 100 100)"/><ellipse class="pv-punta" cx="100" cy="20" rx="4.5" ry="3" transform="rotate(-100 100 100)"/></g>
             <circle id="firma" cx="14" cy="60" r="5"/>
+            <circle class="fs fs1" cx="14" cy="60" r="1.7"/><circle class="fs fs2" cx="15" cy="59" r="1.2"/><circle class="fs fs3" cx="13" cy="61" r="1.4"/>
           </svg>
           <div id="seal-dot"></div>
         </button>
@@ -1296,7 +1333,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.41 · 2026-07-07';
+const APP_VERSION='v60S.42 · 2026-07-07';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2909,20 +2946,29 @@ function renderLetture(mo){
   box.querySelectorAll('.lett-upd').forEach(b=>{ b.onclick=e=>{ e.stopPropagation(); b.classList.toggle('sel'); }; });
   document.querySelector('#lett-no').onclick=()=>{ box.classList.add('hidden'); box.innerHTML=''; _pendingLetture=null; };
   document.querySelector('#lett-ok').onclick=()=>{
-    const tk=todayKey(); if(!S.checks[tk]) S.checks[tk]={};
-    let n=0;
-    box.querySelectorAll('.lett-row.on').forEach(r=>{
-      const l=_pendingLetture[+r.dataset.i]; if(!l) return;
-      const upd=r.querySelector('.lett-upd');
-      if(upd&&upd.classList.contains('sel')&&l.nuovo_titolo){
-        const s=(S.scheduled||[]).find(t=>t.id===l.id); const q=(S.quests||[]).find(t=>t.id===l.id);
-        if(s) s.titolo=l.nuovo_titolo; if(q) q.titolo=l.nuovo_titolo;
-      }
-      S.checks[tk][l.id]=true; n++;
-    });
-    box.classList.add('hidden'); box.innerHTML=''; _pendingLetture=null;
-    save(); render(); try{ updateRing(); }catch(_){}
-    toast(n?(n+(n===1?' confermata dal racconto':' confermate dal racconto')):'Nessuna conferma');
+    const righe=[...box.querySelectorAll('.lett-row.on')];
+    if(!righe.length){ box.classList.add('hidden'); box.innerHTML=''; _pendingLetture=null; toast('Nessuna conferma'); return; }
+    const ok=document.querySelector('#lett-ok'), no=document.querySelector('#lett-no');
+    if(ok) ok.disabled=true; if(no) no.disabled=true;
+    righe.forEach((r,i)=> setTimeout(()=>{ try{ r.classList.add('stamped'); }catch(_){} }, i*90));
+    const attesa=righe.length*90+430;   /* l'ultimo timbro finisce di assestarsi, poi si passa allo stato */
+    setTimeout(()=>{
+      const tk=todayKey(); if(!S.checks[tk]) S.checks[tk]={};
+      let n=0;
+      righe.forEach(r=>{
+        const l=_pendingLetture[+r.dataset.i]; if(!l) return;
+        const upd=r.querySelector('.lett-upd');
+        if(upd&&upd.classList.contains('sel')&&l.nuovo_titolo){
+          const s=(S.scheduled||[]).find(t=>t.id===l.id); const q=(S.quests||[]).find(t=>t.id===l.id);
+          if(s) s.titolo=l.nuovo_titolo; if(q) q.titolo=l.nuovo_titolo;
+        }
+        S.checks[tk][l.id]=true; n++;
+      });
+      box.classList.add('via');
+      setTimeout(()=>{ box.classList.remove('via'); box.classList.add('hidden'); box.innerHTML=''; _pendingLetture=null; },300);
+      save(); render(); try{ updateRing(); }catch(_){}
+      toast(n+(n===1?' confermata dal racconto':' confermate dal racconto'));
+    },attesa);
   };
 }
 function _isoPlus(gg){ const d=new Date(); d.setDate(d.getDate()+gg); return d.toISOString().slice(0,10); }
@@ -3486,6 +3532,7 @@ function updateRing(){
     micBtn.classList.remove('sealed');
     document.querySelector('#ring-count').textContent= r.total? (r.done+' / '+r.total+' · il cerchio si chiude') : '';
   }
+  try{ micBtn.classList.toggle('pieno',S.lastFullSealed===todayKey()); }catch(_){}
   try{ syncDayLine(); setTimeout(syncDayLine,2400); }catch(_){}
   try{ setTimeout(perle,2800); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno */
   try{ renderFlow(); }catch(_){}
