@@ -150,6 +150,8 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 #rivelazione{width:100%;max-width:340px;margin-top:12px;background:linear-gradient(160deg,rgba(232,168,76,.10),rgba(127,184,164,.06) 70%);border:1px solid rgba(232,168,76,.35);border-radius:18px;padding:14px 16px;text-align:left;box-shadow:0 8px 30px rgba(232,168,76,.10)}
 .riv-head{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
 .riv-txt{font-size:14px;color:var(--t1);line-height:1.6;font-family:ui-serif,Georgia,serif;font-style:italic}
+body[data-pane="diario"] header .hd-row,body[data-pane="impostazioni"] header .hd-row{display:none}
+#dateline{font-size:clamp(31px,9.5vw,38px)}
 
 #live{width:100%;margin-top:22px;font-family:var(--serif);font-size:18px;line-height:1.6;
   color:var(--t1);display:none;text-align:center}
@@ -227,8 +229,8 @@ section{margin-top:38px}
 
 /* ════════ diario: prosa, niente lastre ════════ */
 .diary-font{font-family:var(--serif)}
-.entry{padding:24px 0;border-bottom:.5px solid rgba(245,242,234,.07);position:relative}
-.e-del{position:absolute;top:22px;right:0;border:none;background:none;color:var(--t3);font-size:19px;line-height:1;padding:6px 2px 6px 10px;opacity:.55;font-family:inherit}
+.entry{padding:24px 0;border-bottom:.5px solid rgba(245,242,234,.07);position:relative;padding-right:40px}
+.e-del{position:absolute;top:18px;right:0;border:none;background:none;color:var(--t3);font-size:19px;line-height:1;padding:10px 4px 10px 14px;opacity:.55;font-family:inherit}
 .e-del:active{opacity:.35}
 .e-del.armed{color:var(--accent);opacity:1;font-size:12px;letter-spacing:.04em}
 .entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
@@ -514,7 +516,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro #distill-text,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
-body.theme-inchiostro #dateline{font-size:clamp(28px,8.6vw,34px);font-weight:400;line-height:1.05;letter-spacing:.01em;color:var(--t1)}
+body.theme-inchiostro #dateline{font-size:clamp(31px,9.5vw,38px);font-weight:400;line-height:1.05;letter-spacing:.01em;color:var(--t1)}
 body.theme-inchiostro .sec-head{font-size:15px;color:var(--t2);letter-spacing:.05em;font-weight:400}
 body.theme-inchiostro .ed-num{font-size:24px;font-weight:400}
 /* ensō doppio: esterno giada (tutto), interno ambra (essenziali ◆) con bagliore */
@@ -659,20 +661,7 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
         </div>
       </div>
 
-      <section id="sec-observer" class="hidden">
-        <div class="sec-head">Mente Osservatrice</div>
-        <div id="observer-card">
-          <p id="observer-note">—</p>
-          <div id="observer-meta"></div>
-          <div id="observer-patterns"></div>
-          <div class="btn-row" style="justify-content:flex-start">
-            <button class="act primary" id="btn-observe">Osserva</button>
-            <button class="act hidden" id="btn-obs-act">Trasforma in mossa</button>
           </div>
-          <div id="observer-history"></div>
-        </div>
-      </section>
-    </div>
 
     <!-- ===== DIARIO ===== -->
     <div id="tab-diario" class="hidden">
@@ -687,16 +676,7 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
         <div id="list-diario" class="diary-font"></div>
       </section>
 
-      <section id="sec-dono" style="margin-top:26px">
-        <div class="sec-head">Mente Osservatrice</div>
-        <p class="note" style="margin-top:0">Rilegge un mese di diario e azioni, e scrive nella sua voce.</p>
-        <div class="btn-row" style="justify-content:flex-start"><button class="act primary" id="btn-distill">Scrivi il dono</button></div>
-        <div id="distill-out" class="hidden" style="margin-top:14px;padding:16px;border:1px solid rgba(159,216,196,.20);border-radius:14px;background:rgba(10,16,15,.5)">
-            <p id="distill-text" style="font-style:italic;line-height:1.65;color:#cfe8de;margin:0 0 12px">—</p>
-            <div class="btn-row" style="justify-content:flex-start"><button class="act" id="btn-distill-share">Condividi</button><button class="act" id="btn-distill-close">Chiudi</button></div>
           </div>
-      </section>
-    </div>
 
     <!-- ===== ALTRO (nascosto, aperto dal Diario) ===== -->
     <div id="tab-impostazioni" class="hidden">
@@ -1222,7 +1202,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.33 · 2026-07-07';
+const APP_VERSION='v60S.34 · 2026-07-07';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2360,8 +2340,7 @@ function handleFlowAction(action,extra){
   if(action==='distill'){ showPane('quest'); setTimeout(()=>{ const b=document.querySelector('#btn-save'); if(b&&!b.disabled) b.click(); },80); return; }
   if(action==='settings'){ showPane('impostazioni'); setTimeout(()=>{ const k=document.querySelector('#apikey'); if(k) k.focus(); },120); return; }
   if(action==='tasks'){ showPane('impostazioni'); setTimeout(()=>{ const t=document.querySelector('#new-task-txt'); if(t) t.focus(); },120); return; }
-  if(action==='observe'){ showPane('quest'); setTimeout(()=>{ try{ observe(false); }catch(_){} },120); return; }
-  if(action==='dono'){ showPane('diario'); setTimeout(()=>{ try{ document.querySelector('#sec-dono').scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} },140); return; }
+
   if(action==='today'){ showPane('oggi'); setTimeout(()=>{ if(!focusTarget(extra)) scrollToSoft('#sec-today-quests'); },140); return; }
 }
 /* ── PROSSIMA MOSSA: non la prima in lista, ma l'UNICA che conta adesso ──
@@ -2451,7 +2430,7 @@ function renderFlow(){
     return;
   }
   if(S.diary.length>=2&&!((S.observerNotes||[]).length)){
-    el.innerHTML='<strong>Ci sono gia abbastanza tracce.</strong><button data-flow="dono">Fatti scrivere il dono</button>';
+    el.innerHTML='';
     return;
   }
   el.innerHTML='<strong>Il difficile resta fuori.</strong><button data-flow="speak">Parla una cosa sola</button>';
@@ -2460,6 +2439,7 @@ document.querySelector('#flow').addEventListener('click',e=>{
   const b=e.target.closest('[data-flow]'); if(b) handleFlowAction(b.dataset.flow,{target:b.dataset.target,kind:b.dataset.kind});
 });
 function showPane(name){
+  try{ document.body.setAttribute('data-pane',name); }catch(_){}
   ['oggi','quest','diario','impostazioni'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',t!==name));
   if(name!=='impostazioni'){
     document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.tab===name));
@@ -2477,6 +2457,32 @@ document.querySelectorAll('nav button').forEach(b=>{
 /* Altro è nascosto: si apre dal Diario e si torna indietro */
 document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
 { const ph=document.querySelector('#prog-head'); if(ph) ph.onclick=()=>document.querySelector('#sec-programma').classList.toggle('collapsed'); }
+/* ── swipe tra le pagine: gesto orizzontale netto, mai dal bordo (iOS back), mai dal microfono ── */
+(function(){
+  const ordine=['oggi','quest','diario'];
+  let sx=0,sy=0,st=0,ok=false;
+  const m=document.querySelector('main'); if(!m) return;
+  m.addEventListener('touchstart',e=>{
+    ok=false;
+    if(e.touches.length!==1) return;
+    const t=e.touches[0];
+    if(t.clientX<24||t.clientX>window.innerWidth-24) return;
+    if(e.target&&e.target.closest&&(e.target.closest('#mic')||e.target.closest('#confirm-row')||e.target.closest('#prio-row'))) return;
+    sx=t.clientX; sy=t.clientY; st=Date.now(); ok=true;
+  },{passive:true});
+  m.addEventListener('touchend',e=>{
+    if(!ok) return; ok=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Date.now()-st>600) return;
+    if(Math.abs(dx)<64||Math.abs(dx)<Math.abs(dy)*2) return;
+    const cur=ordine.findIndex(n=>!document.querySelector('#tab-'+n).classList.contains('hidden'));
+    if(cur<0) return;
+    const nxt=cur+(dx<0?1:-1);
+    if(nxt<0||nxt>=ordine.length) return;
+    showPane(ordine[nxt]);
+  },{passive:true});
+})();
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
   b.onclick=()=>{ S.settings.uiTheme=(b.dataset.uitheme==='inchiostro')?'inchiostro':'classico'; save(); applyTheme(); renderSettings(); };
 });
@@ -3007,7 +3013,6 @@ function maybeObserveAuto(){
     if(last && (last.createdAt||'').slice(0,10)===todayKey()) return;   /* già osservato oggi */
     const haDati=(S.diary&&S.diary.length>=2)||Object.keys(S.checks||{}).length>=2;
     if(!haDati) return;                                                  /* troppo poco da osservare */
-    setTimeout(()=>{ observe(true); }, 1200);                            /* silenziosa, poco dopo l'avvio */
   }catch(_){}
 }
 function fmtObsDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
@@ -3266,9 +3271,9 @@ async function runDistill(){
     txt.textContent=m; _lastDistill='';
   }
 }
-document.querySelector('#btn-distill').onclick=runDistill;
-document.querySelector('#btn-distill-close').onclick=()=>{ document.querySelector('#distill-out').classList.add('hidden'); };
-document.querySelector('#btn-distill-share').onclick=async()=>{
+{ const b=document.querySelector('#btn-distill'); if(b) b.onclick=runDistill; }
+{ const b=document.querySelector('#btn-distill-close'); if(b) b.onclick=()=>{ document.querySelector('#distill-out').classList.add('hidden'); }; }
+const _bds=document.querySelector('#btn-distill-share'); if(_bds) _bds.onclick=async()=>{
   if(!_lastDistill) return;
   try{ if(navigator.share){ await navigator.share({text:_lastDistill}); return; } }catch(_){}
   try{ await navigator.clipboard.writeText(_lastDistill); toast('Copiato: incollalo dove vuoi'); }
@@ -3343,7 +3348,6 @@ function updateRing(){
     ensoEl.style.filter='drop-shadow(0 0 22px var(--jade-glow))';   /* un respiro di bagliore, non la fioritura */
     try{ document.querySelector('#ring-count').textContent='Cerchio del giorno · gli essenziali ci sono'; }catch(_){}
     try{ renderStreak(); }catch(_){}
-    try{ setTimeout(()=>observe(true),1200); }catch(_){}   /* la Mente osserva la giornata chiusa */
   } else if(res==='full'){
     save();
     haptic(true); setTimeout(()=>haptic(true),160); setTimeout(()=>haptic(true),320);  /* tre pulsazioni decise: il cerchio è pieno */
@@ -3358,7 +3362,6 @@ function updateRing(){
       try{ streamInto(document.querySelector('#ring-count'),'Cerchio pieno · niente è rimasto fuori',{speed:46}); }catch(_){ try{ document.querySelector('#ring-count').textContent='Cerchio pieno · niente è rimasto fuori'; }catch(_){} }
       try{ renderStreak(); }catch(_){}
     },350);
-    try{ setTimeout(()=>observe(true),1500); }catch(_){}   /* a cerchio pieno, la Mente osserva la giornata */
   } else if(res==='already'){
     micBtn.classList.add('sealed');
     document.querySelector('#ring-count').textContent='Cerchio chiuso · a domani';
