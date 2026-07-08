@@ -684,6 +684,15 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
   body:not(.anima-sempre) #obs-whisper.entra{animation:none;opacity:1}
   body:not(.anima-sempre) #obs-whisper.esce{animation:none;opacity:0;transition:opacity .3s}
 }
+/* ══════ FRAME-LAVORO 4: LA TRANSIZIONE DI PAGINA ══════
+   avanti = entra da destra, indietro = da sinistra: 30px di corsa, 16 frame, curva del pennello */
+.tabpane.entra-dx{animation:pane-dx .27s cubic-bezier(.22,1,.36,1)}
+.tabpane.entra-sx{animation:pane-sx .27s cubic-bezier(.22,1,.36,1)}
+@keyframes pane-dx{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes pane-sx{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) .tabpane.entra-dx,body:not(.anima-sempre) .tabpane.entra-sx{animation:none}
+}
 </style>
 </head>
 <body>
@@ -1336,7 +1345,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.48 · 2026-07-08';
+const APP_VERSION='v60S.49 · 2026-07-08';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2573,6 +2582,12 @@ document.querySelector('#flow').addEventListener('click',e=>{
   const b=e.target.closest('[data-flow]'); if(b) handleFlowAction(b.dataset.flow,{target:b.dataset.target,kind:b.dataset.kind});
 });
 function showPane(name){
+  /* transizione direzionale: la pagina entra dal lato verso cui stai andando (16 frame) */
+  const ORD={oggi:0,quest:1,diario:2};
+  let dir=0;
+  try{ const prev=document.body.getAttribute('data-pane');
+    if(prev&&prev!==name&&ORD[prev]!==undefined&&ORD[name]!==undefined) dir=(ORD[name]>ORD[prev])?1:-1;
+  }catch(_){}
   try{ document.body.setAttribute('data-pane',name); }catch(_){}
   ['oggi','quest','diario','impostazioni'].forEach(t=>$('#tab-'+t).classList.toggle('hidden',t!==name));
   if(name!=='impostazioni'){
@@ -2581,7 +2596,8 @@ function showPane(name){
   render();
   try{
     const pane=$('#tab-'+name);
-    pane.classList.remove('tab-in'); void pane.offsetWidth; pane.classList.add('tab-in');
+    pane.classList.remove('tab-in','entra-dx','entra-sx'); void pane.offsetWidth;
+    pane.classList.add(dir===1?'entra-dx':(dir===-1?'entra-sx':'tab-in'));
     const m=document.querySelector('main'); if(m) m.scrollTop=0;
   }catch(_){}
 }
