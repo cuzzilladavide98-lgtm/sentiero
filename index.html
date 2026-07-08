@@ -135,7 +135,7 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 .sec-toggle{cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;justify-content:space-between;align-items:center}
 .sec-toggle .chev{font-size:12px;opacity:.55;transition:transform .25s ease}
 /* FRAME-LAVORO 6: LA FISARMONICA — si apre col respiro (19 frame), mai di scatto */
-#sec-programma{display:grid;grid-template-rows:auto 1fr;
+#sec-programma{scroll-margin-top:10px;display:grid;grid-template-rows:auto 1fr;
   transition:grid-template-rows .32s cubic-bezier(.22,1,.36,1)}
 #sec-programma .group{overflow:hidden;min-height:0}
 #sec-programma .chev{display:inline-block;transition:transform .3s cubic-bezier(.22,1,.36,1)}
@@ -1376,7 +1376,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.51 · 2026-07-08';
+const APP_VERSION='v60S.52 · 2026-07-08';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2648,7 +2648,13 @@ document.querySelectorAll('nav button').forEach(b=>{
 });
 /* Altro è nascosto: si apre dal Diario e si torna indietro */
 document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
-{ const ph=document.querySelector('#prog-head'); if(ph) ph.onclick=()=>document.querySelector('#sec-programma').classList.toggle('collapsed'); }
+{ const ph=document.querySelector('#prog-head'); if(ph) ph.onclick=()=>{
+  const sec=document.querySelector('#sec-programma');
+  const apre=sec.classList.contains('collapsed');   /* sta per aprirsi */
+  sec.classList.toggle('collapsed');
+  /* all'apertura la pagina ti accompagna: lo spazio si concede DAVANTI agli occhi, non sotto la piega */
+  if(apre) setTimeout(()=>{ try{ sec.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){} },70);
+}; }
 /* ── swipe tra le pagine: gesto orizzontale netto, mai dal bordo (iOS back), mai dal microfono ── */
 (function(){
   const ordine=['oggi','quest','diario'];
