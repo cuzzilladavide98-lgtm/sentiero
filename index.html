@@ -778,6 +778,25 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .pietra .p-arco{fill:none;stroke:#E8A84C;stroke-width:2.6;stroke-linecap:round}
 .pietra.spenta .p-track{stroke:rgba(245,242,234,.05)}
 .pietra .p-firma{fill:#B9402E}
+/* ══════ IL PATTO DEL MATTINO — il dispositivo chiede, tu punti ══════ */
+#patto{margin:4px 0 14px;padding:14px 14px 10px;border-radius:16px;
+  background:rgba(245,242,234,.03);border:.5px solid rgba(232,168,76,.14);
+  box-shadow:inset 0 1px 0 rgba(245,242,234,.05),0 10px 26px rgba(0,0,0,.3)}
+.patto-head{font-family:var(--serif,ui-serif);font-size:15px;color:var(--t1)}
+.patto-sub{font-size:12px;color:#8A9490;font-style:italic;margin:2px 0 10px}
+.patto-r{display:block;width:100%;text-align:left;border:none;background:none;color:var(--t2);
+  font-family:inherit;font-size:14px;padding:10px 6px;border-top:.5px solid rgba(245,242,234,.06);
+  -webkit-tap-highlight-color:transparent}
+.patto-r:active{color:var(--accent)}
+.patto-no{border:none;background:none;color:#565E5A;font-family:inherit;font-size:11.5px;
+  padding:10px 6px 4px;font-style:italic}
+/* la spina d'oro: il passo del giorno si riconosce sul fianco */
+.item.passo{position:relative}
+.item.passo::before{content:'';position:absolute;left:-10px;top:50%;width:3px;height:56%;
+  transform:translateY(-50%);border-radius:3px;background:linear-gradient(180deg,#F2C56B,#A9691F)}
+/* il timbro del patto e D'ORO, unico del giorno */
+.item.passo.done .chk::before{background:linear-gradient(160deg,#F2C56B,#B0731F)}
+.item.passo.done .chk-mark path{stroke:#241A08}
 </style>
 </head>
 <body>
@@ -819,6 +838,7 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
         <span id="day-line"></span>
       </div>
       <div id="cammino" aria-label="Il sentiero degli ultimi trenta giorni"></div>
+      <div id="patto" class="hidden"></div>
 
       <section id="sec-task">
         <div class="sec-head">Oggi</div>
@@ -1167,6 +1187,7 @@ function sanitizeState(raw,def){
     lastSealed:(typeof raw.lastSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastSealed))?raw.lastSealed:'',
     lastFullSealed:(typeof raw.lastFullSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastFullSealed))?raw.lastFullSealed:'',
     essentials:Array.isArray(raw.essentials)?raw.essentials.filter(x=>typeof x==='string').slice(0,40):[],
+    patto:(raw.patto&&typeof raw.patto.tk==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.patto.tk)&&typeof raw.patto.id==='string')?{tk:raw.patto.tk,id:raw.patto.id}:null,
     lastDayInit:(typeof raw.lastDayInit==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastDayInit))?raw.lastDayInit:'',
     settings:{
       sound:!(raw.settings&&raw.settings.sound===false),
@@ -1417,7 +1438,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.59 · 2026-07-09';
+const APP_VERSION='v60S.60 · 2026-07-09';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3762,6 +3783,29 @@ function applyTheme(){ try{
   requestAnimationFrame(fr);
 })();
 
+/* ══════ IL PATTO DEL MATTINO ══════
+   Il dispositivo chiede una volta al giorno; tu scegli il passo che conta, o rifiuti.
+   Mantenuto = timbro d'oro + parola alla firma. Mai insistente, mai punitivo. */
+function renderPatto(){
+  const box=document.getElementById('patto'); if(!box) return;
+  const tk=todayKey();
+  const scelto=(S.patto&&S.patto.tk===tk);
+  let no=false; try{ no=(localStorage.getItem('sentiero-patto-no')===tk); }catch(_){}
+  let sched=[]; try{ sched=scheduledFor(S,dowOf(),tk)||[]; }catch(_){}
+  if(scelto||no||!sched.length){ box.innerHTML=''; box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML='<div class="patto-head">Il patto del mattino</div>'+
+    '<div class="patto-sub">quale sar\u00e0 il passo che conta, oggi?</div>'+
+    sched.slice(0,8).map(t=>'<button class="patto-r" data-id="'+t.id+'">'+escapeHtml(t.titolo||'')+'</button>').join('')+
+    '<button class="patto-no">oggi nessun patto</button>';
+  box.querySelectorAll('.patto-r').forEach(bt=>{ bt.onclick=()=>{
+    S.patto={tk:tk,id:bt.dataset.id}; save();
+    try{ toast('Patto stretto. La firma della sera sapr\u00e0.'); }catch(_){}
+    try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
+  };});
+  const bn=box.querySelector('.patto-no');
+  if(bn) bn.onclick=()=>{ try{ localStorage.setItem('sentiero-patto-no',tk); }catch(_){} renderPatto(); };
+}
 /* ══════ IL SENTIERO VISIBILE ══════
    Ogni pietra e un giorno: l'arco = quanto del cerchio fu dipinto, la firma = cerchio pieno.
    Tutto ricalcolato da S.checks (indicizzato per data): nessuna migrazione, nessun nuovo stato. */
@@ -3879,6 +3923,12 @@ function updateRing(){
   try{ micBtn.classList.toggle('pieno',S.lastFullSealed===todayKey()); }catch(_){}
   try{ syncDayLine(); setTimeout(syncDayLine,2400); }catch(_){}
   try{ renderCammino(); }catch(_){}
+  try{ renderPatto(); }catch(_){}
+  /* la parola della sera: se il patto e mantenuto, la firma lo dice — una volta */
+  try{ const tk2=todayKey();
+    if(S.patto&&S.patto.tk===tk2&&(S.checks[tk2]||{})[S.patto.id]&&S.lastSealed===tk2&&window._pattoDetto!==tk2){
+      window._pattoDetto=tk2; setTimeout(()=>{ try{ toast('Il patto \u00e8 stato mantenuto.'); }catch(_){} },1900);
+    } }catch(_){}
   try{ setTimeout(perle,2800); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno */
   try{ renderFlow(); }catch(_){}
 }
@@ -3927,7 +3977,7 @@ function buildTaskRow(t,checks){
   const done=checks[t.id]===true;
   const isEss=(S.essentials||[]).includes(t.id);
   const div=document.createElement('div');
-  div.className='item'+(done?' done':'');
+  div.className='item'+(done?' done':'')+((S.patto&&S.patto.tk===todayKey()&&S.patto.id===t.id)?' passo':'');
   div.dataset.tid=t.id;
   div.innerHTML='<span class="prio prio-0"></span>'+
     '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
