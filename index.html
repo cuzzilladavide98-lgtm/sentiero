@@ -755,9 +755,20 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
   body:not(.anima-sempre) #day-line .pc{opacity:1;transform:none}
   body:not(.anima-sempre) #day-line.perla-via{opacity:0;transition:opacity .3s}
 }
+/* ══════ LA SOGLIA — l'alba adattiva: la luce sale col colore dell'ora ══════
+   cerimonia piena solo alla prima apertura del giorno · tap salta sempre */
+#soglia{position:fixed;inset:0;z-index:200;background:#070A09;display:flex;align-items:center;justify-content:center;
+  transition:opacity .45s ease}
+#soglia.via{opacity:0;pointer-events:none}
+#soglia canvas{position:absolute;inset:0;width:100%;height:100%}
+#soglia-saluto{position:relative;font-family:ui-serif,Georgia,serif;font-style:italic;font-size:17px;
+  letter-spacing:.02em;opacity:0}
+#soglia.rito #soglia-saluto{animation:su-saluto .65s cubic-bezier(.22,1,.36,1) .4s both}
+@keyframes su-saluto{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
+<div id="soglia" aria-hidden="true"><canvas id="soglia-cv" width="300" height="650"></canvas><div id="soglia-saluto"></div></div>
 <div id="bg"></div>
 <div id="watermark"></div>
 <div id="grain"></div>
@@ -1407,7 +1418,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.54 · 2026-07-08';
+const APP_VERSION='v60S.55 · 2026-07-09';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3702,6 +3713,45 @@ function applyTheme(){ try{
     ctx.globalCompositeOperation='source-over';
   }
   requestAnimationFrame(frame);
+})();
+
+/* ══════ LA SOGLIA — l'alba adattiva ══════ */
+(function(){
+  const sg=document.getElementById('soglia'); if(!sg) return;
+  const rmq=matchMedia('(prefers-reduced-motion: reduce)');
+  let animaSempre=false; try{ animaSempre=(S.settings&&S.settings.anim==='sempre'); }catch(_){}
+  const tk=(function(){ try{ return todayKey(); }catch(_){ return new Date().toISOString().slice(0,10); } })();
+  let prima=true;
+  try{ prima=(localStorage.getItem('sentiero-soglia')!==tk); localStorage.setItem('sentiero-soglia',tk); }catch(_){}
+  let chiusa=false;
+  const fine=()=>{ if(chiusa) return; chiusa=true; sg.classList.add('via'); setTimeout(()=>{ try{ sg.remove(); }catch(_){} },520); };
+  sg.addEventListener('click',fine);   /* tap salta sempre */
+  if(!prima || (rmq.matches&&!animaSempre)){ setTimeout(fine,180); return; }   /* micro-entrata */
+  const hnow=new Date().getHours();
+  const F=(hnow>=5&&hnow<9)?{c:'232,168,76',s:"il mattino ha l'oro in bocca"}:
+          (hnow>=9&&hnow<17)?{c:'214,209,196',s:'un passo alla volta'}:
+          (hnow>=17&&hnow<22)?{c:'217,116,75',s:'la sera raccoglie'}:
+                              {c:'127,184,164',s:'la notte custodisce'};
+  const sal=document.getElementById('soglia-saluto');
+  if(sal){ sal.textContent=F.s; sal.style.color='rgba('+F.c+',.92)'; }
+  const cv=document.getElementById('soglia-cv'); const ctx=cv?cv.getContext('2d'):null;
+  const W=300,H=650; let t0=null;
+  function fr(ts){
+    if(chiusa) return;
+    if(!t0) t0=ts;
+    const t=(ts-t0)/1000;
+    if(ctx){ ctx.clearRect(0,0,W,H);
+      const su=Math.min(1,t/0.9), e=1-Math.pow(1-su,3);
+      const g=ctx.createLinearGradient(0,H,0,H-H*e*1.2);
+      g.addColorStop(0,'rgba('+F.c+','+(0.18*(1-su*0.55)).toFixed(3)+')');
+      g.addColorStop(1,'rgba('+F.c+',0)');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    }
+    if(t>=1.6){ fine(); return; }
+    requestAnimationFrame(fr);
+  }
+  sg.classList.add('rito');
+  requestAnimationFrame(fr);
 })();
 
 /* ══ LE PERLE: dettagli rari, mai a caso, max una al giorno ══ */
