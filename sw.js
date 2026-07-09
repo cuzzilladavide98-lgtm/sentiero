@@ -1,5 +1,10 @@
-const CACHE = 'sentiero-v60s55';
-const ASSETS = ['./audio/active_quest_v6_bandcore.wav', './audio/orchestra/atomic-tension.mp3', './audio/orchestra/sewer-tension.mp3', './audio/orchestra/daw-loop.mp3', './audio/orchestra/tribal-drive.mp3', './audio/orchestra/low-drums.mp3', './audio/orchestra/east-drums.mp3', './audio/orchestra/d-major.mp3', './audio/orchestra/f-major.mp3', './audio/orchestra/a-major.mp3', './audio/orchestra/b-major.mp3', './audio/orchestra/lead-guitar.mp3', './', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-180.png', 'splash-1290x2796.png', 'splash-1179x2556.png', 'splash-1170x2532.png', 'splash-1125x2436.png', 'splash-828x1792.png', 'splash-750x1334.png'];
+const CACHE = 'sentiero-v60s56';
+const ASSETS = ['./', './index.html', './manifest.json',
+  './icon-192.png', './icon-512.png', './icon-180.png',
+  'splash-1290x2796.png', 'splash-1179x2556.png', 'splash-1170x2532.png',
+  'splash-1125x2436.png', 'splash-828x1792.png', 'splash-750x1334.png',
+  './active_quest_v6_bandcore.wav', './tribal-drive.mp3', './atomic-tension.mp3',
+  './sewer-tension.mp3', './d-major.mp3', './f-major.mp3', './lead-guitar.mp3'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {

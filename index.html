@@ -10,14 +10,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Sentiero">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#070A09">
 <!-- splash screen iOS: nere con enso, così il primo fotogramma combacia con l'app (niente lampo bianco) -->
-<link rel="apple-touch-startup-image" href="splash-1290x2796.png" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3)">
-<link rel="apple-touch-startup-image" href="splash-1179x2556.png" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3)">
-<link rel="apple-touch-startup-image" href="splash-1170x2532.png" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3)">
-<link rel="apple-touch-startup-image" href="splash-1125x2436.png" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3)">
-<link rel="apple-touch-startup-image" href="splash-828x1792.png" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2)">
-<link rel="apple-touch-startup-image" href="splash-750x1334.png" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2)">
 <meta name="color-scheme" content="dark">
 <style>
 /* ═══════════════════════════════════════════════════════
@@ -418,7 +412,8 @@ nav button.on{color:var(--t1)}
   display:flex;align-items:center;justify-content:center;padding:40px}
 .ob-inner{max-width:320px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;background:none;border:none;box-shadow:none}
 .ob-enso{width:88px;height:88px;margin-bottom:30px}
-.ob-stroke{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;animation:introsvg 1.2s cubic-bezier(.4,0,.2,1) .1s forwards}
+.ob-stroke{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;animation:ob-traccia 1.2s cubic-bezier(.4,0,.2,1) .1s forwards}
+@keyframes ob-traccia{0%{stroke-dashoffset:503}100%{stroke-dashoffset:40}}
 .ob-title{font-family:var(--serif);font-weight:400;font-size:32px;letter-spacing:.02em;color:var(--t1);margin-bottom:16px;text-transform:lowercase}
 .ob-sub{font-family:var(--serif);font-size:17px;line-height:1.65;color:var(--t2);margin-bottom:40px}
 .ob-go{border:none;background:none;color:var(--accent);font-size:18px;font-weight:600;padding:12px 32px;transition:opacity .15s,transform .15s}
@@ -426,25 +421,9 @@ nav button.on{color:var(--t1)}
 .ob-note{font-size:13px;color:var(--t3);line-height:1.5;margin-top:24px;min-height:18px}
 
 /* ════════ apertura ════════ */
-#app-intro{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
-/* l'enso ha la stessa scala della splash nativa: ~32% del lato minore di diametro */
-#app-intro svg{width:32vmin;height:32vmin;max-width:236px;max-height:236px}
-#app-intro .intro-track{opacity:0}
-#app-intro .intro-enso{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;
-  animation:introsvg 1.1s cubic-bezier(.4,0,.2,1) .25s forwards}
-#app-intro .intro-glyph{opacity:0;animation:introglyph .5s ease-out .15s forwards}
-#app-intro .intro-name{font-family:var(--serif);font-style:italic;font-size:22px;letter-spacing:.2em;
-  color:var(--t1);opacity:0;text-transform:lowercase;margin-left:.2em;
-  animation:introname .5s ease-out 1.1s forwards}
-/* uscita: il nome svanisce, poi l'intero intro fa una lieve dissolvenza lasciando l'app già montata sotto */
-#app-intro.leaving .intro-name{animation:nameout .35s ease forwards}
-#app-intro.leaving{animation:introexit .5s cubic-bezier(.4,0,.2,1) .2s forwards}
 
-@keyframes introsvg{0%{stroke-dashoffset:503}100%{stroke-dashoffset:40}}
-@keyframes introglyph{from{opacity:0;transform:translate(100px,100px) scale(.9)}to{opacity:1;transform:translate(100px,100px) scale(1)}}
-@keyframes introname{from{opacity:0;transform:translateY(8px)}to{opacity:.9;transform:none}}
-@keyframes nameout{to{opacity:0;transform:translateY(-6px)}}
-@keyframes introexit{to{opacity:0}}
+
+
 @keyframes born{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
 @keyframes tabin{from{opacity:0}to{opacity:1}}
 @keyframes entryup{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
@@ -591,11 +570,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 .obs-hist-date{display:block;font-family:var(--sans);font-size:11px;color:var(--t3);margin-bottom:3px;letter-spacing:.02em}
 
 /* soglia musicale: il tocco che sblocca l'audio diventa un rito d'ingresso */
-#app-intro.gate{cursor:pointer;gap:18px;padding:0 40px}
-#app-intro .intro-summary{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.55;
-  color:var(--t2);text-align:center;max-width:30ch;opacity:0;animation:gatefade 1s ease-out .4s forwards}
-#app-intro .intro-tap{font-size:12px;letter-spacing:.18em;text-transform:lowercase;color:var(--t3);
-  margin-top:6px;opacity:0;animation:gatepulse 2.4s ease-in-out 1s infinite,gatefade 1s ease-out .8s forwards}
+
 @keyframes gatefade{to{opacity:1}}
 @keyframes gatepulse{0%,100%{opacity:.3}50%{opacity:.75}}
 
@@ -761,10 +736,27 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
   transition:opacity .45s ease}
 #soglia.via{opacity:0;pointer-events:none}
 #soglia canvas{position:absolute;inset:0;width:100%;height:100%}
-#soglia-saluto{position:relative;font-family:ui-serif,Georgia,serif;font-style:italic;font-size:17px;
-  letter-spacing:.02em;opacity:0}
+#soglia-saluto{position:relative;font-family:ui-serif,Georgia,serif;font-style:italic;font-size:19px;
+  letter-spacing:.03em;opacity:0;max-width:82%;text-align:center;line-height:1.5}
+/* la pagina emerge ATTRAVERSO il velo che si alza, come nel mockup */
+body.alba #date-wrap{animation:su-alba .55s cubic-bezier(.22,1,.36,1) var(--alba-d,1.35s) both}
+body.alba #giorno-bar{animation:su-alba .55s cubic-bezier(.22,1,.36,1) calc(var(--alba-d,1.35s) + .14s) both}
+body.alba main .tabpane:not(.hidden){animation:su-alba .55s cubic-bezier(.22,1,.36,1) calc(var(--alba-d,1.35s) + .26s) both}
+@keyframes su-alba{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #soglia.rito #soglia-saluto{animation:su-saluto .65s cubic-bezier(.22,1,.36,1) .4s both}
 @keyframes su-saluto{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* la pagina emerge dopo il rito, come nel mockup: data, barra, sezioni in cascata */
+body.app-nasce #date-wrap>*{animation:nasce .5s cubic-bezier(.22,1,.36,1) both}
+body.app-nasce #date-wrap>:nth-child(2){animation-delay:.08s}
+body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s both}
+body.app-nasce .tabpane:not(.hidden)>*{animation:nasce .45s cubic-bezier(.22,1,.36,1) both}
+body.app-nasce .tabpane:not(.hidden)>:nth-child(1){animation-delay:.22s}
+body.app-nasce .tabpane:not(.hidden)>:nth-child(2){animation-delay:.3s}
+body.app-nasce .tabpane:not(.hidden)>:nth-child(3){animation-delay:.38s}
+body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre).app-nasce #date-wrap>*,body:not(.anima-sempre).app-nasce #giorno-bar,body:not(.anima-sempre).app-nasce .tabpane:not(.hidden)>*{animation:none}
+}
 </style>
 </head>
 <body>
@@ -774,21 +766,6 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 <div id="grain"></div>
 <div id="edge-top"></div>
 <div id="edge-bot"></div>
-<div id="app-intro">
-  <svg viewBox="0 0 200 200" aria-hidden="true">
-    <circle class="intro-track" fill="none" stroke="rgba(245,242,234,.07)" stroke-width="2.5" cx="100" cy="100" r="80"/>
-    <circle class="intro-enso" cx="100" cy="100" r="80"
-      transform="rotate(-100 100 100)"
-      stroke-dasharray="503" stroke-dashoffset="503"/>
-    <g class="intro-glyph" fill="#F5F2EA" transform="translate(100 100)">
-      <rect x="-9" y="-32" width="18" height="38" rx="9"/>
-      <path d="M -20 -5 a 20 20 0 0 0 40 0 h 6 a 26 26 0 0 1 -23 25.5 V 32 h 11 v 7 H -15 v -7 h 11 V 20.5 A 26 26 0 0 1 -26 -5 Z"/>
-    </g>
-  </svg>
-  <div class="intro-name">sentiero</div>
-  <div class="intro-summary hidden" id="intro-summary"></div>
-  <div class="intro-tap hidden" id="intro-tap">tocca per entrare</div>
-</div>
 <div id="onboard" class="hidden">
   <div class="ob-inner">
     <svg class="ob-enso" viewBox="0 0 200 200" aria-hidden="true">
@@ -1418,7 +1395,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.55 · 2026-07-09';
+const APP_VERSION='v60S.56 · 2026-07-09';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2000,7 +1977,7 @@ const MUSIC=(()=>{
 /* ── ATHEME: Active Quest Theme provvisorio (campione v6, loop seamless via Web Audio).
       Parte solo con quest attive; fade out quando non ce ne sono; precaricato; volume da codice. ── */
 const ATHEME=(()=>{
-  const URL='audio/active_quest_v6_bandcore.wav';
+  const URL='active_quest_v6_bandcore.wav';
   let VOL=0.40;                       /* volume gestibile da codice (0.35–0.45) */
   let ctx=null,buf=null,src=null,gain=null;
   let loaded=false,loading=false,playing=false,unlocked=false,wantActive=false,failed=false;
@@ -2062,7 +2039,7 @@ const ATHEME=(()=>{
    Parte nel gesto utente con un vero file audio locale, cosi iOS/Safari non
    resta muto mentre l'orchestra Web Audio carica e decodifica i campioni. */
 const BOOTBED=(()=>{
-  const URL='audio/orchestra/tribal-drive.mp3';
+  const URL='tribal-drive.mp3';
   let el=null,fade=null,failed=false,want=false;
   function ensure(){
     if(el) return el;
@@ -2115,7 +2092,7 @@ const BOOTBED=(()=>{
    Le scene cambiano con remainingWork con crossfade veri, pulsazione a tempo e un
    accento breve al completamento. Nessun oscillatore, nessun MIDI finto: solo audio reale. */
 const ORCH=(()=>{
-  const BASE='audio/orchestra/';
+  const BASE='';
   const CORE_URL='audio/active_quest_v6_bandcore.wav';
   // base gain di ogni strato (timbro), poi modulato dalle scene
   const L=[
@@ -3724,7 +3701,10 @@ function applyTheme(){ try{
   let prima=true;
   try{ prima=(localStorage.getItem('sentiero-soglia')!==tk); localStorage.setItem('sentiero-soglia',tk); }catch(_){}
   let chiusa=false;
-  const fine=()=>{ if(chiusa) return; chiusa=true; sg.classList.add('via'); setTimeout(()=>{ try{ sg.remove(); }catch(_){} },520); };
+  const fine=()=>{ if(chiusa) return; chiusa=true;
+    if(sg.classList.contains('rito')){ try{ document.body.classList.add('app-nasce');
+      setTimeout(()=>{ try{ document.body.classList.remove('app-nasce'); }catch(_){} },1700); }catch(_){} }
+    sg.classList.add('via'); setTimeout(()=>{ try{ sg.remove(); }catch(_){} },520); };
   sg.addEventListener('click',fine);   /* tap salta sempre */
   if(!prima || (rmq.matches&&!animaSempre)){ setTimeout(fine,180); return; }   /* micro-entrata */
   const hnow=new Date().getHours();
@@ -3732,8 +3712,14 @@ function applyTheme(){ try{
           (hnow>=9&&hnow<17)?{c:'214,209,196',s:'un passo alla volta'}:
           (hnow>=17&&hnow<22)?{c:'217,116,75',s:'la sera raccoglie'}:
                               {c:'127,184,164',s:'la notte custodisce'};
+  /* saluto intelligente: se la musica è attiva e l'osservatrice ha un pensiero, parla lei */
+  let testo=F.s, durata=1.9;
+  try{ const notes=S.observerNotes||[];
+    if(S.settings&&S.settings.music&&notes.length){ testo=notes[notes.length-1].note; durata=2.6; } }catch(_){}
   const sal=document.getElementById('soglia-saluto');
-  if(sal){ sal.textContent=F.s; sal.style.color='rgba('+F.c+',.92)'; }
+  if(sal){ sal.textContent=testo; sal.style.color='rgba('+F.c+',.92)'; }
+  try{ document.body.style.setProperty('--alba-d',(durata-0.55).toFixed(2)+'s');
+    document.body.classList.add('alba'); }catch(_){}
   const cv=document.getElementById('soglia-cv'); const ctx=cv?cv.getContext('2d'):null;
   const W=300,H=650; let t0=null;
   function fr(ts){
@@ -3742,12 +3728,12 @@ function applyTheme(){ try{
     const t=(ts-t0)/1000;
     if(ctx){ ctx.clearRect(0,0,W,H);
       const su=Math.min(1,t/0.9), e=1-Math.pow(1-su,3);
-      const g=ctx.createLinearGradient(0,H,0,H-H*e*1.2);
-      g.addColorStop(0,'rgba('+F.c+','+(0.18*(1-su*0.55)).toFixed(3)+')');
+      const g=ctx.createLinearGradient(0,H,0,H-H*e*1.35);
+      g.addColorStop(0,'rgba('+F.c+','+(0.30*(1-su*0.45)).toFixed(3)+')');
       g.addColorStop(1,'rgba('+F.c+',0)');
       ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
     }
-    if(t>=1.6){ fine(); return; }
+    if(t>=durata){ fine(); return; }
     requestAnimationFrame(fr);
   }
   sg.classList.add('rito');
@@ -4640,31 +4626,9 @@ try{
     requestAnimationFrame(()=>{ hdr.classList.toggle('scrolled', mainEl.scrollTop>16); ticking=false; });
   },{passive:true});
 }catch(_){}
-/* ── apertura: una sola schermata che si dissolve. Se la musica è attiva, mostra il
-     pensiero dell'osservatrice; l'audio si sblocca al primo tocco (rete di sicurezza). ── */
-try{
-  const intro=document.querySelector('#app-intro');
-  const appEl=document.querySelector('#app');
-  appEl.style.opacity='1';
-  const fast=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let introGone=false;
-  function dismissIntro(){
-    if(introGone) return; introGone=true;
-    intro.classList.add('leaving');
-    setTimeout(()=>{ intro.style.display='none'; maybeOnboard(); }, fast?60:750);
-  }
-  /* un tocco sull'intro sblocca subito l'audio e fa entrare (oltre alla dissolvenza automatica) */
-  intro.addEventListener('click',()=>{ try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){} dismissIntro(); }, {once:true});
-  if(S.settings.music){
-    const sumEl=document.querySelector('#intro-summary');
-    const notes=S.observerNotes||[];
-    if(sumEl&&notes.length){ sumEl.textContent=notes[notes.length-1].note; sumEl.classList.remove('hidden'); }
-    /* nessun blocco: si dissolve da sola, un po' più a lungo per leggere il pensiero */
-    setTimeout(dismissIntro, fast?260:2600);
-  } else {
-    setTimeout(dismissIntro, fast?200:1500);
-  }
-}catch(_){ try{document.querySelector('#app-intro').style.display='none';}catch(e){} maybeOnboard(); }
+/* ── apertura: la SOGLIA è l'unica porta; qui restano i lavori di servizio ── */
+try{ const appEl=document.querySelector('#app'); if(appEl) appEl.style.opacity='1'; }catch(_){}
+try{ document.addEventListener('pointerdown',()=>{ try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){} },{once:true}); }catch(_){}
 
 /* ======================================================================
    ONBOARDING + PERMESSI (una sola volta, nel contesto giusto)
