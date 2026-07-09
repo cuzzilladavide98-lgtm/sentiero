@@ -779,15 +779,32 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .pietra.spenta .p-track{stroke:rgba(245,242,234,.05)}
 .pietra .p-firma{fill:#B9402E}
 /* ══════ IL PATTO DEL MATTINO — il dispositivo chiede, tu punti ══════ */
-#patto{margin:4px 0 14px;padding:14px 14px 10px;border-radius:16px;
-  background:rgba(245,242,234,.03);border:.5px solid rgba(232,168,76,.14);
-  box-shadow:inset 0 1px 0 rgba(245,242,234,.05),0 10px 26px rgba(0,0,0,.3)}
+#patto{margin:4px 0 14px;padding:15px 14px 10px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(232,168,76,.07),rgba(245,242,234,.02));
+  border:.5px solid rgba(232,168,76,.34);
+  box-shadow:inset 0 1px 0 rgba(245,242,234,.06),0 10px 26px rgba(0,0,0,.3);
+  animation:patto-entra .5s cubic-bezier(.22,1,.36,1) .55s both,patto-chiama 2.2s ease-in-out 1.2s 3}
+@keyframes patto-entra{from{opacity:0;transform:translateY(11px) scale(.975)}to{opacity:1;transform:none}}
+@keyframes patto-chiama{0%,100%{box-shadow:inset 0 1px 0 rgba(245,242,234,.06),0 10px 26px rgba(0,0,0,.3),0 0 0 rgba(232,168,76,0)}
+ 50%{box-shadow:inset 0 1px 0 rgba(245,242,234,.06),0 10px 26px rgba(0,0,0,.3),0 0 28px rgba(232,168,76,.26)}}
+.patto-head::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;
+  background:radial-gradient(circle at 35% 30%,#F2C56B,#A9691F);animation:p-pilota 2.6s ease-in-out infinite}
 .patto-head{font-family:var(--serif,ui-serif);font-size:15px;color:var(--t1)}
 .patto-sub{font-size:12px;color:#8A9490;font-style:italic;margin:2px 0 10px}
 .patto-r{display:block;width:100%;text-align:left;border:none;background:none;color:var(--t2);
   font-family:inherit;font-size:14px;padding:10px 6px;border-top:.5px solid rgba(245,242,234,.06);
   -webkit-tap-highlight-color:transparent}
 .patto-r:active{color:var(--accent)}
+.patto-nuovo{display:block;width:100%;text-align:left;border:none;background:none;color:var(--accent);
+  font-family:inherit;font-size:13.5px;padding:11px 6px;border-top:.5px solid rgba(245,242,234,.06);
+  -webkit-tap-highlight-color:transparent}
+.patto-nuovo-box{display:flex;gap:8px;padding:8px 2px 4px;border-top:.5px solid rgba(245,242,234,.06)}
+.patto-nuovo-box.hidden{display:none}
+.patto-inp{flex:1;background:rgba(245,242,234,.05);border:.5px solid rgba(232,168,76,.25);border-radius:10px;
+  color:var(--t1);font-family:inherit;font-size:14px;padding:9px 11px;outline:none}
+.patto-inp:focus{border-color:rgba(232,168,76,.55)}
+.patto-inp-ok{border:none;border-radius:10px;background:linear-gradient(160deg,#F2C56B,#B0731F);
+  color:#241A08;font-family:inherit;font-size:13px;font-weight:600;padding:0 16px}
 .patto-no{border:none;background:none;color:#565E5A;font-family:inherit;font-size:11.5px;
   padding:10px 6px 4px;font-style:italic}
 /* la spina d'oro: il passo del giorno si riconosce sul fianco */
@@ -797,6 +814,10 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 /* il timbro del patto e D'ORO, unico del giorno */
 .item.passo.done .chk::before{background:linear-gradient(160deg,#F2C56B,#B0731F)}
 .item.passo.done .chk-mark path{stroke:#241A08}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) #patto{animation:none}
+  body:not(.anima-sempre) .patto-head::before{animation:none}
+}
 </style>
 </head>
 <body>
@@ -1438,7 +1459,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.60 · 2026-07-09';
+const APP_VERSION='v60S.62 · 2026-07-09';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3792,11 +3813,15 @@ function renderPatto(){
   const scelto=(S.patto&&S.patto.tk===tk);
   let no=false; try{ no=(localStorage.getItem('sentiero-patto-no')===tk); }catch(_){}
   let sched=[]; try{ sched=scheduledFor(S,dowOf(),tk)||[]; }catch(_){}
-  if(scelto||no||!sched.length){ box.innerHTML=''; box.classList.add('hidden'); return; }
+  if(scelto||no||!sched.length){ box.innerHTML=''; box.classList.add('hidden'); box.dataset.tk=''; return; }
+  if(box.dataset.tk===tk&&box.innerHTML){ box.classList.remove('hidden'); return; }   /* gia in scena: l'ingresso non si rigioca */
+  box.dataset.tk=tk;
   box.classList.remove('hidden');
   box.innerHTML='<div class="patto-head">Il patto del mattino</div>'+
     '<div class="patto-sub">quale sar\u00e0 il passo che conta, oggi?</div>'+
     sched.slice(0,8).map(t=>'<button class="patto-r" data-id="'+t.id+'">'+escapeHtml(t.titolo||'')+'</button>').join('')+
+    '<button class="patto-nuovo">+ un passo nuovo</button>'+
+    '<div class="patto-nuovo-box hidden"><input class="patto-inp" type="text" maxlength="80" placeholder="l\'idea di stamattina\u2026" enterkeyhint="done"><button class="patto-inp-ok">Patto</button></div>'+
     '<button class="patto-no">oggi nessun patto</button>';
   box.querySelectorAll('.patto-r').forEach(bt=>{ bt.onclick=()=>{
     S.patto={tk:tk,id:bt.dataset.id}; save();
@@ -3805,6 +3830,24 @@ function renderPatto(){
   };});
   const bn=box.querySelector('.patto-no');
   if(bn) bn.onclick=()=>{ try{ localStorage.setItem('sentiero-patto-no',tk); }catch(_){} renderPatto(); };
+  /* l'idea del mattino diventa la puntata: nasce quest di oggi, il patto si stringe su di lei */
+  const bnu=box.querySelector('.patto-nuovo'), nbox=box.querySelector('.patto-nuovo-box');
+  if(bnu&&nbox) bnu.onclick=()=>{ bnu.classList.add('hidden'); nbox.classList.remove('hidden');
+    const inp=nbox.querySelector('.patto-inp'); if(inp) setTimeout(()=>inp.focus(),60); };
+  const bok=box.querySelector('.patto-inp-ok');
+  const nasciPatto=()=>{
+    const inp=box.querySelector('.patto-inp'); if(!inp) return;
+    const titolo=String(inp.value||'').trim().slice(0,80); if(!titolo) return;
+    const q={id:coreUid(),titolo:titolo,note:'',quando:tk,ora:'',prio:3,fatto:false};
+    if(!Array.isArray(S.quests)) S.quests=[];
+    S.quests.push(q);
+    S.patto={tk:tk,id:q.id}; save();
+    try{ toast('Nata dal patto: \u00ab'+titolo+'\u00bb'); }catch(_){}
+    try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
+  };
+  if(bok) bok.onclick=nasciPatto;
+  const binp=box.querySelector('.patto-inp');
+  if(binp) binp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); nasciPatto(); } });
 }
 /* ══════ IL SENTIERO VISIBILE ══════
    Ogni pietra e un giorno: l'arco = quanto del cerchio fu dipinto, la firma = cerchio pieno.
@@ -4096,7 +4139,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   const p=q.prio||3;
   const div=document.createElement('div');
   div.dataset.qid=q.id;
-  div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'');
+  div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'')+((S.patto&&S.patto.tk===todayKey()&&S.patto.id===q.id)?' passo':'');
   if(bornIds.includes(q.id)) div.style.animationDelay=(bornIds.indexOf(q.id)*0.13)+'s';
   const calBtn=(q.quando&&!q.fatto)?'<button class="cal" aria-label="Aggiungi al calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>':'';
   div.innerHTML='<span class="prio prio-'+p+'"></span>'+

@@ -1,4 +1,4 @@
-const CACHE = 'sentiero-v60s60';
+const CACHE = 'sentiero-v60s62';
 const ASSETS = ['./', './index.html', './manifest.json',
   './icon-192.png', './icon-512.png', './icon-180.png',
   'splash-1290x2796.png', 'splash-1179x2556.png', 'splash-1170x2532.png',
