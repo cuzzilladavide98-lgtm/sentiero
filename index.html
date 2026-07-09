@@ -736,6 +736,25 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
   body:not(.anima-sempre) .entry.via-entry{opacity:0}
   body:not(.anima-sempre) .entry.via-entry.chiudi{transition:none}
 }
+/* ══════ FRAME-LAVORO 8: LE CERIMONIE RARE ══════ */
+#rivelazione{position:relative}
+.riv-fx{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.riv-fx .rs{position:absolute;bottom:18%;width:4px;height:4px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#FFF4D7,#E8A84C);opacity:0;
+  animation:riv-scintilla 1.35s ease-out both}
+@keyframes riv-scintilla{0%{opacity:0;transform:translate(0,6px) scale(.5)}
+ 18%{opacity:1}100%{opacity:0;transform:translate(var(--rx,0),-56px) scale(1)}}
+#day-line .pw{display:inline-block;white-space:pre}
+#day-line .pc{display:inline-block;opacity:0;transform:translateY(4px);
+  animation:perla-c .3s cubic-bezier(.22,1,.36,1) both}
+@keyframes perla-c{to{opacity:1;transform:translateY(0)}}
+#day-line.perla-via{animation:perla-esala .5s ease both}
+@keyframes perla-esala{to{opacity:0;transform:translateY(-5px)}}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) .riv-fx .rs,body:not(.anima-sempre) #day-line .pc,body:not(.anima-sempre) #day-line.perla-via{animation:none}
+  body:not(.anima-sempre) #day-line .pc{opacity:1;transform:none}
+  body:not(.anima-sempre) #day-line.perla-via{opacity:0;transition:opacity .3s}
+}
 </style>
 </head>
 <body>
@@ -1388,7 +1407,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.53 · 2026-07-08';
+const APP_VERSION='v60S.54 · 2026-07-08';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3097,6 +3116,19 @@ function maybeRivelazione(){
   box.innerHTML='<div class="riv-head">Rivelazione</div><div class="riv-txt">'+escapeHtml(rivTesto(c))+
     '</div><div class="btn-row" style="margin-top:10px;justify-content:flex-end"><button class="act primary" id="riv-ok">Ho visto</button></div>';
   box.classList.remove('hidden');
+  /* CERIMONIA: sette scintille d'oro salgono attorno al drop, poi si dissolvono */
+  try{
+    if(!box.querySelector('.riv-fx')){
+      const fx=document.createElement('div'); fx.className='riv-fx'; fx.setAttribute('aria-hidden','true');
+      for(let i=0;i<7;i++){ const s=document.createElement('span'); s.className='rs';
+        s.style.left=(8+Math.random()*84)+'%';
+        s.style.animationDelay=(120+i*90+Math.random()*60)+'ms';
+        s.style.setProperty('--rx',((Math.random()-.5)*26)+'px');
+        fx.appendChild(s); }
+      box.appendChild(fx);
+      setTimeout(()=>{ try{ fx.remove(); }catch(_){} },2200);
+    }
+  }catch(_){}
   if(!S.mastery.riv) S.mastery.riv=[];
   S.mastery.riv.push({iso:new Date().toISOString().slice(0,16),asse:c.asse});
   if(S.mastery.riv.length>24) S.mastery.riv=S.mastery.riv.slice(-24);
@@ -3692,8 +3724,18 @@ function perle(){
   if(!L.length) return;
   const dl=document.querySelector('#day-line'); if(!dl) return;
   try{ localStorage.setItem('sentiero-perla',tk); }catch(_){}
-  dl.textContent=L[0]; dl.classList.add('perla');
-  setTimeout(()=>{ dl.classList.remove('perla'); try{ syncDayLine(); }catch(_){} },9000);
+  /* la perla si SCRIVE: un carattere ogni 14ms, come un pensiero che affiora */
+  dl.innerHTML=''; let pi=0;
+  String(L[0]).split(' ').forEach((wd,wi,arr)=>{
+    const w=document.createElement('span'); w.className='pw';
+    for(const ch of wd){ const c=document.createElement('span'); c.className='pc'; c.textContent=ch;
+      c.style.animationDelay=(90+pi*14)+'ms'; pi++; w.appendChild(c); }
+    dl.appendChild(w);
+    if(wi<arr.length-1){ dl.appendChild(document.createTextNode(' ')); pi++; }
+  });
+  dl.classList.add('perla');
+  setTimeout(()=>{ dl.classList.add('perla-via'); },8500);
+  setTimeout(()=>{ dl.classList.remove('perla'); dl.classList.remove('perla-via'); try{ syncDayLine(); }catch(_){} },9000);
 }
 function syncDayLine(){   /* striscia di stato in pagina Oggi: eco del cerchio + doppio mini-anello */
   const dl=document.querySelector('#day-line'); if(!dl) return;
