@@ -324,7 +324,14 @@ section{margin-top:38px}
 .entry{padding:24px 0;border-bottom:.5px solid rgba(245,242,234,.07);position:relative}
 .e-del{position:absolute;top:14px;right:0;border:none;background:none;color:var(--t3);font-size:19px;line-height:1;padding:12px 6px 12px 18px;opacity:.55;font-family:inherit;min-width:44px;text-align:right}
 .e-del:active{opacity:.35}
-.e-del.armed{color:var(--accent);opacity:1;font-size:12px;letter-spacing:.04em}
+/* FRAME-LAVORO 7: LA × ARMATA — l'avviso entra con un impulso di brace (14 frame) */
+.e-del.armed{color:var(--ember);opacity:1;font-size:12px;letter-spacing:.04em;
+  animation:arma .24s cubic-bezier(.3,1.4,.4,1) both}
+@keyframes arma{0%{opacity:0;transform:translateX(6px) scale(.82)}60%{opacity:1;transform:translateX(0) scale(1.07)}100%{transform:scale(1)}}
+/* l'addio della voce: prima esala di lato, poi cede il suo spazio */
+.entry.via-entry{animation:entry-esala .24s ease both;pointer-events:none}
+@keyframes entry-esala{to{opacity:0;transform:translateX(16px)}}
+.entry.via-entry.chiudi{transition:height .22s cubic-bezier(.4,0,.6,1),padding .22s cubic-bezier(.4,0,.6,1);overflow:hidden}
 .entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-right:64px}
 .ed-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;color:var(--t1);letter-spacing:-.02em}
 .ed-mo{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);text-transform:lowercase}
@@ -723,6 +730,11 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #sec-programma,body:not(.anima-sempre) #sec-programma .chev{transition:none}
   body:not(.anima-sempre) #sec-programma:not(.collapsed) .group .item{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) .e-del.armed,body:not(.anima-sempre) .entry.via-entry{animation:none}
+  body:not(.anima-sempre) .entry.via-entry{opacity:0}
+  body:not(.anima-sempre) .entry.via-entry.chiudi{transition:none}
 }
 </style>
 </head>
@@ -1376,7 +1388,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.52 · 2026-07-08';
+const APP_VERSION='v60S.53 · 2026-07-08';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3986,8 +3998,19 @@ function renderDiary(){
         return;
       }
       clearTimeout(armTimer);
-      S.diary=S.diary.filter(x=>x!==e);
-      save(); renderDiary(); toast('Voce eliminata');
+      /* l'addio: esala di lato (14 frame), poi lo spazio si chiude (13), poi lo stato */
+      try{
+        const riga=div;
+        riga.classList.add('via-entry');
+        setTimeout(()=>{ try{
+          riga.style.height=riga.offsetHeight+'px'; riga.classList.add('chiudi');
+          void riga.offsetWidth;
+          riga.style.height='0px'; riga.style.paddingTop='0px'; riga.style.paddingBottom='0px';
+        }catch(_){} },230);
+        setTimeout(()=>{ S.diary=S.diary.filter(x=>x!==e); save(); renderDiary(); toast('Voce eliminata'); },470);
+      }catch(_){
+        S.diary=S.diary.filter(x=>x!==e); save(); renderDiary(); toast('Voce eliminata');
+      }
     };
     div.appendChild(del);
     el.appendChild(div);
