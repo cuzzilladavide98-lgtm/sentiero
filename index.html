@@ -769,6 +769,9 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .pietra{flex:none;width:22px;height:22px;position:relative;-webkit-tap-highlight-color:transparent}
 .pietra.lun::after{content:'';position:absolute;left:50%;bottom:-5px;width:3px;height:3px;margin-left:-1.5px;
   border-radius:50%;background:rgba(245,242,234,.18)}
+.p-oro{fill:#E8A84C}
+.p-oro.aud{fill:#F2C56B}
+.p-oro-az{stroke:rgba(217,116,75,.75);stroke-width:1.1}
 .p-pilota{fill:#E8A84C;animation:p-pilota 2.6s ease-in-out infinite}
 @keyframes p-pilota{50%{opacity:.4}}
 .pietra svg{width:100%;height:100%;display:block}
@@ -805,6 +808,13 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .patto-inp:focus{border-color:rgba(232,168,76,.55)}
 .patto-inp-ok{border:none;border-radius:10px;background:linear-gradient(160deg,#F2C56B,#B0731F);
   color:#241A08;font-family:inherit;font-size:13px;font-weight:600;padding:0 16px}
+.azz-head{font-size:11px;color:#D9744B;letter-spacing:.06em;font-style:italic;padding:12px 6px 2px;
+  border-top:.5px solid rgba(245,242,234,.06)}
+.azz-r{color:#C8A38F}
+.azz-r:active{color:#D9744B}
+.azz-nuovo{color:#D9744B !important}
+/* la spina dell'audace: brace che sale nell'oro, piu alta */
+.item.passo.audace::before{height:74%;background:linear-gradient(180deg,#F2C56B,#D9744B)}
 .patto-no{border:none;background:none;color:#565E5A;font-family:inherit;font-size:11.5px;
   padding:10px 6px 4px;font-style:italic}
 /* la spina d'oro: il passo del giorno si riconosce sul fianco */
@@ -1208,7 +1218,10 @@ function sanitizeState(raw,def){
     lastSealed:(typeof raw.lastSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastSealed))?raw.lastSealed:'',
     lastFullSealed:(typeof raw.lastFullSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastFullSealed))?raw.lastFullSealed:'',
     essentials:Array.isArray(raw.essentials)?raw.essentials.filter(x=>typeof x==='string').slice(0,40):[],
-    patto:(raw.patto&&typeof raw.patto.tk==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.patto.tk)&&typeof raw.patto.id==='string')?{tk:raw.patto.tk,id:raw.patto.id}:null,
+    patto:(raw.patto&&typeof raw.patto.tk==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.patto.tk)&&typeof raw.patto.id==='string')?{tk:raw.patto.tk,id:raw.patto.id,audace:raw.patto.audace===true}:null,
+    patti:(function(p){ const out={}; if(!p||typeof p!=='object') return out;
+      Object.keys(p).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort().slice(-90).forEach(k=>{
+        const v=p[k]|0; if(v===1||v===2) out[k]=v; }); return out; })(raw.patti),
     lastDayInit:(typeof raw.lastDayInit==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastDayInit))?raw.lastDayInit:'',
     settings:{
       sound:!(raw.settings&&raw.settings.sound===false),
@@ -1422,7 +1435,32 @@ function sanitizeMastery(raw){
     .slice(-180).map(e=>({iso:clampStr(e.iso,20),livello:Math.max(1,Math.min(3,e.livello))}));
   if(Array.isArray(raw.riv)) m.riv=raw.riv.filter(e=>e&&typeof e.iso==='string'&&Number.isInteger(e.asse))
     .slice(-24).map(e=>({iso:clampStr(e.iso,20),asse:Math.max(1,Math.min(3,e.asse))})); else m.riv=[];
+  m.detti=Array.isArray(raw.detti)?raw.detti.filter(x=>typeof x==='string').map(x=>clampStr(x,48)).slice(-40):[];
   return m;
+}
+/* ══ LA PRESENZA — puro: quale soglia dell'accumulo merita una voce, oggi ══ */
+function presenzaCandidate(m){
+  if(!m) return null;
+  const detti=Array.isArray(m.detti)?m.detti:[];
+  const ha=k=>detti.includes(k);
+  /* prima le soglie specifiche delle quest (a meta strada verso un lascito) */
+  const ids=Object.keys(m.quest||{});
+  for(const id of ids){ const q=m.quest[id]||{};
+    if((q.attriti|0)>=2&&!ha('f2:'+id)) return {key:'f2:'+id,tipo:'f2',id:id};
+  }
+  for(const id of ids){ const q=m.quest[id]||{};
+    if((q.assenze|0)>=6&&!ha('a6:'+id)) return {key:'a6:'+id,tipo:'a6',id:id};
+  }
+  if((m.sguardo||[]).length>=10&&!ha('sg10')) return {key:'sg10',tipo:'sg10'};
+  if(Object.keys(m.giorni||{}).length>=7&&!ha('g7')) return {key:'g7',tipo:'g7'};
+  return null;
+}
+function presenzaTesto(tipo,titolo){
+  if(tipo==='f2') return '\u00ab'+titolo+'\u00bb torna con fatica, nelle tue parole. lo sto annotando.';
+  if(tipo==='a6') return 'tengo d\u2019occhio \u00ab'+titolo+'\u00bb da un po\u2019. anche il silenzio dice qualcosa.';
+  if(tipo==='sg10') return 'dieci sguardi su te stesso. comincio a vedere come guardi.';
+  if(tipo==='g7') return 'sette giorni di passi. sto imparando il tuo.';
+  return '';
 }
 function aiOutputToState(parsed){
   if(!parsed||typeof parsed!=='object') return null;
@@ -1459,7 +1497,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.62 · 2026-07-09';
+const APP_VERSION='v60S.66 · 2026-07-09';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3663,7 +3701,7 @@ function applyTheme(){ try{
     g.addColorStop(1,'rgba('+r1+','+g1+','+b1+',0)'); c.fillStyle=g; c.fillRect(0,0,32,32); return s; }
   const spOro=sprite(242,197,107), spBrace=sprite(230,120,70), spCuore=sprite(255,214,140,'rgba(255,252,240,1)');
   const P=[]; const RAD=Math.PI/180, A0=-100*RAD, ARCO=305*RAD, R=79, C=150;
-  let p=0, wasSealed=false, burst=0, last=0;
+  let p=0, wasSealed=false, burst=0, last=0, CAL=0, RIE=false;
   const rmq=matchMedia('(prefers-reduced-motion: reduce)');
   function animOk(){ try{ return (S.settings&&S.settings.anim==='sempre')||!rmq.matches; }catch(_){ return true; } }
   function banda(ts,rec,statico){
@@ -3673,10 +3711,10 @@ function applyTheme(){ try{
     for(let i=0;i<=n;i++){
       const t=i/n, a=A0+ARCO*p*t;
       const f=statico?0.85:(0.72+0.28*Math.sin(ts*0.006+i*1.7));
-      const d=9.5*f*(0.85+0.3*Math.sin(i*0.7));
-      ctx.globalAlpha=0.13*f;
+      const d=9.5*(0.95+0.18*CAL)*f*(0.85+0.3*Math.sin(i*0.7));
+      ctx.globalAlpha=(0.11+0.05*CAL)*f;
       ctx.drawImage(sp,C+R*Math.cos(a)-d/2,C+R*Math.sin(a)-d/2,d,d);
-      if(i%2===0){ const d2=d*0.55; ctx.globalAlpha=0.11*f;
+      if(i%2===0||CAL>0.55){ const d2=d*0.55; ctx.globalAlpha=0.11*f;
         ctx.drawImage(spCuore,C+R*Math.cos(a)-d2/2,C+R*Math.sin(a)-d2/2,d2,d2); }
     }
     ctx.globalAlpha=1;
@@ -3684,7 +3722,7 @@ function applyTheme(){ try{
   function spawnArco(rosso){ const t=Math.random()*Math.max(0.02,p); const a=A0+ARCO*t;
     P.push({x:C+R*Math.cos(a),y:C+R*Math.sin(a),
       vx:Math.cos(a)*0.13+((Math.random()-.5)*0.24),vy:Math.sin(a)*0.13-0.24-Math.random()*0.2,
-      vita:1,dec:0.007+Math.random()*0.008,s:5+Math.random()*8,rosso:!!rosso,wav:Math.random()*6.28}); }
+      vita:1,dec:0.007+Math.random()*0.008,s:5+Math.random()*8,rosso:!!rosso,bianco:(!rosso&&CAL>0.7&&Math.random()<0.15),wav:Math.random()*6.28}); }
   function spawnSpirale(){ const a=Math.random()*Math.PI*2, rr=126+Math.random()*18;
     P.push({a,rr,orb:0.03+Math.random()*0.02,x:C+rr*Math.cos(a),y:C+rr*Math.sin(a),
       vita:1,dec:0.011,s:4+Math.random()*6,rosso:true,spirale:true}); }
@@ -3700,7 +3738,8 @@ function applyTheme(){ try{
     const rec=mic&&mic.classList.contains('rec');
     const sealed=mic&&mic.classList.contains('sealed');
     const pieno=mic&&mic.classList.contains('pieno');
-    if(sealed&&!wasSealed) burst=pieno?54:34;
+    CAL=Math.max(0,Math.min(1,window._ensoCalore||0)); RIE=!!window._ensoRientro;
+    if(sealed&&!wasSealed) burst=(pieno?54:34)+(mic&&mic.classList.contains('oro')?22:0);   /* l'azzardo vinto: il fuoco sa */
     wasSealed=sealed;
     const T=(sealed?1:(window._ensoTarget||0));
     p+=(T-p)*(1-Math.exp(-0.055*dt));
@@ -3716,11 +3755,11 @@ function applyTheme(){ try{
     /* fiamma pilota: a giorno vuoto, una sola brace che aspetta alla testa */
     if(p<=0.002){ const f=0.6+0.4*Math.sin(ts*0.005);
       ctx.globalAlpha=0.7*f;
-      const d=10+3*f;
-      ctx.drawImage(spOro,C+R*Math.cos(A0)-d/2,C+R*Math.sin(A0)-d/2,d,d);
+      const d=(RIE?14:10)+3*f;   /* al rientro la brace e piu grande: non si era spenta */
+      ctx.drawImage(RIE?spBrace:spOro,C+R*Math.cos(A0)-d/2,C+R*Math.sin(A0)-d/2,d,d);
       ctx.globalAlpha=1; }
-    const rate=rec?1.5:(sealed?0.55:(p>0?(0.25+p*0.9):0.05));
-    if(Math.random()<rate*dt*0.6) (rec?spawnSpirale:spawnArco)(rec);
+    const rate=(rec?1.5:(sealed?0.55:(p>0?(0.25+p*0.9):0.05)))*(0.8+0.6*CAL);
+    if(Math.random()<rate*dt*0.6) (rec?spawnSpirale:spawnArco)(rec||(RIE&&Math.random()<0.5));
     if(pieno&&Math.random()<0.28*dt) spawnArco(false);
     if(burst>0){ const n=Math.min(6,burst); for(let i=0;i<n;i++) spawnBurst(); burst-=n; }
     for(let i=P.length-1;i>=0;i--){ const q=P[i];
@@ -3733,7 +3772,7 @@ function applyTheme(){ try{
       if(q.vita<=0){ P.splice(i,1); continue; }
       const d=q.s*(0.5+q.vita*0.9);
       ctx.globalAlpha=Math.min(1,q.vita*1.3);
-      ctx.drawImage(q.rosso?spBrace:spOro,q.x-d/2,q.y-d/2,d,d);
+      ctx.drawImage(q.bianco?spCuore:(q.rosso?spBrace:spOro),q.x-d/2,q.y-d/2,d,d);
     }
     ctx.globalAlpha=1;
     /* LA COMETA: cuore ardente sul fronte, coda tripla, fontana di scintille */
@@ -3807,6 +3846,31 @@ function applyTheme(){ try{
 /* ══════ IL PATTO DEL MATTINO ══════
    Il dispositivo chiede una volta al giorno; tu scegli il passo che conta, o rifiuti.
    Mantenuto = timbro d'oro + parola alla firma. Mai insistente, mai punitivo. */
+/* puro: il calore del fuoco — cresce col cammino, logaritmico (0 al giorno 1, ~0.55 a 7, 1 a 42+) */
+function fuocoCalore(streak){ const s=Math.max(0,streak|0); return Math.min(1, Math.log2(1+s)/Math.log2(43)); }
+/* puro: il rientro — streak azzerato ma con storia recente: il fuoco sa di aver gia bruciato */
+function fuocoRientro(streak,giorni,tk){
+  if((streak|0)>1) return false;
+  if(!giorni||typeof giorni!=='object') return false;
+  const oggi=new Date(tk); let storia=0;
+  for(let i=2;i<=14;i++){ const d=new Date(oggi); d.setDate(d.getDate()-i);
+    const k=d.toISOString().slice(0,10); const g=giorni[k];
+    if(g&&(g.fatte|0)>0) storia++; }
+  return storia>=3;
+}
+/* puro: il marchio del giorno — 0 nessuno, 1 patto mantenuto, 2 azzardo vinto */
+function pattoMark(patto,tk,checksDay){
+  if(!patto||patto.tk!==tk) return 0;
+  if(!checksDay||!checksDay[patto.id]) return 0;
+  return patto.audace?2:1;
+}
+function azzardoCandidates(sched,mastery){
+  const out=[]; const m=(mastery&&mastery.quest)||{};
+  (sched||[]).forEach(t=>{ const q=m[t.id];
+    if(q&&(((q.assenze|0)>=3)||((q.attriti|0)>=1))&&t.titolo) out.push({id:t.id,titolo:t.titolo}); });
+  const seen=new Set();
+  return out.filter(c=>{ if(seen.has(c.id)) return false; seen.add(c.id); return true; }).slice(0,3);
+}
 function renderPatto(){
   const box=document.getElementById('patto'); if(!box) return;
   const tk=todayKey();
@@ -3820,20 +3884,29 @@ function renderPatto(){
   box.innerHTML='<div class="patto-head">Il patto del mattino</div>'+
     '<div class="patto-sub">quale sar\u00e0 il passo che conta, oggi?</div>'+
     sched.slice(0,8).map(t=>'<button class="patto-r" data-id="'+t.id+'">'+escapeHtml(t.titolo||'')+'</button>').join('')+
+    (function(){ const az=azzardoCandidates(sched,S.mastery);
+      return '<div class="azz-head">l\u2019azzardo \u2014 il passo che rimandi</div>'+
+        az.map(c=>'<button class="patto-r azz-r" data-id="'+c.id+'">'+escapeHtml(c.titolo)+'</button>').join('')+
+        '<button class="patto-nuovo azz-nuovo">+ scrivi l\u2019azzardo</button>'; })()+
     '<button class="patto-nuovo">+ un passo nuovo</button>'+
     '<div class="patto-nuovo-box hidden"><input class="patto-inp" type="text" maxlength="80" placeholder="l\'idea di stamattina\u2026" enterkeyhint="done"><button class="patto-inp-ok">Patto</button></div>'+
     '<button class="patto-no">oggi nessun patto</button>';
   box.querySelectorAll('.patto-r').forEach(bt=>{ bt.onclick=()=>{
-    S.patto={tk:tk,id:bt.dataset.id}; save();
-    try{ toast('Patto stretto. La firma della sera sapr\u00e0.'); }catch(_){}
+    const audace=bt.classList.contains('azz-r');
+    S.patto={tk:tk,id:bt.dataset.id,audace:audace}; save();
+    try{ toast(audace?'Azzardo accettato. La firma della sera sapr\u00e0.':'Patto stretto. La firma della sera sapr\u00e0.'); }catch(_){}
     try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
   };});
   const bn=box.querySelector('.patto-no');
   if(bn) bn.onclick=()=>{ try{ localStorage.setItem('sentiero-patto-no',tk); }catch(_){} renderPatto(); };
   /* l'idea del mattino diventa la puntata: nasce quest di oggi, il patto si stringe su di lei */
-  const bnu=box.querySelector('.patto-nuovo'), nbox=box.querySelector('.patto-nuovo-box');
-  if(bnu&&nbox) bnu.onclick=()=>{ bnu.classList.add('hidden'); nbox.classList.remove('hidden');
-    const inp=nbox.querySelector('.patto-inp'); if(inp) setTimeout(()=>inp.focus(),60); };
+  const nbox=box.querySelector('.patto-nuovo-box');
+  box.querySelectorAll('.patto-nuovo').forEach(bnu=>{ bnu.onclick=()=>{
+    if(nbox){ nbox.dataset.audace=bnu.classList.contains('azz-nuovo')?'1':'';
+      box.querySelectorAll('.patto-nuovo').forEach(x=>x.classList.add('hidden'));
+      nbox.classList.remove('hidden');
+      const inp=nbox.querySelector('.patto-inp'); if(inp) setTimeout(()=>inp.focus(),60); }
+  };});
   const bok=box.querySelector('.patto-inp-ok');
   const nasciPatto=()=>{
     const inp=box.querySelector('.patto-inp'); if(!inp) return;
@@ -3841,8 +3914,9 @@ function renderPatto(){
     const q={id:coreUid(),titolo:titolo,note:'',quando:tk,ora:'',prio:3,fatto:false};
     if(!Array.isArray(S.quests)) S.quests=[];
     S.quests.push(q);
-    S.patto={tk:tk,id:q.id}; save();
-    try{ toast('Nata dal patto: \u00ab'+titolo+'\u00bb'); }catch(_){}
+    const aud=!!(box.querySelector('.patto-nuovo-box')&&box.querySelector('.patto-nuovo-box').dataset.audace);
+    S.patto={tk:tk,id:q.id,audace:aud}; save();
+    try{ toast((aud?'Azzardo scritto: ':'Nata dal patto: ')+'\u00ab'+titolo+'\u00bb'); }catch(_){}
     try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
   };
   if(bok) bok.onclick=nasciPatto;
@@ -3864,16 +3938,19 @@ function renderCammino(){
     const haDati=(S.checks&&S.checks[tk])||i===0;
     const isOggi=(i===0);
     const pieno=(tot>0&&done>=tot);
+    const oroV=((S.patti&&S.patti[tk])|0);
     const off=(C*(1-Math.max(0,Math.min(1,p)))).toFixed(1);
     const label=d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric'});
     const lun=(dowOf(d)===0);
     const pilota=(isOggi&&p<=0.001);
     out+='<div class="pietra'+(isOggi?' oggi':'')+(haDati?'':' spenta')+(lun?' lun':'')+'" data-tk="'+tk+'" data-info="'+
-      label+(haDati?(' · '+done+'/'+tot+(pieno?' · cerchio pieno':'')):' · nessun segno')+'">'+
+      label+(haDati?(' · '+done+'/'+tot+(pieno?' · cerchio pieno':'')+(oroV===2?' · azzardo vinto':(oroV===1?' · patto d\u2019oro':''))):' · nessun segno')+'">'+
       '<svg viewBox="0 0 24 24"><circle class="p-track" cx="12" cy="12" r="9"/>'+
       ((haDati&&p>0.001)?'<circle class="p-arco" cx="12" cy="12" r="9" transform="rotate(-100 12 12)" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off+'"/>':'')+
       (pieno&&haDati?'<circle class="p-firma" cx="4.8" cy="8.6" r="2"/>':'')+
       (pilota?'<circle class="p-pilota" cx="10.4" cy="3.1" r="1.7"/>':'')+
+      (oroV===1?'<circle class="p-oro" cx="12" cy="12" r="2"/>':'')+
+      (oroV===2?'<circle class="p-oro-az" cx="12" cy="12" r="4" fill="none"/><circle class="p-oro aud" cx="12" cy="12" r="2.4"/>':'')+
       '</svg></div>';
   }
   box.innerHTML=out;
@@ -3933,6 +4010,8 @@ function updateRing(){
   const tk=todayKey(),dow=dowOf();
   const r=computeProgress(S,tk,dow);
   window._ensoTarget=r.p;   /* la pittura la disegna il motore rAF, frame per frame */
+  try{ window._ensoCalore=fuocoCalore(S.streak);
+    window._ensoRientro=fuocoRientro(S.streak,(S.mastery&&S.mastery.giorni)||null,todayKey()); }catch(_){}
   try{ syncAdaptiveMusic(false); }catch(_){}  /* musica adattiva: WAV primario, generativo come fallback */
   const res=sealIfComplete(S,tk,dow);
   if(res==='soft'){
@@ -3964,13 +4043,42 @@ function updateRing(){
     document.querySelector('#ring-count').textContent= r.total? (r.done+' / '+r.total+' · il cerchio si chiude') : '';
   }
   try{ micBtn.classList.toggle('pieno',S.lastFullSealed===todayKey()); }catch(_){}
+  try{ const tkO=todayKey();
+    micBtn.classList.toggle('oro',!!(S.patto&&S.patto.tk===tkO&&S.patto.audace&&(S.checks[tkO]||{})[S.patto.id]&&S.lastSealed===tkO));
+  }catch(_){}
   try{ syncDayLine(); setTimeout(syncDayLine,2400); }catch(_){}
+  /* la memoria d'oro: il registro si scrive (o si ritira) nell'istante del passo */
+  try{ const tkM=todayKey();
+    if(!S.patti||typeof S.patti!=='object') S.patti={};
+    const mk=pattoMark(S.patto,tkM,S.checks[tkM]||{});
+    if(mk&&S.patti[tkM]!==mk){ S.patti[tkM]=mk; save(); }
+    else if(!mk&&S.patti[tkM]){ delete S.patti[tkM]; save(); }
+  }catch(_){}
   try{ renderCammino(); }catch(_){}
   try{ renderPatto(); }catch(_){}
+  /* la presenza dell'osservatrice: dopo la firma, una soglia dell'accumulo puo farsi voce — una al giorno */
+  try{ const tkP=todayKey();
+    if(S.lastSealed===tkP&&localStorage.getItem('sentiero-presenza')!==tkP){
+      const c=presenzaCandidate(S.mastery);
+      if(c){
+        let titolo='';
+        if(c.id){ const s2=(S.scheduled||[]).find(t=>t.id===c.id); const q2=(S.quests||[]).find(t=>t.id===c.id);
+          titolo=(s2&&s2.titolo)||(q2&&q2.titolo)||''; }
+        if(!c.id||titolo){
+          localStorage.setItem('sentiero-presenza',tkP);
+          if(!Array.isArray(S.mastery.detti)) S.mastery.detti=[];
+          S.mastery.detti.push(c.key); if(S.mastery.detti.length>40) S.mastery.detti=S.mastery.detti.slice(-40);
+          save();
+          const txt=presenzaTesto(c.tipo,titolo);
+          if(txt) setTimeout(()=>{ try{ _whisper(txt); }catch(_){} },5200);
+        }
+      }
+    } }catch(_){}
   /* la parola della sera: se il patto e mantenuto, la firma lo dice — una volta */
   try{ const tk2=todayKey();
     if(S.patto&&S.patto.tk===tk2&&(S.checks[tk2]||{})[S.patto.id]&&S.lastSealed===tk2&&window._pattoDetto!==tk2){
-      window._pattoDetto=tk2; setTimeout(()=>{ try{ toast('Il patto \u00e8 stato mantenuto.'); }catch(_){} },1900);
+      window._pattoDetto=tk2; const audD=!!(S.patto&&S.patto.audace);
+      setTimeout(()=>{ try{ toast(audD?'L\u2019azzardo \u00e8 stato vinto.':'Il patto \u00e8 stato mantenuto.'); }catch(_){} },1900);
     } }catch(_){}
   try{ setTimeout(perle,2800); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno */
   try{ renderFlow(); }catch(_){}
@@ -4020,7 +4128,7 @@ function buildTaskRow(t,checks){
   const done=checks[t.id]===true;
   const isEss=(S.essentials||[]).includes(t.id);
   const div=document.createElement('div');
-  div.className='item'+(done?' done':'')+((S.patto&&S.patto.tk===todayKey()&&S.patto.id===t.id)?' passo':'');
+  div.className='item'+(done?' done':'')+((S.patto&&S.patto.tk===todayKey()&&S.patto.id===t.id)?(' passo'+(S.patto.audace?' audace':'')):'');
   div.dataset.tid=t.id;
   div.innerHTML='<span class="prio prio-0"></span>'+
     '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
@@ -4139,7 +4247,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   const p=q.prio||3;
   const div=document.createElement('div');
   div.dataset.qid=q.id;
-  div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'')+((S.patto&&S.patto.tk===todayKey()&&S.patto.id===q.id)?' passo':'');
+  div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'')+((S.patto&&S.patto.tk===todayKey()&&S.patto.id===q.id)?(' passo'+(S.patto.audace?' audace':'')):'');
   if(bornIds.includes(q.id)) div.style.animationDelay=(bornIds.indexOf(q.id)*0.13)+'s';
   const calBtn=(q.quando&&!q.fatto)?'<button class="cal" aria-label="Aggiungi al calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>':'';
   div.innerHTML='<span class="prio prio-'+p+'"></span>'+
