@@ -333,18 +333,25 @@ section{margin-top:38px}
 .entry .tags{margin-top:12px;font-size:13px;line-height:1.6;font-family:var(--sans)}
 .entry .tags.born-t{color:var(--accent)}
 .entry .tags.done-t{color:var(--t3)}
-/* ══ I CAPITOLI — il mese rilegato, in cima al Diario ══ */
+/* ══ I CAPITOLI — la pergamena del mese, chiusa dalla ceralacca ══ */
 #capitoli:empty{display:none}
-#capitoli{margin-bottom:10px}
-#capitoli .capitolo{border:1px solid rgba(245,242,234,.09);border-radius:14px;padding:18px 16px 16px;background:rgba(245,242,234,.015)}
-#capitoli .cap-head{display:flex;align-items:baseline;gap:8px;margin-bottom:14px}
-#capitoli .cap-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3)}
-#capitoli .cap-mese{font-family:var(--serif);font-size:22px;color:var(--t1)}
-#capitoli .cap-anno{font-size:13px;color:var(--t3)}
+#capitoli{margin:6px 2px 16px}
+#capitoli .capitolo{position:relative;border:.5px solid rgba(245,242,234,.28);border-radius:2px;
+  outline:.5px solid rgba(245,242,234,.09);outline-offset:4px;
+  padding:26px 16px 16px;background:linear-gradient(180deg,rgba(245,242,234,.03),rgba(245,242,234,.008))}
+#capitoli .cap-fermaglio{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  width:38px;height:12px;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:0 6px}
+#capitoli .cap-fermaglio b{width:7px;height:7px;border-radius:50%;background:#B9402E;box-shadow:0 0 8px rgba(185,64,46,.35)}
+#capitoli .cap-angoli::before,#capitoli .cap-angoli::after{content:'';position:absolute;width:12px;height:12px;pointer-events:none}
+#capitoli .cap-angoli::before{bottom:-4px;left:-4px;border-bottom:1.5px solid rgba(245,242,234,.45);border-left:1.5px solid rgba(245,242,234,.45)}
+#capitoli .cap-angoli::after{bottom:-4px;right:-4px;border-bottom:1.5px solid rgba(245,242,234,.45);border-right:1.5px solid rgba(245,242,234,.45)}
+#capitoli .cap-eyebrow{display:block;text-align:center;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+#capitoli .cap-mese{display:block;text-align:center;font-family:var(--serif);font-style:italic;font-size:26px;color:var(--t1);line-height:1.2;margin-bottom:10px}
+#capitoli .cap-mese small{font-style:normal;font-size:13px;color:var(--t3);margin-left:7px}
 #capitoli .cap-fila{width:100%;display:block;margin:2px 0 14px}
-#capitoli .cap-riga{font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.65;color:rgba(245,242,234,.82);margin:0}
-#capitoli .cap-firma{margin-top:8px;font-size:12px;color:var(--t3)}
-#capitoli .cap-prec{margin-top:14px;padding-top:12px;border-top:.5px solid rgba(245,242,234,.07)}
+#capitoli .cap-riga{font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.7;color:rgba(245,242,234,.84);margin:0;text-align:center}
+#capitoli .cap-firma{margin-top:10px;font-size:12px;color:var(--t3);text-align:center}
+#capitoli .cap-prec{margin-top:16px;padding-top:12px;border-top:.5px solid rgba(245,242,234,.07)}
 #capitoli .cap-prec .pr{display:flex;gap:10px;align-items:baseline;padding:6px 0;color:var(--t3);font-size:13px;line-height:1.5}
 #capitoli .cap-prec .pr b{font-family:var(--serif);font-weight:400;color:var(--t2);font-size:14px;flex:none}
 #capitoli .cap-prec .pr span{font-style:italic;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
@@ -354,6 +361,7 @@ section{margin-top:38px}
 }
 /* ══ LA SEMINA — il seme in giada nella day-line, la voce-domanda nel Diario ══ */
 #day-line.perla.seme{color:var(--jade)}
+#day-line.perla.dono{color:var(--t2)}
 #giorno-bar.semina-viva{cursor:pointer}
 .entry.seme{-webkit-tap-highlight-color:transparent}
 .entry.seme .seme-q{font-style:italic;font-size:17px;line-height:1.7;color:rgba(127,184,164,.92);margin-top:0}
@@ -806,19 +814,23 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .pietra .p-arco{fill:none;stroke:#E8A84C;stroke-width:2.6;stroke-linecap:round}
 .pietra.spenta .p-track{stroke:rgba(245,242,234,.05)}
 .pietra .p-firma{fill:#B9402E}
-/* ══════ IL PATTO DEL MATTINO — il dispositivo chiede, tu punti ══════ */
-#patto{margin:4px 0 14px;padding:15px 14px 10px;border-radius:16px;
-  background:linear-gradient(180deg,rgba(232,168,76,.07),rgba(245,242,234,.02));
-  border:.5px solid rgba(232,168,76,.34);
-  box-shadow:inset 0 1px 0 rgba(245,242,234,.06),0 10px 26px rgba(0,0,0,.3);
-  animation:patto-entra .5s cubic-bezier(.22,1,.36,1) .55s both,patto-chiama 2.2s ease-in-out 1.2s 3}
+/* ══════ IL PATTO DEL MATTINO — la pergamena col fermaglio: l'invito del giorno ══════ */
+#patto{position:relative;margin:10px 2px 20px;padding:24px 14px 10px;border-radius:2px;
+  background:linear-gradient(180deg,rgba(232,168,76,.05),rgba(245,242,234,.015));
+  border:.5px solid rgba(232,168,76,.42);
+  outline:.5px solid rgba(232,168,76,.14);outline-offset:4px;
+  animation:patto-entra .5s cubic-bezier(.22,1,.36,1) .55s both}
 @keyframes patto-entra{from{opacity:0;transform:translateY(11px) scale(.975)}to{opacity:1;transform:none}}
-@keyframes patto-chiama{0%,100%{box-shadow:inset 0 1px 0 rgba(245,242,234,.06),0 10px 26px rgba(0,0,0,.3),0 0 0 rgba(232,168,76,0)}
- 50%{box-shadow:inset 0 1px 0 rgba(245,242,234,.06),0 10px 26px rgba(0,0,0,.3),0 0 28px rgba(232,168,76,.26)}}
-.patto-head::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;
-  background:radial-gradient(circle at 35% 30%,#F2C56B,#A9691F);animation:p-pilota 2.6s ease-in-out infinite}
-.patto-head{font-family:var(--serif,ui-serif);font-size:15px;color:var(--t1)}
-.patto-sub{font-size:12px;color:#8A9490;font-style:italic;margin:2px 0 10px}
+#patto .patto-fermaglio{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  width:38px;height:12px;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:0 6px}
+#patto .patto-fermaglio b{width:7px;height:7px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#F2C56B,#A9691F);box-shadow:0 0 8px rgba(232,168,76,.4);
+  animation:p-pilota 2.6s ease-in-out infinite}
+#patto .patto-angoli::before,#patto .patto-angoli::after{content:'';position:absolute;width:12px;height:12px;pointer-events:none}
+#patto .patto-angoli::before{bottom:-4px;left:-4px;border-bottom:1.5px solid rgba(232,168,76,.8);border-left:1.5px solid rgba(232,168,76,.8)}
+#patto .patto-angoli::after{bottom:-4px;right:-4px;border-bottom:1.5px solid rgba(232,168,76,.8);border-right:1.5px solid rgba(232,168,76,.8)}
+.patto-eyebrow{display:block;text-align:center;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(232,168,76,.75);margin-bottom:6px}
+.patto-title{display:block;text-align:center;font-family:var(--serif,ui-serif);font-style:italic;font-size:21px;line-height:1.25;color:var(--t1);margin-bottom:12px}
 .patto-r{display:block;width:100%;text-align:left;border:none;background:none;color:var(--t2);
   font-family:inherit;font-size:14px;padding:10px 6px;border-top:.5px solid rgba(245,242,234,.06);
   -webkit-tap-highlight-color:transparent}
@@ -837,6 +849,9 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
   border-top:.5px solid rgba(245,242,234,.06)}
 .azz-r{color:#C8A38F}
 .azz-r:active{color:#D9744B}
+.sfida-head{color:var(--accent)}
+.sfida-r{color:#CBB289}
+.sfida-r:active{color:var(--accent)}
 .azz-nuovo{color:#D9744B !important}
 /* la spina dell'audace: brace che sale nell'oro, piu alta */
 .item.passo.audace::before{height:74%;background:linear-gradient(180deg,#F2C56B,#D9744B)}
@@ -851,7 +866,7 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .item.passo.done .chk-mark path{stroke:#241A08}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #patto{animation:none}
-  body:not(.anima-sempre) .patto-head::before{animation:none}
+  body:not(.anima-sempre) #patto .patto-fermaglio b{animation:none}
 }
 </style>
 </head>
@@ -1228,6 +1243,34 @@ function sanitizeObsLines(arr){   /* memoria del sussurro: le ultime righe dette
   }
   return out.slice(-12); /* memoria di lavoro, non archivio: le ultime 12 bastano */
 }
+function sanitizeFoto(raw){   /* la fotografia del giorno: done/tot congelati, ultimi sessanta */
+  const out={};
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)) return out;
+  Object.keys(raw).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort().slice(-60).forEach(k=>{
+    const v=raw[k]; if(!v||typeof v!=='object') return;
+    const done=v.done|0, tot=v.tot|0;
+    if(tot<0||done<0||done>99||tot>99) return;
+    out[k]={done:done,tot:tot};
+  });
+  return out;
+}
+function fotoDi(state,tk,dow){   /* la memoria vera del giorno se c'e; altrimenti il ricalcolo col piano di oggi */
+  const f=(state.foto||{})[tk];
+  if(f&&Number.isFinite(f.done)&&Number.isFinite(f.tot)) return {done:f.done,tot:f.tot,p:f.tot?f.done/f.tot:0,fonte:'foto'};
+  try{ const r=computeProgress(state,tk,dow); return {done:r.done||0,tot:r.total||0,p:r.p||0,fonte:'calc'}; }catch(_){ return {done:0,tot:0,p:0,fonte:'calc'}; }
+}
+function sanitizeSfide(raw){   /* la sfida che cresce: proposta, assaggi, esito */
+  const out={};
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)) return out;
+  Object.keys(raw).slice(0,60).forEach(id=>{
+    const e=raw[id]; if(!e||typeof e!=='object') return;
+    const day=s=>(typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s))?s:'';
+    out[clampStr(id,24)]={prop:day(e.prop),taciFino:day(e.taciFino),forma:clampStr(e.forma,80).trim(),
+      giorni:Array.isArray(e.giorni)?e.giorni.filter(g=>typeof g==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(g)).slice(-8):[],
+      stabile:day(e.stabile)};
+  });
+  return out;
+}
 function sanitizeSemi(arr){   /* la memoria dei semi: cosa e stato chiesto, cosa e stato raccolto */
   if(!Array.isArray(arr)) return [];
   const out=[];
@@ -1285,6 +1328,8 @@ function sanitizeState(raw,def){
     obsLines:sanitizeObsLines(raw.obsLines),
     capitoli:sanitizeCapitoli(raw.capitoli),
     semi:sanitizeSemi(raw.semi),
+    sfide:sanitizeSfide(raw.sfide),
+    foto:sanitizeFoto(raw.foto),
     questLog:sanitizeQuestLog(raw.questLog),
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
@@ -1570,7 +1615,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.68 · 2026-07-10';
+const APP_VERSION='v60S.73 · 2026-07-10';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1590,7 +1635,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -2977,7 +3022,11 @@ function _endHold(){
   _holdActive=false;
   const held=Date.now()-_pressT0;
   if(recording) stopRec();
-  if(held<350) micLabel.textContent='Tieni premuto il cerchio per parlare';   /* pressione troppo breve */
+  if(held<350){   /* pressione troppo breve: suggerimento; DUE tocchi brevi ravvicinati = esporta l'enso */
+    const nowT=Date.now();
+    if(nowT-(window._ensoTapT||0)<450){ window._ensoTapT=0; try{ ensoEsporta(); }catch(_){} }
+    else { window._ensoTapT=nowT; micLabel.textContent='Tieni premuto il cerchio per parlare'; }
+  }
 }
 micBtn.addEventListener('pointerdown',_startHold);
 window.addEventListener('pointerup',_endHold);
@@ -3777,6 +3826,18 @@ function applyTheme(){ try{
   const spOro=sprite(242,197,107), spBrace=sprite(230,120,70), spCuore=sprite(255,214,140,'rgba(255,252,240,1)');
   const P=[]; const RAD=Math.PI/180, A0=-100*RAD, ARCO=305*RAD, R=79, C=150;
   let p=0, wasSealed=false, burst=0, last=0, CAL=0, RIE=false;
+  /* IL METEO DEL FUOCO — tirato una volta al giorno, vero caso: tocca il COME arde,
+     mai il QUANTO (quello resta legge: calore, streak, sigillo). quieto | vento | crepito */
+  let MET={fl:1,am:1,wav:1,com:1};
+  try{
+    const mtk=todayKey(); let m=null;
+    try{ m=JSON.parse(localStorage.getItem('sentiero-meteo')||'null'); }catch(_){}
+    if(!m||m.tk!==mtk){ m={tk:mtk,car:meteoCarattere(Math.random())};
+      try{ localStorage.setItem('sentiero-meteo',JSON.stringify(m)); }catch(_){} }
+    MET=(m.car==='vento')?{fl:1.6,am:1,wav:2.2,com:1.4}:
+        (m.car==='crepito')?{fl:1.1,am:1.5,wav:1,com:1.2}:
+                            {fl:0.8,am:0.8,wav:0.6,com:0.7};
+  }catch(_){}
   const rmq=matchMedia('(prefers-reduced-motion: reduce)');
   function animOk(){ try{ return (S.settings&&S.settings.anim==='sempre')||!rmq.matches; }catch(_){ return true; } }
   function banda(ts,rec,statico){
@@ -3785,7 +3846,7 @@ function applyTheme(){ try{
     const sp=rec?spBrace:spOro;
     for(let i=0;i<=n;i++){
       const t=i/n, a=A0+ARCO*p*t;
-      const f=statico?0.85:(0.72+0.28*Math.sin(ts*0.006+i*1.7));
+      const f=statico?0.85:(0.72+0.28*MET.am*Math.sin(ts*0.006*MET.fl+i*1.7));
       const d=9.5*(0.95+0.18*CAL)*f*(0.85+0.3*Math.sin(i*0.7));
       ctx.globalAlpha=(0.11+0.05*CAL)*f;
       ctx.drawImage(sp,C+R*Math.cos(a)-d/2,C+R*Math.sin(a)-d/2,d,d);
@@ -3841,7 +3902,7 @@ function applyTheme(){ try{
       if(q.spirale){ q.a+=q.orb*dt; q.rr-=0.55*dt; q.x=C+q.rr*Math.cos(q.a); q.y=C+q.rr*Math.sin(q.a);
         if(q.rr<40) q.vita-=0.05*dt; }
       else{ if(q.grav) q.vy+=q.grav*dt;
-        if(q.wav!==undefined){ q.wav+=0.09*dt; q.x+=Math.sin(q.wav)*0.18*dt; }
+        if(q.wav!==undefined){ q.wav+=0.09*dt; q.x+=Math.sin(q.wav)*0.18*MET.wav*dt; }
         q.x+=q.vx*dt; q.y+=q.vy*dt; }
       q.vita-=q.dec*dt;
       if(q.vita<=0){ P.splice(i,1); continue; }
@@ -3861,7 +3922,7 @@ function applyTheme(){ try{
       ctx.drawImage(rec?spBrace:spOro,C+R*Math.cos(a)-dd/2,C+R*Math.sin(a)-dd/2,dd,dd);
       const dc=dd*0.45;
       ctx.drawImage(spCuore,C+R*Math.cos(a)-dc/2,C+R*Math.sin(a)-dc/2,dc,dc);
-      if(Math.random()<0.9*dt){ P.push({x:C+R*Math.cos(a),y:C+R*Math.sin(a),
+      if(Math.random()<0.9*MET.com*dt){ P.push({x:C+R*Math.cos(a),y:C+R*Math.sin(a),
         vx:(Math.random()-.5)*0.8,vy:-0.35-Math.random()*0.55,vita:0.85,dec:0.018,s:4+Math.random()*5,rosso:rec,wav:Math.random()*6.28}); }
     }
     if(P.length>120) P.splice(0,P.length-120);
@@ -3890,6 +3951,20 @@ function applyTheme(){ try{
           (hnow>=9&&hnow<17)?{c:'214,209,196',s:'un passo alla volta'}:
           (hnow>=17&&hnow<22)?{c:'217,116,75',s:'la sera raccoglie'}:
                               {c:'127,184,164',s:'la notte custodisce'};
+  /* la soglia respira: una volta su dodici, una sfumatura fuori canone. non premia: ricorda
+     che il mondo non e un dipendente. tinta rara nella stessa fascia, a volte un saluto raro. */
+  try{
+    if(Math.random()<1/12){
+      const RARI={
+        '232,168,76':{c:['239,186,96','224,148,58'],s:'nebbia leggera anche qui dentro. si cammina lo stesso.'},
+        '214,209,196':{c:['203,207,188','221,213,185'],s:'il giorno non ha fretta di te.'},
+        '217,116,75':{c:['227,133,97','204,99,64'],s:'stasera perfino la luce si siede.'},
+        '127,184,164':{c:['115,175,176','141,191,151'],s:'le stelle non tengono il conto.'}
+      };
+      const rr=RARI[F.c];
+      if(rr){ F.c=rr.c[Math.random()<0.5?0:1]; if(Math.random()<0.5) F.s=rr.s; }
+    }
+  }catch(_){}
   /* saluto intelligente: se la musica è attiva e l'osservatrice ha un pensiero, parla lei */
   let testo=F.s, durata=1.9;
   try{ const notes=S.observerNotes||[];
@@ -3934,6 +4009,64 @@ function fuocoRientro(streak,giorni,tk){
   return storia>=3;
 }
 /* puro: il marchio del giorno — 0 nessuno, 1 patto mantenuto, 2 azzardo vinto */
+/* ══ LA SFIDA CHE CRESCE — puro: quale rituale e maturo, quale assaggio chiede l'esito ══
+   Legge: il motore propone, mai impone. Assaggio di un giorno (patto audace, il rituale
+   resta com'e) -> dopo tre assaggi vinti propone la forma stabile. Rifiuto implicito=14gg,
+   sfida persa=30gg di silenzio. */
+function sfidaMatura(state,t,tk){
+  if(!t||!Array.isArray(t.days)||!t.days.length) return false;
+  const m=((state.mastery||{}).quest||{})[t.id];
+  if(m&&(((m.attriti|0)>=1)||((m.assenze|0)>=3))) return false;
+  let plan=0,fatte=0;
+  for(let i=1;i<=21;i++){
+    const d=new Date(tk+'T12:00:00'); d.setDate(d.getDate()-i);
+    if(!t.days.includes(dowOf(d))) continue;
+    plan++;
+    const k=d.toISOString().slice(0,10);
+    if(state.checks[k]&&state.checks[k][t.id]===true) fatte++;
+  }
+  return plan>=10&&(fatte/plan)>=0.9;
+}
+function sfidaCandidate(state,tk){
+  const sfide=state.sfide||{}; const sched=state.scheduled||[];
+  const dISO=(base,delta)=>{ const d=new Date(base+'T12:00:00'); d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); };
+  const q14=dISO(tk,-14), q3=dISO(tk,-3);
+  for(const t of sched){
+    if(!t||!t.id||!t.titolo) continue;
+    const e=sfide[t.id]; if(!e) continue;
+    if(e.stabile||!(e.giorni||[]).length) continue;
+    const giorni=e.giorni.filter(g=>g<tk);
+    if(!giorni.length) continue;
+    const vinte=giorni.filter(g=>state.checks[g]&&state.checks[g][t.id]===true);
+    if(giorni.length>=3) return (vinte.length>=3&&e.forma)?{tipo:'stabile',id:t.id,forma:e.forma,titolo:t.titolo}:{tipo:'spegni',id:t.id};
+    if(e.forma&&giorni[giorni.length-1]<=q3) return {tipo:'assaggio',id:t.id,titolo:t.titolo,forma:e.forma};
+  }
+  for(const t of sched){
+    if(!t||!t.id||!t.titolo) continue;
+    const e=sfide[t.id];
+    if(e&&((e.taciFino&&e.taciFino>=tk)||(e.prop&&e.prop>q14)||(e.giorni||[]).length)) continue;
+    if(e&&e.stabile&&e.stabile>dISO(tk,-21)) continue;
+    if(sfidaMatura(state,t,tk)) return {tipo:'assaggio',id:t.id,titolo:t.titolo};
+  }
+  return null;
+}
+const SFIDA_SYS='Sei il motore di Sentiero. Un rituale quotidiano e diventato solido: proponi UNA versione appena piu alta.\n'+
+'REGOLE: stessa attivita, incremento piccolo e concreto (il grande nasce dal piccolo): un quarto d\u2019ora prima, una serie o una soglia in piu. Mai raddoppi, mai attivita nuove.\n'+
+'FORMATO: solo il nuovo titolo, imperativo conciso nello stile dell\u2019originale, massimo sessanta caratteri, in italiano. Rispondi SOLO JSON compatto: {"sfida":"..."}';
+async function askSfida(id){
+  const t=(S.scheduled||[]).find(x=>x&&x.id===id); if(!t) throw new Error('rituale');
+  let plan=0,fatte=0; const tkS=todayKey();
+  for(let i=1;i<=21;i++){ const d=new Date(tkS+'T12:00:00'); d.setDate(d.getDate()-i);
+    if(!t.days.includes(dowOf(d))) continue; plan++;
+    const k=d.toISOString().slice(0,10);
+    if(S.checks[k]&&S.checks[k][t.id]===true) fatte++; }
+  const res=await callAnthropic({system:SFIDA_SYS,user:'RITUALE: '+t.titolo+'\nCOSTANZA: '+fatte+' fatte su '+plan+' previste nelle ultime tre settimane.',assistantPrefix:'{',max_tokens:100,temperature:0.5,timeout:20000});
+  if(res.err) throw new Error(res.err);
+  const p=parseLooseJson(res.text);
+  const f=clampStr((p&&typeof p.sfida==='string')?p.sfida:'',80).trim();
+  if(!f||f.toLowerCase()===t.titolo.trim().toLowerCase()) throw new Error('vuota');
+  return f;
+}
 function pattoMark(patto,tk,checksDay){
   if(!patto||patto.tk!==tk) return 0;
   if(!checksDay||!checksDay[patto.id]) return 0;
@@ -3956,13 +4089,27 @@ function renderPatto(){
   if(box.dataset.tk===tk&&box.innerHTML){ box.classList.remove('hidden'); return; }   /* gia in scena: l'ingresso non si rigioca */
   box.dataset.tk=tk;
   box.classList.remove('hidden');
-  box.innerHTML='<div class="patto-head">Il patto del mattino</div>'+
-    '<div class="patto-sub">quale sar\u00e0 il passo che conta, oggi?</div>'+
+  box.innerHTML='<div class="patto-angoli"></div><div class="patto-fermaglio"><b></b></div>'+
+    '<span class="patto-eyebrow">il patto del mattino</span>'+
+    '<span class="patto-title">Quale sar\u00e0 il passo che conta?</span>'+
     sched.slice(0,8).map(t=>'<button class="patto-r" data-id="'+t.id+'">'+escapeHtml(t.titolo||'')+'</button>').join('')+
     (function(){ const az=azzardoCandidates(sched,S.mastery);
       return '<div class="azz-head">l\u2019azzardo \u2014 il passo che rimandi</div>'+
         az.map(c=>'<button class="patto-r azz-r" data-id="'+c.id+'">'+escapeHtml(c.titolo)+'</button>').join('')+
         '<button class="patto-nuovo azz-nuovo">+ scrivi l\u2019azzardo</button>'; })()+
+    (function(){ let sf=null; try{ sf=sfidaCandidate(S,tk); }catch(_){}
+      if(!sf) return '';
+      if(!S.sfide) S.sfide={};
+      if(sf.tipo==='spegni'){ const e=S.sfide[sf.id];
+        if(e){ const d=new Date(tk+'T12:00:00'); d.setDate(d.getDate()+30);
+          e.taciFino=d.toISOString().slice(0,10); e.giorni=[]; e.forma=''; save(); }
+        return ''; }
+      const e=S.sfide[sf.id]||(S.sfide[sf.id]={prop:'',taciFino:'',forma:'',giorni:[],stabile:''});
+      if(sf.tipo==='stabile') return '<div class="azz-head sfida-head">la sfida che cresce \u2014 tre assaggi vinti</div>'+
+        '<button class="patto-r sfida-r" data-sfida-stabile="'+sf.id+'">\u00ab'+escapeHtml(sf.forma)+'\u00bb \u00b7 rendila la nuova forma</button>';
+      if(e.prop!==tk){ e.prop=tk; save(); }
+      return '<div class="azz-head sfida-head">la sfida che cresce \u2014 \u00e8 matura</div>'+
+        '<button class="patto-r sfida-r" data-sfida="'+sf.id+'" data-forma="'+escapeHtml(sf.forma||'')+'">'+escapeHtml(sf.titolo)+' \u00b7 alzala</button>'; })()+
     '<button class="patto-nuovo">+ un passo nuovo</button>'+
     '<div class="patto-nuovo-box hidden"><input class="patto-inp" type="text" maxlength="80" placeholder="l\'idea di stamattina\u2026" enterkeyhint="done"><button class="patto-inp-ok">Patto</button></div>'+
     '<button class="patto-no">oggi nessun patto</button>';
@@ -3974,6 +4121,38 @@ function renderPatto(){
   };});
   const bn=box.querySelector('.patto-no');
   if(bn) bn.onclick=()=>{ try{ localStorage.setItem('sentiero-patto-no',tk); }catch(_){} renderPatto(); };
+  /* la sfida che cresce: l'assaggio apre la casella con la forma alzata (AI o mano tua) */
+  const nboxS=box.querySelector('.patto-nuovo-box');
+  const bsf=box.querySelector('[data-sfida]');
+  if(bsf) bsf.onclick=async()=>{
+    if(!nboxS) return;
+    nboxS.dataset.audace='1'; nboxS.dataset.sfida=bsf.dataset.sfida;
+    box.querySelectorAll('.patto-nuovo').forEach(x=>x.classList.add('hidden'));
+    nboxS.classList.remove('hidden');
+    const inp=nboxS.querySelector('.patto-inp');
+    if(inp){
+      inp.placeholder='come la alzi, oggi?\u2026';
+      inp.value=bsf.dataset.forma||'';
+      if(!inp.value&&S.apiKey){
+        inp.placeholder='la forma alzata sta arrivando\u2026';
+        try{ const f=await askSfida(bsf.dataset.sfida); if(f&&!inp.value) inp.value=f; }catch(_){}
+        inp.placeholder='come la alzi, oggi?\u2026';
+      }
+      setTimeout(()=>inp.focus(),60);
+    }
+  };
+  const bst=box.querySelector('[data-sfida-stabile]');
+  if(bst) bst.onclick=()=>{
+    const id=bst.dataset.sfidaStabile;
+    const t=(S.scheduled||[]).find(x=>x&&x.id===id);
+    const e=(S.sfide||{})[id];
+    if(t&&e&&e.forma){
+      t.titolo=e.forma; e.stabile=tk; e.giorni=[]; e.forma=''; save();
+      try{ toast('La sfida \u00e8 la nuova forma: \u00ab'+t.titolo+'\u00bb'); }catch(_){}
+      box.dataset.tk='';
+      try{ render(); }catch(_){} try{ renderPatto(); }catch(_){} try{ updateRing(); }catch(_){}
+    }
+  };
   /* l'idea del mattino diventa la puntata: nasce quest di oggi, il patto si stringe su di lei */
   const nbox=box.querySelector('.patto-nuovo-box');
   box.querySelectorAll('.patto-nuovo').forEach(bnu=>{ bnu.onclick=()=>{
@@ -3986,6 +4165,16 @@ function renderPatto(){
   const nasciPatto=()=>{
     const inp=box.querySelector('.patto-inp'); if(!inp) return;
     const titolo=String(inp.value||'').trim().slice(0,80); if(!titolo) return;
+    const sfId=(box.querySelector('.patto-nuovo-box')||{dataset:{}}).dataset.sfida;
+    if(sfId){
+      if(!S.sfide) S.sfide={};
+      const e=S.sfide[sfId]||(S.sfide[sfId]={prop:tk,taciFino:'',forma:'',giorni:[],stabile:''});
+      e.forma=titolo; e.giorni=(e.giorni||[]).concat([tk]).slice(-8);
+      S.patto={tk:tk,id:sfId,audace:true}; save();
+      try{ toast('\u00ab'+titolo+'\u00bb \u2014 assaggio della sfida. La firma della sera sapr\u00e0.'); }catch(_){}
+      try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
+      return;
+    }
     const q={id:coreUid(),titolo:titolo,note:'',quando:tk,ora:'',prio:3,fatto:false};
     if(!Array.isArray(S.quests)) S.quests=[];
     S.quests.push(q);
@@ -4009,8 +4198,8 @@ function renderCammino(){
     const d=new Date(oggi); d.setDate(d.getDate()-i);
     const tk=d.toISOString().slice(0,10);
     let p=0,done=0,tot=0;
-    try{ const r=computeProgress(S,tk,dowOf(d)); p=r.p||0; done=r.done||0; tot=r.total||r.tot||0; }catch(_){}
-    const haDati=(S.checks&&S.checks[tk])||i===0;
+    try{ const f=fotoDi(S,tk,dowOf(d)); p=f.p||0; done=f.done||0; tot=f.tot||0; }catch(_){}
+    const haDati=(S.checks&&S.checks[tk])||!!((S.foto||{})[tk])||i===0;
     const isOggi=(i===0);
     const pieno=(tot>0&&done>=tot);
     const oroV=((S.patti&&S.patti[tk])|0);
@@ -4031,6 +4220,108 @@ function renderCammino(){
   box.innerHTML=out;
   box.querySelectorAll('.pietra').forEach(el=>{ el.onclick=()=>{ try{ toast(el.dataset.info); }catch(_){} }; });
   box.scrollLeft=box.scrollWidth;   /* oggi sempre in vista, a destra */
+}
+/* ══ L'ENSO ESPORTABILE — doppio tocco sul cerchio: l'istante diventa PNG ══
+   Composizione manuale (niente serializzazione SVG): fondo nero, traccia, il fuoco vivo
+   fotografato dal canvas rAF cosi com'e in questo istante, la firma se il giorno e sigillato.
+   Coordinate: canvas fx 300 logico (C=150,R=79), SVG 200 (offset +50). */
+let _ensoExpBusy=false;
+function ensoEsporta(){
+  if(_ensoExpBusy) return; _ensoExpBusy=true;
+  try{
+    const fx=document.getElementById('enso-fx'); if(!fx){ _ensoExpBusy=false; return; }
+    const S1=1200, k=S1/300;
+    const cv=document.createElement('canvas'); cv.width=S1; cv.height=S1;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,S1,S1);
+    ctx.strokeStyle='rgba(245,242,234,0.10)'; ctx.lineWidth=4.5*k;
+    ctx.beginPath(); ctx.arc(150*k,150*k,79*k,0,Math.PI*2); ctx.stroke();
+    try{ ctx.drawImage(fx,0,0,fx.width,fx.height,0,0,S1,S1); }catch(_){}
+    try{
+      if(micBtn.classList.contains('sealed')){
+        ctx.fillStyle='#B9402E';
+        ctx.beginPath(); ctx.arc((14+50)*k,(60+50)*k,5*k,0,Math.PI*2); ctx.fill();
+        [[14-9,60-5,1.7],[15+7,59-8,1.2],[13-4,61+9,1.4]].forEach(s=>{
+          ctx.beginPath(); ctx.arc((s[0]+50)*k,(s[1]+50)*k,s[2]*k,0,Math.PI*2); ctx.fill(); });
+      }
+    }catch(_){}
+    cv.toBlob(async function(b){
+      try{
+        if(!b){ _ensoExpBusy=false; return; }
+        const nome='enso-'+todayKey()+'.png';
+        try{
+          const f=new File([b],nome,{type:'image/png'});
+          if(navigator.canShare&&navigator.canShare({files:[f]})&&navigator.share){
+            await navigator.share({files:[f]});
+            try{ toast('L\u2019ens\u014d di oggi \u00e8 tuo'); }catch(_){}
+            _ensoExpBusy=false; return;
+          }
+        }catch(e){ if(e&&e.name==='AbortError'){ _ensoExpBusy=false; return; } }
+        try{
+          const u=URL.createObjectURL(b);
+          const a=document.createElement('a'); a.href=u; a.download=nome;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function(){ try{ URL.revokeObjectURL(u); }catch(_){} },4000);
+          try{ toast('Ens\u014d scaricato'); }catch(_){}
+        }catch(_){ try{ toast('Esportazione non riuscita'); }catch(__){} }
+      }finally{ _ensoExpBusy=false; }
+    },'image/png');
+  }catch(_){ _ensoExpBusy=false; }
+}
+/* ══ IL DONO — poche volte l'anno, vero caso: una riga trovata, mai guadagnata.
+   MAI oro, MAI voce dell'osservatrice, MAI numeri. Un tiro al giorno, quiete di
+   ventun giorni tra un dono e l'altro, la perla vince, il seme quel giorno tace. ══ */
+function meteoCarattere(r){ return r<0.5?'quieto':(r<0.82?'vento':'crepito'); }
+const DONI=[
+ 'una foglia attraversa la strada. nessuno la vede, tranne te.',
+ 'il ciliegio non tiene il conto dei suoi fiori.',
+ 'la luna non corre. eppure arriva sempre.',
+ 'il vento passa tra i rami senza contarli.',
+ 'la pioggia cade uguale sul tetto e sul sentiero.',
+ 'una pietra nel torrente: liscia, e senza fretta di esserlo.',
+ 'anche il silenzio, stamattina, era una specie di musica.',
+ 'il sole non sa di essere puntuale.',
+ 'l\u2019erba cresce anche dove nessuno guarda.',
+ 'due rive, lo stesso fiume.'
+];
+function donoCandidate(rng,ctx){
+  if(ctx.ultimo){ const gap=Math.round((Date.parse(ctx.tk+'T12:00:00Z')-Date.parse(ctx.ultimo+'T12:00:00Z'))/86400000); if(gap<21) return -1; }
+  if(rng()>=1/80) return -1;
+  const dati=ctx.dati||[]; const liberi=[];
+  for(let i=0;i<ctx.poolN;i++) if(dati.indexOf(i)<0) liberi.push(i);
+  const pool=liberi.length?liberi:Array.from({length:ctx.poolN},(_,i)=>i);
+  return pool[Math.floor(rng()*pool.length)%pool.length];
+}
+function donoScrivi(testo){
+  const dl=document.querySelector('#day-line'); if(!dl) return false;
+  dl.innerHTML=''; let pi=0;
+  String(testo).split(' ').forEach((wd,wi,arr)=>{
+    const w=document.createElement('span'); w.className='pw';
+    for(const ch of wd){ const c=document.createElement('span'); c.className='pc'; c.textContent=ch;
+      c.style.animationDelay=(90+pi*14)+'ms'; pi++; w.appendChild(c); }
+    dl.appendChild(w);
+    if(wi<arr.length-1){ dl.appendChild(document.createTextNode(' ')); pi++; }
+  });
+  dl.classList.add('perla','dono');
+  setTimeout(()=>{ dl.classList.add('perla-via'); },10600);
+  setTimeout(()=>{ dl.classList.remove('perla','dono','perla-via'); try{ syncDayLine(); }catch(_){} },11100);
+  return true;
+}
+function maybeDono(){
+  try{
+    const tk=todayKey();
+    try{ if(localStorage.getItem('sentiero-perla')===tk) return; }catch(_){}   /* la perla vince */
+    let st=null; try{ st=JSON.parse(localStorage.getItem('sentiero-dono')||'null'); }catch(_){}
+    if(!st||typeof st!=='object') st={roll:'',ultimo:'',dati:[]};
+    if(st.roll===tk) return;                                                   /* un tiro al giorno */
+    st.roll=tk;
+    const idx=donoCandidate(Math.random,{tk:tk,ultimo:st.ultimo||'',dati:st.dati||[],poolN:DONI.length});
+    if(idx>=0&&donoScrivi(DONI[idx]+' \u00b7 trovato sul sentiero')){
+      st.ultimo=tk; st.dati=(st.dati||[]).concat([idx]);
+      if(st.dati.length>=DONI.length) st.dati=[];
+    }
+    try{ localStorage.setItem('sentiero-dono',JSON.stringify(st)); }catch(_){}
+  }catch(_){}
 }
 /* ══ LE PERLE: dettagli rari, mai a caso, max una al giorno ══ */
 function perle(){
@@ -4084,7 +4375,9 @@ function syncDayLine(){   /* striscia di stato in pagina Oggi: eco del cerchio +
 function updateRing(){
   const tk=todayKey(),dow=dowOf();
   const r=computeProgress(S,tk,dow);
-  window._ensoTarget=r.p;   /* la pittura la disegna il motore rAF, frame per frame */
+  window._ensoTarget=r.p;
+  try{ if(!S.foto) S.foto={}; S.foto[tk]={done:r.done|0,tot:(r.total|0)};
+    const kk=Object.keys(S.foto); if(kk.length>60) kk.sort().slice(0,kk.length-60).forEach(k=>{ delete S.foto[k]; }); }catch(_){}   /* la pittura la disegna il motore rAF, frame per frame */
   try{ window._ensoCalore=fuocoCalore(S.streak);
     window._ensoRientro=fuocoRientro(S.streak,(S.mastery&&S.mastery.giorni)||null,todayKey()); }catch(_){}
   try{ syncAdaptiveMusic(false); }catch(_){}  /* musica adattiva: WAV primario, generativo come fallback */
@@ -4155,7 +4448,7 @@ function updateRing(){
       window._pattoDetto=tk2; const audD=!!(S.patto&&S.patto.audace);
       setTimeout(()=>{ try{ toast(audD?'L\u2019azzardo \u00e8 stato vinto.':'Il patto \u00e8 stato mantenuto.'); }catch(_){} },1900);
     } }catch(_){}
-  try{ setTimeout(()=>{ perle(); try{ maybeSemina(); }catch(_){} },2800); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno; dopo la perla, l'eventuale seme */
+  try{ setTimeout(()=>{ perle(); try{ maybeDono(); }catch(_){} try{ maybeSemina(); }catch(_){} },2800); }catch(_){}   /* il ritardo copre il testo in streaming; poi perla > dono > seme */
   try{ renderFlow(); }catch(_){}
 }
 
@@ -4549,6 +4842,7 @@ async function maybeSemina(){
     try{ if(localStorage.getItem('sentiero-seme')===tk) return; }catch(_){}
     try{ if(localStorage.getItem('sentiero-perla')===tk) return; }catch(_){}      /* la perla vince */
     try{ if(localStorage.getItem('sentiero-presenza')===tk) return; }catch(_){}   /* una voce sola per sera */
+    try{ const dn=JSON.parse(localStorage.getItem('sentiero-dono')||'null'); if(dn&&dn.ultimo===tk) return; }catch(_){}   /* il giorno del dono, il seme tace */
     const d=new Date();
     const cand=seminaCandidate(S,{tk:tk,ora:d.getHours(),dow:dowOf(d),sealed:S.lastSealed===tk,vuoti:giorniVuoti(S,tk)});
     if(!cand) return;
@@ -4592,8 +4886,8 @@ function capitoloFotografia(state,mese){
   for(let g=1;g<=nG;g++){
     const tk=mese+'-'+String(g).padStart(2,'0');
     let p=0,done=0,tot=0;
-    try{ const r=computeProgress(state,tk,dowOf(new Date(y,mo-1,g))); p=r.p||0; done=r.done||0; tot=r.total||0; }catch(_){}
-    const haDati=!!(state.checks&&state.checks[tk]);
+    try{ const r=fotoDi(state,tk,dowOf(new Date(y,mo-1,g))); p=r.p||0; done=r.done||0; tot=r.tot||0; }catch(_){}
+    const haDati=!!((state.checks&&state.checks[tk])||((state.foto||{})[tk]));
     const pieno=(haDati&&tot>0&&done>=tot)?1:0;
     const oroRaw=((state.patti||{})[tk]|0);
     const oro=(oroRaw===1||oroRaw===2)?oroRaw:0;
@@ -4684,7 +4978,9 @@ function renderCapitoli(){   /* la costellazione: cenere=spento, anello oro=parz
   const prec=caps.slice(0,-1).slice(-5).reverse().map(p=>
     '<div class="pr"><b>'+escapeHtml(meseNome(p.mese))+'</b><span>'+escapeHtml(p.riga)+'</span></div>').join('');
   box.innerHTML='<div class="capitolo">'+
-    '<div class="cap-head"><span class="cap-eyebrow">Capitolo</span><span class="cap-mese">'+escapeHtml(meseNome(c.mese,true))+'</span><span class="cap-anno">'+escapeHtml(c.mese.slice(0,4))+'</span></div>'+
+    '<div class="cap-angoli"></div><div class="cap-fermaglio"><b></b></div>'+
+    '<span class="cap-eyebrow">capitolo</span>'+
+    '<span class="cap-mese">'+escapeHtml(meseNome(c.mese,true))+'<small>'+escapeHtml(c.mese.slice(0,4))+'</small></span>'+
     '<svg class="cap-fila" viewBox="0 0 340 26" xmlns="http://www.w3.org/2000/svg">'+fila+'</svg>'+
     '<p class="cap-riga">'+escapeHtml(c.riga)+'</p>'+
     '<div class="cap-firma">\u2014 l\u2019osservatrice</div>'+
