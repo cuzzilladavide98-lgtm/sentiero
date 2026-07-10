@@ -867,6 +867,7 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .item.voto .ttl{display:block;font-family:var(--serif);font-size:19px;line-height:1.45;color:rgba(245,242,234,.94)}
 .item.voto .ttl::first-letter{font-family:var(--serif);font-size:52px;line-height:.8;color:var(--accent);float:left;margin:2px 8px 0 0}
 .item.voto .meta{display:block;font-family:var(--serif);font-style:italic;font-size:15px;margin-top:8px;clear:both}
+.item.voto+.item.voto{border-top:none}
 .item{-webkit-touch-callout:none;-webkit-user-select:none}
 .azz-head{font-size:12.5px;color:#D9744B;letter-spacing:.06em;font-style:italic;padding:12px 6px 2px;
   border-top:.5px solid rgba(245,242,234,.06)}
@@ -1654,7 +1655,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.81 · 2026-07-10';
+const APP_VERSION='v60S.82 · 2026-07-10';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3739,47 +3740,45 @@ function _whisper(text){
 
 /* ══ LA NOTA ALL'OSSERVATRICE — tocco lungo su una riga: una parola tua, la riga rispondera ══ */
 window._notaPend=null;
-function apriNotaBox(div,id,titolo,isQuest){
+function apriNotaBox(div,id,titolo,isQuest){   /* LA CURA: aggiorna la riga, o lasciala andare col perche */
   const prev=div.nextElementSibling;
   if(prev&&prev.classList&&prev.classList.contains('nota-obs-box')){ prev.remove(); return; }
   document.querySelectorAll('.nota-obs-box').forEach(x=>x.remove());
-  const conNota=!!(S.apiKey&&S.apiKey.startsWith('sk-ant-')&&!(S.settings&&S.settings.obsLine===false));
   const box=document.createElement('div'); box.className='nota-obs-box';
-  box.innerHTML=(conNota?('<input class="patto-inp nota-obs-inp" type="text" maxlength="140" placeholder="una parola per l\u2019osservatrice\u2026" enterkeyhint="send">'+
-    '<button class="patto-inp-ok nota-obs-ok">Affida</button>'):'')+
-    (isQuest?('<button class="patto-inp-ok nota-voto">'+(S.votoId===id?'Sciogli il voto':'Voto')+'</button>'):'');
-  if(!box.innerHTML) return;
+  box.innerHTML='<button class="patto-inp-ok cura-agg">Aggiorna</button>'+
+    '<button class="patto-inp-ok cura-via">Lascia andare</button>';
   div.after(box);
-  const bv=box.querySelector('.nota-voto');
-  if(bv) bv.onclick=()=>{
-    S.votoId=(S.votoId===id)?'':id; save(); box.remove();
-    try{ render(); }catch(_){}
+  const fase=(modo)=>{
+    box.innerHTML='<input class="patto-inp cura-inp" type="text" maxlength="200" enterkeyhint="done">'+
+      '<button class="patto-inp-ok cura-ok">'+(modo==='agg'?'Salva':'Lascia andare')+'</button>';
+    const inp=box.querySelector('.cura-inp');
+    if(modo==='agg'){ inp.value=titolo; }
+    else { inp.placeholder='perch\u00e9 la lasci andare? (obbligatorio)'; }
+    const ok=()=>{
+      const v=String(inp.value||'').trim();
+      if(modo==='agg'){
+        if(!v) return;
+        if(isQuest){ const q=(S.quests||[]).find(x=>x&&x.id===id); if(q) q.titolo=v.slice(0,200); }
+        else { const r=(S.scheduled||[]).find(x=>x&&x.id===id); if(r) r.titolo=v.slice(0,200); }
+        save(); box.remove(); try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
+      } else {
+        if(v.length<3){ inp.value=''; inp.placeholder='serve il perch\u00e9: \u00e8 il prezzo del lasciare'; return; }
+        if(isQuest) S.quests=(S.quests||[]).filter(x=>!(x&&x.id===id));
+        else { S.scheduled=(S.scheduled||[]).filter(x=>!(x&&x.id===id)); S.essentials=(S.essentials||[]).filter(x=>x!==id); }
+        try{ addDiary('Lascio andare \u00ab'+titolo+'\u00bb: '+v.slice(0,300),[],[],''); }catch(_){}
+        save(); box.remove();
+        try{ render(); }catch(_){} try{ updateRing(); }catch(_){} try{ renderDiary(); }catch(_){}
+      }
+    };
+    box.querySelector('.cura-ok').onclick=ok;
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ok(); } });
+    setTimeout(()=>{ try{ inp.focus(); }catch(_){} },60);
   };
-  if(!conNota) return;
-  const inp=box.querySelector('.nota-obs-inp');
-  const invia=()=>{
-    const testo=String(inp.value||'').trim().slice(0,140); if(!testo){ box.remove(); return; }
-    window._notaPend={id:id,testo:testo,tk:todayKey()};
-    box.remove();
-    const fatta=(function(){ try{
-      const tk=todayKey();
-      if((S.checks[tk]||{})[id]===true) return true;
-      const q=(S.quests||[]).find(x=>x&&x.id===id); return !!(q&&q.fatto);
-    }catch(_){ return false; } })();
-    if(fatta){ try{ observerLineFor(div); }catch(_){} }
-    else { try{ toast('Affidata. Rispondera alla spunta.'); }catch(_){} }
-  };
-  box.querySelector('.nota-obs-ok').onclick=invia;
-  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); invia(); } });
-  setTimeout(()=>{ try{ inp.focus(); }catch(_){} },60);
+  box.querySelector('.cura-agg').onclick=()=>fase('agg');
+  box.querySelector('.cura-via').onclick=()=>fase('via');
 }
 function attachNota(div,id,titolo,isQuest){
-  try{
-    if(!isQuest){   /* le task: solo la nota, che vive con la chiave e l'osservatrice accesa */
-      if(S.settings&&S.settings.obsLine===false) return;
-      if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;
-    }
-  }catch(_){ return; }
+
   let t=null,x0=0,y0=0;
   div.addEventListener('pointerdown',e=>{
     if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal')) return;
@@ -4716,7 +4715,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   const div=document.createElement('div');
   div.dataset.qid=q.id;
   div.className='item'+(q.fatto?' done':'')+(future?' future':'')+(bornIds.includes(q.id)?' born':'')+((S.patto&&S.patto.tk===todayKey()&&S.patto.id===q.id)?(' passo'+(S.patto.audace?' audace':'')):'');
-  if(S.votoId===q.id) div.classList.add('voto');
+  div.classList.add('voto');   /* la veste dell'amanuense e di tutte: lo stile non e un premio */
   if(bornIds.includes(q.id)) div.style.animationDelay=(bornIds.indexOf(q.id)*0.13)+'s';
   const calBtn=(q.quando&&!q.fatto)?'<button class="cal" aria-label="Aggiungi al calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>':'';
   div.innerHTML='<span class="prio prio-'+p+'"></span>'+
