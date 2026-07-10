@@ -352,6 +352,12 @@ section{margin-top:38px}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) .tabpane:not(.hidden) #capitoli .capitolo{animation:none}
 }
+/* ══ LA SEMINA — il seme in giada nella day-line, la voce-domanda nel Diario ══ */
+#day-line.perla.seme{color:var(--jade)}
+#giorno-bar.semina-viva{cursor:pointer}
+.entry.seme{-webkit-tap-highlight-color:transparent}
+.entry.seme .seme-q{font-style:italic;font-size:17px;line-height:1.7;color:rgba(127,184,164,.92);margin-top:0}
+.entry.seme .ed-meta{color:rgba(127,184,164,.55)}
 
 /* ════════ impostazioni: righe pulite ════════ */
 .switchrow{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:.5px solid rgba(245,242,234,.07)}
@@ -1136,7 +1142,7 @@ function sanitizeDiary(arr){
     const testo=clampStr(e.testo,LIMITS.DIARY);
     if(!testo) continue;
     const iso=(typeof e.iso==='string'&&!isNaN(Date.parse(e.iso)))?e.iso:new Date().toISOString();
-    out.push({data:clampStr(e.data,10),iso,testo,raw:clampStr(e.raw,LIMITS.RAW),born:lst(e.born),done:lst(e.done),pos:posOf(e.pos)});
+    out.push({data:clampStr(e.data,10),iso,testo,raw:clampStr(e.raw,LIMITS.RAW),born:lst(e.born),done:lst(e.done),pos:posOf(e.pos),seme:clampStr(e.seme||'',40)});
     if(out.length>=LIMITS.DMAX) break;
   }
   return out;
@@ -1222,6 +1228,29 @@ function sanitizeObsLines(arr){   /* memoria del sussurro: le ultime righe dette
   }
   return out.slice(-12); /* memoria di lavoro, non archivio: le ultime 12 bastano */
 }
+function sanitizeSemi(arr){   /* la memoria dei semi: cosa e stato chiesto, cosa e stato raccolto */
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  const ASSI=['pattern','senso','corpo','rientro','germoglio'];
+  const GESTI=['inizia','smetti','proteggi',''];
+  const STATI=['esalato','piantato','risposto'];
+  for(const s of arr){
+    if(!s||typeof s!=='object') continue;
+    const testo=clampStr(s.testo,200).trim(); if(!testo) continue;
+    out.push({
+      id:clampStr(s.id,40)||('sm'+Math.random().toString(36).slice(2,9)),
+      iso:(typeof s.iso==='string')?s.iso.slice(0,40):new Date().toISOString(),
+      tk:(typeof s.tk==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s.tk))?s.tk:'',
+      asse:ASSI.includes(s.asse)?s.asse:'pattern',
+      gesto:GESTI.includes(s.gesto)?(s.gesto||''):'',
+      testo:testo,
+      stato:STATI.includes(s.stato)?s.stato:'esalato',
+      fonte:(s.fonte==='ai')?'ai':'locale',
+      rif:clampStr(s.rif,40)
+    });
+  }
+  return out.slice(-40);
+}
 function sanitizeCapitoli(arr){   /* i capitoli: un mese rilegato non si riscrive, al massimo si ripulisce */
   if(!Array.isArray(arr)) return [];
   const out=[]; const visti=new Set();
@@ -1255,6 +1284,7 @@ function sanitizeState(raw,def){
     mastery:sanitizeMastery(raw.mastery),
     obsLines:sanitizeObsLines(raw.obsLines),
     capitoli:sanitizeCapitoli(raw.capitoli),
+    semi:sanitizeSemi(raw.semi),
     questLog:sanitizeQuestLog(raw.questLog),
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
@@ -1540,7 +1570,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.67 · 2026-07-10';
+const APP_VERSION='v60S.68 · 2026-07-10';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1560,7 +1590,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -3051,6 +3081,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         if(out.non_eseguibile) msg+=' · Non posso: '+out.non_eseguibile;
         toast(msg);
         try{ processMastery(out.motore); }catch(_){}
+        try{ semeRaccolto(); }catch(_){}
         try{ renderLetture(out.motore); }catch(_){}
         try{ if(!maybeRivelazione()) maybeLascito(); }catch(_){}
         resetCapture();
@@ -3062,12 +3093,13 @@ document.querySelector('#btn-save').onclick=async()=>{
       addDiary(transcript,[],[]);
       save(); render();
       toast('Nota salvata nel diario (IA spenta: manca la chiave)');
+      try{ semeRaccolto(); }catch(_){}
       resetCapture();
       guideAfterDistill([]);
       return;
     }
   }catch(err){
-    addDiary(transcript,[],[]); save(); render(); resetCapture();
+    addDiary(transcript,[],[]); save(); render(); resetCapture(); try{ semeRaccolto(); }catch(_){}
     const code=(err&&err.message)||'';
     let msg='IA non raggiungibile'+(code&&code!=='bad'?' ['+code.slice(0,90)+']':'')+': trascritto salvato comunque';
     if(code==='bad') msg='L\u2019IA ha risposto in un formato non leggibile: riprova. Trascritto salvato.';
@@ -3087,9 +3119,9 @@ document.querySelector('#btn-save').onclick=async()=>{
     renderFlow();
   }
 };
-function addDiary(testo,born,done,raw){
+function addDiary(testo,born,done,raw,seme){
   const lst=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,20).map(x=>x.slice(0,200)):[];
-  S.diary.unshift({data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos()});
+  S.diary.unshift({data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos(),seme:clampStr(seme||'',40)});
   if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX;
 }
 
@@ -3126,7 +3158,7 @@ async function askClaude(transcript){
 '14. SGUARDO: classifica il diario: 1=cronaca, 2=osservazione su di se, 3=pattern/connessione causale su di se. Vale il livello massimo presente: {"livello":N,"segnale":"frase"}.\n'+
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
 '{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"non_eseguibile":""}';
-  const res=await callAnthropic({system:sys,user:'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
+  const res=await callAnthropic({system:sys,user:(window._semeAttivo?'DOMANDA SEMINATA (il racconto risponde a questa):\n'+window._semeAttivo.testo+'\n\n':'')+'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
   if(res.err){ const e=res.err;
     if(e==='chiave') throw new Error('AUTH');
     if(e==='credito') throw new Error('CREDIT');
@@ -3308,7 +3340,7 @@ function buildObserverDigest(){
     taskCompletate:Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0)
   }));
   const osservazioniPrecedenti=(S.observerNotes||[]).slice(-4).map(n=>n.note);
-  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti};
+  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti, domandeSeminate:(S.semi||[]).slice(-6).map(s=>({domanda:s.testo,stato:s.stato}))};
 }
 
 async function askObserver(digest){
@@ -4123,7 +4155,7 @@ function updateRing(){
       window._pattoDetto=tk2; const audD=!!(S.patto&&S.patto.audace);
       setTimeout(()=>{ try{ toast(audD?'L\u2019azzardo \u00e8 stato vinto.':'Il patto \u00e8 stato mantenuto.'); }catch(_){} },1900);
     } }catch(_){}
-  try{ setTimeout(perle,2800); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno */
+  try{ setTimeout(()=>{ perle(); try{ maybeSemina(); }catch(_){} },2800); }catch(_){}   /* il ritardo copre il testo in streaming del cerchio pieno; dopo la perla, l'eventuale seme */
   try{ renderFlow(); }catch(_){}
 }
 
@@ -4337,6 +4369,208 @@ function renderQuests(bornIds){
   el.innerHTML='';
   list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>{renderQuests([]);renderTodayQuests([]);})));
 }
+/* ══════════════════════════════════════════════════════════════
+   LA SEMINA DI DOMANDE — un seme, non un consiglio. Adattiva: decidono i dati.
+   Legge: 1/di max · la perla vince · MAI numeri · venerdi sera silenzio ·
+   mattina=pattern, sera=senso/corpo · ignorata torna variata · toccata si pianta
+   nel Diario · ritoccata apre il mic e la risposta entra nel ciclo dell'osservatrice.
+   ══════════════════════════════════════════════════════════════ */
+const SEME_VIVAIO={
+ pattern:{
+  inizia:['cosa aspetta da settimane un inizio che dura un minuto?','la prima mossa che rimandi: e davvero grande o l\u2019hai solo disegnata grande?'],
+  smetti:['cosa continui a fare solo perche hai sempre fatto cosi?','quale abitudine ti ruba le mattine senza pagare affitto?'],
+  proteggi:['cosa funziona gia, e nessuno se ne accorge - nemmeno tu?','quale parte del tuo giorno difenderesti a mani nude?']
+ },
+ senso:{
+  inizia:['per chi ancora ti chiama per nome: cosa stai costruendo che vedranno?','se il lavoro e di passaggio, tu verso dove?'],
+  smetti:['cosa porti avanti per abitudine che non serve piu a nessuno che ami?','a chi stai ancora dimostrando qualcosa che non guarda piu?'],
+  proteggi:['chi ami di piu al mondo - e il tuo tempo lo sa?','lo svuotamento della sera: e il prezzo giusto per cio che compri col giorno?']
+ },
+ corpo:{
+  inizia:['dove lo senti, il desiderio che vuole tutto subito - un attimo prima che comandi?','che gesto chiede il corpo appena sveglio, prima che decida la testa?'],
+  smetti:['la tensione nel collo: che parola non stai dicendo?','la fame che arriva quando non sei attento: di cosa ha fame davvero?'],
+  proteggi:['il corpo stanco del giorno buono e quello del giorno storto: li distingui ancora?','quale stanchezza stasera e guadagnata, e quale solo subita?']
+ },
+ rientro:['il sentiero non si offende: aspetta.','anche il vuoto e una pietra, se lo attraversi.'],
+ germoglio:['quella domanda che avevi piantato - \u00ab%T\u00bb - e germogliato qualcosa?','\u00ab%T\u00bb, avevi piantato. la risposta e cresciuta o l\u2019ha vinta il buio?']
+};
+function seminaCooldown(semi){
+  const s=semi||[]; if(!s.length) return 0;
+  const veri=s.filter(x=>x.asse!=='rientro');
+  if(!veri.length) return 2;
+  const ultimo=veri[veri.length-1];
+  if(ultimo.stato==='piantato'||ultimo.stato==='risposto') return 2;
+  const u2=veri.slice(-2);
+  if(u2.length===2&&u2.every(x=>x.stato==='esalato')) return 5;
+  return 3;
+}
+function giorniVuoti(state,tk){
+  let n=0;
+  for(let i=1;i<=5;i++){
+    const d=new Date(tk+'T12:00:00'); d.setDate(d.getDate()-i);
+    const k=d.toISOString().slice(0,10);
+    const day=(state.checks||{})[k];
+    if(day&&Object.values(day).some(v=>v===true)) break;
+    n++;
+  }
+  return n;
+}
+function seminaCandidate(state,ctx){
+  const semi=state.semi||[];
+  if(semi.some(s=>s.tk===ctx.tk)) return null;
+  if(ctx.dow===4&&ctx.ora>=18) return null;
+  const mattina=(ctx.ora>=5&&ctx.ora<12);
+  const sera=(ctx.ora>=18&&ctx.ora<23&&ctx.sealed);
+  if(!mattina&&!sera) return null;
+  if(ctx.vuoti>=2){
+    const sette=new Date(ctx.tk+'T12:00:00'); sette.setDate(sette.getDate()-7);
+    const soglia=sette.toISOString().slice(0,10);
+    if(!semi.some(s=>s.asse==='rientro'&&s.tk>=soglia)) return {tipo:'rientro'};
+    return null;
+  }
+  const q14=new Date(ctx.tk+'T12:00:00'); q14.setDate(q14.getDate()-14);
+  const sogliaG=q14.toISOString().slice(0,10);
+  const germ=semi.find(s=>(s.stato==='piantato'||s.stato==='risposto')&&s.asse!=='germoglio'&&s.tk&&s.tk<=sogliaG&&!semi.some(x=>x.rif===s.id));
+  if(germ) return {tipo:'germoglio',rif:germ.id,rifTesto:germ.testo};
+  const veri=semi.filter(x=>x.asse!=='rientro');
+  if(veri.length){
+    const ultimo=veri[veri.length-1];
+    const gap=Math.round((Date.parse(ctx.tk+'T12:00:00Z')-Date.parse((ultimo.tk||ctx.tk)+'T12:00:00Z'))/86400000);
+    if(gap<seminaCooldown(semi)) return null;
+  }
+  const pool=mattina?['pattern']:['senso','corpo'];
+  let asse=pool[0];
+  if(pool.length>1){
+    const lastIdx=a=>{ for(let i=semi.length-1;i>=0;i--) if(semi[i].asse===a) return i; return -1; };
+    asse=pool.slice().sort((a,b)=>lastIdx(a)-lastIdx(b))[0];
+  }
+  const GESTI=['inizia','smetti','proteggi'];
+  const lastG=g=>{ for(let i=semi.length-1;i>=0;i--) if(semi[i].gesto===g) return i; return -1; };
+  const gesto=GESTI.slice().sort((a,b)=>lastG(a)-lastG(b))[0];
+  return {tipo:'seme',asse:asse,gesto:gesto};
+}
+function semeVivaio(tipo,asse,gesto,mem,rifTesto){
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z\u00e0-\u00f9 ]/g,'').slice(0,60);
+  const usati=new Set((mem||[]).map(norm));
+  let pool;
+  if(tipo==='rientro') pool=SEME_VIVAIO.rientro;
+  else if(tipo==='germoglio') pool=SEME_VIVAIO.germoglio.map(t=>t.replace('%T',clampStr(rifTesto||'',60)));
+  else pool=(SEME_VIVAIO[asse]&&SEME_VIVAIO[asse][gesto])||SEME_VIVAIO.pattern.inizia;
+  for(const t of pool) if(!usati.has(norm(t))) return t;
+  return pool[(mem||[]).length%pool.length];
+}
+function semeFiltro(testo,mem,tipo){
+  const t=String(testo||'').trim();
+  if(!t||t.length<12||t.length>150) return false;
+  if(/\d/.test(t)) return false;
+  if(tipo!=='rientro'&&!/\?$/.test(t)) return false;
+  if(/(se non avessi paura|immagina (se|di)|sogna|io migliore|non avere paura|zona di comfort)/i.test(t)) return false;
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z\u00e0-\u00f9 ]/g,'').slice(0,60);
+  if((mem||[]).some(m=>norm(m)===norm(t))) return false;
+  return true;
+}
+const SEME_SYS='Sei l\u2019osservatrice di Sentiero. Ogni tanto pianti una DOMANDA nella giornata: un seme, non un consiglio.\n'+
+'VOCE: calma, affilata, leggermente audace. Ironia asciutta ammessa. Minuscole, come si parla.\n'+
+'VIETATO: retorica motivazionale ("se non avessi paura", "immagina se", "sogna", "il tuo io migliore"), consigli, imperativi, esclamazioni, e qualsiasi numero o cifra.\n'+
+'ASSI: pattern (cosa si ripete) \u00b7 senso (per chi, verso dove) \u00b7 corpo (dove lo senti). GESTI: iniziare, smettere, proteggere. Ti arrivano asse e gesto: restaci.\n'+
+'TEMI VIVI di chi ti legge (toccali solo se l\u2019asse ci passa): le finanze che preoccupano, l\u2019allenamento che torna nei pensieri e sparisce dal piano, la vita sentimentale, gli impulsi che vogliono tutto subito, lo svuotamento della sera, la solitudine come tema aperto, le persone per cui vale la pena ("chi ancora mi chiama per nome").\n'+
+'Se nei dati ci sono parole del suo diario, puoi riprenderne DUE-TRE esatte tra virgolette basse \u00ab...\u00bb, mai parafrasate.\n'+
+'Se c\u2019e germoglio_di: la domanda torna su QUEL seme piantato tempo fa - chiedi cosa e cresciuto, di lato, senza ripeterlo uguale.\n'+
+'NON RIPETERTI: semi_recenti sono le domande gia piantate; cambia immagine, attacco, struttura.\n'+
+'FORMATO: UNA domanda sola, massimo centotrenta caratteri, finisce col punto interrogativo. Rispondi SOLO JSON compatto: {"seme":"..."}';
+function semeDigest(cand){
+  const dia=(S.diary||[]).slice(0,2).map(e=>clampStr(e.testo,240));
+  const attr=[]; try{ Object.values((S.mastery&&S.mastery.quest)||{}).forEach(q=>{ if(q&&q.fraseAttrito) attr.push(clampStr(q.fraseAttrito,90)); }); }catch(_){}
+  const d={momento:(new Date().getHours()<12)?'mattina':'sera',asse:cand.asse||cand.tipo,gesto:cand.gesto||'',
+    quest_aperte:(S.quests||[]).filter(q=>!q.fatto).slice(0,8).map(q=>q.titolo),
+    attriti:attr.slice(0,3),diario_recente:dia,
+    semi_recenti:(S.semi||[]).slice(-6).map(s=>s.testo)};
+  if(cand.tipo==='germoglio') d.germoglio_di=clampStr(cand.rifTesto||'',160);
+  return d;
+}
+async function askSeme(cand){
+  const res=await callAnthropic({system:SEME_SYS,user:'DATI (JSON):\n'+JSON.stringify(semeDigest(cand)),assistantPrefix:'{',max_tokens:150,temperature:0.8,timeout:25000});
+  if(res.err) throw new Error(res.err);
+  const p=parseLooseJson(res.text);
+  const t=clampStr((p&&typeof p.seme==='string')?p.seme:'',160).trim();
+  if(!t) throw new Error('vuoto');
+  return t;
+}
+function semeScrivi(testo,semeId){   /* il rito della perla, in giada: si scrive un carattere alla volta */
+  const dl=document.querySelector('#day-line'); if(!dl) return false;
+  dl.innerHTML=''; let pi=0;
+  String(testo).split(' ').forEach((wd,wi,arr)=>{
+    const w=document.createElement('span'); w.className='pw';
+    for(const ch of wd){ const c=document.createElement('span'); c.className='pc'; c.textContent=ch;
+      c.style.animationDelay=(90+pi*14)+'ms'; pi++; w.appendChild(c); }
+    dl.appendChild(w);
+    if(wi<arr.length-1){ dl.appendChild(document.createTextNode(' ')); pi++; }
+  });
+  dl.classList.add('perla','seme');
+  const gb=document.getElementById('giorno-bar');
+  window._semeVivo=semeId;
+  if(gb){ gb.classList.add('semina-viva');
+    gb.addEventListener('click',function h(){
+      gb.removeEventListener('click',h);
+      if(window._semeVivo===semeId){ try{ semePianta(semeId); }catch(_){} }
+    }); }
+  setTimeout(()=>{ if(window._semeVivo===semeId) dl.classList.add('perla-via'); },11500);
+  setTimeout(()=>{ window._semeVivo=null; if(gb) gb.classList.remove('semina-viva');
+    dl.classList.remove('perla','seme','perla-via'); try{ syncDayLine(); }catch(_){} },12000);
+  return true;
+}
+function semePianta(id){
+  const s=(S.semi||[]).find(x=>x.id===id); if(!s||s.stato!=='esalato') return;
+  s.stato='piantato';
+  addDiary(s.testo,[],[],'',id);
+  window._semeVivo=null;
+  save(); try{ renderDiary(); }catch(_){}
+  const dl=document.querySelector('#day-line'); if(dl) dl.classList.add('perla-via');
+  try{ toast('Seme piantato nel diario'); }catch(_){}
+  try{ haptic(); }catch(_){}
+}
+function semeRispondiUI(id,testo){
+  window._semeAttivo={id:id,testo:testo};
+  showPane('quest');
+  setTimeout(()=>{ try{ micBtn.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
+    try{ micLabel.textContent='\u00ab'+testo+'\u00bb \u2014 tieni premuto e rispondi'; }catch(_){} },120);
+}
+function semeRaccolto(){   /* il racconto e arrivato: il seme e risposto */
+  if(!window._semeAttivo) return;
+  const s=(S.semi||[]).find(x=>x.id===window._semeAttivo.id);
+  if(s&&s.stato!=='risposto'){ s.stato='risposto'; save(); try{ renderDiary(); }catch(_){} }
+  window._semeAttivo=null;
+}
+let _seminaBusy=false;
+async function maybeSemina(){
+  if(_seminaBusy) return; _seminaBusy=true;
+  try{
+    const tk=todayKey();
+    try{ if(localStorage.getItem('sentiero-seme')===tk) return; }catch(_){}
+    try{ if(localStorage.getItem('sentiero-perla')===tk) return; }catch(_){}      /* la perla vince */
+    try{ if(localStorage.getItem('sentiero-presenza')===tk) return; }catch(_){}   /* una voce sola per sera */
+    const d=new Date();
+    const cand=seminaCandidate(S,{tk:tk,ora:d.getHours(),dow:dowOf(d),sealed:S.lastSealed===tk,vuoti:giorniVuoti(S,tk)});
+    if(!cand) return;
+    const mem=(S.semi||[]).map(s=>s.testo);
+    let testo='',fonte='locale';
+    if(S.apiKey&&cand.tipo!=='rientro'){
+      try{ testo=await askSeme(cand); fonte='ai'; }catch(_){ testo=''; }
+      if(testo&&!semeFiltro(testo,mem,cand.tipo)) testo='';
+      if(!testo) fonte='locale';
+    }
+    if(!testo) testo=semeVivaio(cand.tipo,cand.asse,cand.gesto,mem,cand.rifTesto);
+    if(!semeFiltro(testo,mem,cand.tipo)) return;
+    const id='sm'+Date.now().toString(36);
+    if(!semeScrivi(testo,id)) return;
+    S.semi.push({id:id,iso:new Date().toISOString(),tk:tk,asse:cand.tipo==='seme'?cand.asse:cand.tipo,
+      gesto:cand.gesto||'',testo:testo,stato:'esalato',fonte:fonte,rif:cand.rif||''});
+    S.semi=sanitizeSemi(S.semi);
+    try{ localStorage.setItem('sentiero-seme',tk); }catch(_){}
+    save();
+  }catch(_){}
+  finally{ _seminaBusy=false; }
+}
 /* ══════════════════════════════════════════════════════════════════
    I CAPITOLI — alla prima apertura di un mese nuovo, quello finito si rilega:
    fotografia delle pietre (col piano di oggi, il meglio che la memoria offre)
@@ -4472,7 +4706,18 @@ function renderDiary(){
     const mese=d.toLocaleDateString('it-IT',{month:'short'}).replace('.','');
     const dow=d.toLocaleDateString('it-IT',{weekday:'long'});
     const ora=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-    div.innerHTML=
+    if(e.seme){
+      div.classList.add('seme');
+      const stS=((S.semi||[]).find(s=>s.id===e.seme)||{}).stato||'piantato';
+      div.innerHTML=
+        '<div class="entry-date">'+
+          '<span class="ed-num">'+giorno+'</span>'+
+          '<span class="ed-mo">'+mese+'</span>'+
+          '<span class="ed-meta">seme '+(stS==='risposto'?'\u00b7 risposta raccolta':'\u00b7 tocca per rispondere a voce')+'</span>'+
+        '</div>'+
+        '<p class="seme-q">'+escapeHtml(txt)+'</p>';
+      if(stS!=='risposto') div.onclick=()=>{ try{ semeRispondiUI(e.seme,txt); }catch(_){} };
+    } else div.innerHTML=
       '<div class="entry-date">'+
         '<span class="ed-num">'+giorno+'</span>'+
         '<span class="ed-mo">'+mese+'</span>'+
