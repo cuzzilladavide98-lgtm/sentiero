@@ -56,7 +56,7 @@ main{flex:1;padding:0 28px 132px;overflow-y:auto;-webkit-overflow-scrolling:touc
 header{padding:14px 28px 0}
 .hd-row{display:flex;align-items:flex-start;justify-content:space-between;min-height:44px}
 #dateline{
-  font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.15;
+  font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.12;white-space:nowrap;
   letter-spacing:-.02em;color:var(--t1);text-transform:lowercase;max-width:78%;
 }
 #btn-pin{border:none;background:none;color:var(--t2);width:44px;height:44px;flex:none;
@@ -120,8 +120,11 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 #btn-pin{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--t2);background:rgba(245,242,234,.05);border:.5px solid rgba(245,242,234,.10);border-radius:999px;padding:6px 12px;font-family:inherit}
 #btn-pin svg{width:13px;height:13px;stroke:var(--jade);flex:none}
 #btn-pin svg.share{stroke:var(--t2);opacity:.65}
-#giorno-bar{display:flex;align-items:center;gap:14px;padding:2px 0 13px;margin-bottom:6px;border-bottom:.5px solid rgba(245,242,234,.08)}
-#gb-ring{width:66px;height:66px;flex:none}
+#giorno-bar{display:flex;align-items:center;min-height:44px;padding:4px 0 14px;margin-bottom:8px;border-bottom:.5px solid rgba(245,242,234,.08)}
+#gb-ring{width:84px;height:84px;flex:none}
+#hd-dx{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.gb-t{stroke:rgba(245,242,234,.08);stroke-width:2.4}
+.gb-t2{stroke:rgba(245,242,234,.06);stroke-width:2}
 #gb-ring circle{fill:none;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.22,1,.36,1)}
 #gb-r1{stroke:rgba(127,184,164,.35);stroke-width:2.4;transform:rotate(-100deg);transform-origin:50% 50%}
 #gb-r2{stroke:var(--accent);stroke-width:2.8;transform:rotate(-100deg);transform-origin:50% 50%}
@@ -162,7 +165,12 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 .riv-head{font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
 .riv-txt{font-size:15px;color:var(--t1);line-height:1.6;font-family:ui-serif,Georgia,serif;font-style:italic}
 body[data-pane="diario"] header .hd-row,body[data-pane="impostazioni"] header .hd-row{display:none}
-#dateline{font-size:clamp(34px,10.5vw,42px)}
+#dateline{font-size:clamp(30px,8.6vw,36px)}
+#dateline{display:flex;align-items:baseline}
+.d-num{font-family:var(--serif);font-size:84px;line-height:.88;color:var(--t1);position:relative;display:inline-block;font-variant-numeric:lining-nums}
+.d-num::after{content:'';position:absolute;left:4%;right:10%;bottom:-3px;height:2px;border-radius:2px;background:linear-gradient(90deg,rgba(232,168,76,.7),transparent)}
+.d-mese{font-family:var(--serif);font-style:italic;font-size:26px;color:rgba(245,242,234,.75);margin-left:11px}
+@media (max-width:350px){ .d-num{font-size:68px} .d-mese{font-size:22px} }
 /* ══════ CANTIERE SPARKING — S1: MATERIA E LUCE ══════
    Stesso gioco, resa nuova: profondita, luce ambientale, superfici che esistono. */
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
@@ -800,12 +808,13 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 }
 /* ══════ IL SENTIERO VISIBILE — le pietre del cammino ══════
    trenta giorni come pietre: ogni pietra porta il suo arco di fuoco com'era a fine giornata */
-#cammino{display:flex;align-items:center;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+#cammino{display:flex;align-items:flex-end;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
   padding:10px 2px 12px;margin:0 -2px;scrollbar-width:none;position:relative}
 #cammino::-webkit-scrollbar{display:none}
 #cammino::before{content:'';position:absolute;left:6px;right:6px;top:50%;height:1px;margin-top:-1px;
   background:linear-gradient(90deg,transparent,rgba(245,242,234,.07) 12%,rgba(245,242,234,.07) 88%,rgba(232,168,76,.25))}
 .pietra{flex:none;width:44px;height:44px;position:relative;-webkit-tap-highlight-color:transparent}
+.pietra.oggi{width:52px;height:52px;margin-left:8px}
 .pietra.lun::after{content:'';position:absolute;left:50%;bottom:-5px;width:3px;height:3px;margin-left:-1.5px;
   border-radius:50%;background:rgba(245,242,234,.18)}
 .p-oro{fill:#E8A84C}
@@ -901,11 +910,14 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
   <header>
     <div class="hd-row">
       <div id="date-wrap"><div id="gb-dow"></div><div id="dateline"></div></div>
+      <div id="hd-dx">
       <button id="btn-pin" aria-label="Condividi la mia posizione">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
         <span>dove sono</span>
         <svg class="share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>
       </button>
+      <svg id="gb-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="gb-t" cx="20" cy="20" r="16"/><circle class="gb-t2" cx="20" cy="20" r="10.5"/><circle id="gb-r1" cx="20" cy="20" r="16"/><circle id="gb-r2" cx="20" cy="20" r="10.5"/></svg>
+      </div>
     </div>
   </header>
 
@@ -913,7 +925,6 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
       <div id="giorno-bar">
-        <svg id="gb-ring" viewBox="0 0 40 40" aria-hidden="true"><circle id="gb-r1" cx="20" cy="20" r="16"/><circle id="gb-r2" cx="20" cy="20" r="10.5"/></svg>
         <span id="day-line"></span>
       </div>
       <div id="cammino" aria-label="Il sentiero degli ultimi trenta giorni"></div>
@@ -1635,7 +1646,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.77 · 2026-07-10';
+const APP_VERSION='v60S.79 · 2026-07-10';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2770,7 +2781,7 @@ document.querySelector('#btn-pin').onclick=()=>{
    HEADER / TABS
    ====================================================================== */
 function renderStreak(){
-  $('#dateline').textContent=new Date().toLocaleDateString('it-IT',{day:'numeric',month:'long'});
+  { const _d=new Date(); $('#dateline').innerHTML='<span class="d-num">'+_d.getDate()+'</span><span class="d-mese">'+_d.toLocaleDateString('it-IT',{month:'long'})+'</span>'; }
   try{ const gd=$('#gb-dow'); if(gd) gd.textContent=new Date().toLocaleDateString('it-IT',{weekday:'long'}); }catch(_){}
 }
 function scrollToSoft(sel){
