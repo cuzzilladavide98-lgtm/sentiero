@@ -42,6 +42,7 @@ body{
   letter-spacing:-.01em;
 }
 button,.item,.chk,.sw,.days button,#mic{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{overflow-x:hidden}   /* il volto: il fuoco sborda i margini, la pagina no */
 #live[contenteditable]{-webkit-user-select:text;user-select:text}
 
 /* niente sfondi decorativi: spariscono del tutto */
@@ -55,19 +56,19 @@ main{flex:1;padding:0 28px 132px;overflow-y:auto;-webkit-overflow-scrolling:touc
 header{padding:14px 28px 0}
 .hd-row{display:flex;align-items:flex-start;justify-content:space-between;min-height:44px}
 #dateline{
-  font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.15;
+  font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.15;
   letter-spacing:-.02em;color:var(--t1);text-transform:lowercase;max-width:78%;
 }
 #btn-pin{border:none;background:none;color:var(--t2);width:44px;height:44px;flex:none;
   display:flex;align-items:center;justify-content:center;transition:color .2s,transform .15s}
 #btn-pin:active{color:var(--accent);transform:scale(1.15)}
-nav button .ico{display:block;width:25px;height:25px;margin:0 auto 4px;color:var(--t2);transition:color .2s,transform .2s}
+nav button .ico{display:block;width:38px;height:38px;margin:0 auto 4px;color:var(--t2);transition:color .2s,transform .2s}
 nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
 #mic-wrap{display:flex;flex-direction:column;align-items:center;padding:40px 0 28px;position:relative}
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
-#mic{width:236px;height:236px;border:none;background:transparent;position:relative;touch-action:none}
+#mic{width:310px;height:310px;border:none;background:transparent;position:relative;touch-action:none}
 #mic svg{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:1}
 .ring-track{fill:none;stroke:rgba(245,242,234,.10);stroke-width:4.5}
    /* niente transition: la pittura la guida il rAF, frame per frame */
@@ -113,21 +114,21 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 @keyframes sealglow{0%{filter:drop-shadow(0 0 0 transparent)}40%{filter:drop-shadow(0 0 16px rgba(232,168,76,.8))}100%{filter:drop-shadow(0 0 6px rgba(232,168,76,.3))}}
 
-#mic-label{margin-top:22px;font-size:15px;color:var(--t2);text-align:center;min-height:20px;font-weight:400;letter-spacing:0}
-#ring-count{font-size:12px;color:var(--t3);margin-top:6px;letter-spacing:.04em}
-#gb-dow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;min-height:13px}
-#btn-pin{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--t2);background:rgba(245,242,234,.05);border:.5px solid rgba(245,242,234,.10);border-radius:999px;padding:6px 12px;font-family:inherit}
+#mic-label{margin-top:22px;font-size:16px;color:var(--t2);text-align:center;min-height:20px;font-weight:400;letter-spacing:0}
+#ring-count{font-size:14px;color:var(--t3);margin-top:6px;letter-spacing:.04em}
+#gb-dow{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;min-height:13px}
+#btn-pin{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--t2);background:rgba(245,242,234,.05);border:.5px solid rgba(245,242,234,.10);border-radius:999px;padding:6px 12px;font-family:inherit}
 #btn-pin svg{width:13px;height:13px;stroke:var(--jade);flex:none}
 #btn-pin svg.share{stroke:var(--t2);opacity:.65}
-#giorno-bar{display:flex;align-items:center;gap:10px;padding:2px 0 13px;margin-bottom:6px;border-bottom:.5px solid rgba(245,242,234,.08)}
-#gb-ring{width:30px;height:30px;flex:none}
+#giorno-bar{display:flex;align-items:center;gap:14px;padding:2px 0 13px;margin-bottom:6px;border-bottom:.5px solid rgba(245,242,234,.08)}
+#gb-ring{width:66px;height:66px;flex:none}
 #gb-ring circle{fill:none;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.22,1,.36,1)}
 #gb-r1{stroke:rgba(127,184,164,.35);stroke-width:2.4;transform:rotate(-100deg);transform-origin:50% 50%}
 #gb-r2{stroke:var(--accent);stroke-width:2.8;transform:rotate(-100deg);transform-origin:50% 50%}
-#day-line{font-size:12px;color:var(--t3);letter-spacing:.04em;min-height:15px}
+#day-line{font-size:15px;color:var(--t3);letter-spacing:.04em;min-height:18px}
 #day-line.sealed{color:var(--accent)}
 .sec-toggle{cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;justify-content:space-between;align-items:center}
-.sec-toggle .chev{font-size:12px;opacity:.55;transition:transform .25s ease}
+.sec-toggle .chev{font-size:13px;opacity:.55;transition:transform .25s ease}
 /* FRAME-LAVORO 6: LA FISARMONICA — si apre col respiro (19 frame), mai di scatto */
 #sec-programma{scroll-margin-top:10px;display:grid;grid-template-rows:auto 1fr;
   transition:grid-template-rows .32s cubic-bezier(.22,1,.36,1)}
@@ -139,29 +140,29 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 #sec-programma:not(.collapsed) .group .item:nth-child(1){animation-delay:.05s}
 #sec-programma:not(.collapsed) .group .item:nth-child(2){animation-delay:.09s}
 #sec-programma:not(.collapsed) .group .item:nth-child(n+3){animation-delay:.13s}
-.flow{margin-top:14px;min-height:34px;text-align:center;color:var(--t3);font-size:13px;line-height:1.45;max-width:320px}
-.flow strong{display:block;color:var(--t1);font-size:14px;font-weight:500;margin-bottom:4px}
+.flow{margin-top:14px;min-height:34px;text-align:center;color:var(--t3);font-size:14px;line-height:1.45;max-width:320px}
+.flow strong{display:block;color:var(--t1);font-size:15px;font-weight:500;margin-bottom:4px}
 .flow button,.empty-go{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;padding:6px 0;margin-top:2px}
 .flow:empty{display:none}
 #letture{width:100%;max-width:340px;margin-top:12px;background:rgba(245,242,234,.04);border:.5px solid rgba(245,242,234,.09);border-radius:16px;padding:12px 14px;text-align:left}
-.lett-head{font-size:12px;color:var(--t3);letter-spacing:.05em;margin-bottom:6px}
+.lett-head{font-size:13px;color:var(--t3);letter-spacing:.05em;margin-bottom:6px}
 .lett-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(245,242,234,.06)}
 .lett-row:last-of-type{border-bottom:none}
 .lett-chk{flex:none;width:19px;height:19px;border-radius:50%;border:1.6px solid var(--t3);margin-top:1px;position:relative}
 .lett-row.on .lett-chk{border-color:var(--accent);background:rgba(232,168,76,.15)}
 .lett-row.on .lett-chk::after{content:'';position:absolute;inset:5px 4px 6px 5px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-48deg)}
 .lett-row:not(.on){opacity:.45}
-.lett-txt{flex:1;font-size:13.5px;color:var(--t1);line-height:1.4}
-.lett-txt em{display:block;font-size:12px;color:var(--t3);font-style:italic;margin-top:1px}
-.lett-upd{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--jade);background:none;border:1px solid rgba(127,184,164,.35);border-radius:999px;padding:3px 10px}
+.lett-txt{flex:1;font-size:14.5px;color:var(--t1);line-height:1.4}
+.lett-txt em{display:block;font-size:13px;color:var(--t3);font-style:italic;margin-top:1px}
+.lett-upd{display:inline-block;margin-top:5px;font-size:12.5px;color:var(--jade);background:none;border:1px solid rgba(127,184,164,.35);border-radius:999px;padding:3px 10px}
 .lett-upd.sel{background:rgba(127,184,164,.18)}
 #lascito{width:100%;max-width:340px;margin-top:10px;background:rgba(232,168,76,.05);border:.5px solid rgba(232,168,76,.22);border-radius:16px;padding:12px 14px;text-align:left}
-.lasc-txt{font-size:13px;color:var(--t2);line-height:1.5;font-style:italic}
+.lasc-txt{font-size:15px;color:var(--t2);line-height:1.5;font-style:italic}
 #rivelazione{width:100%;max-width:340px;margin-top:12px;background:linear-gradient(160deg,rgba(232,168,76,.10),rgba(127,184,164,.06) 70%);border:1px solid rgba(232,168,76,.35);border-radius:18px;padding:14px 16px;text-align:left;box-shadow:0 8px 30px rgba(232,168,76,.10)}
-.riv-head{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
-.riv-txt{font-size:14px;color:var(--t1);line-height:1.6;font-family:ui-serif,Georgia,serif;font-style:italic}
+.riv-head{font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}
+.riv-txt{font-size:15px;color:var(--t1);line-height:1.6;font-family:ui-serif,Georgia,serif;font-style:italic}
 body[data-pane="diario"] header .hd-row,body[data-pane="impostazioni"] header .hd-row{display:none}
-#dateline{font-size:clamp(31px,9.5vw,38px)}
+#dateline{font-size:clamp(34px,10.5vw,42px)}
 /* ══════ CANTIERE SPARKING — S1: MATERIA E LUCE ══════
    Stesso gioco, resa nuova: profondita, luce ambientale, superfici che esistono. */
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
@@ -233,7 +234,7 @@ nav button .ico{transition:transform .16s ease}
 .btn-row{display:flex;gap:0;margin-top:24px;width:100%;justify-content:center}
 button.act{
   flex:0 0 auto;padding:12px 28px;border:none;background:none;
-  color:var(--t2);font-size:16px;font-weight:500;letter-spacing:0;
+  color:var(--t2);font-size:16.5px;font-weight:500;letter-spacing:0;
   transition:opacity .15s,transform .15s;
 }
 button.act.primary{color:var(--accent);font-weight:600}
@@ -241,7 +242,7 @@ button.act:active{opacity:.5;transform:scale(.97)}
 
 /* ════════ liste: righe di testo nel vuoto, niente card ════════ */
 section{margin-top:38px}
-.sec-head{font-size:13px;font-weight:600;color:var(--t3);letter-spacing:.02em;margin:0 0 4px;text-transform:lowercase}
+.sec-head{font-size:14px;font-weight:600;color:var(--t3);letter-spacing:.02em;margin:0 0 4px;text-transform:lowercase}
 .group{background:none;border:none;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 .group:empty{display:none}
 
@@ -250,14 +251,14 @@ section{margin-top:38px}
 .item:active{opacity:.6}
 
 /* priorità: nessun blocco colorato. Un punto piccolo, discreto. */
-.item .prio{flex:none;width:6px;height:6px;border-radius:50%;background:var(--t3)}
+.item .prio{flex:none;width:9px;height:9px;border-radius:50%;background:var(--t3)}
 .prio-0{display:none}
 .prio-1{background:var(--ember)}
 .prio-2{background:var(--accent)}
 .prio-3{background:var(--t3)}
 
 /* ── spunta: coreografia in tre tempi (anello → riempimento → segno disegnato) ── */
-.item .chk{flex:none;width:27px;height:27px;border-radius:50%;overflow:visible;
+.item .chk{flex:none;width:40px;height:40px;border-radius:50%;overflow:visible;
   border:1.5px solid rgba(245,242,234,.28);background:transparent;position:relative;
   transition:border-color .3s ease;-webkit-tap-highlight-color:transparent}
 /* IL COLPO DI TIMBRO: il quadrato vermiglio e il ::before, unico riempimento */
@@ -298,7 +299,7 @@ section{margin-top:38px}
   transition:transform .4s cubic-bezier(.22,1,.36,1) .1s}
 .item.done .txt{color:var(--t3)}
 .item.done .txt .ttl::after{transform:scaleX(1)}
-.item .meta{display:block;font-size:13px;color:var(--t3);margin-top:3px;font-weight:400}
+.item .meta{display:block;font-size:14px;color:var(--t3);margin-top:3px;font-weight:400}
 .item .meta.over{color:var(--ember)}
 .item .meta.soon{color:var(--accent)}
 .item .del{flex:none;border:none;background:none;color:var(--t3);font-size:20px;
@@ -308,8 +309,8 @@ section{margin-top:38px}
 #list-quest .item.future{opacity:1}  /* nella loro scheda dedicata le future sono protagoniste */
 .item.leaving{animation:leave .45s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes leave{0%{opacity:1;max-height:70px}100%{opacity:0;max-height:0;padding-top:0;padding-bottom:0}}
-.empty{font-family:var(--serif);font-style:italic;color:var(--t3);font-size:16px;padding:8px 0;line-height:1.6}
-.empty .empty-go{display:block;font-family:var(--sans);font-style:normal;font-size:15px;margin-top:10px}
+.empty{font-family:var(--serif);font-style:italic;color:var(--t3);font-size:17px;padding:8px 0;line-height:1.6}
+.empty .empty-go{display:block;font-family:var(--sans);font-style:normal;font-size:16px;margin-top:10px}
 
 /* ════════ diario: prosa, niente lastre ════════ */
 .diary-font{font-family:var(--serif)}
@@ -317,7 +318,7 @@ section{margin-top:38px}
 .e-del{position:absolute;top:14px;right:0;border:none;background:none;color:var(--t3);font-size:19px;line-height:1;padding:12px 6px 12px 18px;opacity:.55;font-family:inherit;min-width:44px;text-align:right}
 .e-del:active{opacity:.35}
 /* FRAME-LAVORO 7: LA × ARMATA — l'avviso entra con un impulso di brace (14 frame) */
-.e-del.armed{color:var(--ember);opacity:1;font-size:12px;letter-spacing:.04em;
+.e-del.armed{color:var(--ember);opacity:1;font-size:13.5px;letter-spacing:.04em;
   animation:arma .24s cubic-bezier(.3,1.4,.4,1) both}
 @keyframes arma{0%{opacity:0;transform:translateX(6px) scale(.82)}60%{opacity:1;transform:translateX(0) scale(1.07)}100%{transform:scale(1)}}
 /* l'addio della voce: prima esala di lato, poi cede il suo spazio */
@@ -327,10 +328,10 @@ section{margin-top:38px}
 .entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-right:64px}
 .ed-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;color:var(--t1);letter-spacing:-.02em}
 .ed-mo{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);text-transform:lowercase}
-.ed-meta{font-family:var(--sans);font-size:12px;color:var(--t3);letter-spacing:.02em;margin-left:auto;align-self:center;text-transform:lowercase}
+.ed-meta{font-family:var(--sans);font-size:13.5px;color:var(--t3);letter-spacing:.02em;margin-left:auto;align-self:center;text-transform:lowercase}
 .ed-meta .posa{color:var(--jade);text-decoration:none;display:inline-block;padding:8px 6px;margin:-8px -2px -8px 0}
-.entry p{margin-top:0;font-size:18px;line-height:1.75;color:rgba(245,242,234,.92)}
-.entry .tags{margin-top:12px;font-size:13px;line-height:1.6;font-family:var(--sans)}
+.entry p{margin-top:0;font-size:19px;line-height:1.75;color:rgba(245,242,234,.92)}
+.entry .tags{margin-top:12px;font-size:14px;line-height:1.6;font-family:var(--sans)}
 .entry .tags.born-t{color:var(--accent)}
 .entry .tags.done-t{color:var(--t3)}
 /* ══ I CAPITOLI — la pergamena del mese, chiusa dalla ceralacca ══ */
@@ -338,22 +339,22 @@ section{margin-top:38px}
 #capitoli{margin:6px 2px 16px}
 #capitoli .capitolo{position:relative;border:.5px solid rgba(245,242,234,.28);border-radius:2px;
   outline:.5px solid rgba(245,242,234,.09);outline-offset:4px;
-  padding:26px 16px 16px;background:linear-gradient(180deg,rgba(245,242,234,.03),rgba(245,242,234,.008))}
-#capitoli .cap-fermaglio{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
-  width:38px;height:12px;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:0 6px}
-#capitoli .cap-fermaglio b{width:7px;height:7px;border-radius:50%;background:#B9402E;box-shadow:0 0 8px rgba(185,64,46,.35)}
+  padding:30px 16px 16px;background:linear-gradient(180deg,rgba(245,242,234,.03),rgba(245,242,234,.008))}
+#capitoli .cap-fermaglio{position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  width:48px;height:16px;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:0 6px}
+#capitoli .cap-fermaglio b{width:10px;height:10px;border-radius:50%;background:#B9402E;box-shadow:0 0 8px rgba(185,64,46,.35)}
 #capitoli .cap-angoli::before,#capitoli .cap-angoli::after{content:'';position:absolute;width:12px;height:12px;pointer-events:none}
 #capitoli .cap-angoli::before{bottom:-4px;left:-4px;border-bottom:1.5px solid rgba(245,242,234,.45);border-left:1.5px solid rgba(245,242,234,.45)}
 #capitoli .cap-angoli::after{bottom:-4px;right:-4px;border-bottom:1.5px solid rgba(245,242,234,.45);border-right:1.5px solid rgba(245,242,234,.45)}
-#capitoli .cap-eyebrow{display:block;text-align:center;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
-#capitoli .cap-mese{display:block;text-align:center;font-family:var(--serif);font-style:italic;font-size:26px;color:var(--t1);line-height:1.2;margin-bottom:10px}
-#capitoli .cap-mese small{font-style:normal;font-size:13px;color:var(--t3);margin-left:7px}
+#capitoli .cap-eyebrow{display:block;text-align:center;font-size:12.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+#capitoli .cap-mese{display:block;text-align:center;font-family:var(--serif);font-style:italic;font-size:28px;color:var(--t1);line-height:1.2;margin-bottom:10px}
+#capitoli .cap-mese small{font-style:normal;font-size:14px;color:var(--t3);margin-left:7px}
 #capitoli .cap-fila{width:100%;display:block;margin:2px 0 14px}
-#capitoli .cap-riga{font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.7;color:rgba(245,242,234,.84);margin:0;text-align:center}
-#capitoli .cap-firma{margin-top:10px;font-size:12px;color:var(--t3);text-align:center}
+#capitoli .cap-riga{font-family:var(--serif);font-style:italic;font-size:17.5px;line-height:1.7;color:rgba(245,242,234,.84);margin:0;text-align:center}
+#capitoli .cap-firma{margin-top:10px;font-size:13.5px;color:var(--t3);text-align:center}
 #capitoli .cap-prec{margin-top:16px;padding-top:12px;border-top:.5px solid rgba(245,242,234,.07)}
-#capitoli .cap-prec .pr{display:flex;gap:10px;align-items:baseline;padding:6px 0;color:var(--t3);font-size:13px;line-height:1.5}
-#capitoli .cap-prec .pr b{font-family:var(--serif);font-weight:400;color:var(--t2);font-size:14px;flex:none}
+#capitoli .cap-prec .pr{display:flex;gap:10px;align-items:baseline;padding:6px 0;color:var(--t3);font-size:14px;line-height:1.5}
+#capitoli .cap-prec .pr b{font-family:var(--serif);font-weight:400;color:var(--t2);font-size:15px;flex:none}
 #capitoli .cap-prec .pr span{font-style:italic;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 .tabpane:not(.hidden) #capitoli .capitolo{animation:nasce .26s cubic-bezier(.22,1,.36,1) both}
 @media (prefers-reduced-motion:reduce){
@@ -364,14 +365,14 @@ section{margin-top:38px}
 #day-line.perla.dono{color:var(--t2)}
 #giorno-bar.semina-viva{cursor:pointer}
 .entry.seme{-webkit-tap-highlight-color:transparent}
-.entry.seme .seme-q{font-style:italic;font-size:17px;line-height:1.7;color:rgba(127,184,164,.92);margin-top:0}
+.entry.seme .seme-q{font-style:italic;font-size:18.5px;line-height:1.7;color:rgba(127,184,164,.92);margin-top:0}
 .entry.seme .ed-meta{color:rgba(127,184,164,.55)}
 
 /* ════════ impostazioni: righe pulite ════════ */
 .switchrow{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:.5px solid rgba(245,242,234,.07)}
 .group .switchrow:last-child{border-bottom:none}
 .switchrow span{font-size:17px;color:var(--t1)}
-label{display:block;font-size:13px;color:var(--t3);margin:16px 0 6px}
+label{display:block;font-size:14px;color:var(--t3);margin:16px 0 6px}
 input[type=text],input[type=password],input[type=time]{
   width:100%;padding:14px 0;border:none;border-bottom:.5px solid rgba(245,242,234,.15);
   background:none;color:var(--t1);font-size:17px;border-radius:0}
@@ -386,21 +387,26 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 
 /* segmented: testo, sottolineato l'attivo */
 .seg{display:flex;gap:20px;background:none;border:none}
-.seg button{padding:6px 0;border:none;background:none;color:var(--t3);font-size:15px;font-weight:500;position:relative}
+.seg button{padding:6px 0;border:none;background:none;color:var(--t3);font-size:16px;font-weight:500;position:relative}
 .seg button.on{color:var(--accent)}
 
 .days{display:flex;gap:7px;margin-top:10px}
 .days button{flex:1;aspect-ratio:1;max-width:42px;border-radius:50%;border:1.5px solid rgba(245,242,234,.16);
-  background:none;color:var(--t2);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .18s}
+  background:none;color:var(--t2);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .18s}
 .days button.on{background:var(--accent);border-color:var(--accent);color:#1a1208;font-weight:700}
 
-.note{font-size:13px;color:var(--t3);line-height:1.55;margin-top:8px}
+.note{font-size:14px;color:var(--t3);line-height:1.55;margin-top:8px}
 
 /* ════════ nav: testo, l'attivo in accento. Nessuna capsula. ════════ */
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;z-index:20;
   background:linear-gradient(0deg,#000 55%,transparent);
   padding:2px 0 calc(var(--safe-bot) + 2px);pointer-events:none}
 nav .inner{display:flex;gap:8px;pointer-events:auto}
+nav{transition:opacity .6s ease}
+body.nav-quieta nav{opacity:.22}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) nav{transition:none}
+}
 nav button{border:none;background:none;color:rgba(200,210,205,.35);transition:color .3s;
   width:44px;height:32px;display:flex;align-items:center;justify-content:center;padding:0}
 nav button .ico{display:none}
@@ -412,7 +418,7 @@ nav button.on{color:var(--accent)}
 /* ════════ toast: testo che appare, niente pillola pesante ════════ */
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);
   background:rgba(20,20,20,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  color:var(--t1);padding:12px 22px;border-radius:99px;font-size:14px;
+  color:var(--t1);padding:12px 22px;border-radius:99px;font-size:15px;
   opacity:0;pointer-events:none;z-index:50;max-width:84%;text-align:center}
 /* FRAME-LAVORO 5: LA RICEVUTA — atterra con la molla (20 frame), bacio di luce, parole ogni 2 frame, esala in basso */
 .toast::before{content:'';position:absolute;inset:0;border-radius:99px;opacity:0;
@@ -453,7 +459,7 @@ nav button.on{color:var(--accent)}
 .ob-sub{font-family:var(--serif);font-size:17px;line-height:1.65;color:var(--t2);margin-bottom:40px}
 .ob-go{border:none;background:none;color:var(--accent);font-size:18px;font-weight:600;padding:12px 32px;transition:opacity .15s,transform .15s}
 .ob-go:active{opacity:.5;transform:scale(.96)}
-.ob-note{font-size:13px;color:var(--t3);line-height:1.5;margin-top:24px;min-height:18px}
+.ob-note{font-size:14px;color:var(--t3);line-height:1.5;margin-top:24px;min-height:18px}
 
 /* ════════ apertura ════════ */
 
@@ -485,7 +491,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   #mic{width:212px;height:212px}
   #mic-wrap{padding:32px 0 24px}
   .entry p{font-size:17px}
-  .item .txt{font-size:16px}
+  .item .txt{font-size:17px}
 }
 /* iPhone 13 mini (375px): margini più stretti, enso ancora più compatto */
 @media (max-width:380px){
@@ -493,7 +499,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 18px 0}
   #dateline{font-size:25px}
   #mic{width:196px;height:196px}
-  #mic-label{font-size:14px;margin-top:18px}
+  #mic-label{font-size:16px;margin-top:18px}
   .ed-num{font-size:30px}
   nav button{padding:8px 16px}
 }
@@ -504,10 +510,10 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   #dateline{font-size:23px}
   #mic{width:184px;height:184px}
   .days{gap:5px}
-  .days button{font-size:13px}
-  nav button{padding:8px 13px;font-size:11px}
+  .days button{font-size:15px}
+  nav button{padding:8px 13px;font-size:13px}
   nav .inner{gap:4px}
-  button.act{padding:12px 20px;font-size:15px}
+  button.act{padding:12px 20px;font-size:16.5px}
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -521,11 +527,11 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   #dateline{font-size:26px}
   #mic{width:200px;height:200px}
   #mic-wrap{padding:30px 0 22px}
-  #mic-label{font-size:14px;margin-top:18px}
-  .item .txt{font-size:16px}
+  #mic-label{font-size:16px;margin-top:18px}
+  .item .txt{font-size:17px}
   .ed-num{font-size:30px}
   .entry p{font-size:17px;line-height:1.7}
-  .days button{max-width:38px;font-size:13px}
+  .days button{max-width:38px;font-size:15px}
   nav button{padding:8px 16px}
 }
 /* schermi molto stretti (Galaxy A14 ~360 e sotto): un altro gradino */
@@ -535,8 +541,8 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   #dateline{font-size:24px}
   #mic{width:184px;height:184px}
   .days{gap:5px}
-  .days button{max-width:34px;font-size:12px}
-  nav button{padding:8px 13px;font-size:12px}
+  .days button{max-width:34px;font-size:15px}
+  nav button{padding:8px 13px;font-size:13px}
   .seg{gap:14px}
 }
 
@@ -561,14 +567,14 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 
 /* riga domanda priorità */
 #prio-row{margin-top:14px}
-#prio-row .act{font-size:15px;padding:11px 20px;border-radius:14px}
+#prio-row .act{font-size:16px;padding:11px 20px;border-radius:14px}
 #prio-row .act.primary{background:rgba(232,168,76,.16);color:var(--accent);font-weight:600}
 #prio-row .act:not(.primary){color:var(--t2)}
 
 /* testata Diario con accesso ad Altro */
 .diario-head{display:flex;align-items:center;justify-content:space-between;padding-top:4px}
 .altro-link{display:inline-flex;align-items:center;gap:6px;border:none;background:none;
-  color:var(--t2);font-size:14px;font-weight:500;padding:8px 4px;transition:color .2s}
+  color:var(--t2);font-size:15px;font-weight:500;padding:8px 4px;transition:color .2s}
 .altro-link:active{color:var(--accent)}
 .altro-link svg{display:block}
 
@@ -593,16 +599,16 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 .obs-thinking i:nth-child(2){animation-delay:.18s}
 .obs-thinking i:nth-child(3){animation-delay:.36s}
 @keyframes obsDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
-#observer-meta{font-size:12px;color:var(--t3);margin-top:10px;letter-spacing:.02em}
+#observer-meta{font-size:13px;color:var(--t3);margin-top:10px;letter-spacing:.02em}
 #observer-patterns{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
-.obs-tag{font-size:11px;color:var(--accent);border:.5px solid rgba(232,168,76,.4);
+.obs-tag{font-size:12.5px;color:var(--accent);border:.5px solid rgba(232,168,76,.4);
   border-radius:99px;padding:3px 10px;letter-spacing:.02em}
 #observer-card .btn-row{margin-top:18px}
 #observer-history{margin-top:6px}
-.obs-hist-head{font-size:11px;color:var(--t3);text-transform:lowercase;letter-spacing:.06em;margin:14px 0 8px}
-.obs-hist{font-family:var(--serif);font-size:15px;line-height:1.5;color:var(--t2);
+.obs-hist-head{font-size:12.5px;color:var(--t3);text-transform:lowercase;letter-spacing:.06em;margin:14px 0 8px}
+.obs-hist{font-family:var(--serif);font-size:15.5px;line-height:1.5;color:var(--t2);
   padding:10px 0;border-top:.5px solid rgba(245,242,234,.07)}
-.obs-hist-date{display:block;font-family:var(--sans);font-size:11px;color:var(--t3);margin-bottom:3px;letter-spacing:.02em}
+.obs-hist-date{display:block;font-family:var(--sans);font-size:12px;color:var(--t3);margin-bottom:3px;letter-spacing:.02em}
 
 /* soglia musicale: il tocco che sblocca l'audio diventa un rito d'ingresso */
 
@@ -619,26 +625,26 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 @keyframes flashTarget{0%{box-shadow:0 0 0 0 var(--accent);background:rgba(20,116,182,.16)}60%{background:rgba(20,116,182,.10)}100%{box-shadow:0 0 0 0 transparent;background:transparent}}
 .item.flash{animation:flashTarget 1.7s ease-out;border-radius:12px}
 /* il "perché" della prossima mossa: l'urgenza che la rende essenziale */
-#flow .flow-why{display:block;font-size:12px;color:var(--t3);margin-top:3px;letter-spacing:.02em;opacity:.9}
+#flow .flow-why{display:block;font-size:13px;color:var(--t3);margin-top:3px;letter-spacing:.02em;opacity:.9}
 /* Suoni dell'app: righe evento compatte, una sotto l'altra, leggibili su schermi piccoli */
 .snd-ev{padding:14px 0;border-bottom:.5px solid rgba(245,242,234,.07)}
 .snd-ev .snd-label{font-weight:600;color:var(--t1)}
-.snd-ev .snd-cur{font-size:12px;color:var(--t2);margin-top:3px;word-break:break-word}
-.snd-ev .snd-desc{font-size:12px;color:var(--t3);margin-top:3px;line-height:1.45;opacity:.85}
+.snd-ev .snd-cur{font-size:13px;color:var(--t2);margin-top:3px;word-break:break-word}
+.snd-ev .snd-desc{font-size:13px;color:var(--t3);margin-top:3px;line-height:1.45;opacity:.85}
 .snd-ev .snd-acts{display:flex;gap:18px;margin-top:9px}
-.snd-ev .snd-acts button{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;font-size:14px;padding:3px 0}
+.snd-ev .snd-acts button{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;font-size:15px;padding:3px 0}
 .snd-ev .snd-acts button[disabled]{color:var(--t3);opacity:.45}
 /* "Più tardi": le azioni future restano ripiegate, presenti ma non invadenti */
 .later-head{display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:15px 2px;color:var(--t3);font-size:13px;letter-spacing:.02em;cursor:pointer;
+  padding:15px 2px;color:var(--t3);font-size:14px;letter-spacing:.02em;cursor:pointer;
   border-top:.5px solid rgba(245,242,234,.06);-webkit-user-select:none;user-select:none}
-.later-head .later-chev{opacity:.55;font-size:12px;flex:none}
+.later-head .later-chev{opacity:.55;font-size:13px;flex:none}
 .item.later-item{opacity:.4}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro #distill-text,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
 body.theme-inchiostro #dateline{font-size:clamp(31px,9.5vw,38px);font-weight:400;line-height:1.05;letter-spacing:.01em;color:var(--t1)}
-body.theme-inchiostro .sec-head{font-size:15px;color:var(--t2);letter-spacing:.05em;font-weight:400}
+body.theme-inchiostro .sec-head{font-size:15.5px;color:var(--t2);letter-spacing:.05em;font-weight:400}
 body.theme-inchiostro .ed-num{font-size:24px;font-weight:400}
 /* ensō doppio: esterno giada (tutto), interno ambra (essenziali ◆) con bagliore */
 body.theme-inchiostro #mic.rec::before{background:radial-gradient(circle,rgba(217,164,65,.16),transparent 66%)}
@@ -663,11 +669,11 @@ body.theme-inchiostro .btn-row .act.distilla-cta{box-shadow:0 6px 22px rgba(217,
 /* ── geometria del mockup: densita, misure, nav ── */
 body.theme-inchiostro main{padding-left:20px;padding-right:20px}
 body.theme-inchiostro section{margin-top:20px}
-body.theme-inchiostro .sec-head{font-size:15px;text-transform:none;margin:0 0 9px}
+body.theme-inchiostro .sec-head{font-size:15.5px;text-transform:none;margin:0 0 9px}
 body.theme-inchiostro .item{gap:12px;padding:12px 0}
-body.theme-inchiostro .item .chk{width:23px;height:23px}
+body.theme-inchiostro .item .chk{width:34px;height:34px}
 body.theme-inchiostro .entry{padding:16px 0}
-body.theme-inchiostro nav button{font-size:10px;letter-spacing:.05em;padding:8px 16px}
+body.theme-inchiostro nav button{font-size:12px;letter-spacing:.05em;padding:8px 16px}
 body.theme-inchiostro nav button .ico{width:21px;height:21px}
 body.theme-inchiostro nav button.on{color:var(--accent)}
 body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
@@ -794,12 +800,12 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 }
 /* ══════ IL SENTIERO VISIBILE — le pietre del cammino ══════
    trenta giorni come pietre: ogni pietra porta il suo arco di fuoco com'era a fine giornata */
-#cammino{display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+#cammino{display:flex;align-items:center;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
   padding:10px 2px 12px;margin:0 -2px;scrollbar-width:none;position:relative}
 #cammino::-webkit-scrollbar{display:none}
 #cammino::before{content:'';position:absolute;left:6px;right:6px;top:50%;height:1px;margin-top:-1px;
   background:linear-gradient(90deg,transparent,rgba(245,242,234,.07) 12%,rgba(245,242,234,.07) 88%,rgba(232,168,76,.25))}
-.pietra{flex:none;width:22px;height:22px;position:relative;-webkit-tap-highlight-color:transparent}
+.pietra{flex:none;width:44px;height:44px;position:relative;-webkit-tap-highlight-color:transparent}
 .pietra.lun::after{content:'';position:absolute;left:50%;bottom:-5px;width:3px;height:3px;margin-left:-1.5px;
   border-radius:50%;background:rgba(245,242,234,.18)}
 .p-oro{fill:#E8A84C}
@@ -815,39 +821,39 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .pietra.spenta .p-track{stroke:rgba(245,242,234,.05)}
 .pietra .p-firma{fill:#B9402E}
 /* ══════ IL PATTO DEL MATTINO — la pergamena col fermaglio: l'invito del giorno ══════ */
-#patto{position:relative;margin:10px 2px 20px;padding:24px 14px 10px;border-radius:2px;
+#patto{position:relative;margin:10px 2px 20px;padding:28px 14px 10px;border-radius:2px;
   background:linear-gradient(180deg,rgba(232,168,76,.05),rgba(245,242,234,.015));
   border:.5px solid rgba(232,168,76,.42);
   outline:.5px solid rgba(232,168,76,.14);outline-offset:4px;
   animation:patto-entra .5s cubic-bezier(.22,1,.36,1) .55s both}
 @keyframes patto-entra{from{opacity:0;transform:translateY(11px) scale(.975)}to{opacity:1;transform:none}}
-#patto .patto-fermaglio{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
-  width:38px;height:12px;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:0 6px}
-#patto .patto-fermaglio b{width:7px;height:7px;border-radius:50%;
+#patto .patto-fermaglio{position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  width:48px;height:16px;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:0 6px}
+#patto .patto-fermaglio b{width:10px;height:10px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#F2C56B,#A9691F);box-shadow:0 0 8px rgba(232,168,76,.4);
   animation:p-pilota 2.6s ease-in-out infinite}
 #patto .patto-angoli::before,#patto .patto-angoli::after{content:'';position:absolute;width:12px;height:12px;pointer-events:none}
 #patto .patto-angoli::before{bottom:-4px;left:-4px;border-bottom:1.5px solid rgba(232,168,76,.8);border-left:1.5px solid rgba(232,168,76,.8)}
 #patto .patto-angoli::after{bottom:-4px;right:-4px;border-bottom:1.5px solid rgba(232,168,76,.8);border-right:1.5px solid rgba(232,168,76,.8)}
-.patto-eyebrow{display:block;text-align:center;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(232,168,76,.75);margin-bottom:6px}
-.patto-title{display:block;text-align:center;font-family:var(--serif,ui-serif);font-style:italic;font-size:21px;line-height:1.25;color:var(--t1);margin-bottom:12px}
+.patto-eyebrow{display:block;text-align:center;font-size:12.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(232,168,76,.75);margin-bottom:6px}
+.patto-title{display:block;text-align:center;font-family:var(--serif,ui-serif);font-style:italic;font-size:23px;line-height:1.25;color:var(--t1);margin-bottom:12px}
 .patto-r{display:block;width:100%;text-align:left;border:none;background:none;color:var(--t2);
-  font-family:inherit;font-size:14px;padding:10px 6px;border-top:.5px solid rgba(245,242,234,.06);
+  font-family:inherit;font-size:16.5px;padding:12px 6px;border-top:.5px solid rgba(245,242,234,.06);
   -webkit-tap-highlight-color:transparent}
 .patto-r:active{color:var(--accent)}
 .patto-nuovo{display:block;width:100%;text-align:left;border:none;background:none;color:var(--accent);
-  font-family:inherit;font-size:13.5px;padding:11px 6px;border-top:.5px solid rgba(245,242,234,.06);
+  font-family:inherit;font-size:15.5px;padding:11px 6px;border-top:.5px solid rgba(245,242,234,.06);
   -webkit-tap-highlight-color:transparent}
 .patto-nuovo-box{display:flex;gap:8px;padding:8px 2px 4px;border-top:.5px solid rgba(245,242,234,.06)}
 .patto-nuovo-box.hidden{display:none}
 .patto-inp{flex:1;background:rgba(245,242,234,.05);border:.5px solid rgba(232,168,76,.25);border-radius:10px;
-  color:var(--t1);font-family:inherit;font-size:14px;padding:9px 11px;outline:none}
+  color:var(--t1);font-family:inherit;font-size:16px;padding:9px 11px;outline:none}
 .patto-inp:focus{border-color:rgba(232,168,76,.55)}
 .patto-inp-ok{border:none;border-radius:10px;background:linear-gradient(160deg,#F2C56B,#B0731F);
   color:#241A08;font-family:inherit;font-size:13px;font-weight:600;padding:0 16px}
 .nota-obs-box{display:flex;gap:8px;padding:8px 2px 10px;margin-left:34px}
 .item{-webkit-touch-callout:none;-webkit-user-select:none}
-.azz-head{font-size:11px;color:#D9744B;letter-spacing:.06em;font-style:italic;padding:12px 6px 2px;
+.azz-head{font-size:12.5px;color:#D9744B;letter-spacing:.06em;font-style:italic;padding:12px 6px 2px;
   border-top:.5px solid rgba(245,242,234,.06)}
 .azz-r{color:#C8A38F}
 .azz-r:active{color:#D9744B}
@@ -857,7 +863,7 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .azz-nuovo{color:#D9744B !important}
 /* la spina dell'audace: brace che sale nell'oro, piu alta */
 .item.passo.audace::before{height:74%;background:linear-gradient(180deg,#F2C56B,#D9744B)}
-.patto-no{border:none;background:none;color:#565E5A;font-family:inherit;font-size:11.5px;
+.patto-no{border:none;background:none;color:#565E5A;font-family:inherit;font-size:13.5px;
   padding:10px 6px 4px;font-style:italic}
 /* la spina d'oro: il passo del giorno si riconosce sul fianco */
 .item.passo{position:relative}
@@ -1245,6 +1251,18 @@ function sanitizeObsLines(arr){   /* memoria del sussurro: le ultime righe dette
   }
   return out.slice(-12); /* memoria di lavoro, non archivio: le ultime 12 bastano */
 }
+function anzianita(state){   /* l'app impara a tacere: 0 novizio, 1 pratico (7 gg attivi), 2 veterano (21) */
+  const giorni=new Set();
+  try{
+    Object.keys(state.foto||{}).forEach(k=>{ const f=state.foto[k]; if(f&&(f.done|0)>0) giorni.add(k); });
+    Object.keys(state.checks||{}).forEach(k=>{ const d=state.checks[k]; if(d&&Object.values(d).some(v=>v===true)) giorni.add(k); });
+  }catch(_){}
+  const n=giorni.size;
+  return n>=21?2:(n>=7?1:0);
+}
+function micLabelDefault(){   /* il cerchio, imparato, non ha bisogno di didascalia */
+  try{ return anzianita(S)>=1?'':'Tieni premuto il cerchio per parlare'; }catch(_){ return 'Tieni premuto il cerchio per parlare'; }
+}
 function sanitizeFoto(raw){   /* la fotografia del giorno: done/tot congelati, ultimi sessanta */
   const out={};
   if(!raw||typeof raw!=='object'||Array.isArray(raw)) return out;
@@ -1617,7 +1635,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.74 · 2026-07-10';
+const APP_VERSION='v60S.77 · 2026-07-10';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2945,6 +2963,7 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let rec=null,recording=false,committedText='',sessionFinal='',interimText='';
 const micBtn=$('#mic'),micLabel=$('#mic-label'),live=$('#live');
 if(!SR){ micLabel.textContent='Dettatura non disponibile: scrivi qui sotto.'; live.classList.add('show'); live.contentEditable='true'; }
+try{ if(anzianita(S)>=1&&SR) micLabel.textContent=''; }catch(_){}
 
 function startRec(){
   committedText=''; sessionFinal=''; interimText='';
@@ -3037,6 +3056,7 @@ document.querySelector('#btn-discard').onclick=resetCapture;
 /* domanda priorità: se l'IA rileva quest urgenti/importanti, l'utente conferma */
 let pendingPrioIds=[];
 function maybeAskPriority(bornIds){
+  try{ if(anzianita(S)>=2){ const r=document.querySelector('#prio-row'); if(r) r.classList.add('hidden'); return; } }catch(_){}
   pendingPrioIds=(bornIds||[]).filter(id=>{ const q=S.quests.find(x=>x.id===id); return q&&q.prio<=2; });
   const row=document.querySelector('#prio-row');
   if(!pendingPrioIds.length){ row.classList.add('hidden'); return; }
@@ -3046,14 +3066,14 @@ function maybeAskPriority(bornIds){
 }
 document.querySelector('#btn-prio-yes').onclick=()=>{
   document.querySelector('#prio-row').classList.add('hidden');
-  pendingPrioIds=[]; micLabel.textContent='Tieni premuto il cerchio per parlare';
+  pendingPrioIds=[]; micLabel.textContent=micLabelDefault();
   haptic();
 };
 document.querySelector('#btn-prio-no').onclick=()=>{
   pendingPrioIds.forEach(id=>{ const q=S.quests.find(x=>x.id===id); if(q) q.prio=3; });
   save(); render();
   document.querySelector('#prio-row').classList.add('hidden');
-  pendingPrioIds=[]; micLabel.textContent='Tieni premuto il cerchio per parlare';
+  pendingPrioIds=[]; micLabel.textContent=micLabelDefault();
   toast('Priorità azzerate: tutte normali');
 };
 function resetCapture(){
@@ -3062,11 +3082,12 @@ function resetCapture(){
   if(!SR) live.classList.add('show');
   document.querySelector('#confirm-row').classList.add('hidden');
   document.querySelector('#prio-row').classList.add('hidden');
-  micLabel.textContent='Tieni premuto il cerchio per parlare';
+  micLabel.textContent=micLabelDefault();
   updateRing();
   renderFlow();
 }
 function guideAfterDistill(bornIds){
+  try{ if(anzianita(S)>=1) return; }catch(_){}
   bornIds=bornIds||[];
   if(bornIds.length){
     streamInto(micLabel,'Fatto. Ora chiudi la prima quest.',{speed:34});   /* il risultato prende forma */
@@ -3130,7 +3151,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         else if(nr) msg=nr+(nr===1?' nuovo rituale distillato':' nuovi rituali distillati');
         else msg='Quest aggiornate, nota salvata';
         if(out.non_eseguibile) msg+=' · Non posso: '+out.non_eseguibile;
-        toast(msg);
+        if(out.non_eseguibile||anzianita(S)<1) toast(msg);   /* l'esito e gia visibile: dal 7\u00b0 giorno parla solo se c'e qualcosa che non si vede */
         try{ processMastery(out.motore); }catch(_){}
         try{ semeRaccolto(); }catch(_){}
         try{ renderLetture(out.motore); }catch(_){}
@@ -4163,7 +4184,7 @@ function renderPatto(){
   box.querySelectorAll('.patto-r').forEach(bt=>{ bt.onclick=()=>{
     const audace=bt.classList.contains('azz-r');
     S.patto={tk:tk,id:bt.dataset.id,audace:audace}; save();
-    try{ toast(audace?'Azzardo accettato. La firma della sera sapr\u00e0.':'Patto stretto. La firma della sera sapr\u00e0.'); }catch(_){}
+    try{ if(anzianita(S)<1) toast(audace?'Azzardo accettato. La firma della sera sapr\u00e0.':'Patto stretto. La firma della sera sapr\u00e0.'); }catch(_){}
     try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
   };});
   const bn=box.querySelector('.patto-no');
@@ -4227,7 +4248,7 @@ function renderPatto(){
     S.quests.push(q);
     const aud=!!(box.querySelector('.patto-nuovo-box')&&box.querySelector('.patto-nuovo-box').dataset.audace);
     S.patto={tk:tk,id:q.id,audace:aud}; save();
-    try{ toast((aud?'Azzardo scritto: ':'Nata dal patto: ')+'\u00ab'+titolo+'\u00bb'); }catch(_){}
+    try{ if(anzianita(S)<1) toast((aud?'Azzardo scritto: ':'Nata dal patto: ')+'\u00ab'+titolo+'\u00bb'); }catch(_){}
     try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
   };
   if(bok) bok.onclick=nasciPatto;
@@ -4534,6 +4555,7 @@ function render(bornIds){
 }
 function todaysScheduled(){ return scheduledFor(S,dowOf(),todayKey()); }
 function setEmpty(el,text,action,label){
+  try{ if(anzianita(S)>=1){ action=null; label=null; } }catch(_){}
   el.innerHTML='<p class="empty">'+escapeHtml(text)+(action&&label?'<button class="empty-go" data-flow="'+action+'">'+escapeHtml(label)+'</button>':'')+'</p>';
   const b=el.querySelector('[data-flow]');
   if(b) b.onclick=()=>handleFlowAction(b.dataset.flow);
@@ -4548,7 +4570,7 @@ function buildTaskRow(t,checks){
   div.innerHTML='<span class="prio prio-0"></span>'+
     '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
     '<span class="txt"><span class="ttl">'+escapeHtml(t.titolo)+'</span>'+(t.time?'<span class="meta">'+t.time+'</span>':'')+'</span>'+
-    '<button class="essbtn" aria-label="Essenziale" title="Essenziale: chiude il Cerchio del giorno" style="margin-left:auto;background:none;border:none;font-size:16px;padding:6px 8px;cursor:pointer;line-height:1;color:'+(isEss?'#e0a33a':'rgba(200,210,205,.22)')+'">&#9670;</button>';
+    '<button class="essbtn" aria-label="Essenziale" title="Essenziale: chiude il Cerchio del giorno" style="margin-left:auto;background:none;border:none;font-size:21px;padding:8px 10px;cursor:pointer;line-height:1;color:'+(isEss?'#e0a33a':'rgba(200,210,205,.22)')+'">&#9670;</button>';
   div.querySelector('.essbtn').onclick=(e)=>{
     e.stopPropagation();
     S.essentials=S.essentials||[];
@@ -4588,7 +4610,7 @@ function renderTasks(){
   if(later.length){
     const head=document.createElement('div');
     head.className='later-head'+(_laterOpen?' open':'');
-    head.innerHTML='<span>Più tardi · '+later.length+(later.length===1?' azione':' azioni')+' · dalle '+later[0].time+'</span><span class="later-chev">'+(_laterOpen?'∧':'∨')+'</span>';
+    head.innerHTML='<span>'+(anzianita(S)>=2?'Pi\u00f9 tardi':('Pi\u00f9 tardi \u00b7 '+later.length+(later.length===1?' azione':' azioni')+' \u00b7 dalle '+later[0].time))+'</span><span class="later-chev">'+(_laterOpen?'\u2227':'\u2228')+'</span>';
     head.onclick=()=>{ _laterOpen=!_laterOpen; renderTasks(); };
     el.appendChild(head);
     if(_laterOpen) later.forEach(t=>{ const row=buildTaskRow(t,checks); row.classList.add('later-item'); el.appendChild(row); });
@@ -4868,7 +4890,7 @@ function semePianta(id){
   window._semeVivo=null;
   save(); try{ renderDiary(); }catch(_){}
   const dl=document.querySelector('#day-line'); if(dl) dl.classList.add('perla-via');
-  try{ toast('Seme piantato nel diario'); }catch(_){}
+  try{ if(anzianita(S)<1) toast('Seme piantato nel diario'); }catch(_){}
   try{ haptic(); }catch(_){}
 }
 function semeRispondiUI(id,testo){
@@ -5016,12 +5038,12 @@ function renderCapitoli(){   /* la costellazione: cenere=spento, anello oro=parz
   let fila='';
   c.pietre.forEach(pt=>{
     const x=(STEP*(pt.g-1)+STEP/2).toFixed(1);
-    if(pt.pieno) fila+='<circle cx="'+x+'" cy="16" r="3.1" fill="#C9503C"/>';
-    else if(pt.p>0) fila+='<circle cx="'+x+'" cy="16" r="2.9" fill="none" stroke="rgba(232,168,76,.8)" stroke-width="1.2"/>';
-    else fila+='<circle cx="'+x+'" cy="16" r="1.6" fill="rgba(245,242,234,.10)"/>';
+    if(pt.pieno) fila+='<circle cx="'+x+'" cy="30" r="5.4" fill="#C9503C"/>';
+    else if(pt.p>0) fila+='<circle cx="'+x+'" cy="30" r="5" fill="none" stroke="rgba(232,168,76,.8)" stroke-width="2"/>';
+    else fila+='<circle cx="'+x+'" cy="30" r="2.8" fill="rgba(245,242,234,.10)"/>';
     if(pt.oro){
-      if(pt.oro===2) fila+='<circle cx="'+x+'" cy="7.5" r="3" fill="none" stroke="rgba(217,116,75,.75)" stroke-width=".9"/>';
-      fila+='<circle cx="'+x+'" cy="7.5" r="1.4" fill="'+(pt.oro===2?'#F2C56B':'#E8A84C')+'"/>';
+      if(pt.oro===2) fila+='<circle cx="'+x+'" cy="13" r="5" fill="none" stroke="rgba(217,116,75,.75)" stroke-width="1.4"/>';
+      fila+='<circle cx="'+x+'" cy="13" r="2.4" fill="'+(pt.oro===2?'#F2C56B':'#E8A84C')+'"/>';
     }
   });
   const prec=caps.slice(0,-1).slice(-5).reverse().map(p=>
@@ -5030,7 +5052,7 @@ function renderCapitoli(){   /* la costellazione: cenere=spento, anello oro=parz
     '<div class="cap-angoli"></div><div class="cap-fermaglio"><b></b></div>'+
     '<span class="cap-eyebrow">capitolo</span>'+
     '<span class="cap-mese">'+escapeHtml(meseNome(c.mese,true))+'<small>'+escapeHtml(c.mese.slice(0,4))+'</small></span>'+
-    '<svg class="cap-fila" viewBox="0 0 340 26" xmlns="http://www.w3.org/2000/svg">'+fila+'</svg>'+
+    '<svg class="cap-fila" viewBox="0 0 340 46" xmlns="http://www.w3.org/2000/svg">'+fila+'</svg>'+
     '<p class="cap-riga">'+escapeHtml(c.riga)+'</p>'+
     '<div class="cap-firma">\u2014 l\u2019osservatrice</div>'+
     (prec?'<div class="cap-prec">'+prec+'</div>':'')+
@@ -5603,6 +5625,15 @@ try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
 try{ maybeChiudiCapitolo(); }catch(_){}   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
+/* il segnavia impara a tacere: dal 21\u00b0 giorno attivo si attenua quando non serve, torna al tocco */
+(function(){
+  try{ if(anzianita(S)<2) return; }catch(_){ return; }
+  let tq=null;
+  const sveglia=()=>{ try{ document.body.classList.remove('nav-quieta'); }catch(_){}
+    clearTimeout(tq); tq=setTimeout(()=>{ try{ document.body.classList.add('nav-quieta'); }catch(_){} },5000); };
+  window.addEventListener('pointerdown',sveglia,{passive:true});
+  sveglia();
+})();
 try{ initSoundSystem(); }catch(_){}    /* Suoni dell'app: pre-decodifica i suoni già assegnati */
 window.addEventListener('pointerdown',()=>{ _lastUserAct=Date.now(); },{passive:true});  /* ogni tocco reale: i suoni automatici partono solo dietro un'azione */
 /* orologio del giorno: ogni minuto, se una task con orario è appena affiorata, aggiorna la lista da sola */
