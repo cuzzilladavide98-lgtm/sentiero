@@ -333,6 +333,25 @@ section{margin-top:38px}
 .entry .tags{margin-top:12px;font-size:13px;line-height:1.6;font-family:var(--sans)}
 .entry .tags.born-t{color:var(--accent)}
 .entry .tags.done-t{color:var(--t3)}
+/* ══ I CAPITOLI — il mese rilegato, in cima al Diario ══ */
+#capitoli:empty{display:none}
+#capitoli{margin-bottom:10px}
+#capitoli .capitolo{border:1px solid rgba(245,242,234,.09);border-radius:14px;padding:18px 16px 16px;background:rgba(245,242,234,.015)}
+#capitoli .cap-head{display:flex;align-items:baseline;gap:8px;margin-bottom:14px}
+#capitoli .cap-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3)}
+#capitoli .cap-mese{font-family:var(--serif);font-size:22px;color:var(--t1)}
+#capitoli .cap-anno{font-size:13px;color:var(--t3)}
+#capitoli .cap-fila{width:100%;display:block;margin:2px 0 14px}
+#capitoli .cap-riga{font-family:var(--serif);font-style:italic;font-size:16.5px;line-height:1.65;color:rgba(245,242,234,.82);margin:0}
+#capitoli .cap-firma{margin-top:8px;font-size:12px;color:var(--t3)}
+#capitoli .cap-prec{margin-top:14px;padding-top:12px;border-top:.5px solid rgba(245,242,234,.07)}
+#capitoli .cap-prec .pr{display:flex;gap:10px;align-items:baseline;padding:6px 0;color:var(--t3);font-size:13px;line-height:1.5}
+#capitoli .cap-prec .pr b{font-family:var(--serif);font-weight:400;color:var(--t2);font-size:14px;flex:none}
+#capitoli .cap-prec .pr span{font-style:italic;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.tabpane:not(.hidden) #capitoli .capitolo{animation:nasce .26s cubic-bezier(.22,1,.36,1) both}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) .tabpane:not(.hidden) #capitoli .capitolo{animation:none}
+}
 
 /* ════════ impostazioni: righe pulite ════════ */
 .switchrow{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:.5px solid rgba(245,242,234,.07)}
@@ -933,6 +952,7 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
         </button>
       </div>
       <section style="margin-top:14px">
+        <div id="capitoli"></div>
         <div id="list-diario" class="diary-font"></div>
       </section>
 
@@ -1202,6 +1222,28 @@ function sanitizeObsLines(arr){   /* memoria del sussurro: le ultime righe dette
   }
   return out.slice(-12); /* memoria di lavoro, non archivio: le ultime 12 bastano */
 }
+function sanitizeCapitoli(arr){   /* i capitoli: un mese rilegato non si riscrive, al massimo si ripulisce */
+  if(!Array.isArray(arr)) return [];
+  const out=[]; const visti=new Set();
+  for(const c of arr){
+    if(!c||typeof c!=='object') continue;
+    const mese=(typeof c.mese==='string'&&/^\d{4}-\d{2}$/.test(c.mese))?c.mese:null;
+    if(!mese||visti.has(mese)) continue; visti.add(mese);
+    const riga=clampStr(c.riga,300).trim(); if(!riga) continue;
+    const pietre=Array.isArray(c.pietre)?c.pietre.slice(0,31).map(pt=>({
+      g:(pt&&Number.isInteger(pt.g)&&pt.g>=1&&pt.g<=31)?pt.g:0,
+      p:(pt&&typeof pt.p==='number'&&pt.p>=0&&pt.p<=1)?pt.p:0,
+      pieno:(pt&&pt.pieno===1)?1:0,
+      oro:(pt&&(pt.oro===1||pt.oro===2))?pt.oro:0
+    })).filter(pt=>pt.g>0):[];
+    const st=(c.stats&&typeof c.stats==='object')?c.stats:{};
+    out.push({id:clampStr(c.id,40)||('c'+Math.random().toString(36).slice(2,9)),mese:mese,pietre:pietre,
+      stats:{giorni:st.giorni|0,attivi:st.attivi|0,pieni:st.pieni|0,oro:st.oro|0},
+      riga:riga,fonte:(c.fonte==='ai')?'ai':'locale',
+      createdAt:(typeof c.createdAt==='string')?c.createdAt.slice(0,40):new Date().toISOString()});
+  }
+  return out.sort((a,b)=>a.mese<b.mese?-1:1).slice(-24); /* due anni di capitoli bastano */
+}
 function sanitizeState(raw,def){
   raw=(raw&&typeof raw==='object'&&!Array.isArray(raw))?raw:{};
   const st={
@@ -1212,6 +1254,7 @@ function sanitizeState(raw,def){
     observerNotes:sanitizeObserverNotes(raw.observerNotes),
     mastery:sanitizeMastery(raw.mastery),
     obsLines:sanitizeObsLines(raw.obsLines),
+    capitoli:sanitizeCapitoli(raw.capitoli),
     questLog:sanitizeQuestLog(raw.questLog),
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
@@ -1497,7 +1540,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.66 · 2026-07-09';
+const APP_VERSION='v60S.67 · 2026-07-10';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1517,7 +1560,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -4294,7 +4337,128 @@ function renderQuests(bornIds){
   el.innerHTML='';
   list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>{renderQuests([]);renderTodayQuests([]);})));
 }
+/* ══════════════════════════════════════════════════════════════════
+   I CAPITOLI — alla prima apertura di un mese nuovo, quello finito si rilega:
+   fotografia delle pietre (col piano di oggi, il meglio che la memoria offre)
+   + una riga dell'osservatrice. Vive in cima al Diario. MAI numeri nella riga.
+   ══════════════════════════════════════════════════════════════════ */
+/* puro: quali mesi rilegare (con segni, prima del corrente, non ancora capitoli) */
+function capitoloCandidati(state,meseCorr){
+  const gia=new Set((state.capitoli||[]).map(c=>c.mese));
+  const mesi=new Set();
+  Object.keys(state.checks||{}).forEach(k=>{ const m=k.slice(0,7); if(/^\d{4}-\d{2}$/.test(m)&&m<meseCorr) mesi.add(m); });
+  Object.keys(state.patti||{}).forEach(k=>{ const m=k.slice(0,7); if(/^\d{4}-\d{2}$/.test(m)&&m<meseCorr) mesi.add(m); });
+  return Array.from(mesi).filter(m=>!gia.has(m)).sort().slice(-3);
+}
+/* puro: congela il mese in pietre {g,p,pieno,oro} + stats */
+function capitoloFotografia(state,mese){
+  const y=+mese.slice(0,4), mo=+mese.slice(5,7);
+  const nG=new Date(y,mo,0).getDate();
+  const pietre=[]; let attivi=0,pieni=0,oroN=0;
+  for(let g=1;g<=nG;g++){
+    const tk=mese+'-'+String(g).padStart(2,'0');
+    let p=0,done=0,tot=0;
+    try{ const r=computeProgress(state,tk,dowOf(new Date(y,mo-1,g))); p=r.p||0; done=r.done||0; tot=r.total||0; }catch(_){}
+    const haDati=!!(state.checks&&state.checks[tk]);
+    const pieno=(haDati&&tot>0&&done>=tot)?1:0;
+    const oroRaw=((state.patti||{})[tk]|0);
+    const oro=(oroRaw===1||oroRaw===2)?oroRaw:0;
+    if(haDati&&done>0) attivi++;
+    if(pieno) pieni++;
+    if(oro) oroN++;
+    pietre.push({g:g,p:haDati?Math.round(p*100)/100:0,pieno:pieno,oro:oro});
+  }
+  return {pietre:pietre,stats:{giorni:nG,attivi:attivi,pieni:pieni,oro:oroN}};
+}
+/* puro: la riga di ripiego, senza chiave e senza cifre — sempre uguale a parita di dati */
+function capitoloRigaLocale(f){
+  const s=f.stats,n=s.giorni||30,terzo=Math.ceil(n/3);
+  let inizio=0,fine=0;
+  (f.pietre||[]).forEach(pt=>{ const on=(pt.p>0||pt.pieno); if(!on)return; if(pt.g<=terzo)inizio++; else if(pt.g>n-terzo)fine++; });
+  const rAtt=s.attivi/n, rPieni=s.attivi?s.pieni/s.attivi:0;
+  if(!s.attivi) return 'Un mese in bianco. Anche la pausa lascia un segno: il foglio e ancora qui.';
+  if(rAtt>=0.9&&rPieni>=0.7) return 'Un mese che non ha chiesto eroismi: solo il tratto, ogni giorno. Cosi scava l\u2019acqua.';
+  if(s.oro>0&&rAtt>=0.6) return 'Tra le pietre brilla l\u2019oro dei patti mantenuti. La parola data a se stessi pesa piu della voglia.';
+  if(fine>inizio*2) return 'Il mese e cresciuto camminando: il finale dice piu dell\u2019inizio.';
+  if(inizio>fine*2) return 'Partenza piena, finale sottile. Il fuoco che dura e piu raro di quello che divampa.';
+  if(rAtt>=0.5) return 'Un mese a giorni alterni: il ritmo c\u2019e, cerca solo di non spezzarsi ai bordi.';
+  return 'Poche pietre, ma vere. Il sentiero non misura la lunghezza del passo: misura che tu sia passato.';
+}
+const CAPITOLO_SYS='Sei l\u2019osservatrice di Sentiero. Un mese di cammino si chiude e diventa capitolo: rileggilo e restituisci UNA riga sola.\n'+
+'VOCE: calma, essenziale, un filo di Tao senza mai nominarlo. Niente domande, niente esclamazioni, niente elenchi.\n'+
+'REGOLA ASSOLUTA: VIETATO qualsiasi numero o cifra nel testo. Parla per immagini del ritmo: costanza, vuoti, ritorni, il finale che cresce, il fuoco che dura.\n'+
+'Guarda i DATI: giorni attivi contro vuoti, cerchi pieni, patti d\u2019oro, dove si addensa il mese (inizio, centro, fine), il confronto col capitolo precedente se c\u2019e.\n'+
+'FORMATO: massimo 140 caratteri, una frase o due brevissime. Rispondi SOLO JSON compatto: {"riga":"..."}';
+function capitoloDigest(f,mese,prev){
+  const n=f.stats.giorni,terzo=Math.ceil(n/3); let inizio=0,centro=0,fine=0;
+  f.pietre.forEach(pt=>{ if(!(pt.p>0||pt.pieno)) return; if(pt.g<=terzo) inizio++; else if(pt.g>n-terzo) fine++; else centro++; });
+  return {mese:mese,giorni:n,attivi:f.stats.attivi,vuoti:n-f.stats.attivi,cerchi_pieni:f.stats.pieni,patti_oro:f.stats.oro,
+    distribuzione:{inizio:inizio,centro:centro,fine:fine},capitolo_precedente:prev?prev.riga:null};
+}
+async function askCapitolo(f,mese){
+  const prev=(S.capitoli||[]).length?S.capitoli[S.capitoli.length-1]:null;
+  const res=await callAnthropic({system:CAPITOLO_SYS,user:'DATI DEL MESE (JSON):\n'+JSON.stringify(capitoloDigest(f,mese,prev)),assistantPrefix:'{',max_tokens:200,temperature:0.6,timeout:30000});
+  if(res.err) throw new Error(res.err);
+  const p=parseLooseJson(res.text);
+  const riga=clampStr((p&&typeof p.riga==='string')?p.riga:'',160).trim();
+  if(!riga) throw new Error('vuota');
+  return riga;
+}
+let _capitoliBusy=false;
+async function maybeChiudiCapitolo(){
+  if(_capitoliBusy) return; _capitoliBusy=true;
+  try{
+    const cand=capitoloCandidati(S,todayKey().slice(0,7));
+    if(!cand.length) return;
+    for(let i=0;i<cand.length;i++){
+      const mese=cand[i];
+      const f=capitoloFotografia(S,mese);
+      let riga='';
+      if(i===cand.length-1&&S.apiKey){ try{ riga=await askCapitolo(f,mese); }catch(_){ riga=''; } }
+      if(riga&&/\d/.test(riga)) riga='';   /* dove parla l\u2019osservatrice, mai numeri */
+      const fonte=riga?'ai':'locale';
+      if(!riga) riga=capitoloRigaLocale(f);
+      S.capitoli.push({id:'c'+Date.now().toString(36)+i,mese:mese,pietre:f.pietre,stats:f.stats,riga:riga,fonte:fonte,createdAt:new Date().toISOString()});
+    }
+    S.capitoli=sanitizeCapitoli(S.capitoli);
+    save(); try{ renderCapitoli(); }catch(_){}
+  }catch(_){}
+  finally{ _capitoliBusy=false; }
+}
+function meseNome(mese,maiuscola){
+  try{ const n=new Date(mese+'-15T12:00:00').toLocaleDateString('it-IT',{month:'long'});
+    return maiuscola?(n.charAt(0).toUpperCase()+n.slice(1)):n; }catch(_){ return mese; }
+}
+function renderCapitoli(){   /* la costellazione: cenere=spento, anello oro=parziale, vermiglio=pieno, scintilla=patto */
+  const box=document.getElementById('capitoli'); if(!box) return;
+  const caps=S.capitoli||[];
+  if(!caps.length){ box.innerHTML=''; return; }
+  const c=caps[caps.length-1];
+  const nG=(c.stats&&c.stats.giorni)||c.pietre.length||30;
+  const STEP=340/nG;
+  let fila='';
+  c.pietre.forEach(pt=>{
+    const x=(STEP*(pt.g-1)+STEP/2).toFixed(1);
+    if(pt.pieno) fila+='<circle cx="'+x+'" cy="16" r="3.1" fill="#C9503C"/>';
+    else if(pt.p>0) fila+='<circle cx="'+x+'" cy="16" r="2.9" fill="none" stroke="rgba(232,168,76,.8)" stroke-width="1.2"/>';
+    else fila+='<circle cx="'+x+'" cy="16" r="1.6" fill="rgba(245,242,234,.10)"/>';
+    if(pt.oro){
+      if(pt.oro===2) fila+='<circle cx="'+x+'" cy="7.5" r="3" fill="none" stroke="rgba(217,116,75,.75)" stroke-width=".9"/>';
+      fila+='<circle cx="'+x+'" cy="7.5" r="1.4" fill="'+(pt.oro===2?'#F2C56B':'#E8A84C')+'"/>';
+    }
+  });
+  const prec=caps.slice(0,-1).slice(-5).reverse().map(p=>
+    '<div class="pr"><b>'+escapeHtml(meseNome(p.mese))+'</b><span>'+escapeHtml(p.riga)+'</span></div>').join('');
+  box.innerHTML='<div class="capitolo">'+
+    '<div class="cap-head"><span class="cap-eyebrow">Capitolo</span><span class="cap-mese">'+escapeHtml(meseNome(c.mese,true))+'</span><span class="cap-anno">'+escapeHtml(c.mese.slice(0,4))+'</span></div>'+
+    '<svg class="cap-fila" viewBox="0 0 340 26" xmlns="http://www.w3.org/2000/svg">'+fila+'</svg>'+
+    '<p class="cap-riga">'+escapeHtml(c.riga)+'</p>'+
+    '<div class="cap-firma">\u2014 l\u2019osservatrice</div>'+
+    (prec?'<div class="cap-prec">'+prec+'</div>':'')+
+    '</div>';
+}
 function renderDiary(){
+  try{ renderCapitoli(); }catch(_){}
   const el=document.querySelector('#list-diario');
   if(!S.diary.length){ setEmpty(el,'Il diario e vuoto. Non va riempito: va lasciato dietro ogni azione vera.','speak','Registra la prima nota'); return; }
   el.innerHTML='';
@@ -4848,6 +5012,7 @@ try{ initDay(); }catch(_){}
 try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
+try{ maybeChiudiCapitolo(); }catch(_){}   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
 try{ initSoundSystem(); }catch(_){}    /* Suoni dell'app: pre-decodifica i suoni già assegnati */
 window.addEventListener('pointerdown',()=>{ _lastUserAct=Date.now(); },{passive:true});  /* ogni tocco reale: i suoni automatici partono solo dietro un'azione */
 /* orologio del giorno: ogni minuto, se una task con orario è appena affiorata, aggiorna la lista da sola */
