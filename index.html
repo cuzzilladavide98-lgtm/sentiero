@@ -845,6 +845,8 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 .patto-inp:focus{border-color:rgba(232,168,76,.55)}
 .patto-inp-ok{border:none;border-radius:10px;background:linear-gradient(160deg,#F2C56B,#B0731F);
   color:#241A08;font-family:inherit;font-size:13px;font-weight:600;padding:0 16px}
+.nota-obs-box{display:flex;gap:8px;padding:8px 2px 10px;margin-left:34px}
+.item{-webkit-touch-callout:none;-webkit-user-select:none}
 .azz-head{font-size:11px;color:#D9744B;letter-spacing:.06em;font-style:italic;padding:12px 6px 2px;
   border-top:.5px solid rgba(245,242,234,.06)}
 .azz-r{color:#C8A38F}
@@ -1615,7 +1617,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.73 · 2026-07-10';
+const APP_VERSION='v60S.74 · 2026-07-10';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3650,7 +3652,9 @@ function buildLinePackage(id,title){
     const t=(arr[i]&&arr[i].testo||'').toLowerCase();
     if(kws.some(w=>t.includes(w))) dia.push({quando:String(arr[i].iso||'').slice(0,10),testo:clampStr(arr[i].testo,220)});
   }
-  pkg.diario_pertinente=dia; pkg.nota_utente=null;
+  pkg.diario_pertinente=dia;
+  pkg.nota_utente=(window._notaPend&&window._notaPend.id===id&&window._notaPend.tk===tk)?window._notaPend.testo:null;
+  if(pkg.nota_utente) window._notaPend=null;   /* la nota si consuma: una parola, una risposta */
   pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>({task:n.task,riga:n.riga}));
   return pkg;
 }
@@ -3693,6 +3697,49 @@ function _whisper(text){
   _whisperTimer2=setTimeout(()=>{ el.classList.remove('esce'); el.innerHTML=''; }, durata+520);
 }
 
+/* ══ LA NOTA ALL'OSSERVATRICE — tocco lungo su una riga: una parola tua, la riga rispondera ══ */
+window._notaPend=null;
+function apriNotaBox(div,id,titolo){
+  const prev=div.nextElementSibling;
+  if(prev&&prev.classList&&prev.classList.contains('nota-obs-box')){ prev.remove(); return; }
+  document.querySelectorAll('.nota-obs-box').forEach(x=>x.remove());
+  const box=document.createElement('div'); box.className='nota-obs-box';
+  box.innerHTML='<input class="patto-inp nota-obs-inp" type="text" maxlength="140" placeholder="una parola per l\u2019osservatrice\u2026" enterkeyhint="send">'+
+    '<button class="patto-inp-ok nota-obs-ok">Affida</button>';
+  div.after(box);
+  const inp=box.querySelector('.nota-obs-inp');
+  const invia=()=>{
+    const testo=String(inp.value||'').trim().slice(0,140); if(!testo){ box.remove(); return; }
+    window._notaPend={id:id,testo:testo,tk:todayKey()};
+    box.remove();
+    const fatta=(function(){ try{
+      const tk=todayKey();
+      if((S.checks[tk]||{})[id]===true) return true;
+      const q=(S.quests||[]).find(x=>x&&x.id===id); return !!(q&&q.fatto);
+    }catch(_){ return false; } })();
+    if(fatta){ try{ observerLineFor(div); }catch(_){} }
+    else { try{ toast('Affidata. Rispondera alla spunta.'); }catch(_){} }
+  };
+  box.querySelector('.nota-obs-ok').onclick=invia;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); invia(); } });
+  setTimeout(()=>{ try{ inp.focus(); }catch(_){} },60);
+}
+function attachNota(div,id,titolo){
+  try{
+    if(S.settings&&S.settings.obsLine===false) return;   /* stessa porta della riga: se lei tace, niente note */
+    if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;
+  }catch(_){ return; }
+  let t=null,x0=0,y0=0;
+  div.addEventListener('pointerdown',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal')) return;
+    x0=e.clientX; y0=e.clientY;
+    t=setTimeout(()=>{ t=null; try{ haptic(); }catch(_){} apriNotaBox(div,id,titolo); },550);
+  });
+  const annulla=()=>{ if(t){ clearTimeout(t); t=null; } };
+  div.addEventListener('pointerup',annulla);
+  div.addEventListener('pointercancel',annulla);
+  div.addEventListener('pointermove',e=>{ if(t&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10)) annulla(); });
+}
 let _lineTimer=null,_lineToken=0;
 function observerLineFor(el){
   try{
@@ -4520,6 +4567,7 @@ function buildTaskRow(t,checks){
     if(now){ div.classList.add('done'); onComplete(div); setTimeout(()=>{ div.classList.remove('justdone'); delete div.dataset.busy; },650); }   /* mirato: aggiorna la riga, non l'intera lista */
     else { div.classList.remove('done'); sUndo(); delete div.dataset.busy; updateRing(); }
   };
+  try{ attachNota(div,t.id,t.titolo); }catch(_){}
   return div;
 }
 function renderTasks(){
@@ -4640,6 +4688,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   };
   const cb=div.querySelector('.cal'); if(cb) cb.onclick=(e)=>{ e.stopPropagation(); addToCalendar(q); };
   div.querySelector('.del').onclick=()=>{ S.quests=S.quests.filter(x=>x!==q); save(); rerender(); updateRing(); };
+  try{ attachNota(div,q.id,q.titolo); }catch(_){}
   return div;
 }
 function renderTodayQuests(bornIds){
