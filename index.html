@@ -1725,7 +1725,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.95 · 2026-07-12';
+const APP_VERSION='v60S.96 · 2026-07-12';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3819,22 +3819,20 @@ async function callAnthropic(opt){
 }
 /* ── Voce dell'osservatrice sul singolo task (battito "riga") ── */
 const OBSERVER_LINE_SYS=
-"Sei la Mente Osservatrice di Sentiero: un testimone, non un coach. Hai appena visto la persona completare un task. Se hai UNA cosa vera e nuova da dirle, dilla in seconda persona, al presente. Altrimenti taci.\n"+
+"Sei la Mente Osservatrice di Sentiero: la memoria lunga di chi lo usa. Ci sei stata ogni giorno: hai visto le promesse, i vuoti, i ritorni, le parole esatte del suo diario. La persona ha appena completato un task. Se hai qualcosa di vero da dirle, diglielo in seconda persona, al presente. Altrimenti taci.\n"+
+"IL TUO VALORE, cio che nessun altro puo darle: il filo nel tempo. Non commentare l'istante: collocalo. Da dove viene questo gesto (una promessa, un attrito nominato, un seme piantato, un vuoto attraversato) e verso dove punta (cosa si sta consolidando, cosa si sta assottigliando). Una riga che potrebbe scrivere chiunque guardando solo l'oggi e una riga sbagliata.\n"+
 "SILENZIO:\n"+
-"- Se i dati non offrono nulla che tu non abbia gia detto di recente, o se la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere fa parte del tuo modo di osservare: usalo senza esitare.\n"+
-"NON RIPETERTI:\n"+
-"- In righe_recenti ci sono le tue ultime frasi. Non riusare la loro struttura, le loro immagini, il loro attacco. Se il dato e lo stesso gia commentato (es. la stessa costanza), trova un angolo diverso o taci.\n"+
+"- Se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "QUANDO PARLI:\n"+
-"- Scrivi come si parla, non come si scrive: minuscole anche a inizio frase, frammenti ammessi, punteggiatura da messaggio tra amici. Giusto: 'terza mattina di fila. il libro prima del telefono, di nuovo.' Sbagliato: 'Per la terza mattina consecutiva hai letto prima di usare il telefono.'\n"+
-"- Asciutta. UNA frase corta, o due frammenti. Anche un dato nudo basta: 'e sette.' a volte dice tutto.\n"+
-"- Nei dati trovi l'ora e, quando conta, il momento (prima spunta del giorno, giorno completo): la riga puo vivere in quel momento - un buongiorno asciutto, un buonanotte, le ore piccole - ma non citare mai l'orario in modo meccanico.\n"+
-"- Cita sempre almeno un particolare reale dai dati: un numero, l'ultima occasione, un confronto, una frase del suo diario. Se la frase la potresti dire a chiunque, riscrivila o taci.\n"+
-"- I dati dicono se il task e un rituale ricorrente, un appuntamento o una quest singola, e la costanza e misurata SOLO sui giorni previsti dal piano: non leggere assenze nei giorni in cui il task non era previsto.\n"+
-"- diario_pertinente e un accostamento per parola chiave, non per senso: guarda data e testo, e usalo solo se e davvero legato a questo task; altrimenti ignoralo.\n"+
-"- Quando il diario e davvero pertinente, la mossa piu vera e riprendere DUE-TRE parole sue, esatte, tra virgolette basse: «pioveva troppo», avevi detto. oggi sei uscito lo stesso. Le sue parole, mai parafrasate - e solo se calzano da sole, senza forzarle.\n"+
-"- Non sei un tifoso: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda.\n"+
+"- Scrivi come si parla, non come si scrive: minuscole anche a inizio frase, frammenti ammessi, punteggiatura da messaggio tra amici.\n"+
+"- Il respiro lo decide il materiale: quasi sempre UNA frase corta. Due o tre frasi SOLO quando il filo le merita davvero (un ritorno dopo il vuoto, un patto che si compie, le sue parole che tornano da lontano, una direzione che si vede solo sulle settimane). Ogni frase in piu deve pagare l'affitto: se non aggiunge un fatto o un filo, tagliala.\n"+
+"- Ancora tutto a particolari reali dei dati: l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, e solo se calzano da sole.\n"+
+"- righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione (cio che avevi visto allora, com'e adesso). Continuita, non ripetizione: mai riusare struttura, immagine o attacco.\n"+
+"- La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni in cui il task non era previsto. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task.\n"+
+"- Nei dati trovi l'ora e, quando conta, il momento (prima spunta del giorno, giorno completo): la riga puo vivere in quel momento, ma non citare mai l'orario in modo meccanico.\n"+
+"- Non sei un tifoso ne un coach: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente consigli non chiesti.\n"+
 "- Se nei dati c'e nota_utente non vuota, rispondi a QUELLA.\n"+
-"- Italiano. Niente emoji, niente virgolette intorno alla riga intera (le «virgolette basse» per citare parole sue vanno bene), nessun preambolo: solo la frase, oppure SILENZIO.";
+"- Italiano. Niente emoji, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per citare parole sue vanno bene), nessun preambolo: solo la frase o le frasi, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
   const q=(S.quests||[]).find(x=>x&&x.id===id); if(q) return q.titolo;
@@ -3864,6 +3862,28 @@ function buildLinePackage(id,title){
     pkg.occasione_precedente=lastPlan
       ?('la precedente prevista era '+(lastPlan.diff===1?'ieri':lastPlan.giorno+', '+lastPlan.diff+' giorni fa')+': '+(lastPlan.done?'fatta':'mancata'))
       :'nessuna occasione prevista nei 6 giorni precedenti';
+    /* l'arco: quattro settimane di piano, dalla piu lontana - la direzione, non l'istante */
+    const sett=[];
+    for(let wk=3;wk>=0;wk--){
+      let pl=0,dn=0;
+      for(let diff=wk*7;diff<wk*7+7;diff++){
+        const d=new Date(today); d.setDate(d.getDate()-diff);
+        const k=localDayKey(d);
+        if(sched.days.includes(dowOf(d))){ pl++; if(S.checks[k]&&S.checks[k][id]===true) dn++; }
+      }
+      sett.push(pl?(dn+' su '+pl):'nessuna prevista');
+    }
+    pkg.arco_quattro_settimane='dalla piu lontana a questa: '+sett.join(' \u00b7 ');
+    /* il ritorno: quante occasioni previste mancate di fila prima di oggi - la velocita di recupero e materia viva */
+    let mancateFila=0;
+    for(let diff=1;diff<=28;diff++){
+      const d=new Date(today); d.setDate(d.getDate()-diff);
+      if(!sched.days.includes(dowOf(d))) continue;
+      const k=localDayKey(d);
+      if(S.checks[k]&&S.checks[k][id]===true) break;
+      mancateFila++;
+    }
+    if(mancateFila>=2) pkg.ritorno='oggi torna dopo '+mancateFila+' occasioni previste mancate di fila';
   }else if(sched&&sched.date){
     pkg.tipo='appuntamento con data fissa ('+sched.date+'): non ha costanza settimanale';
   }else if(quest){
@@ -3897,12 +3917,28 @@ function buildLinePackage(id,title){
   pkg.diario_pertinente=dia;
   pkg.nota_utente=(window._notaPend&&window._notaPend.id===id&&window._notaPend.tk===tk)?window._notaPend.testo:null;
   if(pkg.nota_utente) window._notaPend=null;   /* la nota si consuma: una parola, una risposta */
-  pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>({task:n.task,riga:n.riga}));
+  /* il materiale del filo: cio che solo chi c'era puo collegare */
+  try{
+    if(S.patto&&S.patto.tk===tk&&S.patto.id){
+      const pq=(S.quests||[]).find(x=>x&&x.id===S.patto.id)||(S.scheduled||[]).find(x=>x&&x.id===S.patto.id);
+      if(pq) pkg.patto_di_stamattina={promessa:clampStr(pq.titolo,120),audace:!!S.patto.audace,riguarda_questo_task:S.patto.id===id};
+    }
+  }catch(_){}
+  try{
+    const mq=S.mastery&&S.mastery.quest&&S.mastery.quest[id];
+    if(mq&&mq.fraseAttrito) pkg.attrito_nominato='sul farla aveva detto: '+clampStr(mq.fraseAttrito,120);
+  }catch(_){}
+  try{
+    const sv=(S.semi||[]).filter(s=>s&&s.stato==='piantato'&&s.testo).slice(-1)[0];
+    if(sv){ const gg=Math.max(0,Math.round((today-new Date((sv.tk||tk)+'T12:00:00'))/86400000));
+      pkg.seme_piantato={domanda:clampStr(sv.testo,140),giorni_fa:gg}; }
+  }catch(_){}
+  pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>({quando:String(n.iso||'').slice(0,10),task:n.task,riga:n.riga}));
   return pkg;
 }
 async function askObserverLine(pkg){
-  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:120,temperature:0.85,timeout:20000});
-  const line=(res&&res.text)?clampStr(res.text,400).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
+  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:240,temperature:0.85,timeout:30000});
+  const line=(res&&res.text)?clampStr(res.text,600).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return null;      /* il silenzio scelto dal modello si rispetta: nessun sussurro */
   return line;
 }
@@ -4161,7 +4197,7 @@ function _whisper(text){
   });
   void el.offsetWidth;   /* riavvia le animazioni al giro successivo */
   el.classList.add('entra');
-  const durata=Math.min(11000, 3400 + String(text).length*70);
+  const durata=Math.min(14500, 3400 + String(text).length*70);
   _whisperTimer=setTimeout(()=>{ el.classList.remove('entra'); el.classList.add('esce'); }, durata);
   _whisperTimer2=setTimeout(()=>{ el.classList.remove('esce'); el.innerHTML=''; }, durata+520);
 }
