@@ -55,7 +55,6 @@ html,body{overflow-x:hidden}   /* il volto: il fuoco sborda i margini, la pagina
   display:flex;flex-direction:column;margin:0;
   transform:translate(-50%,54vh);transform:translate(-50%,54dvh);
   background:var(--foglio-bg-opaco);
-  border-top:1px solid rgba(255,255,255,0.08);
   border-radius:16px 16px 0 0;
   transition:transform .32s cubic-bezier(0.32,0.72,0,1)}
 @supports ((-webkit-backdrop-filter:blur(20px)) or (backdrop-filter:blur(20px))){
@@ -64,8 +63,16 @@ html,body{overflow-x:hidden}   /* il volto: il fuoco sborda i margini, la pagina
 body.foglio-opaco #app{transition:none}
 #app.trascinando{transition:none;will-change:transform}
 body:not(.foglio-opaco) #app.trascinando{-webkit-backdrop-filter:saturate(140%) blur(12px);backdrop-filter:saturate(140%) blur(12px)}
+/* C (lab chiaroscuro): ombra portata sul mondo · filo di luce · luce che cade sul primo tratto */
+#app::before{content:'';position:absolute;left:6px;right:6px;top:-26px;height:26px;pointer-events:none;
+  background:radial-gradient(60% 100% at 50% 100%,rgba(0,0,0,0.55) 0,transparent 78%)}
+#app::after{content:'';position:absolute;left:0;right:0;top:-1px;height:64px;border-radius:16px 16px 0 0;pointer-events:none;
+  background:linear-gradient(90deg,transparent 4%,rgba(242,197,107,0.16) 26%,rgba(255,244,215,0.55) 50%,rgba(242,197,107,0.16) 74%,transparent 96%) top/100% 1.5px no-repeat,
+             linear-gradient(180deg,rgba(255,244,215,0.055) 0,rgba(255,244,215,0.02) 26px,transparent 64px)}
 #foglio-grip{flex:0 0 auto;min-height:38px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}
-#foglio-grip::before{content:'';width:36px;height:5px;border-radius:2.5px;background:rgba(255,255,255,0.22)}
+#foglio-grip::before{content:'';width:36px;height:5px;border-radius:2.5px;
+  background:linear-gradient(90deg,rgba(242,197,107,0.28),rgba(255,241,208,0.62) 50%,rgba(242,197,107,0.28));
+  box-shadow:0 0 9px rgba(242,197,107,0.22)}
 #app>header{touch-action:none}
 body[data-foglio="picco"] #app{touch-action:none}
 #btn-altro-mondo{position:fixed;top:calc(var(--safe-top) + 10px);right:14px;z-index:11;width:44px;height:44px;
@@ -1699,7 +1706,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.87 · 2026-07-12';
+const APP_VERSION='v60S.88 · 2026-07-12';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
