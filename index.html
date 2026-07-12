@@ -1725,7 +1725,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.94 · 2026-07-12';
+const APP_VERSION='v60S.95 · 2026-07-12';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3906,6 +3906,233 @@ async function askObserverLine(pkg){
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return null;      /* il silenzio scelto dal modello si rispetta: nessun sussurro */
   return line;
 }
+/* ══ LA BRACE — il pensiero dell'osservatrice in volo: dalla spunta alla casa del sussurro.
+   Una sola materia, la polvere: si condensa dalla spunta, vola perdendo grani, atterra,
+   respira finche l'osservatrice legge, poi si scrive nelle parole o esala nel silenzio.
+   Il nucleo ha il boil disegnato a mano (forma a ~12fps, moto a 60fps). L'uovo «il vuoto»
+   e un omaggio frame per frame, 1/80 e puro caso: la sorte tocca la carne, mai il significato.
+   Vive SOLO mentre l'osservatrice lavora: zero costo a riposo. ══ */
+(function(){
+  const RMQ=matchMedia('(prefers-reduced-motion: reduce)');
+  function animOk(){ try{ return (S.settings&&S.settings.anim==='sempre')||!RMQ.matches; }catch(_){ return !RMQ.matches; } }
+  const CORE='255,244,214',ORO='232,188,106',AMBRA='196,124,38',CIELO='159,196,232',BIANCO='245,238,220',NOTTE='7,10,9';
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const easeOut=t=>1-Math.pow(1-t,3);
+  const qz=(ph,ms)=>Math.floor(ph/ms)*ms;                 /* pose tenute: on threes */
+  const hsh=n=>{ const s=Math.sin(n*127.1)*43758.5453; return s-Math.floor(s); };
+  let cv=null,ctx=null;
+  function tela(){
+    if(cv) return;
+    cv=document.createElement('canvas');
+    cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:69';
+    document.body.appendChild(cv); ctx=cv.getContext('2d');
+    const fit=()=>{ const d=Math.min(2,devicePixelRatio||1); cv.width=innerWidth*d; cv.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); };
+    fit(); addEventListener('resize',fit);
+  }
+  let _sb=null;
+  function safeBottom(){
+    if(_sb!==null) return _sb;
+    const d=document.createElement('div');
+    d.style.cssText='position:fixed;bottom:env(safe-area-inset-bottom,0px);left:0;width:1px;height:1px;pointer-events:none;visibility:hidden';
+    document.body.appendChild(d);
+    _sb=Math.max(0,innerHeight-d.getBoundingClientRect().bottom); d.remove(); return _sb;
+  }
+  const P=[];
+  function sp(o){ if(P.length<150) P.push(Object.assign({x:0,y:0,vx:0,vy:0,r:1.2,ttl:800,t0:performance.now(),tw:rnd(3,9),kind:'dust',col:ORO,g:-0.006},o)); }
+  function dot(x,y,r,a,col){
+    if(a<=0||r<=0) return;
+    ctx.beginPath(); ctx.arc(x,y,r*2.6,0,7); ctx.fillStyle='rgba('+col+','+(a*.16)+')'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fillStyle='rgba('+col+','+a+')'; ctx.fill();
+  }
+  function particelle(now,dt){
+    for(let i=P.length-1;i>=0;i--){
+      const p=P[i], age=now-p.t0;
+      if(age>p.ttl){ P.splice(i,1); continue; }
+      const f=Math.pow(.92,dt/16);
+      p.vx*=f; p.vy=p.vy*f+p.g*dt/16;
+      p.x+=p.vx*dt; p.y+=p.vy*dt;
+      const k=1-age/p.ttl, a=k*(.55+.45*Math.sin(age/159*p.tw));
+      if(p.kind==='star'){
+        const s=p.r*(0.6+k);
+        ctx.strokeStyle='rgba('+p.col+','+a+')'; ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.moveTo(p.x-s,p.y); ctx.lineTo(p.x+s,p.y);
+        ctx.moveTo(p.x,p.y-s); ctx.lineTo(p.x,p.y+s);
+        ctx.stroke();
+        dot(p.x,p.y,p.r*.55,a,p.col);
+      }else dot(p.x,p.y,p.r*k+.4,a,p.col);
+    }
+  }
+  function nucleo(x,y,vx,vy,base,now,col){
+    const st=Math.floor(now/80);                          /* il boil: la forma trema a ~12fps, il moto corre a 60 */
+    const jx=hsh(st)*1.2-.6, jy=hsh(st+7)*1.2-.6, jr=1+(hsh(st+13)*.24-.12);
+    const spd=Math.hypot(vx,vy);
+    ctx.save(); ctx.translate(x+jx,y+jy);
+    if(spd>.6){ ctx.rotate(Math.atan2(vy,vx)); ctx.scale(1+Math.min(1.1,spd*.08),1/(1+Math.min(.45,spd*.04))); }
+    dot(0,0,base*2.4*jr,.2,col||ORO);
+    dot(0,0,base*1.4*jr,.5,col||ORO);
+    dot(0,0,base*.75,1,CORE);
+    ctx.restore();
+  }
+  let phase='idle',raf=0,pT0=0,last=0,from=null,home=null,ctrl=null,prev=null;
+  let egg=false,frozen=null,pending=null,moteT=0,starT=0;
+  function setPhase(p){ phase=p; pT0=performance.now(); prev=null; }
+  function loopStart(){ cancelAnimationFrame(raf); last=0; raf=requestAnimationFrame(loop); }
+  function spegni(){ phase='idle'; P.length=0; pending=null; if(ctx) ctx.clearRect(0,0,innerWidth,innerHeight); }
+  function posAt(t){
+    const u=1-t;
+    const x=u*u*from.x+2*u*t*ctrl.x+t*t*home.x, y=u*u*from.y+2*u*t*ctrl.y+t*t*home.y;
+    const dx=2*u*(ctrl.x-from.x)+2*t*(home.x-ctrl.x), dy=2*u*(ctrl.y-from.y)+2*t*(home.y-ctrl.y);
+    const L=Math.hypot(dx,dy)||1;
+    const wb=Math.sin(t*13.8)*9*Math.sin(t*3.1416);       /* vagare da fuoco fatuo, zero agli estremi */
+    return {x:x-dy/L*wb, y:y+dx/L*wb, tx:dx/L, ty:dy/L};
+  }
+  function loop(now){
+    const dt=last?Math.min(50,now-last):16; last=now;
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    ctx.globalCompositeOperation='lighter';
+    const ph=now-pT0;
+    if(phase==='condensa') condensa(now,ph);
+    else if(phase==='volo') volo(now,ph,dt);
+    else if(phase==='uovo') uovo(now,ph,dt);
+    else if(phase==='atterra') atterra(now,ph);
+    else if(phase==='attesa') attesa(now);
+    else if(phase==='scintilla') scintilla(now,ph);
+    else if(phase==='esala') esala(now,ph,dt);
+    particelle(now,dt);
+    ctx.globalCompositeOperation='source-over';
+    if(phase!=='idle'||P.length) raf=requestAnimationFrame(loop); else raf=0;
+  }
+  function condensa(now,ph){
+    const T=340, k=easeOut(Math.min(1,ph/T));
+    for(let i=0;i<8;i++){
+      const th=i*.785+1.3+hsh(i)*0.5, rr=36*(1-k);
+      dot(from.x+Math.cos(th)*rr, from.y+Math.sin(th)*rr, 1.3, .15+.65*k, ORO);
+    }
+    nucleo(from.x,from.y,0,0,2.6*k,now);
+    if(ph>=T){
+      for(let i=0;i<6;i++) sp({x:from.x,y:from.y,vx:rnd(-.06,.06),vy:rnd(-.06,.02),r:rnd(.7,1.5),ttl:rnd(350,650)});
+      setPhase('volo');
+    }
+  }
+  function volo(now,ph,dt){
+    const T=1100, t=easeIO(Math.min(1,ph/T));
+    if(egg&&t>=.45){ frozen=posAt(.45); setPhase('uovo'); return; }
+    const p=posAt(t);
+    const vx=prev?(p.x-prev.x)/dt*16:0, vy=prev?(p.y-prev.y)/dt*16:0; prev={x:p.x,y:p.y};
+    const n=Math.max(1,Math.round(dt/8));
+    for(let i=0;i<n;i++){
+      sp({x:p.x+rnd(-1.5,1.5),y:p.y+rnd(-1.5,1.5),vx:-p.tx*.05+rnd(-.025,.025),vy:-p.ty*.05+rnd(-.025,.025),
+          r:rnd(.7,1.9),ttl:rnd(500,1100),col:Math.random()<.72?ORO:AMBRA});
+    }
+    if(Math.random()<.12) sp({kind:'star',x:p.x+rnd(-3,3),y:p.y+rnd(-3,3),vx:rnd(-.015,.015),vy:rnd(-.02,.005),r:rnd(1.6,2.7),ttl:rnd(600,1000),g:-.003,col:CORE});
+    nucleo(p.x,p.y,vx,vy,2.7,now);
+    if(t>=1) setPhase('atterra');
+  }
+  function uovo(now,ph,dt){
+    const F=frozen;
+    if(ph<140){ nucleo(F.x,F.y,0,0,2.1,now); }
+    else if(ph<660){
+      const k=qz(ph-140,50)/520;
+      P.forEach(p=>{ const dx=F.x-p.x,dy=F.y-p.y,dd=Math.hypot(dx,dy)||1;
+        p.vx+=dx/dd*.006*dt/16; p.vy+=dy/dd*.006*dt/16; });
+      for(let i=0;i<10;i++){
+        const th=i/10*6.283+i*1.7, rr=(52-i*2.5)*(1-k);
+        dot(F.x+Math.cos(th+k*2.6)*rr, F.y+Math.sin(th+k*2.6)*rr, 1.4, .3+k*.55, CIELO);
+      }
+      nucleo(F.x,F.y,0,0,2.2+k*1.4,now,CIELO);
+    }
+    else if(ph<950){
+      const k=qz(ph-660,50)/290, rr=4+k*44;
+      ctx.beginPath(); ctx.arc(F.x,F.y,rr,0,7);
+      ctx.strokeStyle='rgba('+ORO+','+(1-k)+')'; ctx.lineWidth=2.5; ctx.stroke();
+      for(let i=0;i<8;i++){ const th=i/8*6.283+.4;
+        ctx.beginPath(); ctx.moveTo(F.x+Math.cos(th)*rr*.55,F.y+Math.sin(th)*rr*.55);
+        ctx.lineTo(F.x+Math.cos(th)*(rr+9),F.y+Math.sin(th)*(rr+9));
+        ctx.strokeStyle='rgba('+ORO+','+(1-k)*.9+')'; ctx.lineWidth=1.6; ctx.stroke(); }
+      if(Math.random()<.5){ const th=rnd(0,6.283);
+        sp({x:F.x+Math.cos(th)*rr,y:F.y+Math.sin(th)*rr,vx:Math.cos(th)*.09,vy:Math.sin(th)*.09,r:rnd(.8,1.6),ttl:rnd(400,800)}); }
+      nucleo(F.x,F.y,0,0,3.4,now);
+    }
+    else if(ph<1130){
+      ctx.globalCompositeOperation='source-over';          /* gli impact frame vogliono il nero vero */
+      const inv=qz(ph-950,90)>=90;
+      ctx.beginPath(); ctx.arc(F.x,F.y,30,0,7);
+      ctx.fillStyle=inv?'rgba('+ORO+',.95)':'rgba('+NOTTE+',.97)'; ctx.fill();
+      for(let i=0;i<10;i++){ const th=i/10*6.283+(inv?.31:0);
+        ctx.beginPath();
+        ctx.moveTo(F.x+Math.cos(th-.09)*13,F.y+Math.sin(th-.09)*13);
+        ctx.lineTo(F.x+Math.cos(th)*30,F.y+Math.sin(th)*30);
+        ctx.lineTo(F.x+Math.cos(th+.09)*13,F.y+Math.sin(th+.09)*13);
+        ctx.closePath(); ctx.fillStyle=inv?'rgba('+NOTTE+',.97)':'rgba('+ORO+',.95)'; ctx.fill(); }
+      ctx.globalCompositeOperation='lighter';
+    }
+    else if(ph<1250){
+      const k=qz(ph-1130,40)/120, t2=.45+.55*Math.min(1,k), Pp=posAt(t2);
+      const g=ctx.createLinearGradient(F.x,F.y,Pp.x,Pp.y);
+      g.addColorStop(0,'rgba('+BIANCO+',0)'); g.addColorStop(1,'rgba('+BIANCO+',.95)');
+      ctx.beginPath(); ctx.moveTo(F.x,F.y); ctx.lineTo(Pp.x,Pp.y);
+      ctx.strokeStyle=g; ctx.lineWidth=3.5; ctx.stroke();
+      dot(Pp.x,Pp.y,3.2,1,BIANCO);
+    }
+    else{
+      for(let i=0;i<5;i++){ const t2=.5+i*.11, Pp=posAt(Math.min(1,t2));
+        sp({kind:'star',x:Pp.x,y:Pp.y,vx:rnd(-.01,.01),vy:rnd(-.015,0),r:rnd(1.4,2.4),ttl:rnd(500,900),g:-.002,col:CORE}); }
+      setPhase('atterra');
+    }
+  }
+  function atterra(now,ph){
+    const T=380, k=easeOut(Math.min(1,ph/T));
+    if(ph<=20){ for(let i=0;i<12;i++){ const th=rnd(0,6.283);
+      sp({x:home.x,y:home.y,vx:Math.cos(th)*rnd(.03,.1)*1.4,vy:Math.sin(th)*rnd(.02,.06)-.02,r:rnd(.7,1.7),ttl:rnd(400,900),col:Math.random()<.7?ORO:AMBRA}); } }
+    ctx.beginPath(); ctx.arc(home.x,home.y,3+k*16,0,7);
+    ctx.strokeStyle='rgba('+ORO+','+(1-k)*.5+')'; ctx.lineWidth=1.3; ctx.stroke();
+    nucleo(home.x,home.y,0,0,3.3-k*.7,now);
+    if(k>=1){ setPhase('attesa'); if(pending){ const f=pending; pending=null; f(); } }
+  }
+  function attesa(now){
+    const b=Math.sin(now/380);
+    nucleo(home.x,home.y,0,0,2.4+b*.7,now);
+    if(now-moteT>650){ moteT=now;
+      sp({x:home.x+rnd(-3,3),y:home.y-2,vx:rnd(-.008,.008),vy:rnd(-.03,-.015),r:rnd(.6,1.3),ttl:rnd(900,1500),g:-.004}); }
+    if(now-starT>2600){ starT=now;
+      sp({kind:'star',x:home.x+rnd(-10,10),y:home.y+rnd(-8,2),vx:0,vy:-.008,r:rnd(1.4,2.2),ttl:rnd(700,1100),g:0,col:CORE}); }
+  }
+  function scintilla(now,ph){
+    const T=420, k=Math.min(1,ph/T);
+    if(ph<=20){ for(let i=0;i<12;i++){ const dir=Math.random()<.5?-1:1;
+      sp({kind:Math.random()<.4?'star':'dust',x:home.x,y:home.y,vx:dir*rnd(.03,.1),vy:rnd(-.03,-.005),r:rnd(.9,2.2),ttl:rnd(800,1400),g:-.003,col:Math.random()<.5?CORE:ORO}); } }
+    dot(home.x,home.y,8*(1-k)+1,1-k*.85,CORE);
+    nucleo(home.x,home.y,0,0,2.4*(1-k),now);
+    if(k>=1) setPhase('idle');
+  }
+  function esala(now,ph,dt){
+    const T=1600, k=Math.min(1,ph/T);
+    if(Math.random()<dt/40) sp({x:home.x+rnd(-2,2),y:home.y-1,vx:rnd(-.006,.006),vy:rnd(-.05,-.03),r:rnd(.6,1.4),ttl:rnd(700,1200),g:-.005,col:Math.random()<.8?ORO:AMBRA});
+    nucleo(home.x,home.y,0,0,2.3*(1-k*.75),now);
+    if(k>=1) setPhase('idle');
+  }
+  window._braceParte=function(el){
+    if(!animOk()||document.hidden){ spegni(); return; }
+    const chk=(el&&el.querySelector)?(el.querySelector('.chk')||el):null;
+    if(!chk||!chk.getBoundingClientRect){ spegni(); return; }
+    const r=chk.getBoundingClientRect();
+    if(!(r.width||r.height)){ spegni(); return; }
+    tela();
+    from={x:r.left+r.width/2,y:r.top+r.height/2};
+    home={x:innerWidth/2,y:innerHeight-safeBottom()-104};  /* la casa del sussurro: appena sopra il bordo della sua carta */
+    ctrl={x:(from.x+home.x)/2-70,y:(from.y+home.y)/2-30};
+    egg=Math.random()<1/80;                                /* il vuoto: la famiglia del dono */
+    pending=null; P.length=0;
+    setPhase('condensa'); loopStart();
+  };
+  window._braceEsito=function(fn){
+    if(phase==='idle'){ if(fn) fn(); return; }             /* la brace non vola: il sussurro appare come sempre */
+    const esegui=()=>{ if(fn){ setPhase('scintilla'); fn(); } else setPhase('esala'); };
+    if(phase==='attesa') esegui(); else pending=esegui;    /* l'esito aspetta sempre l'atterraggio */
+  };
+})();
 let _whisperEl=null,_whisperTimer=null,_whisperTimer2=null;
 function _whisper(text){
   if(!text) return;
@@ -4011,11 +4238,15 @@ function observerLineFor(el){
     const title=((el.querySelector('.ttl')||{}).textContent||'').trim(); if(!title) return;
     const token=++_lineToken; clearTimeout(_lineTimer);
     _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
+      try{ window._braceParte(el); }catch(_){}                         /* la brace parte: il pensiero e in volo */
       const line=await askObserverLine(buildLinePackage(id,title));
-      if(line&&token===_lineToken){
-        _whisper(line);
+      if(token!==_lineToken){ return; }                                /* superata da una spunta piu recente: la brace ormai vola per lei */
+      if(line){
+        try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
+      }else{
+        try{ window._braceEsito(null); }catch(_){}                       /* silenzio scelto o errore: la brace esala */
       }
     },800);
   }catch(_){}
