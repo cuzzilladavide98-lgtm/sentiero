@@ -1424,6 +1424,21 @@ function sanitizeCapitoli(arr){   /* i capitoli: un mese rilegato non si riscriv
   }
   return out.sort((a,b)=>a.mese<b.mese?-1:1).slice(-24); /* due anni di capitoli bastano */
 }
+function sanitizeRegistro(arr){
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  for(const e of arr.slice(-250)){
+    if(!e||typeof e!=='object') continue;
+    const v={t:clampStr(e.t,24),tipo:clampStr(e.tipo,16),ver:clampStr(e.ver,24)};
+    if(!v.tipo) continue;
+    if(e.task) v.task=clampStr(e.task,120);
+    if(e.riga) v.riga=clampStr(e.riga,300);
+    if(e.msg) v.msg=clampStr(e.msg,220);
+    if(Number.isFinite(e.ms)&&e.ms>=0&&e.ms<600000) v.ms=Math.round(e.ms);
+    out.push(v);
+  }
+  return out;
+}
 function sanitizeState(raw,def){
   raw=(raw&&typeof raw==='object'&&!Array.isArray(raw))?raw:{};
   const st={
@@ -1434,6 +1449,7 @@ function sanitizeState(raw,def){
     observerNotes:sanitizeObserverNotes(raw.observerNotes),
     mastery:sanitizeMastery(raw.mastery),
     obsLines:sanitizeObsLines(raw.obsLines),
+    registro:sanitizeRegistro(raw.registro),
     capitoli:sanitizeCapitoli(raw.capitoli),
     semi:sanitizeSemi(raw.semi),
     sfide:sanitizeSfide(raw.sfide),
@@ -1725,7 +1741,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.97 · 2026-07-12';
+const APP_VERSION='v60S.98 · 2026-07-12';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4260,6 +4276,33 @@ function attachNota(div,id,titolo,isQuest){
   div.addEventListener('pointercancel',annulla);
   div.addEventListener('pointermove',e=>{ if(t&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10)) annulla(); });
 }
+/* ══ IL REGISTRO DI CANTIERE — la memoria tecnica dell'app: misura Sentiero, mai la vita.
+   Sussurri e silenzi con la loro latenza, gli errori veri, un battito d'apertura al giorno.
+   Vive nello stato: ogni backup esportato lo porta con se. Tetto duro: 250 voci. ══ */
+function regCantiere(tipo,dati){
+  try{
+    const v={t:new Date().toISOString().slice(0,19),tipo:String(tipo||'').slice(0,16),ver:APP_VERSION.slice(0,24)};
+    if(dati&&typeof dati==='object'){
+      if(dati.task) v.task=clampStr(dati.task,120);
+      if(dati.riga) v.riga=clampStr(dati.riga,300);
+      if(dati.msg) v.msg=clampStr(dati.msg,220);
+      if(Number.isFinite(dati.ms)) v.ms=Math.round(dati.ms);
+    }
+    const ult=(S.registro||[]).slice(-1)[0];
+    if(ult&&v.tipo==='errore'&&ult.tipo==='errore'&&ult.msg===v.msg) return;   /* lo stesso errore a raffica si scrive una volta */
+    S.registro=(S.registro||[]).concat([v]).slice(-250);
+    save();
+  }catch(_){}
+}
+(function(){
+  try{
+    const oggi=todayKey();
+    const ap=(S.registro||[]).filter(e=>e&&e.tipo==='apertura').slice(-1)[0];
+    if(!ap||ap.msg!==oggi) regCantiere('apertura',{msg:oggi});
+  }catch(_){}
+  addEventListener('error',e=>{ try{ regCantiere('errore',{msg:String((e&&e.message)||'')+' @'+String((e&&e.lineno)||'')}); }catch(_){} });
+  addEventListener('unhandledrejection',e=>{ try{ regCantiere('errore',{msg:'promise: '+String((e&&e.reason&&e.reason.message)||(e&&e.reason)||'').slice(0,180)}); }catch(_){} });
+})();
 let _lineTimer=null,_lineToken=0;
 function observerLineFor(el){
   try{
@@ -4270,14 +4313,18 @@ function observerLineFor(el){
     const token=++_lineToken; clearTimeout(_lineTimer);
     _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
       try{ window._braceParte(el); }catch(_){}                         /* la brace parte: il pensiero e in volo */
+      const t0Linea=Date.now();
       const line=await askObserverLine(buildLinePackage(id,title));
+      const msLinea=Date.now()-t0Linea;
       if(token!==_lineToken){ return; }                                /* superata da una spunta piu recente: la brace ormai vola per lei */
       if(line){
         try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
+        regCantiere('sussurro',{task:title,riga:line,ms:msLinea});
       }else{
         try{ window._braceEsito(null); }catch(_){}                       /* silenzio scelto o errore: la brace esala */
+        regCantiere('silenzio',{task:title,ms:msLinea});
       }
     },800);
   }catch(_){}
