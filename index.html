@@ -78,6 +78,22 @@ body[data-foglio="picco"] #app{touch-action:none}
 #btn-altro-mondo{position:fixed;top:calc(var(--safe-top) + 10px);right:14px;z-index:11;width:44px;height:44px;
   display:flex;align-items:center;justify-content:center;border:none;border-radius:22px;
   background:rgba(7,10,9,0.55);color:var(--t2)}
+/* punto 2 (lente Canali #59): i testi del mondo parlano solo quando il mondo e il layer attivo.
+   A mezzo/pieno quei dati vivono gia nel foglio (day-line, liste): un canale solo. */
+body:not([data-foglio="picco"]) #ring-count,
+body:not([data-foglio="picco"]) #mic-label,
+body:not([data-foglio="picco"]) #flow{visibility:hidden}
+/* terra: nel mondo nessun testo fluttua nel nero */
+#flow:not(:empty){background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.10);border-radius:16px;padding:14px 16px}
+#live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
+/* punto 3: a picco l'intestazione si fa compatta (come la barra di Mappe): niente tagli */
+body[data-foglio="picco"] #btn-pin{display:none}
+body[data-foglio="picco"] #foglio-grip{min-height:30px}
+body[data-foglio="picco"] header{padding-top:4px}
+body[data-foglio="picco"] .d-num{font-size:46px}
+body[data-foglio="picco"] .d-mese{font-size:18px}
+body[data-foglio="picco"] #gb-dow{font-size:12.5px;letter-spacing:.2em}
+body[data-foglio="picco"] #gb-ring{width:52px;height:52px}
 main{flex:1;padding:0 28px calc(28px + var(--safe-bot));overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 /* la molla del v60S.80 e superata dal foglio: lo scroll vive nel corpo, solo a pieno */
 
@@ -1048,9 +1064,9 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 
     <!-- ===== ALTRO (nascosto, aperto dal Diario) ===== -->
     <div id="tab-impostazioni" class="hidden">
-      <button id="close-altro" class="back-link" aria-label="Torna al Diario">
+      <button id="close-altro" class="back-link" aria-label="Torna dove eri">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        Diario
+        Indietro
       </button>
       <section>
         <div class="sec-head">Esperienza</div>
@@ -1706,7 +1722,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.88 · 2026-07-12';
+const APP_VERSION='v60S.92 · 2026-07-12';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2958,6 +2974,12 @@ function showPane(name){
      'impostazioni' = pannello Altro (foglio a pieno) · 'quest' = foglio a picco, la voce e nel mondo */
   try{ document.body.setAttribute('data-pane',name); }catch(_){}
   const alt=(name==='impostazioni');
+  try{   /* punto 5 (lente Modi #60): entrando in Altro ricordo dove eri, per restituirtelo */
+    if(alt&&document.body.getAttribute('data-pane')!=='impostazioni'){
+      const m0=document.querySelector('main');
+      window._primaDiAltro={det:window._foglioDetent||'mezzo',st:m0?m0.scrollTop:0};
+    }
+  }catch(_){}
   try{ $('#tab-oggi').classList.toggle('hidden',alt); }catch(_){}
   try{ $('#tab-diario').classList.toggle('hidden',alt); }catch(_){}
   try{ $('#tab-impostazioni').classList.toggle('hidden',!alt); }catch(_){}
@@ -3011,6 +3033,16 @@ document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
     showPane(ordine[nxt]);
   },{passive:true});
 })();
+function foglioDopoVoce(){
+  /* se il Motore ha lasciato qualcosa da leggere (letture/lascito/rivelazione), il foglio non lo copre */
+  try{
+    const vivo=['#letture','#lascito','#rivelazione'].some(function(s){
+      const el=document.querySelector(s);
+      return el&&!el.classList.contains('hidden')&&el.textContent.trim();
+    });
+    window.foglioVai&&window.foglioVai(vivo?'picco':'mezzo');
+  }catch(_){ try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(__){} }
+}
 /* ══════ IL FOGLIO — tre detent, velocita, gomma (contratti B/F4) ══════ */
 (function(){
   const fg=document.getElementById('app'); if(!fg) return;
@@ -3027,7 +3059,7 @@ document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
       document.body.appendChild(pr); SB=pr.getBoundingClientRect().height||0; pr.remove();
     }catch(_){ SB=0; }
   }
-  function posDi(d){ return d==='pieno'?Math.round(H*0.08):(d==='mezzo'?Math.round(H*0.54):Math.max(0,Math.round(H-112-SB))); }
+  function posDi(d){ return d==='pieno'?Math.round(H*0.08):(d==='mezzo'?Math.round(H*0.54):Math.max(0,Math.round(H-96-SB))); }   /* 96 = intestazione compatta di picco: tarare qui se sul device spunta uno spiraglio */
   function scrivi(y){ penTy=y; if(raf) return;
     raf=requestAnimationFrame(function(){ raf=0; if(penTy!=null) fg.style.transform='translate(-50%,'+penTy+'px)'; }); }
   function applica(d){
@@ -3045,13 +3077,15 @@ document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
     if(y<mn) return mn+(y-mn)/3;
     if(y>mx) return mx+(y-mx)/3;
     return y; }
-  function trStart(y){ dragging=true; p0=y; ty0=(penTy!=null?penTy:ty); samples=[{t:performance.now(),y:y}]; fg.classList.add('trascinando'); }
+  function trStart(y){ dragging=true; window._foglioVento=true; p0=y; ty0=(penTy!=null?penTy:ty); samples=[{t:performance.now(),y:y}]; fg.classList.add('trascinando'); }
   function trMove(y){ if(!dragging) return;
     const now=performance.now(); samples.push({t:now,y:y});
     while(samples.length>2&&now-samples[0].t>120) samples.shift();
     scrivi(gomma(ty0+(y-p0))); }
   function trEnd(tapGrip){
     if(!dragging) return; dragging=false;
+    window._foglioVento=false;
+    const detPrima=det;
     fg.classList.remove('trascinando');
     const a=samples[0], b=samples[samples.length-1];
     const v=(a&&b&&b.t>a.t)?((b.y-a.y)/(b.t-a.t)):0;   /* px/ms, positivo verso il basso */
@@ -3063,6 +3097,7 @@ document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
     else{ const cur=(penTy!=null?penTy:ty), proj=cur+v*180;
       dest=ORD.reduce(function(m,d){ return Math.abs(posDi(d)-proj)<Math.abs(posDi(m)-proj)?d:m; },'mezzo'); }
     applica(dest);
+    if(dest!==detPrima){ try{ haptic(); }catch(_){} }   /* il detent risponde: un tick, mai dietro foglioVai */
   }
   function giu(e){
     if(dragging) return;
@@ -3108,7 +3143,15 @@ setTimeout(()=>{ try{
   }
 }catch(_){} },1600);
 
-document.querySelector('#close-altro').onclick=()=>showPane('diario');
+document.querySelector('#close-altro').onclick=()=>{
+  const r=window._primaDiAltro; window._primaDiAltro=null;
+  showPane('oggi');   /* rimonta Oggi+Diario impilati (mezzo di default) */
+  try{
+    if(r){ if(window.foglioVai) foglioVai(r.det);
+      const m=document.querySelector('main');
+      if(m) m.scrollTop=(r.det==='pieno')?r.st:0; }
+  }catch(_){}
+};
 
 /* ======================================================================
    DETTATURA
@@ -3312,7 +3355,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         try{ renderLetture(out.motore); }catch(_){}
         try{ if(!maybeRivelazione()) maybeLascito(); }catch(_){}
         resetCapture();
-        try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(_){}
+        foglioDopoVoce();
         guideAfterDistill(bornIds);
         maybeAskPriority(bornIds);
         return;
@@ -3323,12 +3366,12 @@ document.querySelector('#btn-save').onclick=async()=>{
       toast('Nota salvata nel diario (IA spenta: manca la chiave)');
       try{ semeRaccolto(); }catch(_){}
       resetCapture();
-      try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(_){}
+      foglioDopoVoce();
       guideAfterDistill([]);
       return;
     }
   }catch(err){
-    addDiary(transcript,[],[]); save(); render(); resetCapture(); try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(_){} try{ semeRaccolto(); }catch(_){}
+    addDiary(transcript,[],[]); save(); render(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}
     const code=(err&&err.message)||'';
     let msg='IA non raggiungibile'+(code&&code!=='bad'?' ['+code.slice(0,90)+']':'')+': trascritto salvato comunque';
     if(code==='bad') msg='L\u2019IA ha risposto in un formato non leggibile: riprova. Trascritto salvato.';
@@ -4154,7 +4197,7 @@ function applyTheme(){ try{
       const d=(RIE?14:10)+3*f;   /* al rientro la brace e piu grande: non si era spenta */
       ctx.drawImage(RIE?spBrace:spOro,C+R*Math.cos(A0)-d/2,C+R*Math.sin(A0)-d/2,d,d);
       ctx.globalAlpha=1; }
-    const rate=(rec?1.5:(sealed?0.55:(p>0?(0.25+p*0.9):0.05)))*(0.8+0.6*CAL)*((window._foglioDetent==='pieno')?0.3:1);
+    const rate=(rec?1.5:(sealed?0.55:(p>0?(0.25+p*0.9):0.05)))*(0.8+0.6*CAL)*((window._foglioDetent==='pieno')?0.3:1)*(window._foglioVento?1.35:1);
     if(Math.random()<rate*dt*0.6) (rec?spawnSpirale:spawnArco)(rec||(RIE&&Math.random()<0.5));
     if(pieno&&Math.random()<0.28*dt) spawnArco(false);
     if(burst>0){ const n=Math.min(6,burst); for(let i=0;i<n;i++) spawnBurst(); burst-=n; }
