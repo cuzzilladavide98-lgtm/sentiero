@@ -1687,7 +1687,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.106 · 2026-07-13';
+const APP_VERSION='v60S.107 · 2026-07-13';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4546,6 +4546,7 @@ function applyTheme(){ try{
     /* ── LA VIA LATTEA v2 — la grammatica delle lastre: il latte (migliaia di grani fini),
        poche ancore brillanti con alone e croci di diffrazione, il velo continuo della banda,
        nebulose e corsie scure dentro. Stesso seme: la texture non cambia mai. ── */
+    ctx.globalAlpha=1;   /* la polvere lascia il pennello quasi asciutto: senza questa riga TUTTO il cielo si dipinge al 3%. Era questo il nero. */
     const AX=W*0.62, AY=H2*0.38, ANG=-0.56, ca=Math.cos(ANG), sa=Math.sin(ANG), L=Math.hypot(W,H2);
     ctx.save(); ctx.translate(AX,AY); ctx.rotate(ANG);
     const velo=ctx.createLinearGradient(0,-L*0.20,0,L*0.20);
