@@ -1698,7 +1698,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.116 · 2026-07-13';
+const APP_VERSION='v60S.117 · 2026-07-13';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3302,7 +3302,14 @@ document.querySelector('#btn-save').onclick=async()=>{
       const out=await askClaude(transcript);
       try{ regCantiere('distilla',{ms:Date.now()-t0Dist,msg:out?'ok':'vuoto'}); }catch(_){}
       if(out){
-        S.quests=sortQuests(out.quests);
+        /* LA GUARDIA DELLE QUEST: il contratto chiede al modello di restituire ANCHE le esistenti,
+           ma nessuna quest muore per una sua distrazione. Se una quest attiva non compare nella
+           risposta e il trascritto non l'ha chiusa (letture), viene preservata. Deterministico. */
+        const idsOut=new Set((out.quests||[]).map(q=>q&&q.id).filter(Boolean));
+        const chiuse=new Set((out.letture||[]).map(l=>l&&l.id).filter(Boolean));
+        const preservate=(S.quests||[]).filter(q=>q&&q.id&&!idsOut.has(q.id)&&!chiuse.has(q.id));
+        S.quests=sortQuests((out.quests||[]).concat(preservate));
+        if(preservate.length){ try{ regCantiere('guardia',{msg:'preservate '+preservate.length+' quest ignorate dal modello'}); }catch(_){} }
         /* rituali nati a voce: fusione in scheduled, con guardia client-side sui titoli gia esistenti */
         const bornRit=[];
         for(const r of (out.rituali||[])){
