@@ -1687,7 +1687,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.110 · 2026-07-13';
+const APP_VERSION='v60S.111 · 2026-07-13';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3134,6 +3134,7 @@ function startRec(){
     /* il microfono è DAVVERO attivo: solo ora invitiamo a parlare ed entriamo in rosso */
     if(!recording) return;
     micBtn.classList.remove('arming'); micBtn.classList.add('rec');
+    try{ window._cieloVoce&&window._cieloVoce('rec'); }catch(_){}   /* la voce prende il cosmo */
     micLabel.textContent='Parla… rilascia per fermare';
     renderFlow();
     sMicOn(); haptic(); acquireWake();
@@ -3148,11 +3149,12 @@ function startRec(){
     sessionFinal=acc.sessionFinal; interimText=acc.interim;
     live.innerHTML=escapeHtml(committedText+sessionFinal)+'<em>'+escapeHtml(interimText)+'</em>';
     live.scrollTop=live.scrollHeight;   /* l'ultima parola resta in vista */
+    try{ window._cieloParola&&window._cieloParola(); }catch(_){}   /* ogni parola, un'onda nel campo */
     live.classList.add('show');
   };
   rec.onerror=e=>{
     if(e.error==='not-allowed'||e.error==='service-not-allowed'){
-      recording=false; micBtn.classList.remove('rec','arming');
+      recording=false; micBtn.classList.remove('rec','arming'); try{ window._cieloVoce&&window._cieloVoce('quiete'); }catch(_){}
       micLabel.textContent='Microfono non concesso. Attivalo in Impostazioni → Sentiero.';
       return;
     }
@@ -3174,6 +3176,7 @@ function stopRec(){
   recording=false;
   if(rec){ rec.onend=null; try{rec.stop()}catch(_){} }
   micBtn.classList.remove('rec','arming');
+  try{ window._cieloVoce&&window._cieloVoce('quiete'); }catch(_){}   /* il cielo torna a casa */
   sMicOff(); releaseWake();
   try{ if(S.settings.music) MUSIC.recDuck(false); }catch(_){}  /* la musica risale dopo la dettatura */
   try{ if(S.settings.music) ORCH.duck(false); }catch(_){}
@@ -3270,6 +3273,7 @@ document.querySelector('#btn-save').onclick=async()=>{
   const transcript=live.textContent.trim();
   if(!transcript) return;
   distilling=true;
+  try{ window._cieloVoce&&window._cieloVoce('distilla'); }catch(_){}   /* il collasso: il cielo consegna la luce al fuoco */
   const btn=document.querySelector('#btn-save');
   btn.textContent='Distillo…'; btn.disabled=true;
   live.classList.add('distill'); micLabel.textContent='Le parole si trasformano…';
@@ -4595,7 +4599,9 @@ function applyTheme(){ try{
     ctx.globalAlpha=1;   /* il pennello torna pieno dopo la polvere */
     /* ── LA VIA LATTEA v3 — copia del render approvato: velo gaussiano a due strati,
        nuvole di latte, corsie scure, ~3800 stelle-sprite in quattro popoli. ── */
-    const AX=W*0.62, AY=H2*0.38, ANG=-0.56, ca=Math.cos(ANG), sa=Math.sin(ANG), L=Math.hypot(W,H2);
+    /* il nucleo della galassia E il cerchio vocale: la banda nasce da li */
+    const CM0=(function(){ try{ const m=document.getElementById('mic'); if(m){ const r=m.getBoundingClientRect(); if(r.width) return {x:r.left+r.width/2,y:r.top+r.height/2}; } }catch(_){} return {x:W*0.5,y:H2*0.30}; })();
+    const AX=CM0.x, AY=CM0.y, ANG=-0.56, ca=Math.cos(ANG), sa=Math.sin(ANG), L=Math.hypot(W,H2);
     ctx.save(); ctx.translate(AX,AY); ctx.rotate(ANG);
     const GB=[[0.16,0.10,'242,228,196'],[0.055,0.13,'246,238,214']];
     for(let gi=0;gi<2;gi++){
@@ -4704,25 +4710,74 @@ function applyTheme(){ try{
     }catch(_){ return false; }
   }
   let met=null, metNext=Date.now()+40000+Math.random()*60000;
+  /* ── LA VOCE E GRAVITA — quando parli, il cosmo ti sente: la galassia si stringe verso il
+     nucleo (il cerchio) e ruota piano; ogni parola riconosciuta e un'onda di luce nel campo;
+     la distillazione e il collasso: il cielo consegna la luce al fuoco, poi tutto torna a casa. ── */
+  let lastT=0, mQ=0, rot=0, modo='quiete', distT=0;
+  const PULSES=[];
+  window._cieloVoce=function(st){
+    if(st==='rec') modo='rec';
+    else if(st==='distilla'){ modo='distilla'; distT=Date.now(); }
+    else modo='quiete';
+  };
+  window._cieloParola=function(){ if(PULSES.length<4) PULSES.push(Date.now()); };
+  function centroMic(W,H2){
+    try{ const m=document.getElementById('mic');
+      if(m){ const r=m.getBoundingClientRect(); if(r.width) return {x:r.left+r.width/2,y:r.top+r.height/2}; }
+    }catch(_){}
+    return {x:W*0.5,y:H2*0.30};
+  }
   function vita(){
     try{
       const W=Math.max(1,window.innerWidth), H2=Math.max(1,window.innerHeight);
       scr.setTransform(DPR,0,0,DPR,0,0); scr.clearRect(0,0,W,H2);
       if(base.width>0&&base.height>0) scr.drawImage(base,0,0,W,H2);
       const now=Date.now(), ok=vivoOk();
+      const dt=lastT?Math.min(100,now-lastT):33; lastT=now;
+      const attivo=(modo!=='quiete')&&ok;
+      mQ=Math.max(0,Math.min(1,mQ+(attivo?1:-1)*dt/900));
+      if(modo==='rec'&&ok) rot+=dt*0.000012;
+      if(mQ===0) rot=0;
+      if(modo==='distilla'&&now-distT>800) modo='quiete';
+      const comp=0.10+((modo==='distilla')?0.45*Math.min(1,(now-distT)/450):0);
+      const CM=centroMic(W,H2);
+      while(PULSES.length&&now-PULSES[0]>1400) PULSES.shift();
       for(let i=0;i<LIVE.length;i++){
         const s=LIVE[i];
+        let X=s.x, Y=s.y, d0=0;
+        if(mQ>0.01){
+          const px=s.x-CM.x, py=s.y-CM.y;
+          d0=Math.hypot(px,py)||1;
+          const ang=Math.atan2(py,px)+rot*mQ, dist=d0*(1-comp*mQ);
+          X=CM.x+Math.cos(ang)*dist; Y=CM.y+Math.sin(ang)*dist;
+        }
         const tw=ok?(1-s.amp*(0.5+0.5*Math.sin(now/s.per*6.2832+s.ph))):(1-s.amp*0.5);
-        scr.globalAlpha=Math.max(0,Math.min(1,s.a*tw));
+        let al=s.a*tw*(1+0.18*mQ+((modo==='distilla')?0.5:0));
+        if(mQ>0.01&&PULSES.length){
+          if(!d0) d0=Math.hypot(s.x-CM.x,s.y-CM.y)||1;
+          for(let pi=0;pi<PULSES.length;pi++){
+            const age=now-PULSES[pi], R=age*0.35;
+            al+=Math.exp(-Math.pow((d0-R)/90,2))*Math.exp(-age/900)*0.5;
+          }
+        }
+        scr.globalAlpha=Math.max(0,Math.min(1,al));
         if(s.k===1){
           const kk=ok?(1+0.08*Math.sin(now/s.per*5.1+s.ph)):1;
           const f=(s.cr?s.r*10:s.r*5.5)*kk;
-          scr.drawImage(s.cr?spk(s.col):spr(s.col),s.x-f/2,s.y-f/2,f,f);
+          scr.drawImage(s.cr?spk(s.col):spr(s.col),X-f/2,Y-f/2,f,f);
         }else{
-          scr.drawImage(spr(s.col),s.x-s.r*2,s.y-s.r*2,s.r*4,s.r*4);
+          scr.drawImage(spr(s.col),X-s.r*2,Y-s.r*2,s.r*4,s.r*4);
         }
       }
       scr.globalAlpha=1;
+      if(mQ>0.02){                                       /* il nucleo si accende con la voce */
+        const rg=Math.min(W,H2)*0.5;
+        const g=scr.createRadialGradient(CM.x,CM.y,0,CM.x,CM.y,rg);
+        const av=0.05*mQ+((modo==='distilla')?0.08:0);
+        g.addColorStop(0,'rgba(244,230,198,'+av.toFixed(3)+')');
+        g.addColorStop(1,'rgba(244,230,198,0)');
+        scr.fillStyle=g; scr.beginPath(); scr.arc(CM.x,CM.y,rg,0,6.2832); scr.fill();
+      }
       if(ok){
         if(!met&&now>metNext){
           met={x0:Math.random()*W,y0:-20,dx:(0.4+Math.random()*0.5)*(Math.random()<0.5?-1:1)*W*0.5,dy:H2*(0.25+Math.random()*0.2),t0:now,dur:520};
