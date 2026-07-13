@@ -109,8 +109,6 @@ header{padding:14px 28px 0}
 #btn-pin{border:none;background:none;color:var(--t2);width:44px;height:44px;flex:none;
   display:flex;align-items:center;justify-content:center;transition:color .2s,transform .15s}
 #btn-pin:active{color:var(--accent);transform:scale(1.15)}
-nav button .ico{display:block;width:38px;height:38px;margin:0 auto 4px;color:var(--t2);transition:color .2s,transform .2s}
-nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
 #mic-wrap{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;top:calc(32% - 155px);bottom:calc(122px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;padding:0 20px;z-index:1}
@@ -225,9 +223,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(120% 85% at 50% -12%,rgba(232,168,76,.11),transparent 58%),
              radial-gradient(150% 100% at 50% 118%,rgba(127,184,164,.09),transparent 64%)}
 header,main{position:relative;z-index:1}
-/* la navbar diventa vetro: sfocatura reale, velo, filo di luce in cima */
-nav{background:linear-gradient(0deg,rgba(0,0,0,.6) 30%,transparent)}
-nav .inner{position:relative}
 
 /* superfici con corpo: ombra ambientale + chiave, filo di luce interno in alto */
 #letture,#lascito,#rivelazione{
@@ -256,28 +251,20 @@ body.theme-inchiostro nav{background:linear-gradient(0deg,rgba(11,15,14,.85) 40%
 .item{transition:transform .18s ease}
 .act:active{transform:scale(.95)}
 .act{transition:transform .15s ease,opacity .2s,background .2s}
-nav button:active .ico{transform:scale(.86)}
-nav button .ico{transition:transform .16s ease}
 #btn-pin:active{transform:scale(.94)}
 #btn-pin{transition:transform .15s ease}
 .chk:active{transform:scale(.9)}
 @keyframes nasce{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 #letture:not(.hidden),#lascito:not(.hidden){animation:nasce .38s cubic-bezier(.22,1,.36,1)}
 #rivelazione:not(.hidden){animation:nasce .7s cubic-bezier(.22,1,.36,1)}
-.tabpane:not(.hidden) .item,.tabpane:not(.hidden) .entry{animation:nasce .26s cubic-bezier(.22,1,.36,1) both}
-.tabpane:not(.hidden) .item:nth-child(1),.tabpane:not(.hidden) .entry:nth-child(1){animation-delay:.02s}
-.tabpane:not(.hidden) .item:nth-child(2),.tabpane:not(.hidden) .entry:nth-child(2){animation-delay:.06s}
-.tabpane:not(.hidden) .item:nth-child(3),.tabpane:not(.hidden) .entry:nth-child(3){animation-delay:.10s}
-.tabpane:not(.hidden) .item:nth-child(4),.tabpane:not(.hidden) .entry:nth-child(4){animation-delay:.14s}
-.tabpane:not(.hidden) .item:nth-child(n+5),.tabpane:not(.hidden) .entry:nth-child(n+5){animation-delay:.17s}
 #day-line.perla{color:var(--accent);font-style:italic;letter-spacing:.02em;animation:nasce .6s ease}
 @keyframes glifobreathe{0%,100%{opacity:.9}50%{opacity:1}}
 @keyframes sigillovivo{0%,100%{filter:drop-shadow(0 0 5px rgba(232,168,76,.28))}50%{filter:drop-shadow(0 0 11px rgba(232,168,76,.5))}}
 @keyframes rivalone{0%,100%{box-shadow:inset 0 1px 0 rgba(245,242,234,.09),0 2px 8px rgba(0,0,0,.30),0 18px 50px rgba(0,0,0,.40),0 0 30px rgba(232,168,76,.09)}50%{box-shadow:inset 0 1px 0 rgba(245,242,234,.09),0 2px 8px rgba(0,0,0,.30),0 18px 50px rgba(0,0,0,.40),0 0 46px rgba(232,168,76,.17)}}
 #rivelazione:not(.hidden){animation:nasce .7s cubic-bezier(.22,1,.36,1),rivalone 5s ease-in-out .8s infinite}
 @media (prefers-reduced-motion:reduce){
-  body:not(.anima-sempre) .item,body:not(.anima-sempre) .act,body:not(.anima-sempre) .chk,body:not(.anima-sempre) #btn-pin,body:not(.anima-sempre) nav button .ico{transition:none}
-    body:not(.anima-sempre) #letture:not(.hidden),body:not(.anima-sempre) #lascito:not(.hidden),body:not(.anima-sempre) #rivelazione:not(.hidden),body:not(.anima-sempre) #obs-whisper,body:not(.anima-sempre) .tabpane:not(.hidden) .item,body:not(.anima-sempre) .tabpane:not(.hidden) .entry,body:not(.anima-sempre) #day-line.perla{animation:none}
+  body:not(.anima-sempre) .item,body:not(.anima-sempre) .act,body:not(.anima-sempre) .chk,body:not(.anima-sempre) #btn-pin{transition:none}
+    body:not(.anima-sempre) #letture:not(.hidden),body:not(.anima-sempre) #lascito:not(.hidden),body:not(.anima-sempre) #rivelazione:not(.hidden),body:not(.anima-sempre) #obs-whisper,body:not(.anima-sempre) #day-line.perla{animation:none}
 }
 
 #live{width:100%;margin-top:22px;font-family:var(--serif);font-size:18px;line-height:1.6;
@@ -412,10 +399,6 @@ section{margin-top:38px}
 #capitoli .cap-prec .pr{display:flex;gap:10px;align-items:baseline;padding:6px 0;color:var(--t3);font-size:14px;line-height:1.5}
 #capitoli .cap-prec .pr b{font-family:var(--serif);font-weight:400;color:var(--t2);font-size:15px;flex:none}
 #capitoli .cap-prec .pr span{font-style:italic;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-.tabpane:not(.hidden) #capitoli .capitolo{animation:nasce .26s cubic-bezier(.22,1,.36,1) both}
-@media (prefers-reduced-motion:reduce){
-  body:not(.anima-sempre) .tabpane:not(.hidden) #capitoli .capitolo{animation:none}
-}
 /* ══ LA SEMINA — il seme in giada nella day-line, la voce-domanda nel Diario ══ */
 #day-line.perla.seme{color:var(--jade)}
 #day-line.perla.dono{color:var(--t2)}
@@ -453,16 +436,6 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 
 .note{font-size:14px;color:var(--t3);line-height:1.55;margin-top:8px}
 
-/* ════════ nav: testo, l'attivo in accento. Nessuna capsula. ════════ */
-nav{position:fixed;bottom:0;left:0;right:0;display:none;justify-content:center;z-index:20;
-  background:linear-gradient(0deg,#000 55%,transparent);
-  padding:2px 0 calc(var(--safe-bot) + 2px);pointer-events:none}
-nav .inner{display:flex;gap:8px;pointer-events:auto}
-nav{transition:opacity .6s ease}
-body.nav-quieta nav{opacity:.22}
-@media (prefers-reduced-motion:reduce){
-  body:not(.anima-sempre) nav{transition:none}
-}
 nav button{border:none;background:none;color:rgba(200,210,205,.35);transition:color .3s;
   width:44px;height:32px;display:flex;align-items:center;justify-content:center;padding:0}
 nav button .ico{display:none}
@@ -787,15 +760,6 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
   body:not(.anima-sempre) #obs-whisper.entra{animation:none;opacity:1}
   body:not(.anima-sempre) #obs-whisper.esce{animation:none;opacity:0;transition:opacity .3s}
 }
-/* ══════ FRAME-LAVORO 4: LA TRANSIZIONE DI PAGINA ══════
-   avanti = entra da destra, indietro = da sinistra: 30px di corsa, 16 frame, curva del pennello */
-.tabpane.entra-dx{animation:pane-dx .27s cubic-bezier(.22,1,.36,1)}
-.tabpane.entra-sx{animation:pane-sx .27s cubic-bezier(.22,1,.36,1)}
-@keyframes pane-dx{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
-@keyframes pane-sx{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){
-  body:not(.anima-sempre) .tabpane.entra-dx,body:not(.anima-sempre) .tabpane.entra-sx{animation:none}
-}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) .toast.show,body:not(.anima-sempre) .toast.via,body:not(.anima-sempre) .toast .tw,body:not(.anima-sempre) .toast.show::before{animation:none}
   body:not(.anima-sempre) .toast.show{opacity:1}
@@ -841,7 +805,6 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 /* la pagina emerge ATTRAVERSO il velo che si alza, come nel mockup */
 body.alba #date-wrap{animation:su-alba .55s cubic-bezier(.22,1,.36,1) var(--alba-d,1.35s) both}
 body.alba #giorno-bar{animation:su-alba .55s cubic-bezier(.22,1,.36,1) calc(var(--alba-d,1.35s) + .14s) both}
-body.alba main .tabpane:not(.hidden){animation:su-alba .55s cubic-bezier(.22,1,.36,1) calc(var(--alba-d,1.35s) + .26s) both}
 @keyframes su-alba{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #soglia.rito #soglia-saluto{animation:su-saluto .65s cubic-bezier(.22,1,.36,1) .4s both}
 @keyframes su-saluto{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -849,13 +812,8 @@ body.alba main .tabpane:not(.hidden){animation:su-alba .55s cubic-bezier(.22,1,.
 body.app-nasce #date-wrap>*{animation:nasce .5s cubic-bezier(.22,1,.36,1) both}
 body.app-nasce #date-wrap>:nth-child(2){animation-delay:.08s}
 body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s both}
-body.app-nasce .tabpane:not(.hidden)>*{animation:nasce .45s cubic-bezier(.22,1,.36,1) both}
-body.app-nasce .tabpane:not(.hidden)>:nth-child(1){animation-delay:.22s}
-body.app-nasce .tabpane:not(.hidden)>:nth-child(2){animation-delay:.3s}
-body.app-nasce .tabpane:not(.hidden)>:nth-child(3){animation-delay:.38s}
-body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
 @media (prefers-reduced-motion:reduce){
-  body:not(.anima-sempre).app-nasce #date-wrap>*,body:not(.anima-sempre).app-nasce #giorno-bar,body:not(.anima-sempre).app-nasce .tabpane:not(.hidden)>*{animation:none}
+  body:not(.anima-sempre).app-nasce #date-wrap>*,body:not(.anima-sempre).app-nasce #giorno-bar{animation:none}
 }
 /* ══════ IL SENTIERO VISIBILE — le pietre del cammino ══════
    trenta giorni come pietre: ogni pietra porta il suo arco di fuoco com'era a fine giornata */
@@ -1044,11 +1002,6 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
       </section>
     </div>
 
-    <!-- ===== QUEST (secondarie) ===== -->
-    <div id="tab-quest" class="hidden">
-
-          </div>
-
     <!-- ===== DIARIO ===== -->
     <div id="tab-diario">
       <div class="diario-head">
@@ -1074,9 +1027,9 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
       <section>
         <div class="sec-head">Esperienza</div>
         <div class="group">
-          <div class="switchrow"><span>Suoni</span><button class="sw" id="sw-sound"></button></div>
-          <div class="switchrow"><span>Colonna sonora adattiva</span><button class="sw" id="sw-music"></button></div>
-          <div class="switchrow"><span>Tema sonoro</span>
+          <div class="switchrow hidden"><span>Suoni</span><button class="sw" id="sw-sound"></button></div>
+          <div class="switchrow hidden"><span>Colonna sonora adattiva</span><button class="sw" id="sw-music"></button></div>
+          <div class="switchrow hidden"><span>Tema sonoro</span>
             <div class="seg" id="seg-theme">
               <button data-theme="arcade">Arcade</button><button data-theme="zen">Zen</button>
             </div>
@@ -1096,10 +1049,10 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
           <div class="switchrow"><span>Posizione nelle note</span><button class="sw" id="sw-geo"></button></div>
           <div class="switchrow"><span>Promemoria</span><button class="sw" id="sw-notif"></button></div>
         </div>
-        <p class="note" id="music-note"></p>
+        <p class="note hidden" id="music-note"></p>
       </section>
 
-      <section>
+      <section class="hidden">
         <div class="sec-head">Suoni personali</div>
         <div class="group" id="list-sfx"></div>
         <div class="btn-row"><button class="act primary" id="btn-cerchio">Usa i suoni Cerchio</button><button class="act" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
@@ -1107,7 +1060,7 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
         <p class="note">Tocca <b>Usa i suoni Cerchio</b> per attivare in un colpo gli 8 livelli incorporati + il sigillo (niente file da scaricare). Oppure carica i tuoi: fino a 8 livelli in intensità crescente — il combo 1 suona il primo, e così via su per la scala. Al sigillo suona il suono dedicato. Restano solo su questo telefono.</p>
       </section>
 
-      <section>
+      <section class="hidden">
         <div class="sec-head">Suoni dell'app</div>
         <div class="switchrow"><span>Suoni dell'app</span><button class="sw" id="sw-appaudio"></button></div>
         <div class="group" id="list-snd-events"></div>
@@ -1158,13 +1111,6 @@ body.app-nasce .tabpane:not(.hidden)>:nth-child(n+4){animation-delay:.46s}
     </div>
   </main>
 
-  <nav>
-    <div class="inner">
-      <button data-tab="oggi" class="on" aria-label="Oggi"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/></svg></button>
-      <button data-tab="quest" aria-label="Voce"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
-      <button data-tab="diario" aria-label="Diario"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
-    </div>
-  </nav>
 </div>
 <canvas id="fx"></canvas>
 <div id="flash"></div>
@@ -1468,12 +1414,12 @@ function sanitizeState(raw,def){
         const v=p[k]|0; if(v===1||v===2) out[k]=v; }); return out; })(raw.patti),
     lastDayInit:(typeof raw.lastDayInit==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastDayInit))?raw.lastDayInit:'',
     settings:{
-      sound:!(raw.settings&&raw.settings.sound===false),
+      sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
       voice:!(raw.settings&&raw.settings.voice===false),
       obsLine:!(raw.settings&&raw.settings.obsLine===false),
       notif:!!(raw.settings&&raw.settings.notif===true),
       geo:!!(raw.settings&&raw.settings.geo===true),
-      music:!!(raw.settings&&raw.settings.music===true),
+      music:false,   /* AUDIO SPENTO */
       aiModel:(raw.settings&&['max','balanced','fast'].includes(raw.settings.aiModel))?raw.settings.aiModel:'balanced',
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade',
       uiTheme:(raw.settings&&raw.settings.uiTheme==='inchiostro')?'inchiostro':'classico',
@@ -1741,7 +1687,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.99 · 2026-07-12';
+const APP_VERSION='v60S.103 · 2026-07-13';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3025,33 +2971,6 @@ document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
   /* all'apertura la pagina ti accompagna: lo spazio si concede DAVANTI agli occhi, non sotto la piega */
   if(apre) setTimeout(()=>{ try{ sec.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){} },70);
 }; }
-/* ── swipe tra le pagine: gesto orizzontale netto, mai dal bordo (iOS back), mai dal microfono ── */
-(function(){
-  return;   /* lo swipe orizzontale e superato dal foglio */
-  const ordine=['oggi','quest','diario'];
-  let sx=0,sy=0,st=0,ok=false;
-  const m=document.querySelector('main'); if(!m) return;
-  m.addEventListener('touchstart',e=>{
-    ok=false;
-    if(e.touches.length!==1) return;
-    const t=e.touches[0];
-    if(t.clientX<24||t.clientX>window.innerWidth-24) return;
-    if(e.target&&e.target.closest&&(e.target.closest('#mic')||e.target.closest('#confirm-row')||e.target.closest('#prio-row'))) return;
-    sx=t.clientX; sy=t.clientY; st=Date.now(); ok=true;
-  },{passive:true});
-  m.addEventListener('touchend',e=>{
-    if(!ok) return; ok=false;
-    const t=e.changedTouches[0];
-    const dx=t.clientX-sx, dy=t.clientY-sy;
-    if(Date.now()-st>600) return;
-    if(Math.abs(dx)<64||Math.abs(dx)<Math.abs(dy)*2) return;
-    const cur=ordine.findIndex(n=>!document.querySelector('#tab-'+n).classList.contains('hidden'));
-    if(cur<0) return;
-    const nxt=cur+(dx<0?1:-1);
-    if(nxt<0||nxt>=ordine.length) return;
-    showPane(ordine[nxt]);
-  },{passive:true});
-})();
 function foglioDopoVoce(){
   /* se il Motore ha lasciato qualcosa da leggere (letture/lascito/rivelazione), il foglio non lo copre */
   try{
@@ -3356,7 +3275,9 @@ document.querySelector('#btn-save').onclick=async()=>{
   const beforeMap=new Map(S.quests.map(q=>[q.id,q]));
   try{
     if(S.apiKey){
+      const t0Dist=Date.now();
       const out=await askClaude(transcript);
+      try{ regCantiere('distilla',{ms:Date.now()-t0Dist,msg:out?'ok':'vuoto'}); }catch(_){}
       if(out){
         S.quests=sortQuests(out.quests);
         /* rituali nati a voce: fusione in scheduled, con guardia client-side sui titoli gia esistenti */
@@ -4172,6 +4093,7 @@ async function askObserverLine(pkg){
     home={x:innerWidth/2,y:innerHeight-safeBottom()-104};  /* la casa del sussurro: appena sopra il bordo della sua carta */
     ctrl={x:(from.x+home.x)/2-70,y:(from.y+home.y)/2-30};
     egg=Math.random()<1/80;                                /* il vuoto: la famiglia del dono */
+    if(egg){ try{ regCantiere('vuoto',{msg:'uovo in volo'}); }catch(_){} }
     pending=null; P.length=0;
     setPhase('condensa'); loopStart();
   };
@@ -4604,7 +4526,8 @@ function applyTheme(){ try{
       },function(){},{maximumAge:3600000,timeout:8000});
     }
   }catch(_){}
-  function fascia(){ const h=new Date().getHours(); return (h>=22||h<5)?1:((h>=19||h<7)?0.75:0.45); }
+  function fascia(){ return 1; }   /* le stelle costanti: il cielo non segue piu l'orologio, solo la rotazione vera */
+  let VIVE=[];   /* le poche stelle che respirano: le sceglie il seme, le anima il respiro */
   function dipingi(){
     const W=Math.max(1,window.innerWidth), H2=Math.max(1,window.innerHeight);
     cv.width=Math.round(W*DPR); cv.height=Math.round(H2*DPR);
@@ -4616,6 +4539,42 @@ function applyTheme(){ try{
     for(let i=0;i<140;i++){
       const x=rnd()*W, y=rnd()*H2, a=0.02+rnd()*0.05;
       ctx.globalAlpha=a*mul; ctx.fillRect(x,y,1,1);
+    }
+    /* ── LA VIA LATTEA: campo profondo deterministico che rimpiazza il nero.
+       Stesso seme, in coda alla polvere: la texture non cambia mai tra i ridisegni.
+       Banda diagonale come nelle lastre, colori di temperatura, corsie di polvere scura.
+       Il tetto alfa resta 0.34: il cielo si infittisce ma continua a sussurrare. ── */
+    const AX=W*0.62, AY=H2*0.38, ANG=-0.56, ca=Math.cos(ANG), sa=Math.sin(ANG), L=Math.hypot(W,H2);
+    for(let i=0;i<3;i++){
+      const t=(i-1)*L*0.33, gx=AX+ca*t, gy=AY+sa*t, rg=L*(0.16+rnd()*0.08);
+      const tinta=(i===1)?'196,214,242':'242,228,196';
+      const g=ctx.createRadialGradient(gx,gy,0,gx,gy,rg);
+      g.addColorStop(0,'rgba('+tinta+','+(0.04*mul).toFixed(3)+')');
+      g.addColorStop(1,'rgba('+tinta+',0)');
+      ctx.globalAlpha=1; ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(gx,gy,rg,0,6.2832); ctx.fill();
+    }
+    VIVE=[];
+    for(let i=0;i<520;i++){
+      let x,y;
+      if(rnd()<0.65){
+        const t=(rnd()*2-1)*L*0.75, d=((rnd()+rnd()+rnd())/1.5-1)*L*0.13;   /* quasi-gaussiana sull'asse */
+        x=AX+ca*t-sa*d; y=AY+sa*t+ca*d;
+      }else{ x=rnd()*W; y=rnd()*H2; }
+      const cR=rnd(); let r=0.3+rnd()*0.9; const lucida=rnd()<0.06; if(lucida) r+=0.7;
+      const a=(0.06+rnd()*0.20);
+      if(x<-4||x>W+4||y<-4||y>H2+4) continue;
+      const col=cR<0.55?'245,242,234':cR<0.78?'242,222,180':cR<0.90?'186,208,244':cR<0.97?'238,178,128':'236,142,118';
+      if(r>1.15&&VIVE.length<22){ VIVE.push({x:x,y:y,r:r,col:col,base:Math.min(0.3,a+0.08),per:3500+rnd()*4500,ph:rnd()*6.2832}); continue; }
+      ctx.globalAlpha=1; ctx.fillStyle='rgba('+col+','+(a*mul).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
+    }
+    for(let i=0;i<2;i++){
+      const t=(i?0.22:-0.3)*L, dx=AX+ca*t, dy=AY+sa*t;
+      const g=ctx.createRadialGradient(dx,dy,0,dx,dy,L*0.11);
+      g.addColorStop(0,'rgba(7,10,9,'+(0.10*mul).toFixed(3)+')');
+      g.addColorStop(1,'rgba(7,10,9,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(dx,dy,L*0.11,0,6.2832); ctx.fill();
     }
     /* le stelle vere: tempo siderale locale, poi alt-az, finestra verso sud */
     const D=(Date.now()/86400000)-10957.5;   /* giorni da J2000 */
@@ -4646,6 +4605,34 @@ function applyTheme(){ try{
   setInterval(function(){ try{ if(!document.hidden) dipingi(); }catch(_){} },300000);
   window.addEventListener('resize',function(){ try{ dipingi(); }catch(_){} });
   document.addEventListener('visibilitychange',function(){ try{ if(!document.hidden) dipingi(); }catch(_){} });
+  /* ── il respiro del cielo: le ~22 stelle vive, solo di sera e di notte, ~20fps.
+     Ampiezza da sussurro; di giorno o con riduci-moto restano ferme, disegnate una volta.
+     Il fuoco resta l'unico protagonista. ── */
+  const vivo=document.createElement('canvas');
+  vivo.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2';
+  cv.insertAdjacentElement('afterend',vivo);
+  const vctx=vivo.getContext('2d');
+  function vivoOk(){
+    try{
+      if(document.hidden||fascia()<0.75) return false;
+      if(S.settings&&S.settings.anim==='sempre') return true;
+      return !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }catch(_){ return false; }
+  }
+  function respira(){
+    const W=Math.max(1,window.innerWidth), H2=Math.max(1,window.innerHeight);
+    if(vivo.width!==Math.round(W*DPR)||vivo.height!==Math.round(H2*DPR)){ vivo.width=Math.round(W*DPR); vivo.height=Math.round(H2*DPR); }
+    vctx.setTransform(DPR,0,0,DPR,0,0); vctx.clearRect(0,0,W,H2);
+    const mul=fascia(), now=Date.now(), ok=(vivoOk()&&VIVE.length>0);
+    for(let i=0;i<VIVE.length;i++){
+      const v=VIVE[i];
+      const b=ok?(0.55+0.45*Math.sin(now/v.per*6.2832+v.ph)):0.75;
+      vctx.fillStyle='rgba('+v.col+','+(v.base*b*mul).toFixed(3)+')';
+      vctx.beginPath(); vctx.arc(v.x,v.y,v.r,0,6.2832); vctx.fill();
+    }
+    setTimeout(respira, ok?50:4000);   /* fermo = un ridisegno statico ogni tanto, costo ~zero */
+  }
+  respira();
 })();
 
 /* ══════ LA SOGLIA — l'alba adattiva ══════ */
@@ -5996,6 +5983,7 @@ function idbListSounds(){ return sndTx('readonly',st=>st.getAll()).then(a=>Array
 let _actx=null, _audioUnlocked=false; const _bufCache=new Map();
 function audioCtx(){ if(!_actx) _actx=sharedAC(); return _actx; }   /* stesso contesto unico degli altri motori */
 function unlockAudioOnUserGesture(){
+  return;   /* AUDIO SPENTO */
   if(_audioUnlocked) return;
   const ctx=audioCtx(); if(!ctx){ _audioUnlocked=true; return; }
   try{
@@ -6028,6 +6016,7 @@ function getSoundForEvent(eventName){ return (SND.eventSoundMap||{})[eventName]|
 function eventEnabled(eventName){ return (SND.eventEnabledMap||{})[eventName]!==false; }
 function eventVolume(eventName){ const v=(SND.eventVolumes||{})[eventName]; return (typeof v==='number'&&v>=0&&v<=1)?v:1; }
 function playEventSound(eventName,opts){
+  return false;   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
   try{
     if(!SND.audioEnabled||!eventEnabled(eventName)) return false;
     const id=getSoundForEvent(eventName); if(!id) return false;   /* predefinito = silenzio finché l'utente non assegna il suo */
@@ -6084,7 +6073,7 @@ function removePersonalSound(soundId){
   Object.keys(SND.eventSoundMap||{}).forEach(ev=>{ if(SND.eventSoundMap[ev]===soundId) delete SND.eventSoundMap[ev]; });
   saveSoundSettings(); _bufCache.delete(soundId); return idbDelSound(soundId).catch(()=>{});
 }
-function initSoundSystem(){ try{ Object.values(SND.eventSoundMap||{}).forEach(id=>{ if(id) decodeSound(id); }); }catch(_){} }
+function initSoundSystem(){ /* AUDIO SPENTO */ }
 
 /* --- Canzone di base: un loop continuo, scelto dall'utente, indipendente dalla colonna sonora adattiva --- */
 let _baseSrc=null;
@@ -6244,7 +6233,18 @@ function scheduleReminders(){
    ====================================================================== */
 document.querySelector('#btn-export').onclick=()=>{
   try{
-    const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    /* la diagnosi di cantiere viaggia nel backup: chi legge il file sa dispositivo, versione e forma dello stato.
+       All'import viene ignorata: sanitizeState costruisce solo i campi che conosce. */
+    const diag={ver:APP_VERSION,quando:new Date().toISOString(),
+      dispositivo:{ua:String(navigator.userAgent||'').slice(0,160),vw:innerWidth,vh:innerHeight,dpr:devicePixelRatio||1,
+        riduciMoto:!!matchMedia('(prefers-reduced-motion: reduce)').matches,
+        standalone:!!((navigator.standalone)||matchMedia('(display-mode: standalone)').matches)},
+      statoByte:JSON.stringify(S).length,
+      conteggi:{quests:(S.quests||[]).length,diario:(S.diary||[]).length,rituali:(S.scheduled||[]).length,
+        semi:(S.semi||[]).length,capitoli:(S.capitoli||[]).length,foto:Object.keys(S.foto||{}).length,
+        patti:(S.patti||[]).length,registro:(S.registro||[]).length},
+      impostazioni:S.settings};
+    const blob=new Blob([JSON.stringify(Object.assign({},S,{_cantiere:diag}),null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='sentiero-backup-'+todayKey()+'.json'; a.rel='noopener';
     document.body.appendChild(a); a.click(); a.remove();
