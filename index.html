@@ -115,7 +115,7 @@ header{padding:14px 28px 0}
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
 #mic{width:310px;height:310px;border:none;background:transparent;position:relative;touch-action:none}
 #mic svg{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:1}
-.ring-track{fill:none;stroke:rgba(245,242,234,.10);stroke-width:4.5}
+.ring-track{fill:none;stroke:rgba(245,242,234,.04);stroke-width:4.5}   /* l'anello di UI cede il posto all'anello di stelle */
    /* niente transition: la pittura la guida il rAF, frame per frame */
 #enso-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1}
 #cielo{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
@@ -1687,7 +1687,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.111 · 2026-07-13';
+const APP_VERSION='v60S.112 · 2026-07-13';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4542,6 +4542,7 @@ function applyTheme(){ try{
   }catch(_){}
   function fascia(){ return 1; }   /* le stelle costanti: il cielo non segue piu l'orologio, solo la rotazione vera */
   let LIVE=[];   /* il popolo vivo del cielo: brilla frame per frame, la lastra sotto fa da fondale */
+  let ORB=[];    /* l'anello: le stelle catturate in orbita attorno al nucleo — il cerchio E fatto di cielo */
   const SPR={},SPK={};   /* sprite: stella morbida e stella con lame di diffrazione, per colore */
   function spr(col){
     if(SPR[col]) return SPR[col];
@@ -4670,6 +4671,14 @@ function applyTheme(){ try{
       }
     }
     ctx.globalAlpha=1;
+    /* il disco di accrescimento: interno caldo (il fuoco), esterno freddo (il cielo), moto kepleriano */
+    ORB=[];
+    for(let i=0;i<110;i++){
+      const f=1.02+Math.pow(rnd(),0.7)*0.33, cw=rnd();
+      const col=f<1.10?(cw<0.6?'242,222,180':'238,178,128'):f<1.22?(cw<0.6?'246,240,224':'245,242,234'):(cw<0.6?'245,242,234':'186,208,244');
+      ORB.push({f:f,ang:rnd()*6.2832,sp:0.00009/Math.sqrt(f)*(0.8+rnd()*0.4),
+        r:0.6+rnd()*1.0,col:col,a:0.28+rnd()*0.42,amp:0.25+rnd()*0.25,per:1500+rnd()*3500,ph:rnd()*6.2832});
+    }
     /* le stelle vere: tempo siderale locale, poi alt-az, finestra verso sud */
     const D=(Date.now()/86400000)-10957.5;   /* giorni da J2000 */
     let lst=(18.697374558+24.06570982441908*D+LON/15)%24; if(lst<0)lst+=24;
@@ -4723,9 +4732,9 @@ function applyTheme(){ try{
   window._cieloParola=function(){ if(PULSES.length<4) PULSES.push(Date.now()); };
   function centroMic(W,H2){
     try{ const m=document.getElementById('mic');
-      if(m){ const r=m.getBoundingClientRect(); if(r.width) return {x:r.left+r.width/2,y:r.top+r.height/2}; }
+      if(m){ const r=m.getBoundingClientRect(); if(r.width) return {x:r.left+r.width/2,y:r.top+r.height/2,R:r.width/2}; }
     }catch(_){}
-    return {x:W*0.5,y:H2*0.30};
+    return {x:W*0.5,y:H2*0.30,R:Math.min(W,H2)*0.28};
   }
   function vita(){
     try{
@@ -4768,6 +4777,25 @@ function applyTheme(){ try{
         }else{
           scr.drawImage(spr(s.col),X-s.r*2,Y-s.r*2,s.r*4,s.r*4);
         }
+      }
+      /* l'anello vive sempre: orbita lenta in quiete, corre con la voce, collassa nella distillazione */
+      const acc=1+2.2*mQ, distK=(modo==='distilla')?0.5*Math.min(1,(now-distT)/450):0;
+      for(let i=0;i<ORB.length;i++){
+        const o=ORB[i];
+        if(ok) o.ang+=o.sp*dt*acc;
+        const rf=Math.max(0.25,o.f*(1-0.10*mQ-distK));
+        const X=CM.x+Math.cos(o.ang)*CM.R*rf, Y=CM.y+Math.sin(o.ang)*CM.R*rf;
+        const tw=ok?(1-o.amp*(0.5+0.5*Math.sin(now/o.per*6.2832+o.ph))):(1-o.amp*0.5);
+        let al=o.a*tw*(1+0.25*mQ+((modo==='distilla')?0.55:0));
+        if(PULSES.length){
+          const d0=CM.R*rf;
+          for(let pi=0;pi<PULSES.length;pi++){
+            const age=now-PULSES[pi], R2=age*0.35;
+            al+=Math.exp(-Math.pow((d0-R2)/90,2))*Math.exp(-age/900)*0.5;
+          }
+        }
+        scr.globalAlpha=Math.max(0,Math.min(1,al));
+        scr.drawImage(spr(o.col),X-o.r*2,Y-o.r*2,o.r*4,o.r*4);
       }
       scr.globalAlpha=1;
       if(mQ>0.02){                                       /* il nucleo si accende con la voce */
