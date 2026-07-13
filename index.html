@@ -1687,7 +1687,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.112 · 2026-07-13';
+const APP_VERSION='v60S.113 · 2026-07-13';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4603,6 +4603,7 @@ function applyTheme(){ try{
     /* il nucleo della galassia E il cerchio vocale: la banda nasce da li */
     const CM0=(function(){ try{ const m=document.getElementById('mic'); if(m){ const r=m.getBoundingClientRect(); if(r.width) return {x:r.left+r.width/2,y:r.top+r.height/2}; } }catch(_){} return {x:W*0.5,y:H2*0.30}; })();
     const AX=CM0.x, AY=CM0.y, ANG=-0.56, ca=Math.cos(ANG), sa=Math.sin(ANG), L=Math.hypot(W,H2);
+    ANCR.x=Math.max(0,Math.round(AX*DPR)); ANCR.y=Math.max(0,Math.round(AY*DPR));
     ctx.save(); ctx.translate(AX,AY); ctx.rotate(ANG);
     const GB=[[0.16,0.10,'242,228,196'],[0.055,0.13,'246,238,214']];
     for(let gi=0;gi<2;gi++){
@@ -4642,7 +4643,7 @@ function applyTheme(){ try{
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(gx,gy,rg,0,6.2832); ctx.fill();
     }
     LIVE=[];
-    for(let i=0;i<7000;i++){
+    for(let i=0;i<4200;i++){
       let x,y;
       if(rnd()<0.70){
         const t=(rnd()*2-1)*L*0.75, dd=((rnd()+rnd()+rnd())/1.5-1)*L*0.14;
@@ -4651,23 +4652,24 @@ function applyTheme(){ try{
       const p=rnd(), c=rnd(), extra=rnd();
       if(x<-4||x>W+4||y<-4||y>H2+4) continue;
       let col,r,a;
-      if(p<0.60){
-        r=0.5+rnd()*0.4; a=0.14+rnd()*0.16; col=c<0.8?'245,242,234':'242,222,180';
+      if(p<0.40){                                        /* il fondo quieto: poco, e sottovoce */
+        r=0.5+rnd()*0.4; a=0.08+rnd()*0.10; col=c<0.8?'245,242,234':'242,222,180';
         ctx.globalAlpha=a; ctx.drawImage(spr(col),x-r*2,y-r*2,r*4,r*4);
-      }else if(p<0.90){
-        r=0.9+rnd()*0.7; a=0.28+rnd()*0.22;
-        col=c<0.5?'245,242,234':c<0.75?'242,222,180':c<0.9?'186,208,244':'238,178,128';
-        if(LIVE.length<430&&extra<0.45) LIVE.push({k:0,x:x,y:y,r:r,col:col,a:a,amp:0.25+rnd()*0.3,per:1800+rnd()*4200,ph:rnd()*6.2832});
+      }else if(p<0.82){                                  /* l'orchestra: piccole, tutte vive, tutte in moto */
+        r=0.6+rnd()*0.5; a=0.20+rnd()*0.20;
+        col=c<0.6?'245,242,234':c<0.8?'242,222,180':c<0.92?'186,208,244':'238,178,128';
+        if(LIVE.length<700) LIVE.push({k:0,x:x,y:y,r:r,col:col,a:a,amp:0.35+rnd()*0.3,per:1400+rnd()*3600,ph:rnd()*6.2832,dr:1.5+rnd()*2.5,pA:1300+rnd()*2400,pB:1700+rnd()*2600,h1:rnd()*6.2832,h2:rnd()*6.2832});
         else{ ctx.globalAlpha=a; ctx.drawImage(spr(col),x-r*2,y-r*2,r*4,r*4); }
-      }else if(p<0.98){
-        r=1.6+rnd()*0.8; a=0.5+rnd()*0.25;
+      }else if(p<0.96){
+        r=1.1+rnd()*0.9; a=0.35+rnd()*0.25;
         col=c<0.5?'246,240,224':c<0.75?'242,222,180':c<0.92?'186,208,244':'236,150,120';
-        if(LIVE.length<430) LIVE.push({k:0,x:x,y:y,r:r,col:col,a:a,amp:0.3+rnd()*0.35,per:1600+rnd()*3800,ph:rnd()*6.2832});
+        if(LIVE.length<860) LIVE.push({k:0,x:x,y:y,r:r,col:col,a:a,amp:0.3+rnd()*0.35,per:1600+rnd()*3800,ph:rnd()*6.2832,dr:1.2+rnd()*2.0,pA:1500+rnd()*2600,pB:1900+rnd()*2800,h1:rnd()*6.2832,h2:rnd()*6.2832});
         else{ ctx.globalAlpha=a; ctx.drawImage(spr(col),x-r*2,y-r*2,r*4,r*4); }
       }else{
         r=2.4+rnd()*1.2; a=0.75+rnd()*0.25;
         col=c<0.4?'246,240,224':c<0.7?'242,222,180':c<0.88?'186,208,244':'236,150,120';
-        LIVE.push({k:1,cr:(extra<0.5),x:x,y:y,r:r,col:col,a:a,amp:0.22+rnd()*0.2,per:2600+rnd()*5000,ph:rnd()*6.2832});
+        if(LIVE.length<940) LIVE.push({k:1,cr:(extra<0.5),x:x,y:y,r:r,col:col,a:a,amp:0.22+rnd()*0.2,per:2600+rnd()*5000,ph:rnd()*6.2832,dr:0.8+rnd()*1.2,pA:2000+rnd()*3000,pB:2400+rnd()*3200,h1:rnd()*6.2832,h2:rnd()*6.2832});
+        else{ ctx.globalAlpha=a*0.9; ctx.drawImage(spr(col),x-r*2.4,y-r*2.4,r*4.8,r*4.8); }
       }
     }
     ctx.globalAlpha=1;
@@ -4718,7 +4720,8 @@ function applyTheme(){ try{
       return !matchMedia('(prefers-reduced-motion: reduce)').matches;
     }catch(_){ return false; }
   }
-  let met=null, metNext=Date.now()+40000+Math.random()*60000;
+  let met=null, metNext=Date.now()+20000+Math.random()*40000;
+  let ultSent=0; const ANCR={x:2,y:2};   /* la sentinella: un pixel del nucleo, tastato ogni quattro secondi */
   /* ── LA VOCE E GRAVITA — quando parli, il cosmo ti sente: la galassia si stringe verso il
      nucleo (il cerchio) e ruota piano; ogni parola riconosciuta e un'onda di luce nel campo;
      la distillazione e il collasso: il cielo consegna la luce al fuoco, poi tutto torna a casa. ── */
@@ -4743,6 +4746,11 @@ function applyTheme(){ try{
       if(base.width>0&&base.height>0) scr.drawImage(base,0,0,W,H2);
       const now=Date.now(), ok=vivoOk();
       const dt=lastT?Math.min(100,now-lastT):33; lastT=now;
+      if(now-ultSent>4000){ ultSent=now;
+        try{ const pd=ctx.getImageData(ANCR.x,ANCR.y,1,1).data;
+          if(!(pd[0]|pd[1]|pd[2])) dipingi();              /* iOS ha svuotato la lastra: si ridipinge subito */
+        }catch(_){}
+      }
       const attivo=(modo!=='quiete')&&ok;
       mQ=Math.max(0,Math.min(1,mQ+(attivo?1:-1)*dt/900));
       if(modo==='rec'&&ok) rot+=dt*0.000012;
@@ -4753,9 +4761,10 @@ function applyTheme(){ try{
       while(PULSES.length&&now-PULSES[0]>1400) PULSES.shift();
       for(let i=0;i<LIVE.length;i++){
         const s=LIVE[i];
-        let X=s.x, Y=s.y, d0=0;
+        const wX=s.x+s.dr*Math.sin(now/s.pA+s.h1), wY=s.y+s.dr*Math.cos(now/s.pB+s.h2);   /* il vagare: vivo anche da fermo */
+        let X=wX, Y=wY, d0=0;
         if(mQ>0.01){
-          const px=s.x-CM.x, py=s.y-CM.y;
+          const px=wX-CM.x, py=wY-CM.y;
           d0=Math.hypot(px,py)||1;
           const ang=Math.atan2(py,px)+rot*mQ, dist=d0*(1-comp*mQ);
           X=CM.x+Math.cos(ang)*dist; Y=CM.y+Math.sin(ang)*dist;
@@ -4812,7 +4821,7 @@ function applyTheme(){ try{
         }
         if(met){
           const p=(now-met.t0)/met.dur;
-          if(p>=1){ met=null; metNext=now+45000+Math.random()*90000; }
+          if(p>=1){ met=null; metNext=now+30000+Math.random()*60000; }
           else{
             const hx=met.x0+met.dx*p, hy=met.y0+met.dy*p;
             const tx=hx-met.dx*0.16, ty=hy-met.dy*0.16;
