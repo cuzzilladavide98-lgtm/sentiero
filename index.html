@@ -113,7 +113,7 @@ nav button .ico{display:block;width:38px;height:38px;margin:0 auto 4px;color:var
 nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
-#mic-wrap{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;top:calc(32% - 155px);display:flex;flex-direction:column;align-items:center;padding:0 20px;z-index:1}
+#mic-wrap{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;top:calc(32% - 155px);bottom:calc(122px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;padding:0 20px;z-index:1}
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
 #mic{width:310px;height:310px;border:none;background:transparent;position:relative;touch-action:none}
 #mic svg{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:1}
@@ -195,7 +195,7 @@ nav button.on .ico{color:var(--accent);transform:scale(1.06)}
 .flow strong{display:block;color:var(--t1);font-size:15px;font-weight:500;margin-bottom:4px}
 .flow button,.empty-go{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;padding:6px 0;margin-top:2px}
 .flow:empty{display:none}
-#letture{width:100%;max-width:340px;margin-top:12px;background:rgba(245,242,234,.04);border:.5px solid rgba(245,242,234,.09);border-radius:16px;padding:12px 14px;text-align:left}
+#letture{width:100%;max-width:340px;margin-top:12px;background:rgba(245,242,234,.04);border:.5px solid rgba(245,242,234,.09);border-radius:16px;padding:12px 14px;text-align:left;min-height:0;overflow-y:auto}
 .lett-head{font-size:13px;color:var(--t3);letter-spacing:.05em;margin-bottom:6px}
 .lett-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(245,242,234,.06)}
 .lett-row:last-of-type{border-bottom:none}
@@ -282,7 +282,7 @@ nav button .ico{transition:transform .16s ease}
 
 #live{width:100%;margin-top:22px;font-family:var(--serif);font-size:18px;line-height:1.6;
   color:var(--t1);display:none;text-align:center}
-#live.show{display:block}
+#live.show{display:block;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 #live em{color:var(--t3);font-style:italic}
 #live.distill{animation:pulse 1.6s ease-in-out infinite;color:var(--accent)}
 
@@ -1741,7 +1741,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.98 · 2026-07-12';
+const APP_VERSION='v60S.99 · 2026-07-12';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3220,6 +3220,7 @@ function startRec(){
     const acc=accumFromResults(arr);
     sessionFinal=acc.sessionFinal; interimText=acc.interim;
     live.innerHTML=escapeHtml(committedText+sessionFinal)+'<em>'+escapeHtml(interimText)+'</em>';
+    live.scrollTop=live.scrollHeight;   /* l'ultima parola resta in vista */
     live.classList.add('show');
   };
   rec.onerror=e=>{
@@ -3253,7 +3254,7 @@ function stopRec(){
   const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
   if(txt){
     micLabel.textContent='Rileggi e distilla';
-    live.textContent=txt; live.classList.add('show');
+    live.textContent=txt; live.classList.add('show'); live.scrollTop=live.scrollHeight;
     document.querySelector('#confirm-row').classList.remove('hidden');
     renderFlow();
   }else{
