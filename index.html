@@ -115,7 +115,7 @@ header{padding:14px 28px 0}
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
 #mic{width:310px;height:310px;border:none;background:transparent;position:relative;touch-action:none}
 #mic svg{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:1}
-.ring-track{fill:none;stroke:rgba(245,242,234,.04);stroke-width:4.5}   /* l'anello di UI cede il posto all'anello di stelle */
+.ring-track{fill:none;stroke:none;stroke-width:4.5}   /* il cerchio lo disegna la corrente del fiume, non un tratto di plastica */
    /* niente transition: la pittura la guida il rAF, frame per frame */
 #enso-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1}
 #cielo{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
@@ -1687,7 +1687,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.113 · 2026-07-13';
+const APP_VERSION='v60S.114 · 2026-07-13';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4541,8 +4541,9 @@ function applyTheme(){ try{
     }
   }catch(_){}
   function fascia(){ return 1; }   /* le stelle costanti: il cielo non segue piu l'orologio, solo la rotazione vera */
-  let LIVE=[];   /* il popolo vivo del cielo: brilla frame per frame, la lastra sotto fa da fondale */
-  let ORB=[];    /* l'anello: le stelle catturate in orbita attorno al nucleo — il cerchio E fatto di cielo */
+  const POOL=[];                 /* il fiume stellare: particelle che nascono, scorrono e muoiono, come il fuoco */
+  const ANCR={x:2,y:2};          /* il pixel-sentinella del nucleo (dichiarato PRIMA del primo dipinto) */
+  let ultSent=0;
   const SPR={},SPK={};   /* sprite: stella morbida e stella con lame di diffrazione, per colore */
   function spr(col){
     if(SPR[col]) return SPR[col];
@@ -4589,11 +4590,7 @@ function applyTheme(){ try{
     const RAD=Math.PI/180, mul=fascia();
     /* la polvere: seme fisso, texture che non cambia mai */
     let s=88675123; const rnd=function(){ s^=s<<13; s^=s>>>17; s^=s<<5; return ((s>>>0)/4294967296); };
-    ctx.fillStyle='#F5F2EA';
-    for(let i=0;i<140;i++){
-      const x=rnd()*W, y=rnd()*H2, a=0.02+rnd()*0.05;
-      ctx.globalAlpha=a*mul; ctx.fillRect(x,y,1,1);
-    }
+    /* niente grana fissa: ogni stella del campo e una particella viva del fiume, disegnata dal motore */
     /* ── LA VIA LATTEA v2 — la grammatica delle lastre: il latte (migliaia di grani fini),
        poche ancore brillanti con alone e croci di diffrazione, il velo continuo della banda,
        nebulose e corsie scure dentro. Stesso seme: la texture non cambia mai. ── */
@@ -4642,45 +4639,7 @@ function applyTheme(){ try{
       g.addColorStop(1,'rgba(7,10,9,0)');
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(gx,gy,rg,0,6.2832); ctx.fill();
     }
-    LIVE=[];
-    for(let i=0;i<4200;i++){
-      let x,y;
-      if(rnd()<0.70){
-        const t=(rnd()*2-1)*L*0.75, dd=((rnd()+rnd()+rnd())/1.5-1)*L*0.14;
-        x=AX+ca*t-sa*dd; y=AY+sa*t+ca*dd;
-      }else{ x=rnd()*W; y=rnd()*H2; }
-      const p=rnd(), c=rnd(), extra=rnd();
-      if(x<-4||x>W+4||y<-4||y>H2+4) continue;
-      let col,r,a;
-      if(p<0.40){                                        /* il fondo quieto: poco, e sottovoce */
-        r=0.5+rnd()*0.4; a=0.08+rnd()*0.10; col=c<0.8?'245,242,234':'242,222,180';
-        ctx.globalAlpha=a; ctx.drawImage(spr(col),x-r*2,y-r*2,r*4,r*4);
-      }else if(p<0.82){                                  /* l'orchestra: piccole, tutte vive, tutte in moto */
-        r=0.6+rnd()*0.5; a=0.20+rnd()*0.20;
-        col=c<0.6?'245,242,234':c<0.8?'242,222,180':c<0.92?'186,208,244':'238,178,128';
-        if(LIVE.length<700) LIVE.push({k:0,x:x,y:y,r:r,col:col,a:a,amp:0.35+rnd()*0.3,per:1400+rnd()*3600,ph:rnd()*6.2832,dr:1.5+rnd()*2.5,pA:1300+rnd()*2400,pB:1700+rnd()*2600,h1:rnd()*6.2832,h2:rnd()*6.2832});
-        else{ ctx.globalAlpha=a; ctx.drawImage(spr(col),x-r*2,y-r*2,r*4,r*4); }
-      }else if(p<0.96){
-        r=1.1+rnd()*0.9; a=0.35+rnd()*0.25;
-        col=c<0.5?'246,240,224':c<0.75?'242,222,180':c<0.92?'186,208,244':'236,150,120';
-        if(LIVE.length<860) LIVE.push({k:0,x:x,y:y,r:r,col:col,a:a,amp:0.3+rnd()*0.35,per:1600+rnd()*3800,ph:rnd()*6.2832,dr:1.2+rnd()*2.0,pA:1500+rnd()*2600,pB:1900+rnd()*2800,h1:rnd()*6.2832,h2:rnd()*6.2832});
-        else{ ctx.globalAlpha=a; ctx.drawImage(spr(col),x-r*2,y-r*2,r*4,r*4); }
-      }else{
-        r=2.4+rnd()*1.2; a=0.75+rnd()*0.25;
-        col=c<0.4?'246,240,224':c<0.7?'242,222,180':c<0.88?'186,208,244':'236,150,120';
-        if(LIVE.length<940) LIVE.push({k:1,cr:(extra<0.5),x:x,y:y,r:r,col:col,a:a,amp:0.22+rnd()*0.2,per:2600+rnd()*5000,ph:rnd()*6.2832,dr:0.8+rnd()*1.2,pA:2000+rnd()*3000,pB:2400+rnd()*3200,h1:rnd()*6.2832,h2:rnd()*6.2832});
-        else{ ctx.globalAlpha=a*0.9; ctx.drawImage(spr(col),x-r*2.4,y-r*2.4,r*4.8,r*4.8); }
-      }
-    }
-    ctx.globalAlpha=1;
-    /* il disco di accrescimento: interno caldo (il fuoco), esterno freddo (il cielo), moto kepleriano */
-    ORB=[];
-    for(let i=0;i<110;i++){
-      const f=1.02+Math.pow(rnd(),0.7)*0.33, cw=rnd();
-      const col=f<1.10?(cw<0.6?'242,222,180':'238,178,128'):f<1.22?(cw<0.6?'246,240,224':'245,242,234'):(cw<0.6?'245,242,234':'186,208,244');
-      ORB.push({f:f,ang:rnd()*6.2832,sp:0.00009/Math.sqrt(f)*(0.8+rnd()*0.4),
-        r:0.6+rnd()*1.0,col:col,a:0.28+rnd()*0.42,amp:0.25+rnd()*0.25,per:1500+rnd()*3500,ph:rnd()*6.2832});
-    }
+    /* il campo non si dipinge piu sulla lastra: vive nel fiume (motore vita) */
     /* le stelle vere: tempo siderale locale, poi alt-az, finestra verso sud */
     const D=(Date.now()/86400000)-10957.5;   /* giorni da J2000 */
     let lst=(18.697374558+24.06570982441908*D+LON/15)%24; if(lst<0)lst+=24;
@@ -4721,11 +4680,18 @@ function applyTheme(){ try{
     }catch(_){ return false; }
   }
   let met=null, metNext=Date.now()+20000+Math.random()*40000;
-  let ultSent=0; const ANCR={x:2,y:2};   /* la sentinella: un pixel del nucleo, tastato ogni quattro secondi */
-  /* ── LA VOCE E GRAVITA — quando parli, il cosmo ti sente: la galassia si stringe verso il
-     nucleo (il cerchio) e ruota piano; ogni parola riconosciuta e un'onda di luce nel campo;
-     la distillazione e il collasso: il cielo consegna la luce al fuoco, poi tutto torna a casa. ── */
-  let lastT=0, mQ=0, rot=0, modo='quiete', distT=0;
+  /* ══ IL FIUME STELLARE — un solo organismo, come il fuoco: ogni stella nasce, scorre, muore.
+     Lontano dal cerchio la corrente segue la banda; vicino si curva in vortice attorno al nucleo,
+     e chi spiraleggia fino in fondo consegna la sua luce al fuoco. La voce accelera la corrente,
+     ogni parola e un'onda, la distillazione e la piena che trascina tutto dentro. ══ */
+  function vivoOk(){
+    try{
+      if(document.hidden) return false;
+      if(S.settings&&S.settings.anim==='sempre') return true;
+      return !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }catch(_){ return false; }
+  }
+  let lastT=0, mQ=0, modo='quiete', distT=0;
   const PULSES=[];
   window._cieloVoce=function(st){
     if(st==='rec') modo='rec';
@@ -4739,72 +4705,73 @@ function applyTheme(){ try{
     }catch(_){}
     return {x:W*0.5,y:H2*0.30,R:Math.min(W,H2)*0.28};
   }
+  const CAB=Math.cos(-0.56), SAB=Math.sin(-0.56);
+  function nasce(p,W,H2,CM){
+    const L=Math.hypot(W,H2), dove=Math.random();
+    if(dove<0.62){                                       /* nel letto della banda */
+      const t=(Math.random()*2-1)*L*0.7, dd=((Math.random()+Math.random()+Math.random())/1.5-1)*L*0.13;
+      p.x=CM.x+CAB*t-SAB*dd; p.y=CM.y+SAB*t+CAB*dd;
+    }else if(dove<0.80){                                 /* sull'orlo del vortice */
+      const a2=Math.random()*6.2832, rr=CM.R*(1.05+Math.random()*0.8);
+      p.x=CM.x+Math.cos(a2)*rr; p.y=CM.y+Math.sin(a2)*rr;
+    }else{ p.x=Math.random()*W; p.y=Math.random()*H2; }
+    const q=Math.random(), c=Math.random();
+    if(q<0.75){ p.r=0.55+Math.random()*0.55; p.a=0.22+Math.random()*0.22; p.k=0; }
+    else if(q<0.95){ p.r=1.1+Math.random()*0.9; p.a=0.35+Math.random()*0.3; p.k=0; }
+    else{ p.r=2.2+Math.random()*1.2; p.a=0.7+Math.random()*0.3; p.k=1; p.cr=Math.random()<0.5; }
+    const rho=Math.hypot(p.x-CM.x,p.y-CM.y);
+    if(rho<CM.R*1.6) p.col=c<0.55?'242,222,180':c<0.8?'238,178,128':'246,240,224';   /* vicino al fuoco nasce calda */
+    else p.col=c<0.5?'245,242,234':c<0.72?'242,222,180':c<0.9?'186,208,244':'238,178,128';
+    p.tw=1400+Math.random()*3600; p.ph=Math.random()*6.2832; p.amp=0.3+Math.random()*0.3;
+    p.vel=0.7+Math.random()*0.6;
+    p.ttl=8000+Math.random()*12000; p.eta=0;
+  }
   function vita(){
     try{
       const W=Math.max(1,window.innerWidth), H2=Math.max(1,window.innerHeight);
       scr.setTransform(DPR,0,0,DPR,0,0); scr.clearRect(0,0,W,H2);
       if(base.width>0&&base.height>0) scr.drawImage(base,0,0,W,H2);
       const now=Date.now(), ok=vivoOk();
-      const dt=lastT?Math.min(100,now-lastT):33; lastT=now;
+      const dt=lastT?Math.min(80,now-lastT):33; lastT=now;
       if(now-ultSent>4000){ ultSent=now;
         try{ const pd=ctx.getImageData(ANCR.x,ANCR.y,1,1).data;
-          if(!(pd[0]|pd[1]|pd[2])) dipingi();              /* iOS ha svuotato la lastra: si ridipinge subito */
+          if(!(pd[0]|pd[1]|pd[2])) dipingi();              /* iOS ha svuotato la lastra: si ridipinge */
         }catch(_){}
       }
       const attivo=(modo!=='quiete')&&ok;
       mQ=Math.max(0,Math.min(1,mQ+(attivo?1:-1)*dt/900));
-      if(modo==='rec'&&ok) rot+=dt*0.000012;
-      if(mQ===0) rot=0;
       if(modo==='distilla'&&now-distT>800) modo='quiete';
-      const comp=0.10+((modo==='distilla')?0.45*Math.min(1,(now-distT)/450):0);
       const CM=centroMic(W,H2);
       while(PULSES.length&&now-PULSES[0]>1400) PULSES.shift();
-      for(let i=0;i<LIVE.length;i++){
-        const s=LIVE[i];
-        const wX=s.x+s.dr*Math.sin(now/s.pA+s.h1), wY=s.y+s.dr*Math.cos(now/s.pB+s.h2);   /* il vagare: vivo anche da fermo */
-        let X=wX, Y=wY, d0=0;
-        if(mQ>0.01){
-          const px=wX-CM.x, py=wY-CM.y;
-          d0=Math.hypot(px,py)||1;
-          const ang=Math.atan2(py,px)+rot*mQ, dist=d0*(1-comp*mQ);
-          X=CM.x+Math.cos(ang)*dist; Y=CM.y+Math.sin(ang)*dist;
-        }
-        const tw=ok?(1-s.amp*(0.5+0.5*Math.sin(now/s.per*6.2832+s.ph))):(1-s.amp*0.5);
-        let al=s.a*tw*(1+0.18*mQ+((modo==='distilla')?0.5:0));
-        if(mQ>0.01&&PULSES.length){
-          if(!d0) d0=Math.hypot(s.x-CM.x,s.y-CM.y)||1;
-          for(let pi=0;pi<PULSES.length;pi++){
-            const age=now-PULSES[pi], R=age*0.35;
-            al+=Math.exp(-Math.pow((d0-R)/90,2))*Math.exp(-age/900)*0.5;
-          }
-        }
-        scr.globalAlpha=Math.max(0,Math.min(1,al));
-        if(s.k===1){
-          const kk=ok?(1+0.08*Math.sin(now/s.per*5.1+s.ph)):1;
-          const f=(s.cr?s.r*10:s.r*5.5)*kk;
-          scr.drawImage(s.cr?spk(s.col):spr(s.col),X-f/2,Y-f/2,f,f);
-        }else{
-          scr.drawImage(spr(s.col),X-s.r*2,Y-s.r*2,s.r*4,s.r*4);
-        }
-      }
-      /* l'anello vive sempre: orbita lenta in quiete, corre con la voce, collassa nella distillazione */
-      const acc=1+2.2*mQ, distK=(modo==='distilla')?0.5*Math.min(1,(now-distT)/450):0;
-      for(let i=0;i<ORB.length;i++){
-        const o=ORB[i];
-        if(ok) o.ang+=o.sp*dt*acc;
-        const rf=Math.max(0.25,o.f*(1-0.10*mQ-distK));
-        const X=CM.x+Math.cos(o.ang)*CM.R*rf, Y=CM.y+Math.sin(o.ang)*CM.R*rf;
-        const tw=ok?(1-o.amp*(0.5+0.5*Math.sin(now/o.per*6.2832+o.ph))):(1-o.amp*0.5);
-        let al=o.a*tw*(1+0.25*mQ+((modo==='distilla')?0.55:0));
+      if(!POOL.length){ for(let i=0;i<540;i++){ const p={}; nasce(p,W,H2,CM); p.eta=Math.random()*p.ttl; POOL.push(p); } }
+      const spinta=1+2.5*mQ, piena=(modo==='distilla')?6:0;
+      for(let i=0;i<POOL.length;i++){
+        const p=POOL[i];
+        if(ok) p.eta+=dt;
+        if(p.eta>=p.ttl){ nasce(p,W,H2,CM); }
+        const px=p.x-CM.x, py=p.y-CM.y;
+        const rho=Math.max(1,Math.hypot(px,py));
+        const wv=1/(1+Math.pow(rho/(CM.R*2.2),3));        /* quanto comanda il vortice, qui */
+        const bandV=9*p.vel;
+        let vx=CAB*bandV*(1-wv), vy=SAB*bandV*(1-wv);     /* la corrente della banda */
+        const orb=(20*CM.R/Math.max(rho,CM.R*0.6))*p.vel; /* il vortice: kepleriano attorno al nucleo */
+        vx+=(-py/rho)*orb*wv; vy+=(px/rho)*orb*wv;
+        const dentro=(3+piena*14)*(CM.R/rho)*(wv*0.9+0.1)*(0.35+mQ);
+        vx-=(px/rho)*dentro; vy-=(py/rho)*dentro;         /* la spirale che consegna al fuoco */
+        if(ok){ p.x+=vx*spinta*dt/1000; p.y+=vy*spinta*dt/1000; }
+        if(rho<CM.R*0.32||p.x<-30||p.x>W+30||p.y<-30||p.y>H2+30){ nasce(p,W,H2,CM); continue; }
+        const env=Math.sin(3.1416*Math.min(1,p.eta/p.ttl));
+        const tw=ok?(1-p.amp*(0.5+0.5*Math.sin(now/p.tw*6.2832+p.ph))):(1-p.amp*0.5);
+        let al=p.a*env*tw*(1+0.2*mQ+((modo==='distilla')?0.5:0));
         if(PULSES.length){
-          const d0=CM.R*rf;
           for(let pi=0;pi<PULSES.length;pi++){
             const age=now-PULSES[pi], R2=age*0.35;
-            al+=Math.exp(-Math.pow((d0-R2)/90,2))*Math.exp(-age/900)*0.5;
+            al+=Math.exp(-Math.pow((rho-R2)/90,2))*Math.exp(-age/900)*0.5;
           }
         }
         scr.globalAlpha=Math.max(0,Math.min(1,al));
-        scr.drawImage(spr(o.col),X-o.r*2,Y-o.r*2,o.r*4,o.r*4);
+        if(p.k===1){ const f=p.cr?p.r*10:p.r*5.5; scr.drawImage(p.cr?spk(p.col):spr(p.col),p.x-f/2,p.y-f/2,f,f); }
+        else scr.drawImage(spr(p.col),p.x-p.r*2,p.y-p.r*2,p.r*4,p.r*4);
       }
       scr.globalAlpha=1;
       if(mQ>0.02){                                       /* il nucleo si accende con la voce */
@@ -4820,14 +4787,14 @@ function applyTheme(){ try{
           met={x0:Math.random()*W,y0:-20,dx:(0.4+Math.random()*0.5)*(Math.random()<0.5?-1:1)*W*0.5,dy:H2*(0.25+Math.random()*0.2),t0:now,dur:520};
         }
         if(met){
-          const p=(now-met.t0)/met.dur;
-          if(p>=1){ met=null; metNext=now+30000+Math.random()*60000; }
+          const p2=(now-met.t0)/met.dur;
+          if(p2>=1){ met=null; metNext=now+30000+Math.random()*60000; }
           else{
-            const hx=met.x0+met.dx*p, hy=met.y0+met.dy*p;
+            const hx=met.x0+met.dx*p2, hy=met.y0+met.dy*p2;
             const tx=hx-met.dx*0.16, ty=hy-met.dy*0.16;
             const g=scr.createLinearGradient(tx,ty,hx,hy);
             g.addColorStop(0,'rgba(246,240,224,0)');
-            g.addColorStop(1,'rgba(246,240,224,'+(0.85*Math.sin(3.1416*Math.min(1,p))).toFixed(3)+')');
+            g.addColorStop(1,'rgba(246,240,224,'+(0.85*Math.sin(3.1416*Math.min(1,p2))).toFixed(3)+')');
             scr.strokeStyle=g; scr.lineWidth=1.6;
             scr.beginPath(); scr.moveTo(tx,ty); scr.lineTo(hx,hy); scr.stroke();
           }
