@@ -88,6 +88,8 @@ body:not([data-foglio="picco"]) #flow{visibility:hidden}
 /* terra: nel mondo nessun testo fluttua nel nero */
 #flow:not(:empty){background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.10);border-radius:16px;padding:14px 16px}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
+/* Scarta/Distilla: pillola ancorata al fondo del mondo - nessun contenuto puo piu spingerla sotto il foglio, su nessun viewport */
+#mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:44px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}
 /* punto 3 riscritto (v60S.93): morphing continuo guidato da --fp (0=aperto, 1=picco).
    Solo transform/opacity, il layout non si muove mai: capolettera 84->46 (scala .548),
    anello 84->52 (scala .619) che sale al posto del "dove sono" mentre svanisce. */
@@ -1711,7 +1713,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.120 · 2026-07-14';
+const APP_VERSION='v60S.121 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3207,24 +3209,28 @@ function startRec(){
 }
 function stopRec(){
   recording=false;
-  if(rec){ rec.onend=null; try{rec.stop()}catch(_){} }
+  /* niente riavvio, ma il commit dell'ultima sessione resta: Android consegna l'ultimo finale DOPO lo stop */
+  if(rec){ rec.onend=function(){ committedText+=sessionFinal; sessionFinal=''; }; try{rec.stop()}catch(_){} }
   micBtn.classList.remove('rec','arming');
   try{ window._cieloVoce&&window._cieloVoce('quiete'); }catch(_){}   /* il cielo torna a casa */
   sMicOff(); releaseWake();
   try{ if(S.settings.music) MUSIC.recDuck(false); }catch(_){}  /* la musica risale dopo la dettatura */
   try{ if(S.settings.music) ORCH.duck(false); }catch(_){}
   try{ if(S.settings.music) ATHEME.duck(false); }catch(_){}
-  const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
-  if(txt){
-    micLabel.textContent='Rileggi e distilla';
-    live.textContent=txt; live.classList.add('show'); live.scrollTop=live.scrollHeight;
-    document.querySelector('#confirm-row').classList.remove('hidden');
-    renderFlow();
-  }else{
-    micLabel.textContent='Silenzio. Riprova quando vuoi.';
-    live.classList.remove('show');
-    updateRing();
-  }
+  micLabel.textContent='\u2026';
+  setTimeout(function(){   /* 420ms: il tempo del flush del motore - \u00abCavour\u00bb arriva intero */
+    const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
+    if(txt){
+      micLabel.textContent='Rileggi e distilla';
+      live.textContent=txt; live.classList.add('show'); live.scrollTop=live.scrollHeight;
+      document.querySelector('#confirm-row').classList.remove('hidden');
+      renderFlow();
+    }else{
+      micLabel.textContent='Silenzio. Riprova quando vuoi.';
+      live.classList.remove('show');
+      updateRing();
+    }
+  },420);
 }
 /* ── PRESS-TO-REC (stile WhatsApp): tieni premuto il cerchio per dettare, rilascia per fermare.
      Niente preventDefault né pointer-capture (su iOS bloccavano l'audio del microfono / lanciavano
