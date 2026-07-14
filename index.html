@@ -90,7 +90,7 @@ body:not([data-foglio="picco"]) #flow{visibility:hidden}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
 /* Scarta/Distilla: pillola ancorata al fondo del mondo - nessun contenuto puo piu spingerla sotto il foglio, su nessun viewport */
 #mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:44px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}
-#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:16px;right:16px;top:14px;bottom:176px;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box}   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
+#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:16px;right:16px;top:14px;bottom:176px;width:auto;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box}   /* width:auto: senza, il width:100% di base vince su right e la carta sborda */   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
 #mic-wrap:has(#confirm-row:not(.hidden)) #mic-label,#mic-wrap:has(#confirm-row:not(.hidden)) #ring-count,#mic-wrap:has(#confirm-row:not(.hidden)) #flow{visibility:hidden}   /* niente testi-fantasma dietro la carta */
 #mic-wrap:has(#confirm-row:not(.hidden)) #flow{display:none}   /* nel momento della rilettura il flow tace: duplicava la pillola */
 #mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:106px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}   /* la priorita sta sopra la pillola, mai nel mucchio */
@@ -1717,7 +1717,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.126 · 2026-07-14';
+const APP_VERSION='v60S.127 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });

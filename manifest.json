@@ -1,15 +1,16 @@
 {
-  "name": "Sentiero — Diario vocale",
+  "name": "Sentiero",
   "short_name": "Sentiero",
-  "description": "Diario vocale con quest e task pianificate, elaborato dall'IA.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "description": "Il gioco della vita: il giorno è il livello, la posta è vera.",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#070A09",
-  "theme_color": "#070A09",
-  "lang": "it",
+  "orientation": "portrait",
+  "background_color": "#070a09",
+  "theme_color": "#070a09",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
