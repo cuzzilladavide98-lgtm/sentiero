@@ -1495,9 +1495,22 @@ function sealIfComplete(state,tk,dow){
 }
 function accumFromResults(results){
   /* iOS può rispedire gli stessi finali in più eventi: si ricostruisce, mai si accumula */
-  let sessionFinal='',interim='';
-  for(const r of results){ if(r.final) sessionFinal+=r.text+' '; else interim+=r.text; }
-  return {sessionFinal,interim};
+  /* Chrome/Android consegna finali CUMULATIVI (ogni finale contiene l'intera frase fin li,
+     e i precedenti restano in lista); iOS li consegna incrementali. Questa fusione regge entrambi:
+     se il nuovo finale inizia con l'accumulato lo sostituisce, se e un'eco identica si ignora,
+     altrimenti si accoda. Bug dal campo: Anna, Redmi Note 12 Pro. */
+  let fin='', interim='';
+  const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+  for(const r of results){
+    if(!r.final){ interim+=r.text; continue; }
+    const t=norm(r.text), f=norm(fin);
+    if(!t) continue;
+    if(!f){ fin=t; continue; }
+    if(t.toLowerCase().indexOf(f.toLowerCase())===0) fin=t;
+    else if(f.toLowerCase().endsWith(t.toLowerCase())){ /* eco: gia dentro */ }
+    else fin=f+' '+t;
+  }
+  return {sessionFinal:fin?fin+' ':'',interim};
 }
 function extractJson(text){
   if(typeof text!=='string') return null;
@@ -1698,7 +1711,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.117 · 2026-07-13';
+const APP_VERSION='v60S.119 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3793,6 +3806,8 @@ const OBSERVER_LINE_SYS=
 "IL TUO VALORE, cio che nessun altro puo darle: il filo nel tempo. Non commentare l'istante: collocalo. Da dove viene questo gesto (una promessa, un attrito nominato, un seme piantato, un vuoto attraversato) e verso dove punta (cosa si sta consolidando, cosa si sta assottigliando). Una riga che potrebbe scrivere chiunque guardando solo l'oggi e una riga sbagliata.\n"+
 "COME PARLI: italiano contemporaneo, come si parla oggi - minuscole anche a inizio frase, naturale, anche imperfetto. Hai piena capacita di articolazione e di sintesi: una frase ben costruita vale piu di tre frammenti d'atmosfera. Il respiro lo decide il materiale: quasi sempre UNA frase; due o tre SOLO quando il filo le merita davvero. Ogni frase in piu deve pagare l'affitto: se non aggiunge un fatto o un filo, tagliala.\n"+
 "MESTIERE, principi non ornamenti: rifletti, non prescrivere - restituisci cio che vedi e lascia che la conclusione sia sua; sostieni l'autonomia - mai devi o dovresti, mai pressione, mai consigli non chiesti; commenta il processo e la strategia, mai la persona, ne in colpa ne in lode; nel giorno storto gentilezza e umanita comune - capita a chiunque sia vivo - senza minimizzare e senza compatire; un vuoto che finisce e un dato di forza, mai un debito da scontare.\n"+
+"I NUMERI: al massimo UNO per riga, e solo come fatto vissuto (la terza mattina, ventotto giorni, cinque occasioni). MAI rapporti o sequenze di cifre (3 su 7, da 0 a 7): la forma delle settimane si dice in parole - cresce, tiene, cala, torna, si assottiglia. Vietate le parole da analista: trend, plateau, dati, media, percentuale.\n"+
+"I PRIMI GIORNI: se eta_del_cammino dice primo giorno o prima settimana, non leggere storie che non esistono ancora: accogli il gesto di oggi, concreto e leggero, senza pesare un passato che non c'e.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
@@ -3825,24 +3840,39 @@ function buildLinePackage(id,title){
     pkg.occasione_precedente=lastPlan
       ?('la precedente prevista era '+(lastPlan.diff===1?'ieri':lastPlan.giorno+', '+lastPlan.diff+' giorni fa')+': '+(lastPlan.done?'fatta':'mancata'))
       :'nessuna occasione prevista nei 6 giorni precedenti';
-    /* l'arco: quattro settimane di piano, dalla piu lontana - la direzione, non l'istante */
+    /* l'eta del cammino: mai leggere storie precedenti alla prima traccia vera (Anna, giorno uno) */
+    let inizio='';
+    try{
+      const kc=Object.keys(S.checks||{}).sort()[0]||'';
+      const dl=(S.diary||[]).length?String(S.diary[S.diary.length-1].data||''):'';
+      const ra=String((((S.registro||[]).filter(e=>e&&e.tipo==='apertura')[0])||{}).msg||'');
+      [kc,dl,ra].forEach(v=>{ if(/^\d{4}-\d{2}-\d{2}$/.test(v)&&(!inizio||v<inizio)) inizio=v; });
+    }catch(_){}
+    if(!inizio||inizio>tk) inizio=tk;
+    const etaGiorni=Math.max(0,Math.round((Date.parse(tk)-Date.parse(inizio))/86400000));
+    pkg.eta_del_cammino=etaGiorni<1?'primo giorno':etaGiorni<7?'prima settimana':etaGiorni<31?'primo mese':'oltre un mese';
+    /* l'arco: quattro settimane dette in PAROLE, mai in numeri - il modello ripete la forma che riceve */
+    const forma=function(dn,pl){ if(!pl) return 'nessuna prevista'; const r=dn/pl;
+      return dn===0?'vuota':r<0.34?'rara':r<0.67?'a meta':dn===pl?'piena':'quasi piena'; };
     const sett=[];
     for(let wk=3;wk>=0;wk--){
       let pl=0,dn=0;
       for(let diff=wk*7;diff<wk*7+7;diff++){
         const d=new Date(today); d.setDate(d.getDate()-diff);
         const k=localDayKey(d);
+        if(k<inizio) continue;                           /* prima dell'inizio non esisteva nulla da mancare */
         if(sched.days.includes(dowOf(d))){ pl++; if(S.checks[k]&&S.checks[k][id]===true) dn++; }
       }
-      sett.push(pl?(dn+' su '+pl):'nessuna prevista');
+      sett.push(forma(dn,pl));
     }
-    pkg.arco_quattro_settimane='dalla piu lontana a questa: '+sett.join(' \u00b7 ');
-    /* il ritorno: quante occasioni previste mancate di fila prima di oggi - la velocita di recupero e materia viva */
+    if(etaGiorni>=7) pkg.arco_quattro_settimane='dalla piu lontana a questa: '+sett.join(' \u00b7 ');
+    /* il ritorno: contato solo dentro il cammino reale */
     let mancateFila=0;
     for(let diff=1;diff<=28;diff++){
       const d=new Date(today); d.setDate(d.getDate()-diff);
-      if(!sched.days.includes(dowOf(d))) continue;
       const k=localDayKey(d);
+      if(k<inizio) break;
+      if(!sched.days.includes(dowOf(d))) continue;
       if(S.checks[k]&&S.checks[k][id]===true) break;
       mancateFila++;
     }
