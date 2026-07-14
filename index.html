@@ -1717,7 +1717,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.128 · 2026-07-14';
+const APP_VERSION='v60S.129 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4164,14 +4164,17 @@ async function askObserverLine(pkg){
     nucleo(home.x,home.y,0,0,2.3*(1-k*.75),now);
     if(k>=1) setPhase('idle');
   }
-  window._braceParte=function(el){
+  window._braceParte=function(el,rct){
     if(!animOk()||document.hidden){ spegni(); return; }
-    const chk=(el&&el.querySelector)?(el.querySelector('.chk')||el):null;
-    if(!chk||!chk.getBoundingClientRect){ spegni(); return; }
-    const r=chk.getBoundingClientRect();
-    if(!(r.width||r.height)){ spegni(); return; }
+    let px=null,py=null;
+    try{
+      const chk=(el&&el.querySelector)?(el.querySelector('.chk')||el):null;
+      if(chk&&chk.getBoundingClientRect){ const r=chk.getBoundingClientRect(); if(r.width||r.height){ px=r.left+r.width/2; py=r.top+r.height/2; } }
+    }catch(_){}
+    if(px===null&&rct){ px=rct.x; py=rct.y; }              /* la riga e stata ridisegnata nel frattempo: vale la fotografia del tocco */
+    if(px===null){ try{ regCantiere('errore',{msg:'brace: partenza senza riga ne ricordo'}); }catch(_){} spegni(); return; }
     tela();
-    from={x:r.left+r.width/2,y:r.top+r.height/2};
+    from={x:px,y:py};
     home={x:innerWidth/2,y:innerHeight-safeBottom()-104};  /* la casa del sussurro: appena sopra il bordo della sua carta */
     ctrl={x:(from.x+home.x)/2-70,y:(from.y+home.y)/2-30};
     egg=Math.random()<1/80;                                /* il vuoto: la famiglia del dono */
@@ -4335,9 +4338,12 @@ function observerLineFor(el){
     if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;             /* serve la chiave; in silenzio se manca */
     const id=el&&(el.dataset.tid||el.dataset.qid); if(!id) return;
     const title=((el.querySelector('.ttl')||{}).textContent||'').trim(); if(!title) return;
+    let rct=null;   /* la fotografia del tocco: il debounce ridisegna le liste, il punto resta */
+    try{ const c0=(el.querySelector&&el.querySelector('.chk'))||el; const rr=c0.getBoundingClientRect();
+      if(rr.width||rr.height) rct={x:rr.left+rr.width/2,y:rr.top+rr.height/2}; }catch(_){}
     const token=++_lineToken; clearTimeout(_lineTimer);
     _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
-      try{ window._braceParte(el); }catch(_){}                         /* la brace parte: il pensiero e in volo */
+      try{ window._braceParte(el,rct); }catch(_){}                     /* la brace parte: il pensiero e in volo */
       const t0Linea=Date.now();
       const line=await askObserverLine(buildLinePackage(id,title));
       const msLinea=Date.now()-t0Linea;
