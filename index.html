@@ -802,7 +802,7 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 }
 /* ══════ LA SOGLIA — l'alba adattiva: la luce sale col colore dell'ora ══════
    cerimonia piena solo alla prima apertura del giorno · tap salta sempre */
-#soglia{position:fixed;inset:0;z-index:200;background:#070A09;display:flex;align-items:center;justify-content:center;
+#soglia{position:fixed;inset:0;z-index:200;background:transparent;display:flex;align-items:center;justify-content:center;
   transition:opacity .45s ease}
 #soglia.via{opacity:0;pointer-events:none}
 #soglia canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -1717,7 +1717,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.127 · 2026-07-14';
+const APP_VERSION='v60S.128 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4939,57 +4939,33 @@ function applyTheme(){ try{
   try{ document.body.style.setProperty('--alba-d',(durata-0.55).toFixed(2)+'s');
     document.body.classList.add('alba'); }catch(_){}
   const cv=document.getElementById('soglia-cv'); const ctx=cv?cv.getContext('2d'):null;
-  /* il canvas della soglia ora vive alla risoluzione vera: niente piu cerchi stirati in ellisse */
+  /* ══ L'APERTURA E IL MONDO — niente secondo teatro: il velo nero si alza sul fiume stellare
+     vero (il motore del cielo gira gia dietro), e nel sollevarsi il cosmo si stira con un
+     impulso reale al campo di gravita - lo stesso della voce - poi torna a casa. ══ */
   const W=Math.max(1,window.innerWidth), H=Math.max(1,window.innerHeight);
   const DPRS=Math.min(2,window.devicePixelRatio||1);
   if(cv){ cv.width=Math.round(W*DPRS); cv.height=Math.round(H*DPRS); if(ctx) ctx.setTransform(DPRS,0,0,DPRS,0,0); }
-  /* ══ IL VORTICE D'APERTURA — l'icona prende vita: la galassia gira a 60fps e consegna l'app.
-     Rotazione differenziale (dentro corre, fuori vaga), nucleo che arde, dissolvenza con la soglia. ══ */
-  const VCX=W/2, VCY=H*0.34, VR=Math.min(W,H)*0.26;
-  const vspr=(function(){ const c=document.createElement('canvas'); c.width=c.height=64;
-    const g2=c.getContext('2d'); const gr=g2.createRadialGradient(32,32,0,32,32,32);
-    gr.addColorStop(0,'rgba(246,238,214,1)'); gr.addColorStop(0.25,'rgba(246,238,214,0.8)');
-    gr.addColorStop(0.55,'rgba(242,222,180,0.28)'); gr.addColorStop(1,'rgba(242,222,180,0)');
-    g2.fillStyle=gr; g2.fillRect(0,0,64,64); return c; })();
-  const VST=[];
-  for(let i=0;i<300;i++){
-    const u=Math.random();
-    VST.push({u:u,a0:u*12.0+Math.random()*0.55,r:VR*(0.17+u),
-      s:2+(1-u)*6*Math.random(),tw:2+Math.random()*4,ph:Math.random()*6.2832});
-  }
   let t0=null;
   function fr(ts){
     if(chiusa) return;
     if(!t0) t0=ts;
     const t=(ts-t0)/1000;
     if(ctx){ ctx.clearRect(0,0,W,H);
-      const su=Math.min(1,t/0.9), e=1-Math.pow(1-su,3);
+      const velo=1-(1-Math.pow(1-Math.min(1,t/1.6),3));   /* il velo: 1 -> 0, il mondo emerge */
+      if(velo>0){ ctx.fillStyle='rgba(7,10,9,'+velo.toFixed(3)+')'; ctx.fillRect(0,0,W,H); }
+      const su=Math.min(1,t/1.1), e=1-Math.pow(1-su,3);
       const g=ctx.createLinearGradient(0,H,0,H-H*e*1.35);
-      g.addColorStop(0,'rgba('+F.c+','+(0.30*(1-su*0.45)).toFixed(3)+')');
+      g.addColorStop(0,'rgba('+F.c+','+(0.22*(1-su*0.45)).toFixed(3)+')');
       g.addColorStop(1,'rgba('+F.c+',0)');
       ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-      const env=Math.min(1,t/0.45);
-      for(let i=0;i<VST.length;i++){
-        const v=VST[i];
-        const ang=v.a0+t*(0.9/Math.pow(Math.max(v.r/VR,0.2),1.1));
-        const x=VCX+Math.cos(ang)*v.r, y=VCY+Math.sin(ang)*v.r*0.94;
-        const twk=0.65+0.35*Math.sin(t*v.tw+v.ph);
-        ctx.globalAlpha=Math.min(1,(0.28+0.55*(1-v.u))*twk*env);
-        const f=v.s*2;
-        ctx.drawImage(vspr,x-f/2,y-f/2,f,f);
-      }
-      ctx.globalAlpha=env;
-      const gn=ctx.createRadialGradient(VCX,VCY,0,VCX,VCY,VR*0.34);
-      gn.addColorStop(0,'rgba(255,250,236,0.95)');
-      gn.addColorStop(0.35,'rgba(255,244,214,0.55)');
-      gn.addColorStop(1,'rgba(255,244,214,0)');
-      ctx.fillStyle=gn; ctx.beginPath(); ctx.arc(VCX,VCY,VR*0.34,0,6.2832); ctx.fill();
-      ctx.globalAlpha=1;
     }
     if(t>=durata){ fine(); return; }
     requestAnimationFrame(fr);
   }
   sg.classList.add('rito');
+  try{ window._cieloVoce&&window._cieloVoce('rec');   /* il respiro d'apertura: il cosmo si stira verso il fuoco */
+    setTimeout(function(){ try{ window._cieloVoce&&window._cieloVoce('quiete'); }catch(_){} },1400);
+  }catch(_){}
   requestAnimationFrame(fr);
 })();
 
