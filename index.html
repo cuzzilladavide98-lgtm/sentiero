@@ -1711,7 +1711,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.119 · 2026-07-14';
+const APP_VERSION='v60S.120 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3145,6 +3145,7 @@ document.querySelector('#close-altro').onclick=()=>{
    DETTATURA
    ====================================================================== */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const SR_ANDROID=/Android/i.test(navigator.userAgent||'');   /* su Android il continuous e rotto alla radice (bug storico di Chrome): sessioni brevi e riavvio */
 let rec=null,recording=false,committedText='',sessionFinal='',interimText='';
 const micBtn=$('#mic'),micLabel=$('#mic-label'),live=$('#live');
 if(!SR){ micLabel.textContent='Dettatura non disponibile: scrivi qui sotto.'; live.classList.add('show'); live.contentEditable='true'; }
@@ -3153,7 +3154,8 @@ try{ if(anzianita(S)>=1&&SR) micLabel.textContent=''; }catch(_){}
 function startRec(){
   committedText=''; sessionFinal=''; interimText='';
   rec=new SR();
-  rec.lang='it-IT'; rec.continuous=true; rec.interimResults=true;
+  rec.lang='it-IT'; rec.interimResults=true;
+  rec.continuous=!SR_ANDROID;   /* iOS: flusso continuo come sempre. Android: UN finale per sessione - impossibile duplicare - e il riavvio in onend cuce i segmenti */
   rec.onstart=()=>{
     /* il microfono è DAVVERO attivo: solo ora invitiamo a parlare ed entriamo in rosso */
     if(!recording) return;
@@ -3186,7 +3188,14 @@ function startRec(){
   };
   rec.onend=()=>{
     committedText+=sessionFinal; sessionFinal=''; interimText='';
-    if(recording){ try{rec.start()}catch(_){ recording=false; micBtn.classList.remove('rec','arming'); micLabel.textContent='Microfono interrotto. Tieni premuto per riprendere.'; } }
+    if(recording){
+      try{ rec.start(); }
+      catch(_){
+        setTimeout(function(){ if(!recording) return;   /* Android: il motore a volte non e pronto subito - secondo tentativo */
+          try{ rec.start(); }catch(__){ recording=false; micBtn.classList.remove('rec','arming'); try{ window._cieloVoce&&window._cieloVoce('quiete'); }catch(___){} micLabel.textContent='Microfono interrotto. Tieni premuto per riprendere.'; }
+        },200);
+      }
+    }
   };
   recording=true;
   /* stato 'in avvio': enso pulsa neutro, l'utente NON è invitato a parlare finché onstart non scatta */
