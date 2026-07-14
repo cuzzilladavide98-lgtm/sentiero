@@ -90,7 +90,8 @@ body:not([data-foglio="picco"]) #flow{visibility:hidden}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
 /* Scarta/Distilla: pillola ancorata al fondo del mondo - nessun contenuto puo piu spingerla sotto il foglio, su nessun viewport */
 #mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:44px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}
-#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:8px;right:8px;top:14px;bottom:176px;margin:0;overflow-y:auto}   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
+#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:16px;right:16px;top:14px;bottom:176px;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box}   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
+#mic-wrap:has(#confirm-row:not(.hidden)) #mic-label,#mic-wrap:has(#confirm-row:not(.hidden)) #ring-count,#mic-wrap:has(#confirm-row:not(.hidden)) #flow{visibility:hidden}   /* niente testi-fantasma dietro la carta */
 #mic-wrap:has(#confirm-row:not(.hidden)) #flow{display:none}   /* nel momento della rilettura il flow tace: duplicava la pillola */
 #mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:106px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}   /* la priorita sta sopra la pillola, mai nel mucchio */
 /* punto 3 riscritto (v60S.93): morphing continuo guidato da --fp (0=aperto, 1=picco).
@@ -1716,7 +1717,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.124 · 2026-07-14';
+const APP_VERSION='v60S.126 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4938,7 +4939,25 @@ function applyTheme(){ try{
   try{ document.body.style.setProperty('--alba-d',(durata-0.55).toFixed(2)+'s');
     document.body.classList.add('alba'); }catch(_){}
   const cv=document.getElementById('soglia-cv'); const ctx=cv?cv.getContext('2d'):null;
-  const W=300,H=650; let t0=null;
+  /* il canvas della soglia ora vive alla risoluzione vera: niente piu cerchi stirati in ellisse */
+  const W=Math.max(1,window.innerWidth), H=Math.max(1,window.innerHeight);
+  const DPRS=Math.min(2,window.devicePixelRatio||1);
+  if(cv){ cv.width=Math.round(W*DPRS); cv.height=Math.round(H*DPRS); if(ctx) ctx.setTransform(DPRS,0,0,DPRS,0,0); }
+  /* ══ IL VORTICE D'APERTURA — l'icona prende vita: la galassia gira a 60fps e consegna l'app.
+     Rotazione differenziale (dentro corre, fuori vaga), nucleo che arde, dissolvenza con la soglia. ══ */
+  const VCX=W/2, VCY=H*0.34, VR=Math.min(W,H)*0.26;
+  const vspr=(function(){ const c=document.createElement('canvas'); c.width=c.height=64;
+    const g2=c.getContext('2d'); const gr=g2.createRadialGradient(32,32,0,32,32,32);
+    gr.addColorStop(0,'rgba(246,238,214,1)'); gr.addColorStop(0.25,'rgba(246,238,214,0.8)');
+    gr.addColorStop(0.55,'rgba(242,222,180,0.28)'); gr.addColorStop(1,'rgba(242,222,180,0)');
+    g2.fillStyle=gr; g2.fillRect(0,0,64,64); return c; })();
+  const VST=[];
+  for(let i=0;i<300;i++){
+    const u=Math.random();
+    VST.push({u:u,a0:u*12.0+Math.random()*0.55,r:VR*(0.17+u),
+      s:2+(1-u)*6*Math.random(),tw:2+Math.random()*4,ph:Math.random()*6.2832});
+  }
+  let t0=null;
   function fr(ts){
     if(chiusa) return;
     if(!t0) t0=ts;
@@ -4949,6 +4968,23 @@ function applyTheme(){ try{
       g.addColorStop(0,'rgba('+F.c+','+(0.30*(1-su*0.45)).toFixed(3)+')');
       g.addColorStop(1,'rgba('+F.c+',0)');
       ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      const env=Math.min(1,t/0.45);
+      for(let i=0;i<VST.length;i++){
+        const v=VST[i];
+        const ang=v.a0+t*(0.9/Math.pow(Math.max(v.r/VR,0.2),1.1));
+        const x=VCX+Math.cos(ang)*v.r, y=VCY+Math.sin(ang)*v.r*0.94;
+        const twk=0.65+0.35*Math.sin(t*v.tw+v.ph);
+        ctx.globalAlpha=Math.min(1,(0.28+0.55*(1-v.u))*twk*env);
+        const f=v.s*2;
+        ctx.drawImage(vspr,x-f/2,y-f/2,f,f);
+      }
+      ctx.globalAlpha=env;
+      const gn=ctx.createRadialGradient(VCX,VCY,0,VCX,VCY,VR*0.34);
+      gn.addColorStop(0,'rgba(255,250,236,0.95)');
+      gn.addColorStop(0.35,'rgba(255,244,214,0.55)');
+      gn.addColorStop(1,'rgba(255,244,214,0)');
+      ctx.fillStyle=gn; ctx.beginPath(); ctx.arc(VCX,VCY,VR*0.34,0,6.2832); ctx.fill();
+      ctx.globalAlpha=1;
     }
     if(t>=durata){ fine(); return; }
     requestAnimationFrame(fr);
