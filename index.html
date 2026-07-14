@@ -90,7 +90,7 @@ body:not([data-foglio="picco"]) #flow{visibility:hidden}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
 /* Scarta/Distilla: pillola ancorata al fondo del mondo - nessun contenuto puo piu spingerla sotto il foglio, su nessun viewport */
 #mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:44px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}
-#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{margin-bottom:176px}   /* il trascritto si ritira: rileggere viene prima di premere */
+#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:8px;right:8px;top:14px;bottom:176px;margin:0;overflow-y:auto}   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
 #mic-wrap:has(#confirm-row:not(.hidden)) #flow{display:none}   /* nel momento della rilettura il flow tace: duplicava la pillola */
 #mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:106px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}   /* la priorita sta sopra la pillola, mai nel mucchio */
 /* punto 3 riscritto (v60S.93): morphing continuo guidato da --fp (0=aperto, 1=picco).
@@ -1716,7 +1716,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.123 · 2026-07-14';
+const APP_VERSION='v60S.124 · 2026-07-14';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3225,7 +3225,7 @@ function stopRec(){
     const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
     if(txt){
       micLabel.textContent='Rileggi e distilla';
-      live.textContent=txt; live.classList.add('show'); live.scrollTop=live.scrollHeight;
+      live.textContent=txt; live.classList.add('show'); live.scrollTop=0;   /* si rilegge dall'inizio */
       document.querySelector('#confirm-row').classList.remove('hidden');
       renderFlow();
     }else{
