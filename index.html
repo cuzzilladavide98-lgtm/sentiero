@@ -90,7 +90,10 @@ body:not([data-foglio="picco"]) #flow{visibility:hidden}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
 /* Scarta/Distilla: pillola ancorata al fondo del mondo - nessun contenuto puo piu spingerla sotto il foglio, su nessun viewport */
 #mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:44px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}
-#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:16px;right:16px;top:14px;bottom:176px;width:auto;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box}   /* width:auto: senza, il width:100% di base vince su right e la carta sborda */   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
+#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:16px;right:16px;top:14px;bottom:176px;width:auto;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box}   /* width:auto: senza, il width:100% di base vince su right e la carta sborda */
+/* la nascita della quest: i caratteri si accendono, l'aura si spegne piano */
+@keyframes q-pc{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes q-aura{0%{opacity:0}18%{opacity:1}100%{opacity:0}}   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
 #mic-wrap:has(#confirm-row:not(.hidden)) #mic-label,#mic-wrap:has(#confirm-row:not(.hidden)) #ring-count,#mic-wrap:has(#confirm-row:not(.hidden)) #flow{visibility:hidden}   /* niente testi-fantasma dietro la carta */
 #mic-wrap:has(#confirm-row:not(.hidden)) #flow{display:none}   /* nel momento della rilettura il flow tace: duplicava la pillola */
 #mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:106px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}   /* la priorita sta sopra la pillola, mai nel mucchio */
@@ -1717,7 +1720,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.129 · 2026-07-14';
+const APP_VERSION='v60S.135 · 2026-07-20';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3155,7 +3158,11 @@ const SR_ANDROID=/Android/i.test(navigator.userAgent||'');   /* su Android il co
 let rec=null,recording=false,committedText='',sessionFinal='',interimText='';
 const micBtn=$('#mic'),micLabel=$('#mic-label'),live=$('#live');
 if(!SR){ micLabel.textContent='Dettatura non disponibile: scrivi qui sotto.'; live.classList.add('show'); live.contentEditable='true'; }
-try{ if(anzianita(S)>=1&&SR) micLabel.textContent=''; }catch(_){}
+try{ if(anzianita(S)>=1&&SR){
+  const INVITI=['racconta anche cosa ti \u00e8 pesato, oggi','di\u2019 anche come stai, non solo cosa hai fatto','cosa hai rimandato, oggi? si pu\u00f2 dire','se qualcosa ti \u00e8 costato, nominalo'];
+  let hsh=0; const tkL=todayKey(); for(let i=0;i<tkL.length;i++) hsh=(hsh*31+tkL.charCodeAt(i))>>>0;
+  micLabel.textContent=(hsh%3===0)?INVITI[hsh%INVITI.length]:'';
+} }catch(_){}
 
 function startRec(){
   committedText=''; sessionFinal=''; interimText='';
@@ -3332,16 +3339,24 @@ document.querySelector('#btn-save').onclick=async()=>{
     if(S.apiKey){
       const t0Dist=Date.now();
       const out=await askClaude(transcript);
-      try{ regCantiere('distilla',{ms:Date.now()-t0Dist,msg:out?'ok':'vuoto'}); }catch(_){}
+      try{ regCantiere('distilla',{ms:Date.now()-t0Dist,
+        msg:out?('ok \u00b7 attriti '+((out.attriti||[]).length)+' \u00b7 menzioni '+((out.menzioni||[]).length)+' \u00b7 sguardo '+((out.sguardo&&out.sguardo.livello)||0)):'vuoto'}); }catch(_){}
       if(out){
-        /* LA GUARDIA DELLE QUEST: il contratto chiede al modello di restituire ANCHE le esistenti,
-           ma nessuna quest muore per una sua distrazione. Se una quest attiva non compare nella
-           risposta e il trascritto non l'ha chiusa (letture), viene preservata. Deterministico. */
-        const idsOut=new Set((out.quests||[]).map(q=>q&&q.id).filter(Boolean));
-        const chiuse=new Set((out.letture||[]).map(l=>l&&l.id).filter(Boolean));
-        const preservate=(S.quests||[]).filter(q=>q&&q.id&&!idsOut.has(q.id)&&!chiuse.has(q.id));
-        S.quests=sortQuests((out.quests||[]).concat(preservate));
-        if(preservate.length){ try{ regCantiere('guardia',{msg:'preservate '+preservate.length+' quest ignorate dal modello'}); }catch(_){} }
+        /* LA FUSIONE (v133): il contratto e un DELTA - il modello consegna solo quest nuove e
+           modificate, il client conserva tutte le altre. L'omissione non e piu un errore possibile. */
+        if(!Array.isArray(S.quests)) S.quests=[];
+        let nuoveN=0, aggN=0;
+        (out.quests||[]).forEach(nq=>{
+          if(!nq||!nq.titolo) return;
+          const ex=nq.id?S.quests.find(q=>q&&q.id===nq.id):null;
+          if(ex){ Object.assign(ex,nq,{id:ex.id}); aggN++; return; }
+          const tit=String(nq.titolo).trim().toLowerCase();
+          const dup=S.quests.find(q=>q&&!q.fatto&&String(q.titolo||'').trim().toLowerCase()===tit);
+          if(dup){ Object.assign(dup,nq,{id:dup.id}); aggN++; }
+          else{ if(!nq.id) nq.id=uid(); S.quests.push(nq); nuoveN++; }
+        });
+        S.quests=sortQuests(S.quests);
+        if(nuoveN||aggN){ try{ regCantiere('fusione',{msg:'quest nuove '+nuoveN+' \u00b7 aggiornate '+aggN}); }catch(_){} }
         /* rituali nati a voce: fusione in scheduled, con guardia client-side sui titoli gia esistenti */
         const bornRit=[];
         for(const r of (out.rituali||[])){
@@ -3371,12 +3386,13 @@ document.querySelector('#btn-save').onclick=async()=>{
         else msg='Quest aggiornate, nota salvata';
         if(out.non_eseguibile) msg+=' · Non posso: '+out.non_eseguibile;
         if(out.non_eseguibile||anzianita(S)<1) toast(msg);   /* l'esito e gia visibile: dal 7\u00b0 giorno parla solo se c'e qualcosa che non si vede */
-        try{ processMastery(out.motore); }catch(_){}
+        try{ processMastery(out.motore); }catch(_){}   /* il motore: letture, menzioni, attriti, sguardo (sanitizeMotore) */
         try{ semeRaccolto(); }catch(_){}
         try{ renderLetture(out.motore); }catch(_){}
         try{ if(!maybeRivelazione()) maybeLascito(); }catch(_){}
         resetCapture();
-        foglioDopoVoce();
+        if(bornIds.length){ try{ window._nascitaQuest(bornIds[0]); }catch(_){ foglioDopoVoce(); } }   /* la voce diventa materia, e ti ci porta */
+        else foglioDopoVoce();
         guideAfterDistill(bornIds);
         maybeAskPriority(bornIds);
         return;
@@ -3441,13 +3457,13 @@ async function askClaude(transcript){
 '4. DATE RELATIVE → risolvi in YYYY-MM-DD usando OGGI: "oggi"=oggi, "domani"=+1, "dopodomani"=+2, "tra N giorni", nomi di giorno ("lunedì"→il prossimo lunedì futuro), "tra una settimana"=+7, "fine mese"=ultimo giorno del mese. ORE → "stasera"=20:00, "stamattina/in mattinata"=09:00, "pomeriggio"=15:00, "a pranzo"=13:00, orari espliciti vanno in "ora" (HH:MM). Se nulla è indicato, lascia "quando" e "ora" vuoti.\n'+
 '5. COMPLETAMENTI: se dice di aver già fatto qualcosa ("ho chiamato", "fatto", "già spedito") e c\'è una quest che combacia (anche con parole diverse), imposta "fatto":true su quella (stesso id).\n'+
 '6. ANTI-DUPLICATI: se un\'attività combacia con una quest esistente o con una task già pianificata per oggi, NON crearne una nuova: aggiorna l\'esistente o ometti.\n'+
-'7. Mantieni invariate le quest esistenti non menzionate.\n'+
+'7. QUEST ESISTENTI - IL DELTA: nel campo "quests" metti SOLO le quest NUOVE nate dal racconto e le esistenti MODIFICATE dal racconto (completata: stesso id e "fatto":true; nuova data o priorita: stesso id e il campo cambiato). NON ripetere le esistenti non toccate: il sistema le conserva da solo. Per le nuove lascia "id" vuoto: lo assegna il sistema.\n'+
 '8. "diario": il trascritto ripulito SOLO dagli errori evidenti di riconoscimento vocale (omofoni, nomi: "Justin case"→"just in case"). Punteggiatura minima. NON aggiungere, togliere o reinterpretare: restano le parole dell\'utente, in prima persona. Se non serve, identico.\n'+
 '9. RITUALI: se l\'utente chiede ESPLICITAMENTE di ripetere o pianificare un\'attività in modo ricorrente ("ogni martedì", "tutti i giorni", "dal lunedì al venerdì", "segna come ricorrente"), NON creare una quest: mettila in "rituali" con "days" (0=lunedì, 1=martedì, 2=mercoledì, 3=giovedì, 4=venerdì, 5=sabato, 6=domenica) ed eventuale "time" HH:MM. SOLO su istruzione esplicita: mai dedurre un rituale da come racconta le sue abitudini ("in questo periodo mi alleno tutti i giorni" è racconto, non istruzione). Se tra i RITUALI ESISTENTI ce n\'è già uno equivalente, non crearlo.\n'+
 '10. Se chiede di MODIFICARE o ELIMINARE un rituale esistente, non puoi: lascia tutto intatto e scrivi in "non_eseguibile" una frase breve su cosa non puoi fare (es. "modificare i rituali: si fa a mano dalla lista"). Usa "non_eseguibile" SOLO per questo, altrimenti lascialo vuoto.\n'+
 '11. LETTURE (motore di riconoscimento): i RITUALI/TASK DI OGGI e le QUEST hanno un id. Per ogni attivita di cui il racconto dice che E STATA FATTA oggi, aggiungi a "letture" {"id","stato":"completata","prova":parole esatte del trascritto, max 12}. Se ha fatto una VARIANTE reale, "stato":"trasformata" con "variante" e, SOLO se pare la nuova forma stabile, "nuovo_titolo" (altrimenti null). IL SILENZIO NON E UN NO: se un id non e nel racconto, NIENTE riga. In dubbio ometti: un riconoscimento mancato costa un tocco, uno inventato costa la fiducia.\n'+
 '12. MENZIONI: array degli id toccati dal racconto in QUALUNQUE modo, anche negati o al futuro.\n'+
-'13. ATTRITI: frasi con tono di debito verso un id ("dovrei", "prima o poi", "non ho ancora", sfoghi): [{"id","frase" esatta}].\n'+
+'13. ATTRITI (campo importante: cercali DAVVERO, torna indietro a controllare): qualsiasi segnale di fatica, rimando o peso verso un id - "dovrei", "prima o poi", "non ho ancora", "non riesco", "mi pesa", "non ho voglia", "di nuovo non", sfoghi anche indiretti ("uff, la palestra"). Riporta la frase ESATTA: [{"id","frase"}]. Se il racconto contiene anche un solo lamento legato a un id, l\'array NON deve restare vuoto.\n'+
 '14. SGUARDO: classifica il diario: 1=cronaca, 2=osservazione su di se, 3=pattern/connessione causale su di se. Vale il livello massimo presente: {"livello":N,"segnale":"frase"}.\n'+
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
 '{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"non_eseguibile":""}';
@@ -3474,7 +3490,7 @@ function processMastery(mo){
   if(!mo) return;
   if(!S.mastery) S.mastery={quest:{},giorni:{},sguardo:[],riv:[]};
   const tk=todayKey(), dw=dowOf();
-  const attivi=scheduledFor(S,dw,tk).map(t=>t.id).concat(activeQuests(S.quests).map(q=>q.id));
+  const attivi=scheduledFor(S,dw,tk).map(t=>t.id).concat(activeQuests(S,tk).map(q=>q.id));   /* BUG STORICO (v133): era activeQuests(S.quests) - TypeError silenziato dal catch: la Maestria non era MAI partita */
   const toccati=new Set((mo.menzioni||[]).concat((mo.letture||[]).map(l=>l.id)));
   attivi.forEach(id=>{
     if(!S.mastery.quest[id]) S.mastery.quest[id]={assenze:0,attriti:0,fraseAttrito:'',taciFino:''};
@@ -3600,13 +3616,14 @@ function maybeRivelazione(){
    MENTE OSSERVATRICE — specchio-commentatore. Solo osserva, non dialoga.
    Riusa l'IA già presente; se non c'è chiave o è offline, usa logica locale.
    ====================================================================== */
-const OBSERVER_SYS='Sei la Mente Osservatrice di Sentiero: uno specchio lucido che osserva i pattern di chi usa l\'app e restituisce UNA riflessione breve e precisa. Non sei una chat, non fai domande, non dialoghi.\n'+
-'VOCE: calma, affilata, un po\' zen. Ogni nota deve funzionare come un cheat code: nomina il meccanismo nascosto, ribaltalo in una frase memorabile, poi lascia una leva pratica minuscola. Non fare aforismi: fai sblocchi operativi ancorati ai dati.\n'+
-'CONCRETEZZA (regola piu importante): cita il MATERIALE REALE che vedi. Nomina la quest o l\'azione specifica (es. chiamare il commercialista torna da tre giorni), il numero, il giorno. Le frasi astratte tipo le intenzioni superano le azioni sono VIETATE se non ancorate a un dato concreto. Mostra che hai visto proprio i SUOI dati.\n'+
-'SAGGEZZA (Tao, usala senza nominarla ne citarla): il grande nasce dal piccolo (l\'azione ridotta e quella che continua); non-forzare wu wei (cio che si spinge troppo genera attrito, cio che scorre si compie); l\'acqua e morbida e paziente eppure scava la roccia (la costanza batte l\'intensita); sapersi fermare prima di traboccare (un obiettivo a misura della giornata si chiude, uno ideale si rimanda). Questi principi traspaiono dal modo in cui leggi i pattern, mai come citazioni o prediche.\n'+
-'PATTERN da cercare: intenzioni che non diventano azioni, promesse ricorrenti eseguite poco, obiettivi completati solo quando ridotti, rinvii ripetuti, giorni di continuita contro giorni di rottura, attrito prima dell\'inizio, azione che compare solo se gia motivato.\n'+
-'CONFINI: giudica il SISTEMA e il COMPORTAMENTO, mai l\'identita. Vietato sei pigro/incapace/indisciplinato, diagnosi, moralismi. Confronta con le OSSERVAZIONI PRECEDENTI: non ripeterle; se c\'e un cambiamento in meglio o peggio nominalo.\n'+
-'FORMATO: note = 1-3 frasi asciutte, massimo 280 caratteri. Struttura preferita: "Non e X: e Y. Fai Z." Se devi tagliare, taglia summary e pattern: la note e obbligatoria.\n'+
+const OBSERVER_SYS='Sei la voce di Sentiero: l\'amico con la memoria lunga, nel suo momento piu raccolto - il digest. Rileggi i giorni e restituisci UNA riflessione. Non sei una chat, non fai domande, non dialoghi.\n'+
+'IL TUO CARATTERE, tre tesori mai dichiarati: compassione (sei dalla sua parte anche quando affondi il colpo), misura (parole contate), umilta (mai in cattedra). LA LEGGE DELLA LAMA: se i giorni mostrano una persona in piedi puoi essere affilato e nominare il pattern scomodo; se mostrano una persona a terra deponi la lama: gentilezza concreta, mai pietismo, mai analisi.\n'+
+'LA SCOPERTA (il tuo mestiere): trova il legame che lei non ha ancora visto - cosa si tira dietro cosa, cosa cede sempre nello stesso punto, cosa funziona solo se ridotto. Nomina il MATERIALE REALE (la quest specifica, il giorno, le sue parole esatte), mai categorie astratte.\n'+
+'SAGGEZZA (Tao, senza mai nominarlo): il grande nasce dal piccolo; non-forzare; l\'acqua scava la roccia; sapersi fermare. Traspare dal modo di leggere, mai come predica o citazione.\n'+
+'IL MATERIALE: nei dati trovi anche la voce del Motore - attriti_vivi (le sue parole esatte sul peso: sono oro, citale tra virgolette basse), assenze_lunghe (cio che tace da molti giorni), sguardo_recente. E sussurri_recenti sono le righe che hai gia detto alle spunte: mai ripeterle, puoi dar loro seguito.\n'+
+'I NUMERI: vietate cifre, conteggi e rapporti (mai "6 intenzioni", mai "5 volte", mai "3 su 7", nemmeno scritti a lettere). Le quantita si dicono in parole: quasi ogni giorno, piu volte, di rado, mai. Un solo numero ammesso se e un fatto vissuto (il terzo giorno di fila).\n'+
+'CONFINI: giudichi il sistema e il comportamento, mai l\'identita. Niente diagnosi, moralismi o consigli non chiesti: chiudi con una leva minuscola solo se emerge da sola dai dati. Confronta con le OSSERVAZIONI PRECEDENTI: mai ripeterle; se qualcosa e cambiato, in meglio o in peggio, nominalo.\n'+
+'FORMATO: note = 1-3 frasi, massimo 280 caratteri, seconda persona, minuscole come si parla.\n'+
 'Rispondi ESCLUSIVAMENTE con JSON compatto, niente markdown. Metti note come primo campo: {"note":"la riflessione da mostrare","detectedPatterns":["pattern brevi"],"summary":"sintesi"}';
 
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
@@ -3628,15 +3645,33 @@ function buildObserverDigest(){
   /* giorni con attività = sia task ricorrenti spuntate sia quest completate */
   const giorniSet=new Set([...Object.keys(S.checks||{}),...Object.keys(azioniPerGiorno)]);
   const giorni=Array.from(giorniSet).sort().slice(-14);
-  const completamentiGiornalieri=giorni.map(day=>({
-    giorno:day,
-    taskCompletate:Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0)
-  }));
+  const passiGiornalieri=giorni.map(day=>{
+    const n=Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0);
+    return {giorno:day, passo:n===0?'vuoto':n===1?'un passo':n<4?'qualche passo':'molti passi'};
+  });
   const osservazioniPrecedenti=(S.observerNotes||[]).slice(-4).map(n=>n.note);
-  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, completamentiGiornalieri:completamentiGiornalieri, osservazioniPrecedenti:osservazioniPrecedenti, domandeSeminate:(S.semi||[]).slice(-6).map(s=>({domanda:s.testo,stato:s.stato}))};
+  /* l'oro del Motore (acceso dalla v133): gli attriti con le parole esatte, le assenze lunghe, lo sguardo */
+  const dalMotore={};
+  try{
+    const mq=(S.mastery&&S.mastery.quest)||{};
+    const att=[], ass=[];
+    Object.keys(mq).forEach(id=>{ const q=mq[id]||{};
+      if(q.fraseAttrito){ const t=_titoloDiId(id); if(t) att.push({quest:clampStr(t,60),parole:clampStr(q.fraseAttrito,120)}); }
+      if((q.assenze|0)>=4){ const t=_titoloDiId(id); if(t) ass.push(clampStr(t,60)); }
+    });
+    if(att.length) dalMotore.attriti_vivi=att.slice(0,4);
+    if(ass.length) dalMotore.assenze_lunghe=ass.slice(0,4);
+    const sg=(S.mastery&&S.mastery.sguardo)||[];
+    if(sg.length>=3){
+      const ult=sg.slice(-8), m3=ult.filter(e=>e.livello>=3).length, m2=ult.filter(e=>e.livello===2).length;
+      dalMotore.sguardo_recente=m3>=3?'vede i propri pattern':(m2+m3)>=4?'spesso si osserva':'per lo piu cronaca';
+    }
+  }catch(_){}
+  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, passiGiornalieri:passiGiornalieri, dalMotore:dalMotore, sussurri_recenti:(S.obsLines||[]).slice(-5).map(n=>clampStr(n.riga,140)), osservazioniPrecedenti:osservazioniPrecedenti};
 }
 
 async function askObserver(digest){
+  const t0Dig=Date.now();
   const res=await callAnthropic({system:OBSERVER_SYS,user:'DATI OSSERVATI (JSON):\n'+JSON.stringify(digest),assistantPrefix:'{',max_tokens:700,temperature:0.55,timeout:45000});
   if(res.err){ const e=res.err;
     if(e==='chiave') throw new Error('AUTH');
@@ -3666,23 +3701,23 @@ function buildObserverLocal(digest){
   Object.keys(bornCount).forEach(t=>{ const gap=bornCount[t]-(doneCount[t]||0); if(bornCount[t]>=2&&gap>maxGap){maxGap=gap;recurring=t;} });
   const patterns=[]; let note='';
   /* segnale di continuità dai completamenti reali (anche le spunte toccate) */
-  const comp=digest.completamentiGiornalieri||[];
-  const giorniAttivi=comp.filter(g=>g.taskCompletate>0).length;
-  const giorniVuoti=comp.filter(g=>g.taskCompletate===0).length;
+  const comp=digest.passiGiornalieri||[];
+  const giorniAttivi=comp.filter(g=>g.passo!=='vuoto').length;
+  const giorniVuoti=comp.filter(g=>g.passo==='vuoto').length;
   if(d.length<3&&comp.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. Non serve capirlo: serve sporcarlo. Una riga, una spunta, poi il pattern appare.'};
   if(d.length<3&&giorniAttivi){
     patterns.push('azioni senza diario');
-    return {summary:giorniAttivi+' giorni attivi, poche note',detectedPatterns:patterns,note:'Le spunte stanno parlando piu del diario. Non aggiungere teoria: dopo ogni azione lascia una riga, cosi il maestro vede il trucco.'};
+    return {summary:'giorni attivi, poche note',detectedPatterns:patterns,note:'Le spunte stanno parlando piu del diario. Non aggiungere teoria: dopo ogni azione lascia una riga, cosi il maestro vede il trucco.'};
   }
   if(recurring&&maxGap>=2){
     patterns.push('promessa ricorrente non mantenuta');
     note='Non e mancanza di volonta: "'+recurring+'" e troppo grande per partire. Riducila alla prima mossa visibile, oppure cancellala senza debito.';
   } else if(comp.length>=5&&giorniVuoti>giorniAttivi){
     patterns.push('ritmo interrotto');
-    note='Non ti serve un giorno eroico: ti serve un giorno che non si rompa. Con '+giorniVuoti+' giorni vuoti contro '+giorniAttivi+' attivi, scegli una spunta ridicola e proteggila.';
+    note='Non ti serve un giorno eroico: ti serve un giorno che non si rompa. I vuoti stanno superando i pieni: scegli una spunta ridicola e proteggila.';
   } else if(born>0&&done/born<0.5){
     patterns.push('intenzione oltre l\'azione');
-    note=born+' intenzioni, '+done+' azioni. Il bug non e sognare grande: e caricare la giornata come se fosse infinita. Taglia meta, chiudi il resto.';
+    note='Le intenzioni corrono piu veloci delle azioni. Il bug non e sognare grande: e caricare la giornata come se fosse infinita. Taglia meta, chiudi il resto.';
   } else if((born>0&&done/born>=0.8)||(giorniAttivi>=5&&giorniAttivi>giorniVuoti)){
     patterns.push('struttura a basso attrito');
     note='Qui l\'azione segue l\'intenzione con poco attrito. Non inseguire l\'umore: copia la struttura che ha gia funzionato.';
@@ -3690,7 +3725,7 @@ function buildObserverLocal(digest){
     patterns.push('ritmo medio incostante');
     note='Non manca la forza: manca una modalita per i giorni medi. Il cheat code e abbassare la soglia prima che la giornata chieda il conto.';
   }
-  return {summary:born+' intenzioni, '+done+' azioni, '+giorniAttivi+' giorni attivi',detectedPatterns:patterns,note:note};
+  return {summary:'lo sguardo sugli ultimi giorni',detectedPatterns:patterns,note:note};
 }
 
 let observing=false;
@@ -3706,7 +3741,8 @@ async function observe(silent){
       if(!silent){ if(btn){ btn.textContent='Osservo...'; btn.disabled=true; } if(noteEl) noteEl.innerHTML='<span class="obs-thinking">sto osservando<i></i><i></i><i></i></span>'; }
       try{ result=await askObserver(digest); }catch(_){ result=null; }
     }
-    if(!result||!result.note||!String(result.note).trim()) result=buildObserverLocal(digest); /* fallback: offline, IA non disponibile o nota vuota */
+    if(!result||!result.note||!String(result.note).trim()){ result=buildObserverLocal(digest); try{ result._locale=true; }catch(_){} } /* fallback: offline, IA non disponibile o nota vuota */
+    try{ regCantiere('digest',{ms:Date.now()-t0Dig,msg:(result&&result._locale)?'locale':'ok'}); }catch(_){}
     const safeNote=(result&&result.note&&String(result.note).trim())?result.note:'Pochi segnali per ora. Lascia una riga o spunta una cosa: al prossimo sguardo il pattern emerge.';
     const entry={
       id:'o'+Date.now().toString(36),
@@ -3827,6 +3863,8 @@ const OBSERVER_LINE_SYS=
 "MESTIERE, principi non ornamenti: rifletti, non prescrivere - restituisci cio che vedi e lascia che la conclusione sia sua; sostieni l'autonomia - mai devi o dovresti, mai pressione, mai consigli non chiesti; commenta il processo e la strategia, mai la persona, ne in colpa ne in lode; nel giorno storto gentilezza e umanita comune - capita a chiunque sia vivo - senza minimizzare e senza compatire; un vuoto che finisce e un dato di forza, mai un debito da scontare.\n"+
 "I NUMERI: al massimo UNO per riga, e solo come fatto vissuto (la terza mattina, ventotto giorni, cinque occasioni). MAI rapporti o sequenze di cifre (3 su 7, da 0 a 7): la forma delle settimane si dice in parole - cresce, tiene, cala, torna, si assottiglia. Vietate le parole da analista: trend, plateau, dati, media, percentuale.\n"+
 "I PRIMI GIORNI: se eta_del_cammino dice primo giorno o prima settimana, non leggere storie che non esistono ancora: accogli il gesto di oggi, concreto e leggero, senza pesare un passato che non c'e.\n"+
+"LO SPECCHIO E LA SCOPERTA: una riga-specchio (dirle che ha fatto cio che ha appena spuntato, o che era in lista oggi) vale SOLO se chiude un filo piu vecchio di oggi: una promessa di giorni prima, un ritorno dopo un vuoto, una prima volta assoluta. Altrimenti SILENZIO - meglio tacere che fare da specchio. La riga migliore e una SCOPERTA: il legame che lei non ha ancora visto (questo gesto arriva sempre dopo le giornate piene; questo cede sempre lo stesso giorno; queste due cose si tirano a vicenda). Una scoperta vera vale piu di dieci specchi.\n"+
+"LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice con le parole dei dati - piena, quasi piena, a meta, rara, vuota.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
@@ -3854,8 +3892,9 @@ function buildLinePackage(id,title){
       if(isPlan){ planned++; if(isDone) doneOnPlan++; if(diff>0&&lastPlan===null) lastPlan={diff,done:isDone,giorno:NOMI[dowOf(d)]}; }
       else if(isDone) extra++;
     }
-    pkg.costanza=doneOnPlan+' fatte su '+planned+' previste negli ultimi 7 giorni';
-    if(extra) pkg.fuori_piano=extra+' volte in giorni non previsti (in piu rispetto al piano)';
+    const rCost=planned?doneOnPlan/planned:0;
+    pkg.costanza='questa settimana, sui giorni previsti: '+(planned===0?'nessuna prevista':doneOnPlan===0?'vuota':rCost<0.34?'rara':rCost<0.67?'a meta':doneOnPlan===planned?'piena':'quasi piena');
+    if(extra) pkg.fuori_piano=(extra>1?'piu di una volta':'una volta')+' anche in giorni non previsti';
     pkg.occasione_precedente=lastPlan
       ?('la precedente prevista era '+(lastPlan.diff===1?'ieri':lastPlan.giorno+', '+lastPlan.diff+' giorni fa')+': '+(lastPlan.done?'fatta':'mancata'))
       :'nessuna occasione prevista nei 6 giorni precedenti';
@@ -3914,8 +3953,9 @@ function buildLinePackage(id,title){
   pkg.ora=String(adesso.getHours()).padStart(2,'0')+':'+String(adesso.getMinutes()).padStart(2,'0');
   if(pr.done===1) pkg.momento='prima spunta del giorno';
   if(pr.total>0&&pr.done>=pr.total) pkg.momento='con questa il giorno e completo';
-  if(es.total) pkg.oggi.essenziali=es.done+' su '+es.total;
-  pkg.streak=S.streak||0;
+  if(es.total) pkg.oggi.essenziali=(es.done>=es.total?'tutti fatti':es.done===0?'ancora nessuno':'in parte fatti');
+  const stk=S.streak||0;
+  pkg.fuoco=stk<1?'da riaccendere':stk<3?'appena riacceso':stk<7?'acceso da qualche giorno':stk<21?'acceso da settimane':'un fuoco lungo';
   const sealGap=S.lastSealed?Math.round((today-new Date(S.lastSealed+'T12:00:00'))/86400000):null;
   pkg.ultimo_sigillo=S.lastSealed?(sealGap===0?'oggi':sealGap+' giorni fa'):'mai';
   /* diario: accostamento per parola chiave; la data serve al modello per pesare la distanza nel tempo */
@@ -4186,6 +4226,89 @@ async function askObserverLine(pkg){
     if(phase==='idle'){ if(fn) fn(); return; }             /* la brace non vola: il sussurro appare come sempre */
     const esegui=()=>{ if(fn){ setPhase('scintilla'); fn(); } else setPhase('esala'); };
     if(phase==='attesa') esegui(); else pending=esegui;    /* l'esito aspetta sempre l'atterraggio */
+  };
+})();
+/* ══ LA NASCITA DALLA POLVERE — dopo la distillazione l'app non tace piu: il foglio sale da solo
+   fino alla quest appena nata, e la polvere del mondo la SCRIVE - lo sciame spazza la riga da
+   sinistra a destra e ogni carattere si accende dove un grano atterra. Tick aptico alla nascita.
+   Con riduci-moto: solo l'aura. La prima nata ha il rito pieno. ══ */
+(function(){
+  const RMQ=matchMedia('(prefers-reduced-motion: reduce)');
+  function okAnim(){ try{ return (S.settings&&S.settings.anim==='sempre')||!RMQ.matches; }catch(_){ return !RMQ.matches; } }
+  let cv=null,ctx=null;
+  function tela(){
+    if(cv) return;
+    cv=document.createElement('canvas');
+    cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60';
+    document.body.appendChild(cv); ctx=cv.getContext('2d');
+    const fit=()=>{ const d=Math.min(2,devicePixelRatio||1); cv.width=innerWidth*d; cv.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); };
+    fit(); addEventListener('resize',fit);
+  }
+  window._nascitaQuest=function(qid){
+    try{
+      window.foglioVai&&window.foglioVai('pieno');
+      setTimeout(function(){
+        const row=document.querySelector('#list-quest-today .item[data-qid="'+qid+'"]');
+        if(!row){ try{ foglioDopoVoce(); }catch(_){} return; }
+        try{ row.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
+        setTimeout(function(){
+          const r=row.getBoundingClientRect();
+          if(!(r.width||r.height)) return;
+          const au=document.createElement('div');
+          au.style.cssText='position:absolute;inset:-2px -8px;border-radius:12px;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(212,162,78,.12),transparent 70%);border:.5px solid rgba(212,162,78,.35);animation:q-aura 2.2s ease-out .25s both';
+          row.style.position='relative'; row.appendChild(au);
+          setTimeout(function(){ try{ au.remove(); }catch(_){} },2700);
+          try{ haptic(false); }catch(_){}
+          if(!okAnim()) return;
+          const ttl=row.querySelector('.ttl');
+          if(ttl){
+            const ini=ttl.querySelector('.ini');
+            const colIni=ini?ini.style.color:'';
+            const testo=ttl.textContent||'';
+            ttl.innerHTML='';
+            for(let i=0;i<testo.length;i++){
+              const s=document.createElement('span');
+              s.style.cssText='opacity:0;display:inline-block;animation:q-pc .3s ease both;animation-delay:'+(160+i*24)+'ms'+((i===0&&colIni)?';color:'+colIni:'');
+              s.textContent=testo[i]===' '?'\u00a0':testo[i];
+              ttl.appendChild(s);
+            }
+          }
+          tela();
+          const t0=performance.now();
+          const CM=(function(){ try{ const m=document.getElementById('mic'); if(m){ const rr=m.getBoundingClientRect(); return {x:rr.left+rr.width/2,y:Math.max(40,rr.top+rr.height/2)}; } }catch(_){} return {x:innerWidth/2,y:80}; })();
+          const P=[];
+          for(let i=0;i<46;i++){
+            const fq=i/46;
+            P.push({x0:CM.x+(Math.random()*160-80), y0:CM.y+(Math.random()*60-30),
+              tx:r.left+14+fq*(r.width-40)+(Math.random()*10-5), ty:r.top+r.height/2+(Math.random()*12-6),
+              cx:(Math.random()*200-100), r:0.9+Math.random()*1.8, dl:fq*0.55+Math.random()*0.08,
+              col:Math.random()<0.6?'232,188,106':(Math.random()<0.8?'246,238,214':'238,178,128')});
+          }
+          (function volo(now){
+            const t=(now-t0)/1000;
+            ctx.clearRect(0,0,innerWidth,innerHeight);
+            let vivi=0;
+            for(let i=0;i<P.length;i++){
+              const p=P[i];
+              const k=(t-p.dl)/0.62;
+              if(k>=1) continue;
+              vivi++;
+              if(k<0) continue;
+              const e=1-Math.pow(1-k,3), u=1-e;
+              const mx=(p.x0+p.tx)/2+p.cx;
+              const x=u*u*p.x0+2*u*e*mx+e*e*p.tx;
+              const y=u*u*p.y0+2*u*e*((p.y0+p.ty)/2-40)+e*e*p.ty;
+              ctx.globalAlpha=(k<0.75?0.95:(1-k)*3.8);
+              ctx.fillStyle='rgba('+p.col+',1)';
+              ctx.beginPath(); ctx.arc(x,y,p.r*(1-e*0.45),0,6.2832); ctx.fill();
+            }
+            ctx.globalAlpha=1;
+            if(vivi) requestAnimationFrame(volo);
+            else ctx.clearRect(0,0,innerWidth,innerHeight);
+          })(t0);
+        },430);
+      },650);
+    }catch(_){}
   };
 })();
 let _whisperEl=null,_whisperTimer=null,_whisperTimer2=null;
@@ -5067,14 +5190,15 @@ function renderPatto(){
   const scelto=(S.patto&&S.patto.tk===tk);
   let no=false; try{ no=(localStorage.getItem('sentiero-patto-no')===tk); }catch(_){}
   let sched=[]; try{ sched=scheduledFor(S,dowOf(),tk)||[]; }catch(_){}
-  if(scelto||no||!sched.length){ box.innerHTML=''; box.classList.add('hidden'); box.dataset.tk=''; return; }
+  let qOggi=[]; try{ qOggi=(S.quests||[]).filter(q=>q&&q.id&&!q.fatto&&(!q.quando||q.quando<=tk)).slice(0,3); }catch(_){}   /* anche le quest del giorno sono passi che contano */
+  if(scelto||no||(!sched.length&&!qOggi.length)){ box.innerHTML=''; box.classList.add('hidden'); box.dataset.tk=''; return; }
   if(box.dataset.tk===tk&&box.innerHTML){ box.classList.remove('hidden'); return; }   /* gia in scena: l'ingresso non si rigioca */
   box.dataset.tk=tk;
   box.classList.remove('hidden');
   box.innerHTML='<div class="patto-angoli"></div><div class="patto-fermaglio"><b></b></div>'+
     '<span class="patto-eyebrow">il patto del mattino</span>'+
     '<span class="patto-title">Quale sar\u00e0 il passo che conta?</span>'+
-    sched.slice(0,8).map(t=>'<button class="patto-r" data-id="'+t.id+'">'+escapeHtml(t.titolo||'')+'</button>').join('')+
+    sched.slice(0,6).concat(qOggi).map(t=>'<button class="patto-r" data-id="'+t.id+'">'+escapeHtml(t.titolo||'')+'</button>').join('')+
     (function(){ const az=azzardoCandidates(sched,S.mastery);
       return '<div class="azz-head">l\u2019azzardo \u2014 il passo che rimandi</div>'+
         az.map(c=>'<button class="patto-r azz-r" data-id="'+c.id+'">'+escapeHtml(c.titolo)+'</button>').join('')+
@@ -5622,6 +5746,12 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     if(div.dataset.busy) return;
     div.dataset.busy='1';
     q.fatto=!q.fatto;
+    try{ const tkq=todayKey();
+      if(S.patto&&S.patto.tk===tkq&&S.patto.id===q.id){
+        if(!S.checks[tkq]) S.checks[tkq]={};
+        if(q.fatto) S.checks[tkq][q.id]=true; else delete S.checks[tkq][q.id];
+      }
+    }catch(_){}
     if(q.fatto){
       /* registra l'azione: così la Mente Osservatrice sa che l'hai DAVVERO compiuta */
       try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey()}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
@@ -5832,6 +5962,8 @@ function semeRaccolto(){   /* il racconto e arrivato: il seme e risposto */
 }
 let _seminaBusy=false;
 async function maybeSemina(){
+  return;   /* LA SEMINA E CONGELATA (decisione dal campo, 2026-07-20: cinque semi, cinque esalati, zero risposte).
+     Tornera, forse rifondata sulle scoperte dell'amico. Il codice sotto resta intatto. */
   if(_seminaBusy) return; _seminaBusy=true;
   try{
     const tk=todayKey();
