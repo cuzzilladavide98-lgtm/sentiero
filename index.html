@@ -915,6 +915,18 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
   body:not(.anima-sempre) #patto{animation:none}
   body:not(.anima-sempre) #patto .patto-fermaglio b{animation:none}
 }
+
+/* ── la stanza del giardino (v140): l'easter egg del cammino ── */
+#stanza{position:fixed;inset:0;z-index:220;background:#070a09;touch-action:none}
+#stanza canvas{position:absolute;inset:0;width:100%;height:100%}
+#stanza-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:14px;z-index:2;width:38px;height:38px;border-radius:50%;border:1px solid #3a463e;background:rgba(16,21,18,.7);color:#e8dcc0;font-size:20px;line-height:1}
+#stanza-velo{position:absolute;left:0;right:0;bottom:0;padding:26px 22px calc(28px + env(safe-area-inset-bottom));opacity:0;transition:opacity .6s;pointer-events:none;background:linear-gradient(180deg,rgba(7,10,9,0) 0%,rgba(7,10,9,.85) 45%);color:#f5eedc}
+#stanza.svelato #stanza-velo{opacity:1}
+#stanza-velo .r{margin-top:10px}
+#stanza-velo .l{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:#8a927f}
+#stanza-velo .n{font-size:25px;font-weight:800;font-style:italic;color:#e8bc6a}
+#stanza-velo .n small{font-size:13px;color:#8a927f;font-weight:600;font-style:normal}
+#stanza-velo .firma{margin-top:14px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8a927f;text-align:center}
 </style>
 </head>
 <body>
@@ -1155,7 +1167,8 @@ function sanitizeQuests(arr){
     const quando=(typeof q.quando==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(q.quando))?q.quando:'';
     const ora=(typeof q.ora==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(q.ora))?q.ora:'';
     const prio=([1,2,3].includes(Number(q.prio)))?Number(q.prio):3;
-    out.push({id,titolo,note:clampStr(q.note,LIMITS.NOTE),quando,ora,prio,fatto:q.fatto===true});
+    const nata=(typeof q.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(q.nata))?q.nata:'';
+    out.push({id,titolo,note:clampStr(q.note,LIMITS.NOTE),quando,ora,prio,fatto:q.fatto===true,nata});
     if(out.length>=LIMITS.QMAX) break;
   }
   return out;
@@ -1720,7 +1733,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.135 · 2026-07-20';
+const APP_VERSION='v60S.141 · 2026-07-20';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3353,7 +3366,7 @@ document.querySelector('#btn-save').onclick=async()=>{
           const tit=String(nq.titolo).trim().toLowerCase();
           const dup=S.quests.find(q=>q&&!q.fatto&&String(q.titolo||'').trim().toLowerCase()===tit);
           if(dup){ Object.assign(dup,nq,{id:dup.id}); aggN++; }
-          else{ if(!nq.id) nq.id=uid(); S.quests.push(nq); nuoveN++; }
+          else{ if(!nq.id) nq.id=uid(); if(!nq.nata) nq.nata=todayKey(); S.quests.push(nq); nuoveN++; }   /* v141: ogni quest porta la sua data di nascita */
         });
         S.quests=sortQuests(S.quests);
         if(nuoveN||aggN){ try{ regCantiere('fusione',{msg:'quest nuove '+nuoveN+' \u00b7 aggiornate '+aggN}); }catch(_){} }
@@ -3436,7 +3449,7 @@ function addDiary(testo,born,done,raw,seme){
 
 /* catene di modelli per livello scelto: se uno viene ritirato, si passa al successivo */
 const AI_CHAINS={
-  max:     ['claude-opus-4-8','claude-sonnet-4-6','claude-haiku-4-5-20251001'],
+  max:     ['claude-fable-5','claude-opus-4-8','claude-sonnet-4-6','claude-haiku-4-5-20251001'],
   balanced:['claude-sonnet-4-6','claude-haiku-4-5-20251001','claude-sonnet-4-20250514'],
   fast:    ['claude-haiku-4-5-20251001','claude-sonnet-4-6']
 };
@@ -3821,30 +3834,59 @@ const _btnObs=document.querySelector('#btn-observe'); if(_btnObs) _btnObs.onclic
 async function callAnthropic(opt){
   if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return {err:'chiave'};
   if(('onLine' in navigator)&&navigator.onLine===false) return {err:'offline'};
-  const to=opt.timeout||25000; const chain=aiModels(); let overloadRetried=false;
+  const to=opt.timeout||25000; const chain=aiModels();
+  let overloadRetried=false, rateRetried=false, reteRetried=false, senzaThinking=false;
   for(let mi=0; mi<chain.length; mi++){
     const model=chain[mi];
     const ctrl=('AbortController' in window)?new AbortController():null;
     const timer=ctrl?setTimeout(()=>ctrl.abort(),to):null;
     const messages=[{role:'user',content:opt.user}];
     if(opt.assistantPrefix) messages.push({role:'assistant',content:opt.assistantPrefix});
+    /* v139: il sistema lungo viaggia con cache_control - dal secondo battito in poi
+       il prompt e gia sul server: costa una frazione e parte prima */
+    const sys=(typeof opt.system==='string'&&opt.system.length>2048)
+      ?[{type:'text',text:opt.system,cache_control:{type:'ephemeral'}}]:opt.system;
+    const body={model:model,max_tokens:opt.max_tokens||300,system:sys,messages:messages};
+    if(opt.thinking&&!opt.assistantPrefix&&!senzaThinking){
+      /* extended thinking: il modello ragiona prima della riga; l'API impone temperature 1
+         e un max_tokens che contenga il budget - incompatibile col prefill, che ha precedenza */
+      body.thinking={type:'enabled',budget_tokens:opt.thinking};
+      body.max_tokens=Math.max(body.max_tokens,opt.thinking+400);
+      body.temperature=1;
+    }else{
+      body.temperature=(opt.temperature==null?0.7:opt.temperature);
+    }
     let r;
     try{
       r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ctrl?ctrl.signal:undefined,
         headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:model,max_tokens:opt.max_tokens||300,temperature:(opt.temperature==null?0.7:opt.temperature),system:opt.system,messages:messages})});
-    }catch(e){ if(timer)clearTimeout(timer); return {err:(e&&e.name==='AbortError')?'timeout':'rete'}; }
+        body:JSON.stringify(body)});
+    }catch(e){ if(timer)clearTimeout(timer);
+      if(e&&e.name==='AbortError') return {err:'timeout'};
+      if(!reteRetried){ reteRetried=true; await new Promise(s=>setTimeout(s,1500)); mi--; continue; }   /* la rete mobile ha il singhiozzo: un secondo respiro, stesso modello */
+      return {err:'rete'}; }
     if(timer) clearTimeout(timer);
     if(r.ok){
       let data; try{ data=await r.json(); }catch(_){ return {err:'rete'}; }
       const text=((data.content||[]).map(c=>c.text||'').join('')||'').trim();
-      return {text:text, model:model};
+      const u=data.usage||{};
+      return {text:text, model:model,
+        tin:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),
+        tout:u.output_tokens||0};
     }
     let detail=''; try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
     if(r.status===400&&/credit/i.test(detail)) return {err:'credito'};
+    if(r.status===400&&body.thinking&&/thinking|budget|temperature/i.test(detail)&&!senzaThinking){
+      senzaThinking=true; mi--; continue;                              /* modello senza ragionamento: stessa voce, senza pensiero */
+    }
     if(r.status===404||(r.status===400&&/model/i.test(detail))) continue;        /* modello assente → prossimo */
     if(r.status===401||r.status===403) return {err:'chiave'};
-    if(r.status===429) return {err:'limite'};
+    if(r.status===429){
+      if(!rateRetried){ rateRetried=true;
+        const ra=parseInt((r.headers&&r.headers.get&&r.headers.get('retry-after'))||'2',10);
+        await new Promise(s=>setTimeout(s,Math.min(isNaN(ra)?2:ra,8)*1000)); mi--; continue; }   /* il limite respira: un'attesa onesta, poi riprova */
+      return {err:'limite'};
+    }
     if(r.status===529||/overloaded/i.test(detail)){
       if(!overloadRetried){ overloadRetried=true; await new Promise(s=>setTimeout(s,1200)); mi--; continue; }   /* un solo retry, stesso modello */
       return {err:'occupato'};
@@ -3866,7 +3908,8 @@ const OBSERVER_LINE_SYS=
 "LO SPECCHIO E LA SCOPERTA: una riga-specchio (dirle che ha fatto cio che ha appena spuntato, o che era in lista oggi) vale SOLO se chiude un filo piu vecchio di oggi: una promessa di giorni prima, un ritorno dopo un vuoto, una prima volta assoluta. Altrimenti SILENZIO - meglio tacere che fare da specchio. La riga migliore e una SCOPERTA: il legame che lei non ha ancora visto (questo gesto arriva sempre dopo le giornate piene; questo cede sempre lo stesso giorno; queste due cose si tirano a vicenda). Una scoperta vera vale piu di dieci specchi.\n"+
 "LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice con le parole dei dati - piena, quasi piena, a meta, rara, vuota.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
-"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
+"LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
+"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
@@ -3940,6 +3983,17 @@ function buildLinePackage(id,title){
   }else if(quest){
     pkg.tipo='quest singola: non ha costanza settimanale';
     if(quest.prio===1) pkg.priorita='alta'; else if(quest.prio===2) pkg.priorita='media';
+    /* v141 LA NASCITA: la data d'origine e un fatto del client, mai una deduzione del modello.
+       Per le quest d'epoca (senza nata) si risale alla voce di diario PIU ANTICA che l'ha partorita. */
+    let nat=quest.nata||'';
+    if(!nat){ try{ const dArr=S.diary||[];
+      for(let i=dArr.length-1;i>=0;i--){ const b=dArr[i]&&dArr[i].born;
+        if(b&&b.indexOf&&b.indexOf(title)>=0){ nat=String(dArr[i].data||''); break; } }
+    }catch(_){} }
+    if(nat&&/^\d{4}-\d{2}-\d{2}$/.test(nat)){
+      const gg=Math.max(0,Math.round((Date.parse(tk)-Date.parse(nat))/86400000));
+      pkg.quest_nata=gg===0?'oggi':gg===1?'ieri':gg<7?gg+' giorni fa':gg<14?'una settimana fa':gg<31?Math.round(gg/7)+' settimane fa':'piu di un mese fa';
+    }else pkg.quest_nata='ignota';
   }else{
     pkg.tipo='task';
   }
@@ -3961,10 +4015,14 @@ function buildLinePackage(id,title){
   /* diario: accostamento per parola chiave; la data serve al modello per pesare la distanza nel tempo */
   const stop=new Set(['dopo','della','delle','sono','essere','questo','questa','molto','anche','come','quando','perche','niente','ogni','pagine','gram']);
   const kws=(title||'').toLowerCase().split(/[^a-zàèéìòùé]+/).filter(w=>w.length>=4&&!stop.has(w));
+  /* v136: S.diary ha il piu recente in TESTA (unshift) - il vecchio loop partiva dalla coda
+     e serviva al modello le 3 voci piu VECCHIE dell'intero diario: da qui il falso filo del meccanico.
+     Ora si parte dal presente; e il match e a confine di parola (mai piu Mandare->andare). */
+  const kwRe=kws.map(w=>new RegExp('(^|[^a-zàèéìòùé])'+w+'($|[^a-zàèéìòùé])'));
   const dia=[]; const arr=(S.diary||[]);
-  for(let i=arr.length-1;i>=0&&dia.length<3;i--){
+  for(let i=0;i<arr.length&&dia.length<3;i++){
     const t=(arr[i]&&arr[i].testo||'').toLowerCase();
-    if(kws.some(w=>t.includes(w))) dia.push({quando:String(arr[i].iso||'').slice(0,10),testo:clampStr(arr[i].testo,220)});
+    if(kwRe.some(r=>r.test(t))) dia.push({quando:String(arr[i].iso||'').slice(0,10),testo:clampStr(arr[i].testo,220)});
   }
   pkg.diario_pertinente=dia;
   pkg.nota_utente=(window._notaPend&&window._notaPend.id===id&&window._notaPend.tk===tk)?window._notaPend.testo:null;
@@ -3988,14 +4046,37 @@ function buildLinePackage(id,title){
     if(sv){ const gg=Math.max(0,Math.round((today-new Date((sv.tk||tk)+'T12:00:00'))/86400000));
       pkg.seme_piantato={domanda:clampStr(sv.testo,140),giorni_fa:gg}; }
   }catch(_){}
+  /* v137: la coscienza della voce - l'amico sa quanto ha gia parlato oggi e dosa da solo.
+     regCantiere scrive t in UTC senza marcatore: si riappende la Z per riavere l'istante vero. */
+  try{
+    const W=['nessuna','una volta','due volte','tre volte','quattro volte','cinque volte','sei volte','sette volte','otto volte','nove volte','dieci volte'];
+    const ev=[];
+    (S.registro||[]).forEach(e=>{
+      if(!e||(e.tipo!=='sussurro'&&e.tipo!=='silenzio')) return;
+      const ms=Date.parse(String(e.t||'')+'Z');
+      if(Number.isFinite(ms)&&localDayKey(new Date(ms))===tk) ev.push({tipo:e.tipo,ms:ms});
+    });
+    const sus=ev.filter(e=>e.tipo==='sussurro');
+    const sil=ev.length-sus.length;
+    let voce;
+    if(!sus.length) voce='oggi non hai ancora parlato';
+    else{
+      const min=Math.max(0,Math.round((Date.now()-sus[sus.length-1].ms)/60000));
+      const quando=min<10?'pochi minuti fa':min<45?"circa mezz'ora fa":min<90?"circa un'ora fa":min<300?'qualche ora fa':'molte ore fa';
+      voce='oggi hai gia parlato '+(sus.length>10?'piu di dieci volte':W[sus.length])+", l'ultima "+quando;
+    }
+    if(sil>0) voce+='; il silenzio lo hai scelto '+(sil>10?'piu di dieci volte':W[sil]);
+    pkg.la_tua_voce=voce;
+  }catch(_){}
   pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>({quando:String(n.iso||'').slice(0,10),task:n.task,riga:n.riga}));
   return pkg;
 }
 async function askObserverLine(pkg){
-  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:240,temperature:0.85,timeout:30000});
+  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:2800,thinking:2000,timeout:75000});
+  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0};
   const line=(res&&res.text)?clampStr(res.text,600).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
-  if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return null;      /* il silenzio scelto dal modello si rispetta: nessun sussurro */
-  return line;
+  if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* il silenzio scelto si rispetta - ma anche il silenzio ha un costo, e ora si vede */
+  return Object.assign({riga:line},meta);
 }
 /* ══ LA BRACE — il pensiero dell'osservatrice in volo: dalla spunta alla casa del sussurro.
    Una sola materia, la polvere: si condensa dalla spunta, vola perdendo grani, atterra,
@@ -4438,6 +4519,9 @@ function regCantiere(tipo,dati){
       if(dati.riga) v.riga=clampStr(dati.riga,300);
       if(dati.msg) v.msg=clampStr(dati.msg,220);
       if(Number.isFinite(dati.ms)) v.ms=Math.round(dati.ms);
+      if(dati.model) v.model=clampStr(dati.model,40);                  /* v139: il costo del battito resta agli atti */
+      if(Number.isFinite(dati.tin)) v.tin=Math.round(dati.tin);
+      if(Number.isFinite(dati.tout)) v.tout=Math.round(dati.tout);
     }
     const ult=(S.registro||[]).slice(-1)[0];
     if(ult&&v.tipo==='errore'&&ult.tipo==='errore'&&ult.msg===v.msg) return;   /* lo stesso errore a raffica si scrive una volta */
@@ -4454,6 +4538,186 @@ function regCantiere(tipo,dati){
   addEventListener('error',e=>{ try{ regCantiere('errore',{msg:String((e&&e.message)||'')+' @'+String((e&&e.lineno)||'')}); }catch(_){} });
   addEventListener('unhandledrejection',e=>{ try{ regCantiere('errore',{msg:'promise: '+String((e&&e.reason&&e.reason.message)||(e&&e.reason)||'').slice(0,180)}); }catch(_){} });
 })();
+
+/* ══ LA STANZA DEL GIARDINO (v140) — l'easter egg: tieni premuta la notte e il mondo
+   mostra cosa e cresciuto. Il fiume e il tempo: sorgente = 28 giorni fa, fuoco = oggi.
+   Sulle rive, una pianta di luce per giorno; le lucciole sono il diario; i numeri
+   restano dietro un velo che si alza solo a un tocco. Vive SOLO da aperta: zero costo a riposo. ══ */
+function _stanzaDati(){
+  const tk=todayKey(); const oggi=new Date(tk+'T12:00:00');
+  const dSet={}; (S.diary||[]).forEach(e=>{ if(e&&e.data) dSet[e.data]=1; });
+  const qC={}; (S.questLog||[]).forEach(q=>{ if(q&&q.day) qC[q.day]=(qC[q.day]||0)+1; });
+  const days=[]; let totF=0,totP=0;
+  for(let diff=27;diff>=0;diff--){
+    const d=new Date(oggi); d.setDate(d.getDate()-diff); const k=localDayKey(d); const dw=dowOf(d);
+    let prev,fatte;
+    if(S.foto&&S.foto[k]){ prev=S.foto[k].tot||0; fatte=S.foto[k].done||0; }
+    else{ const plan=scheduledFor(S,dw,k); prev=plan.length;
+      const ck=(S.checks&&S.checks[k])||{}; fatte=plan.filter(t=>ck[t.id]===true).length; }
+    totF+=fatte; totP+=prev;
+    days.push({k:k,p:prev?Math.min(1,fatte/prev):null,diario:!!dSet[k],
+      quiete:((S.riposi&&S.riposi[k])||[]).length>0,q:qC[k]||0});
+  }
+  let runs=0,somma=0;
+  (S.scheduled||[]).forEach(t=>{
+    if(!t||!t.days||!t.days.length) return;
+    let miss=0;
+    for(let diff=27;diff>=0;diff--){
+      const d=new Date(oggi); d.setDate(d.getDate()-diff); const k=localDayKey(d);
+      if(!t.days.includes(dowOf(d))) continue;
+      if(S.checks&&S.checks[k]&&S.checks[k][t.id]===true){ if(miss>=1){runs++;somma+=miss;} miss=0; }
+      else miss++;
+    }
+  });
+  const primo=days[0].k;
+  return {days:days,
+    fioriture:{fatte:totF,previste:totP,patti:Object.keys(S.patti||{}).filter(k=>k>=primo).length},
+    lucciole:{giorni:days.filter(x=>x.diario).length,voci:(S.diary||[]).filter(e=>e&&e.data>=primo).length},
+    ricrescite:{n:runs,media:runs?Math.round(somma/runs*10)/10:0}};
+}
+let _stanzaViva=null;
+function _stanzaChiudi(){
+  if(!_stanzaViva) return;
+  try{ cancelAnimationFrame(_stanzaViva.raf); }catch(_){}
+  try{ _stanzaViva.el.remove(); }catch(_){}
+  _stanzaViva=null;
+}
+function _stanzaApri(){
+  if(_stanzaViva) return;
+  const dati=_stanzaDati(); const GG=dati.days;
+  const el=document.createElement('div'); el.id='stanza';
+  const num=function(v){ return String(v).replace('.',','); };
+  el.innerHTML='<canvas></canvas>'
+   +'<button id="stanza-x" aria-label="chiudi">&times;</button>'
+   +'<div id="stanza-velo">'
+   +'<div class="r"><div class="l">Fioriture</div><div class="n">'+dati.fioriture.fatte+' <small>su '+dati.fioriture.previste+' semi promessi &middot; '+dati.fioriture.patti+' patti tenuti</small></div></div>'
+   +'<div class="r"><div class="l">Lucciole</div><div class="n">'+dati.lucciole.giorni+' <small>notti con la tua voce, su ventotto &middot; '+dati.lucciole.voci+' voci</small></div></div>'
+   +'<div class="r"><div class="l">Ricrescite</div><div class="n">'+dati.ricrescite.n+' <small>ritorni'+(dati.ricrescite.n?' &middot; l’erba torna in '+num(dati.ricrescite.media)+' occasioni':'')+'</small></div></div>'
+   +'<div class="firma">quattro settimane &middot; il fiume scende al fuoco di oggi</div>'
+   +'</div>';
+  document.body.appendChild(el);
+  el.querySelector('#stanza-x').addEventListener('click',_stanzaChiudi);
+  el.addEventListener('pointerdown',function(e){
+    if(e.target&&e.target.id==='stanza-x') return;
+    el.classList.toggle('svelato');
+  });
+  el.addEventListener('touchmove',function(e){ e.preventDefault(); },{passive:false});
+  const cv=el.querySelector('canvas'); const ctx2=cv.getContext('2d');
+  const DPR=Math.min(2,devicePixelRatio||1);
+  let W=innerWidth,H2=innerHeight;
+  cv.width=W*DPR; cv.height=H2*DPR; ctx2.setTransform(DPR,0,0,DPR,0,0);
+  const ORO='232,188,106',AMBRA2='196,124,38',CIELO2='159,196,232',CORE2='255,244,214';
+  const rr=function(a,b){ return a+Math.random()*(b-a); };
+  function corso(t){
+    return {x:W*(0.22+0.56*t)+Math.sin(t*Math.PI*2.2)*W*0.16, y:H2*0.06+t*H2*0.78};
+  }
+  function tang(t){
+    const a=corso(Math.max(0,t-0.01)), b=corso(Math.min(1,t+0.01));
+    const dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy)||1; return {x:dx/L,y:dy/L};
+  }
+  const FUOCO=corso(1);
+  const stelle=[]; for(let i=0;i<60;i++) stelle.push({x:Math.random(),y:Math.random(),r:rr(0.4,1.1),f:rr(1,4)});
+  const acqua=[]; for(let i=0;i<120;i++) acqua.push({t:Math.random(),v:rr(0.00035,0.0009),off:rr(-1,1),r:rr(0.5,1.6),h:Math.random()});
+  let scint=[];
+  const piante=GG.map(function(g,i){
+    const t=0.04+0.92*(i/(GG.length-1));
+    const p0=corso(t), tg=tang(t), lato=(i%2?1:-1);
+    const nx=-tg.y*lato, ny=tg.x*lato;
+    const larg=Math.min(W,520)*0.10+Math.abs(Math.sin(t*9))*8;
+    return {g:g,bx:p0.x+nx*larg,by:p0.y+ny*larg,nx:nx,ny:ny,
+      h:g.p==null?7:10+g.p*Math.min(H2*0.055,46),fase:rr(0,9),nasce:500+i*80};
+  });
+  const RIDOTTO=(function(){ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches&&!(S.settings&&S.settings.anim==='sempre'); }catch(_){ return false; } })();
+  const T0=performance.now();
+  function eBack(x){ const c=1.7; return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2); }
+  function quadro(now){
+    const T=RIDOTTO?99999:(now-T0);
+    ctx2.fillStyle='#070a09'; ctx2.fillRect(0,0,W,H2);
+    for(let i=0;i<stelle.length;i++){ const s=stelle[i];
+      ctx2.fillStyle='rgba('+CORE2+','+(0.25+0.3*Math.abs(Math.sin(now/1000/s.f)))+')';
+      ctx2.beginPath(); ctx2.arc(s.x*W,s.y*H2,s.r,0,7); ctx2.fill(); }
+    for(let k=0;k<=30;k++){ const p=corso(k/30);
+      const gr=ctx2.createRadialGradient(p.x,p.y,0,p.x,p.y,26);
+      gr.addColorStop(0,'rgba('+CIELO2+',0.045)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+      ctx2.fillStyle=gr; ctx2.beginPath(); ctx2.arc(p.x,p.y,26,0,7); ctx2.fill(); }
+    for(let i=0;i<acqua.length;i++){ const f=acqua[i];
+      if(!RIDOTTO){ f.t+=f.v; if(f.t>1){ f.t=0; f.off=rr(-1,1); } }
+      const p=corso(f.t), tg=tang(f.t), sp=Math.sin(now/700+f.off*7)*4;
+      const x=p.x+(-tg.y)*(f.off*13+sp), y=p.y+tg.x*(f.off*13+sp);
+      const vic=Math.max(0,1-Math.hypot(x-FUOCO.x,y-FUOCO.y)/(H2*0.3));
+      const col=f.h<0.55?CIELO2:(f.h<0.85?CORE2:ORO);
+      ctx2.fillStyle='rgba('+col+','+(0.25+0.35*f.t+vic*0.3)+')';
+      ctx2.beginPath(); ctx2.arc(x,y,f.r+vic*0.8,0,7); ctx2.fill(); }
+    const puls=1+0.08*Math.sin(now/430)+0.03*Math.sin(now/97);
+    const R=Math.min(W,H2)*0.055*puls;
+    const gf=ctx2.createRadialGradient(FUOCO.x,FUOCO.y,0,FUOCO.x,FUOCO.y,R*3.2);
+    gf.addColorStop(0,'rgba('+CORE2+',0.9)'); gf.addColorStop(0.25,'rgba('+ORO+',0.55)');
+    gf.addColorStop(0.6,'rgba('+AMBRA2+',0.18)'); gf.addColorStop(1,'rgba(0,0,0,0)');
+    ctx2.fillStyle=gf; ctx2.beginPath(); ctx2.arc(FUOCO.x,FUOCO.y,R*3.2,0,7); ctx2.fill();
+    for(let i=0;i<piante.length;i++){ const pl=piante[i], g=pl.g;
+      const vita=Math.min(1,Math.max(0,(T-pl.nasce)/700)); if(vita<=0) continue;
+      const cre=eBack(vita), ond=RIDOTTO?0:Math.sin(now/900+pl.fase)*2.4;
+      const tx=pl.bx+pl.nx*pl.h*cre+ond, ty=pl.by+pl.ny*pl.h*cre;
+      if(g.p===0){
+        ctx2.strokeStyle='rgba(120,95,60,0.55)'; ctx2.lineWidth=1.4; ctx2.beginPath();
+        ctx2.moveTo(pl.bx,pl.by);
+        ctx2.quadraticCurveTo(pl.bx+pl.nx*8,pl.by+pl.ny*8,pl.bx+pl.nx*10+6,pl.by+pl.ny*10+3); ctx2.stroke();
+      }else{
+        const al=g.p==null?0.3:0.35+g.p*0.5;
+        ctx2.strokeStyle='rgba('+ORO+','+(al*0.7)+')'; ctx2.lineWidth=1.2;
+        ctx2.beginPath(); ctx2.moveTo(pl.bx,pl.by);
+        ctx2.quadraticCurveTo(pl.bx+pl.nx*pl.h*0.5+ond*0.5,pl.by+pl.ny*pl.h*0.5,tx,ty); ctx2.stroke();
+        if(g.p!=null&&g.p>=0.99){
+          for(let k=0;k<6;k++){ const a=now/2600+k/6*6.2832;
+            ctx2.fillStyle='rgba('+ORO+',0.85)'; ctx2.beginPath();
+            ctx2.arc(tx+Math.cos(a)*4.6,ty+Math.sin(a)*4.6,1.7,0,7); ctx2.fill(); }
+          ctx2.fillStyle='rgba('+CORE2+',0.95)'; ctx2.beginPath(); ctx2.arc(tx,ty,2.4,0,7); ctx2.fill();
+          if(!RIDOTTO&&Math.random()<0.004) scint.push({x:tx,y:ty,vx:-pl.nx*rr(0.2,0.5),vy:-pl.ny*rr(0.2,0.5)+0.15,a:1});
+        }else{
+          ctx2.fillStyle='rgba('+((g.p!=null&&g.p>=0.5)?ORO:CORE2)+','+al+')';
+          ctx2.beginPath(); ctx2.arc(tx,ty,g.p==null?1.2:1.2+g.p*2,0,7); ctx2.fill();
+        }
+      }
+      if(g.quiete){ ctx2.fillStyle='rgba('+CIELO2+',0.3)'; ctx2.beginPath(); ctx2.arc(pl.bx+6,pl.by+2,2,0,7); ctx2.fill(); }
+      if(g.q){ ctx2.fillStyle='rgba('+CORE2+',0.9)'; ctx2.beginPath(); ctx2.arc(pl.bx-6,pl.by-3,1.8,0,7); ctx2.fill(); }
+      if(g.diario){
+        const lx=pl.bx+pl.nx*(pl.h+14)+(RIDOTTO?0:Math.sin(now/1100+pl.fase)*6);
+        const ly=pl.by+pl.ny*(pl.h+14)+(RIDOTTO?0:Math.cos(now/1300+pl.fase)*5);
+        ctx2.fillStyle='rgba('+CIELO2+','+(0.5+0.4*Math.sin(now/500+pl.fase))+')';
+        ctx2.beginPath(); ctx2.arc(lx,ly,1.7,0,7); ctx2.fill();
+        ctx2.fillStyle='rgba('+CIELO2+',0.12)'; ctx2.beginPath(); ctx2.arc(lx,ly,5,0,7); ctx2.fill();
+      }
+    }
+    const vive=[];
+    for(let i=0;i<scint.length;i++){ const s=scint[i];
+      s.x+=s.vx; s.y+=s.vy; s.a*=0.985; if(s.a>0.02) vive.push(s);
+      ctx2.fillStyle='rgba('+ORO+','+s.a+')'; ctx2.beginPath(); ctx2.arc(s.x,s.y,1.3,0,7); ctx2.fill(); }
+    scint=vive;
+    if(_stanzaViva) _stanzaViva.raf=requestAnimationFrame(quadro);
+  }
+  _stanzaViva={el:el,raf:requestAnimationFrame(quadro)};
+  regCantiere('stanza',{msg:GG.length+' giorni, '+dati.fioriture.fatte+'/'+dati.fioriture.previste});
+}
+(function(){
+  let hT=null,hx=0,hy=0;
+  function bersaglioLibero(e){
+    const el=e.target; if(!el||!el.closest) return el===document.body;
+    if(el.closest('#stanza')) return false;
+    return !el.closest('button,input,textarea,select,a,label,.entry,.chk,.ttl,[data-tid],[data-qid],#mic,#foglio,#app .row,dialog');
+  }
+  window.addEventListener('pointerdown',function(e){
+    if(_stanzaViva||!bersaglioLibero(e)) return;
+    hx=e.clientX; hy=e.clientY; clearTimeout(hT);
+    hT=setTimeout(function(){ hT=null; try{ _stanzaApri(); }catch(_){} },700);
+  },{passive:true});
+  window.addEventListener('pointermove',function(e){
+    if(hT&&(Math.abs(e.clientX-hx)>12||Math.abs(e.clientY-hy)>12)){ clearTimeout(hT); hT=null; }
+  },{passive:true});
+  ['pointerup','pointercancel'].forEach(function(ev){
+    window.addEventListener(ev,function(){ clearTimeout(hT); hT=null; },{passive:true});
+  });
+})();
+
 let _lineTimer=null,_lineToken=0;
 function observerLineFor(el){
   try{
@@ -4468,17 +4732,18 @@ function observerLineFor(el){
     _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
       try{ window._braceParte(el,rct); }catch(_){}                     /* la brace parte: il pensiero e in volo */
       const t0Linea=Date.now();
-      const line=await askObserverLine(buildLinePackage(id,title));
+      const resL=await askObserverLine(buildLinePackage(id,title));
       const msLinea=Date.now()-t0Linea;
       if(token!==_lineToken){ return; }                                /* superata da una spunta piu recente: la brace ormai vola per lei */
-      if(line){
+      if(resL&&resL.riga){
+        const line=resL.riga;
         try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
-        regCantiere('sussurro',{task:title,riga:line,ms:msLinea});
+        regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout});
       }else{
         try{ window._braceEsito(null); }catch(_){}                       /* silenzio scelto o errore: la brace esala */
-        regCantiere('silenzio',{task:title,ms:msLinea});
+        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout});
       }
     },800);
   }catch(_){}
@@ -5281,7 +5546,7 @@ function renderPatto(){
       try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
       return;
     }
-    const q={id:coreUid(),titolo:titolo,note:'',quando:tk,ora:'',prio:3,fatto:false};
+    const q={id:coreUid(),titolo:titolo,note:'',quando:tk,ora:'',prio:3,fatto:false,nata:tk};
     if(!Array.isArray(S.quests)) S.quests=[];
     S.quests.push(q);
     const aud=!!(box.querySelector('.patto-nuovo-box')&&box.querySelector('.patto-nuovo-box').dataset.audace);
@@ -5754,7 +6019,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     }catch(_){}
     if(q.fatto){
       /* registra l'azione: così la Mente Osservatrice sa che l'hai DAVVERO compiuta */
-      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey()}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
+      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey(),nata:q.nata||''}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
     } else {
       /* annullamento: togli l'ultimo log di oggi per quel titolo */
       try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()){ S.questLog.splice(i,1); break; } } }catch(_){}
