@@ -927,6 +927,29 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 #stanza-velo .n{font-size:25px;font-weight:800;font-style:italic;color:#e8bc6a}
 #stanza-velo .n small{font-size:13px;color:#8a927f;font-weight:600;font-style:normal}
 #stanza-velo .firma{margin-top:14px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8a927f;text-align:center}
+#stanza-velo .frase{font-size:15.5px;line-height:1.55;color:#f5eedc;margin-top:10px}
+#stanza-velo .frase b{color:#e8bc6a;font-style:italic;font-size:1.15em}
+#stanza-giorno{position:absolute;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:3;background:rgba(13,18,15,.94);border:1px solid rgba(232,188,106,.4);border-radius:14px;padding:14px 16px;opacity:0;transform:translateY(18px);transition:opacity .35s,transform .35s;pointer-events:none}
+#stanza-giorno.on{opacity:1;transform:none}
+#stanza-giorno .g-testa{color:#e8bc6a;font-weight:700;font-size:14.5px;letter-spacing:.02em}
+#stanza-giorno .g-fatti{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+#stanza-giorno .g-fatti span{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.3);border-radius:12px;padding:3px 10px;font-size:12.5px;color:#f5eedc}
+#stanza-giorno .g-voce{margin-top:9px;color:#9fc4e8;font-size:13px;font-style:italic;line-height:1.45}
+#stanza-giorno .g-voce.muto{color:#8a927f}
+#stanza-giorno .g-cresta{margin-top:8px;color:#8a927f;font-size:12px;line-height:1.5}
+#stanza-giorno .g-cresta i{font-style:normal;color:#b9ae95}
+#stanza-giorno .g-fatti .pv{border-color:rgba(159,196,232,.45);color:#9fc4e8}
+#stanza-giorno .g-azioni{margin-top:11px;display:flex;flex-wrap:wrap;gap:7px}
+#stanza-giorno .g-azioni button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.4);border-radius:12px;padding:6px 12px;font-size:12.5px;color:#e8dcc0}
+#stanza-rito{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;background:rgba(7,10,9,.72);backdrop-filter:blur(3px)}
+#stanza-rito.on{display:flex}
+#stanza-rito .r-box{width:min(88vw,380px);background:rgba(13,18,15,.96);border:1px solid rgba(232,188,106,.45);border-radius:16px;padding:18px 18px 14px}
+#stanza-rito .r-t{color:#e8bc6a;font-weight:800;font-style:italic;font-size:19px;text-align:center;margin-bottom:6px}
+#stanza-rito .r-l{color:#8a927f;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin:10px 0 5px}
+#stanza-rito textarea{width:100%;box-sizing:border-box;background:#0d1210;color:#f5eedc;border:1px solid #2a332e;border-radius:10px;padding:9px;font-size:14.5px;font-family:inherit;resize:none}
+#stanza-rito .r-b{display:flex;gap:8px;margin-top:14px}
+#stanza-rito .r-b button{flex:1;padding:10px;border-radius:12px;font-size:14px;border:1px solid rgba(232,188,106,.5);background:rgba(232,188,106,.12);color:#e8dcc0}
+#stanza-rito .r-b #r-no{flex:.6;border-color:#2a332e;background:transparent;color:#8a927f}
 </style>
 </head>
 <body>
@@ -1168,7 +1191,8 @@ function sanitizeQuests(arr){
     const ora=(typeof q.ora==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(q.ora))?q.ora:'';
     const prio=([1,2,3].includes(Number(q.prio)))?Number(q.prio):3;
     const nata=(typeof q.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(q.nata))?q.nata:'';
-    out.push({id,titolo,note:clampStr(q.note,LIMITS.NOTE),quando,ora,prio,fatto:q.fatto===true,nata});
+    const monte=clampStr(q.monte,24);
+    out.push({id,titolo,note:clampStr(q.note,LIMITS.NOTE),quando,ora,prio,fatto:q.fatto===true,nata,monte});
     if(out.length>=LIMITS.QMAX) break;
   }
   return out;
@@ -1226,7 +1250,8 @@ function sanitizeQuestLog(arr){
     const titolo=clampStr(e.titolo,200).trim(); if(!titolo) continue;
     const day=(typeof e.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.day))?e.day:'';
     if(!day) continue;
-    out.push({titolo:titolo,day:day});
+    const nata=(typeof e.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.nata))?e.nata:'';
+    out.push({titolo:titolo,day:day,nata:nata});
   }
   return out.slice(-300); /* conserva gli ultimi 300 completamenti */
 }
@@ -1413,6 +1438,9 @@ function sanitizeRegistro(arr){
     if(e.riga) v.riga=clampStr(e.riga,300);
     if(e.msg) v.msg=clampStr(e.msg,220);
     if(Number.isFinite(e.ms)&&e.ms>=0&&e.ms<600000) v.ms=Math.round(e.ms);
+    if(e.model) v.model=clampStr(e.model,40);                          /* v143: i costi del battito sopravvivono al riavvio */
+    if(Number.isFinite(e.tin)) v.tin=Math.round(e.tin);
+    if(Number.isFinite(e.tout)) v.tout=Math.round(e.tout);
     out.push(v);
   }
   return out;
@@ -1436,6 +1464,12 @@ function sanitizeState(raw,def){
     riposi:sanitizeRiposi(raw.riposi),
     ferie:sanitizeFerie(raw.ferie),
     questLog:sanitizeQuestLog(raw.questLog),
+    desiderio:(function(d){ if(!d||typeof d!=='object') return null;
+      const t=clampStr(d.testo,240).trim(); if(!t) return null;
+      return {id:clampStr(d.id,24)||coreUid(),testo:t,ostacolo:clampStr(d.ostacolo,240),
+        nata:(typeof d.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d.nata))?d.nata:'',
+        cresta:Array.isArray(d.cresta)?d.cresta.map(x=>clampStr(String(x),120)).filter(Boolean).slice(0,4):[],
+        pietre:Array.isArray(d.pietre)?d.pietre.filter(x=>x&&x.titolo).map(x=>({titolo:clampStr(x.titolo,160),giorno:clampStr(x.giorno,10)})).slice(0,200):[]}; })(raw.desiderio),
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
     lastSealed:(typeof raw.lastSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastSealed))?raw.lastSealed:'',
@@ -1733,7 +1767,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.141 · 2026-07-20';
+const APP_VERSION='v60S.143 · 2026-07-21';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1753,7 +1787,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -3909,7 +3943,7 @@ const OBSERVER_LINE_SYS=
 "LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice con le parole dei dati - piena, quasi piena, a meta, rara, vuota.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
-"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
+"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna che la persona ha nominato: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
@@ -3994,6 +4028,14 @@ function buildLinePackage(id,title){
       const gg=Math.max(0,Math.round((Date.parse(tk)-Date.parse(nat))/86400000));
       pkg.quest_nata=gg===0?'oggi':gg===1?'ieri':gg<7?gg+' giorni fa':gg<14?'una settimana fa':gg<31?Math.round(gg/7)+' settimane fa':'piu di un mese fa';
     }else pkg.quest_nata='ignota';
+    /* v143: la pietra del desiderio - il filo lungo che sale la montagna */
+    if(quest.monte&&S.desiderio&&S.desiderio.id===quest.monte){
+      const ORD=['prima','seconda','terza','quarta','quinta','sesta','settima','ottava','nona','decima'];
+      const nP=(S.desiderio.pietre||[]).length;
+      pkg.pietra_del_desiderio={desiderio:clampStr(S.desiderio.testo,120),
+        pietra:(ORD[nP-1]||('numero '+nP))+' pietra spostata',
+        ostacolo_storico:clampStr(S.desiderio.ostacolo,120)||null};
+    }
   }else{
     pkg.tipo='task';
   }
@@ -4539,24 +4581,85 @@ function regCantiere(tipo,dati){
   addEventListener('unhandledrejection',e=>{ try{ regCantiere('errore',{msg:'promise: '+String((e&&e.reason&&e.reason.message)||(e&&e.reason)||'').slice(0,180)}); }catch(_){} });
 })();
 
-/* ══ LA STANZA DEL GIARDINO (v140) — l'easter egg: tieni premuta la notte e il mondo
+
+/* ══ IL DESIDERIO (v143) — la montagna e le pietre. Uno solo alla volta (Legge del Fuoco).
+   Si esprime toccando una stella cadente nella stanza del giardino; il Motore disegna la
+   cresta (3-4 tappe come orizzonte) e posa UNA pietra viva: una quest concreta, meno di un
+   giorno. Spostata una pietra, il Motore posa la successiva. Niente percentuali: una
+   montagna non sa quante pietre contiene - conta solo quante ne hai spostate. ══ */
+const DESIDERIO_SYS=
+"Sei la voce di Sentiero. La persona ha espresso un desiderio grande - una montagna - e ha nominato cio che finora l'ha fermata. Due compiti. CRESTA: da 3 a 4 tappe grandi, in ordine, massimo 8 parole ciascuna, concrete, niente gergo da coach. PRIMA PIETRA: una sola azione fisica e concreta, compibile in meno di un giorno, massimo 9 parole, che tenga conto dell'ostacolo nominato - il primo movimento reale, cosi piccolo che rifiutarlo costi piu che farlo. Italiano. Rispondi SOLO con JSON: {\"cresta\":[\"...\"],\"pietra\":\"...\"}";
+const PIETRA_SYS=
+"Sei la voce di Sentiero. La persona muove una montagna spostando una pietra alla volta. Ricevi desiderio, ostacolo storico, cresta e pietre gia spostate. Un compito: la PROSSIMA pietra - una sola azione fisica e concreta, meno di un giorno, massimo 9 parole, il passo successivo naturale lungo la cresta, mai una pietra gia spostata. Italiano. Se e onesto dire che la montagna e mossa, rispondi {\"compiuto\":true}. Altrimenti SOLO {\"pietra\":\"...\"}";
+function _desJson(txt){
+  if(!txt) return null;
+  const full=txt.trim().startsWith('{')?txt.trim():'{'+txt.trim();
+  try{ return JSON.parse(full); }catch(_){ return null; }
+}
+function _pietraViva(){
+  if(!S.desiderio) return null;
+  return (S.quests||[]).find(q=>q&&!q.fatto&&q.monte===S.desiderio.id)||null;
+}
+async function esprimiDesiderio(testo,ostacolo){
+  const res=await callAnthropic({system:DESIDERIO_SYS,
+    user:'DATI (JSON):\n'+JSON.stringify({desiderio:testo,ostacolo:ostacolo}),
+    assistantPrefix:'{',max_tokens:400,temperature:0.4,timeout:45000});
+  const out=_desJson(res&&res.text);
+  if(!out||!out.pietra) return null;
+  const tk=todayKey();
+  S.desiderio={id:coreUid(),testo:clampStr(testo,240),ostacolo:clampStr(ostacolo,240),nata:tk,
+    cresta:(Array.isArray(out.cresta)?out.cresta:[]).map(x=>clampStr(String(x),120)).filter(Boolean).slice(0,4),
+    pietre:[]};
+  const q={id:coreUid(),titolo:clampStr(String(out.pietra),160),note:'',quando:tk,ora:'',prio:2,fatto:false,nata:tk,monte:S.desiderio.id};
+  if(!Array.isArray(S.quests)) S.quests=[];
+  S.quests.push(q); S.quests=sortQuests(S.quests); save();
+  regCantiere('desiderio',{msg:'espresso: '+clampStr(testo,120)});
+  try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
+  return q.titolo;
+}
+async function prossimaPietra(){
+  if(!S.desiderio) return null;
+  const viva=_pietraViva(); if(viva) return viva.titolo;
+  const res=await callAnthropic({system:PIETRA_SYS,
+    user:'DATI (JSON):\n'+JSON.stringify({desiderio:S.desiderio.testo,ostacolo:S.desiderio.ostacolo,
+      cresta:S.desiderio.cresta,pietre_spostate:(S.desiderio.pietre||[]).slice(-12)}),
+    assistantPrefix:'{',max_tokens:200,temperature:0.4,timeout:45000});
+  const out=_desJson(res&&res.text);
+  if(!out) return null;
+  if(out.compiuto===true){
+    regCantiere('desiderio',{msg:'la montagna e mossa: '+clampStr(S.desiderio.testo,100)});
+    return 'COMPIUTO';
+  }
+  if(!out.pietra) return null;
+  const tk=todayKey();
+  const q={id:coreUid(),titolo:clampStr(String(out.pietra),160),note:'',quando:tk,ora:'',prio:2,fatto:false,nata:tk,monte:S.desiderio.id};
+  S.quests.push(q); S.quests=sortQuests(S.quests); save();
+  regCantiere('pietra',{msg:'posata: '+clampStr(q.titolo,100)});
+  try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
+  return q.titolo;
+}
+/* ══ LA STANZA DEL GIARDINO (v140 · memoria v142 · desiderio v143) — tieni premuta la notte e il mondo
    mostra cosa e cresciuto. Il fiume e il tempo: sorgente = 28 giorni fa, fuoco = oggi.
-   Sulle rive, una pianta di luce per giorno; le lucciole sono il diario; i numeri
-   restano dietro un velo che si alza solo a un tocco. Vive SOLO da aperta: zero costo a riposo. ══ */
+   v142: ogni pianta toccata racconta il SUO giorno con i fatti veri - i titoli compiuti,
+   la riga di diario - e il velo parla in seconda persona. Vive SOLO da aperta. ══ */
 function _stanzaDati(){
   const tk=todayKey(); const oggi=new Date(tk+'T12:00:00');
-  const dSet={}; (S.diary||[]).forEach(e=>{ if(e&&e.data) dSet[e.data]=1; });
-  const qC={}; (S.questLog||[]).forEach(q=>{ if(q&&q.day) qC[q.day]=(qC[q.day]||0)+1; });
+  const dEntry={}; (S.diary||[]).forEach(e=>{ if(e&&e.data){ dEntry[e.data]=e; } });   /* diary e newest-first: resta la voce PIU ANTICA del giorno */
+  const qT={}; (S.questLog||[]).forEach(q=>{ if(q&&q.day){ (qT[q.day]=qT[q.day]||[]).push(q.titolo); } });
   const days=[]; let totF=0,totP=0;
   for(let diff=27;diff>=0;diff--){
     const d=new Date(oggi); d.setDate(d.getDate()-diff); const k=localDayKey(d); const dw=dowOf(d);
+    const plan=scheduledFor(S,dw,k); const ck=(S.checks&&S.checks[k])||{};
+    const fattiT=plan.filter(t=>ck[t.id]===true).map(t=>t.titolo);
     let prev,fatte;
     if(S.foto&&S.foto[k]){ prev=S.foto[k].tot||0; fatte=S.foto[k].done||0; }
-    else{ const plan=scheduledFor(S,dw,k); prev=plan.length;
-      const ck=(S.checks&&S.checks[k])||{}; fatte=plan.filter(t=>ck[t.id]===true).length; }
+    else{ prev=plan.length; fatte=fattiT.length; }
     totF+=fatte; totP+=prev;
-    days.push({k:k,p:prev?Math.min(1,fatte/prev):null,diario:!!dSet[k],
-      quiete:((S.riposi&&S.riposi[k])||[]).length>0,q:qC[k]||0});
+    days.push({k:k,p:prev?Math.min(1,fatte/prev):null,diario:!!dEntry[k],
+      quiete:((S.riposi&&S.riposi[k])||[]).length>0,q:(qT[k]||[]).length,
+      fattiT:fattiT.slice(0,6),questT:(qT[k]||[]).slice(0,4),
+      voce:dEntry[k]?clampStr(dEntry[k].testo,110):'',
+      patto:!!(S.patti&&S.patti[k])});
   }
   let runs=0,somma=0;
   (S.scheduled||[]).forEach(t=>{
@@ -4575,6 +4678,14 @@ function _stanzaDati(){
     lucciole:{giorni:days.filter(x=>x.diario).length,voci:(S.diary||[]).filter(e=>e&&e.data>=primo).length},
     ricrescite:{n:runs,media:runs?Math.round(somma/runs*10)/10:0}};
 }
+function _stanzaNomeGiorno(k){
+  try{
+    const d=new Date(k+'T12:00:00');
+    const G=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+    const M=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+    return G[d.getDay()]+' '+d.getDate()+' '+M[d.getMonth()];
+  }catch(_){ return k; }
+}
 let _stanzaViva=null;
 function _stanzaChiudi(){
   if(!_stanzaViva) return;
@@ -4587,20 +4698,19 @@ function _stanzaApri(){
   const dati=_stanzaDati(); const GG=dati.days;
   const el=document.createElement('div'); el.id='stanza';
   const num=function(v){ return String(v).replace('.',','); };
+  const IW=['zero','una','due','tre','quattro','cinque','sei','sette','otto','nove','dieci'];
+  const mR=dati.ricrescite.media, mRp=mR>0&&mR<=10?(mR<=1.5?'subito, alla prima occasione':'di solito entro '+(IW[Math.round(mR)]||Math.round(mR))+' occasioni'):'';
   el.innerHTML='<canvas></canvas>'
    +'<button id="stanza-x" aria-label="chiudi">&times;</button>'
    +'<div id="stanza-velo">'
-   +'<div class="r"><div class="l">Fioriture</div><div class="n">'+dati.fioriture.fatte+' <small>su '+dati.fioriture.previste+' semi promessi &middot; '+dati.fioriture.patti+' patti tenuti</small></div></div>'
-   +'<div class="r"><div class="l">Lucciole</div><div class="n">'+dati.lucciole.giorni+' <small>notti con la tua voce, su ventotto &middot; '+dati.lucciole.voci+' voci</small></div></div>'
-   +'<div class="r"><div class="l">Ricrescite</div><div class="n">'+dati.ricrescite.n+' <small>ritorni'+(dati.ricrescite.n?' &middot; l’erba torna in '+num(dati.ricrescite.media)+' occasioni':'')+'</small></div></div>'
-   +'<div class="firma">quattro settimane &middot; il fiume scende al fuoco di oggi</div>'
-   +'</div>';
+   +'<div class="frase">in queste quattro settimane hai compiuto <b>'+dati.fioriture.fatte+'</b> dei <b>'+dati.fioriture.previste+'</b> passi che ti eri promesso'+(dati.fioriture.patti?', e tenuto <b>'+(IW[dati.fioriture.patti]||dati.fioriture.patti)+'</b> patti del mattino':'')+'.</div>'
+   +'<div class="frase">hai dato voce al diario <b>'+dati.lucciole.giorni+'</b> notti su ventotto — <b>'+dati.lucciole.voci+'</b> voci: le lucciole del giardino.</div>'
+   +'<div class="frase">dopo le cadute sei tornato <b>'+dati.ricrescite.n+'</b> volte'+(mRp?', '+mRp:'')+'. nessun contatore di serie sa vederlo: il giardino sì.</div>'
+   +'<div class="firma">tocca una pianta: il suo giorno ricorda \u00b7 quando passa una stella cadente, toccala</div>'
+   +'</div>'
+   +'<div id="stanza-giorno"></div>'+'<div id="stanza-rito"></div>';
   document.body.appendChild(el);
   el.querySelector('#stanza-x').addEventListener('click',_stanzaChiudi);
-  el.addEventListener('pointerdown',function(e){
-    if(e.target&&e.target.id==='stanza-x') return;
-    el.classList.toggle('svelato');
-  });
   el.addEventListener('touchmove',function(e){ e.preventDefault(); },{passive:false});
   const cv=el.querySelector('canvas'); const ctx2=cv.getContext('2d');
   const DPR=Math.min(2,devicePixelRatio||1);
@@ -4608,17 +4718,15 @@ function _stanzaApri(){
   cv.width=W*DPR; cv.height=H2*DPR; ctx2.setTransform(DPR,0,0,DPR,0,0);
   const ORO='232,188,106',AMBRA2='196,124,38',CIELO2='159,196,232',CORE2='255,244,214';
   const rr=function(a,b){ return a+Math.random()*(b-a); };
-  function corso(t){
-    return {x:W*(0.22+0.56*t)+Math.sin(t*Math.PI*2.2)*W*0.16, y:H2*0.06+t*H2*0.78};
-  }
-  function tang(t){
-    const a=corso(Math.max(0,t-0.01)), b=corso(Math.min(1,t+0.01));
-    const dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy)||1; return {x:dx/L,y:dy/L};
-  }
+  function corso(t){ return {x:W*(0.22+0.56*t)+Math.sin(t*Math.PI*2.2)*W*0.16, y:H2*0.06+t*H2*0.78}; }
+  function tang(t){ const a=corso(Math.max(0,t-0.01)), b=corso(Math.min(1,t+0.01));
+    const dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy)||1; return {x:dx/L,y:dy/L}; }
   const FUOCO=corso(1);
   const stelle=[]; for(let i=0;i<60;i++) stelle.push({x:Math.random(),y:Math.random(),r:rr(0.4,1.1),f:rr(1,4)});
   const acqua=[]; for(let i=0;i<120;i++) acqua.push({t:Math.random(),v:rr(0.00035,0.0009),off:rr(-1,1),r:rr(0.5,1.6),h:Math.random()});
-  let scint=[];
+  let scint=[]; let scelto=-1;
+  let meteora=null,metNext=performance.now()+7000+Math.random()*10000;
+  const CAIRN={x:FUOCO.x-Math.min(W,H2)*0.17,y:FUOCO.y+Math.min(W,H2)*0.03};
   const piante=GG.map(function(g,i){
     const t=0.04+0.92*(i/(GG.length-1));
     const p0=corso(t), tg=tang(t), lato=(i%2?1:-1);
@@ -4626,6 +4734,89 @@ function _stanzaApri(){
     const larg=Math.min(W,520)*0.10+Math.abs(Math.sin(t*9))*8;
     return {g:g,bx:p0.x+nx*larg,by:p0.y+ny*larg,nx:nx,ny:ny,
       h:g.p==null?7:10+g.p*Math.min(H2*0.055,46),fase:rr(0,9),nasce:500+i*80};
+  });
+  function giornoParla(i){
+    scelto=i; const g=GG[i]; const box=el.querySelector('#stanza-giorno');
+    const forma=g.p==null?'nessun passo previsto':g.p>=0.99?'giornata piena':g.p>=0.5?'giornata quasi piena':g.p>0?'qualche passo':'giornata vuota';
+    let hh='<div class="g-testa">'+_stanzaNomeGiorno(g.k)+' — '+forma+(g.quiete?' · quiete voluta':'')+(g.patto?' · patto tenuto':'')+'</div>';
+    const fatti=g.fattiT.concat(g.questT);
+    if(fatti.length) hh+='<div class="g-fatti">'+fatti.map(function(t){return '<span>'+String(t).replace(/</g,'&lt;')+'</span>';}).join('')+'</div>';
+    if(g.voce) hh+='<div class="g-voce">&laquo;'+String(g.voce).replace(/</g,'&lt;')+'&raquo;</div>';
+    if(!fatti.length&&!g.voce) hh+='<div class="g-voce muto">questo giorno non ha lasciato tracce scritte — ma il fiume l\\u2019ha attraversato comunque</div>';
+    box.innerHTML=hh; box.classList.add('on'); el.classList.remove('svelato');
+  }
+  function ritoChiudi(){ const r=el.querySelector('#stanza-rito'); r.classList.remove('on'); r.innerHTML=''; }
+  function ritoApri(){
+    if(S.desiderio){ cardDesiderio(); return; }
+    const r=el.querySelector('#stanza-rito');
+    r.innerHTML='<div class="r-box">'
+     +'<div class="r-t">esprimi un desiderio</div>'
+     +'<div class="r-l">la montagna, con parole tue</div>'
+     +'<textarea id="r-des" rows="2"></textarea>'
+     +'<div class="r-l">cosa te lo ha impedito, finora?</div>'
+     +'<textarea id="r-ost" rows="2"></textarea>'
+     +'<div class="r-b"><button id="r-va">affida alla stella</button><button id="r-no">non ora</button></div>'
+     +'</div>';
+    r.classList.add('on');
+    r.querySelector('#r-no').addEventListener('click',ritoChiudi);
+    r.querySelector('#r-va').addEventListener('click',async function(){
+      const t1=r.querySelector('#r-des').value.trim(), t2=r.querySelector('#r-ost').value.trim();
+      if(!t1){ r.querySelector('#r-des').focus(); return; }
+      const b=this; b.disabled=true; b.textContent='la stella ascolta\u2026';
+      let esito=null; try{ esito=await esprimiDesiderio(t1,t2); }catch(_){}
+      if(esito){ ritoChiudi(); try{ toast('La prima pietra: \u00ab'+esito+'\u00bb \u2014 \u00e8 tra le tue quest.'); }catch(_){} }
+      else{ b.disabled=false; b.textContent='il cielo non ha risposto \u2014 riprova'; }
+    });
+  }
+  function cardDesiderio(){
+    if(!S.desiderio){ ritoApri(); return; }
+    const d=S.desiderio, box=el.querySelector('#stanza-giorno');
+    const viva=_pietraViva(); const n=(d.pietre||[]).length;
+    let hh='<div class="g-testa">il desiderio \u2014 nato '+_stanzaNomeGiorno(d.nata)+'</div>'
+     +'<div class="g-voce">\u00ab'+String(d.testo).replace(/</g,'&lt;')+'\u00bb</div>';
+    if(d.cresta&&d.cresta.length) hh+='<div class="g-cresta">'+d.cresta.map(function(c){return '<i>'+String(c).replace(/</g,'&lt;')+'</i>';}).join(' \u00b7 ')+'</div>';
+    hh+='<div class="g-fatti"><span>'+n+' pietre spostate</span>'
+      +(viva?'<span class="pv">pietra viva: '+String(viva.titolo).replace(/</g,'&lt;')+'</span>':'')+'</div>';
+    hh+='<div class="g-azioni">'
+      +(!viva?'<button id="d-posa">posa la prossima pietra</button>':'')
+      +'<button id="d-fatto">\u00e8 compiuto</button><button id="d-via">lascia andare</button></div>';
+    box.innerHTML=hh; box.classList.add('on'); el.classList.remove('svelato');
+    const bp=box.querySelector('#d-posa');
+    if(bp) bp.addEventListener('click',async function(){
+      this.disabled=true; this.textContent='il Motore pensa\u2026';
+      let t=null; try{ t=await prossimaPietra(); }catch(_){}
+      if(t==='COMPIUTO'){ box.classList.remove('on'); S.desiderio=null; save(); try{ toast('La montagna \u00e8 mossa.'); }catch(_){} }
+      else if(t){ cardDesiderio(); try{ toast('Posata: \u00ab'+t+'\u00bb'); }catch(_){} }
+      else{ this.disabled=false; this.textContent='riprova'; }
+    });
+    let conf1=false,conf2=false;
+    box.querySelector('#d-fatto').addEventListener('click',function(){
+      if(!conf1){ conf1=true; this.textContent='confermi? la montagna \u00e8 mossa'; return; }
+      regCantiere('desiderio',{msg:'compiuto: '+clampStr(d.testo,100)});
+      S.desiderio=null; save(); box.classList.remove('on');
+      try{ toast('La montagna \u00e8 mossa. Le pietre restano nel registro.'); }catch(_){}
+    });
+    box.querySelector('#d-via').addEventListener('click',function(){
+      if(!conf2){ conf2=true; this.textContent='confermi? si lascia andare'; return; }
+      regCantiere('desiderio',{msg:'lasciato: '+clampStr(d.testo,100)});
+      S.desiderio=null; save(); box.classList.remove('on');
+      try{ toast('Lasciato andare. Il cielo non giudica.'); }catch(_){}
+    });
+  }
+  el.addEventListener('pointerdown',function(e){
+    if(e.target&&(e.target.id==='stanza-x'||e.target.closest&&e.target.closest('#stanza-giorno,#stanza-rito,#stanza-rito *'))) return;
+    const px=e.clientX, py=e.clientY;
+    if(meteora&&meteora.px!=null&&Math.hypot(px-meteora.px,py-meteora.py)<48){ ritoApri(); return; }
+    if(S.desiderio&&Math.hypot(px-CAIRN.x,py-CAIRN.y)<32){ cardDesiderio(); return; }
+    let best=-1,bd=1e9;
+    for(let i=0;i<piante.length;i++){ const pl=piante[i];
+      const tx=pl.bx+pl.nx*pl.h, ty=pl.by+pl.ny*pl.h;
+      const d1=Math.hypot(px-pl.bx,py-pl.by), d2=Math.hypot(px-tx,py-ty);
+      const d=Math.min(d1,d2); if(d<bd){ bd=d; best=i; } }
+    if(best>=0&&bd<=30){ giornoParla(best); return; }
+    const box=el.querySelector('#stanza-giorno');
+    if(box.classList.contains('on')){ box.classList.remove('on'); scelto=-1; return; }
+    el.classList.toggle('svelato');
   });
   const RIDOTTO=(function(){ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches&&!(S.settings&&S.settings.anim==='sempre'); }catch(_){ return false; } })();
   const T0=performance.now();
@@ -4658,6 +4849,8 @@ function _stanzaApri(){
       const vita=Math.min(1,Math.max(0,(T-pl.nasce)/700)); if(vita<=0) continue;
       const cre=eBack(vita), ond=RIDOTTO?0:Math.sin(now/900+pl.fase)*2.4;
       const tx=pl.bx+pl.nx*pl.h*cre+ond, ty=pl.by+pl.ny*pl.h*cre;
+      if(i===scelto){ ctx2.fillStyle='rgba('+CORE2+',0.10)';
+        ctx2.beginPath(); ctx2.arc(pl.bx,pl.by,22,0,7); ctx2.fill(); }
       if(g.p===0){
         ctx2.strokeStyle='rgba(120,95,60,0.55)'; ctx2.lineWidth=1.4; ctx2.beginPath();
         ctx2.moveTo(pl.bx,pl.by);
@@ -4686,6 +4879,39 @@ function _stanzaApri(){
         ctx2.fillStyle='rgba('+CIELO2+','+(0.5+0.4*Math.sin(now/500+pl.fase))+')';
         ctx2.beginPath(); ctx2.arc(lx,ly,1.7,0,7); ctx2.fill();
         ctx2.fillStyle='rgba('+CIELO2+',0.12)'; ctx2.beginPath(); ctx2.arc(lx,ly,5,0,7); ctx2.fill();
+      }
+    }
+    /* l'ometto di pietre: il desiderio che si muove, una pietra alla volta */
+    if(S.desiderio){
+      const n=(S.desiderio.pietre||[]).length;
+      const gl=ctx2.createRadialGradient(CAIRN.x,CAIRN.y,0,CAIRN.x,CAIRN.y,30);
+      gl.addColorStop(0,'rgba('+ORO+',0.10)'); gl.addColorStop(1,'rgba(0,0,0,0)');
+      ctx2.fillStyle=gl; ctx2.beginPath(); ctx2.arc(CAIRN.x,CAIRN.y,30,0,7); ctx2.fill();
+      if(n===0){ ctx2.strokeStyle='rgba('+ORO+',0.5)'; ctx2.setLineDash([2,3]);
+        ctx2.beginPath(); ctx2.ellipse(CAIRN.x,CAIRN.y,8,4,0,0,7); ctx2.stroke(); ctx2.setLineDash([]); }
+      let resto=Math.min(n,21), fila=0, yF=CAIRN.y;
+      while(resto>0){ const inFila=Math.min(6-fila,resto);
+        for(let j=0;j<inFila;j++){ const xs=CAIRN.x+(j-(inFila-1)/2)*9;
+          ctx2.fillStyle='#2c2820'; ctx2.strokeStyle='rgba('+ORO+',0.45)'; ctx2.lineWidth=0.8;
+          ctx2.beginPath(); ctx2.ellipse(xs,yF,4.6,3,0,0,7); ctx2.fill(); ctx2.stroke(); }
+        resto-=inFila; fila++; yF-=5.4; if(fila>5) break; }
+      if(n>21){ ctx2.fillStyle='rgba('+CORE2+',0.8)'; ctx2.font='9px sans-serif'; ctx2.textAlign='center';
+        ctx2.fillText(String(n),CAIRN.x,CAIRN.y+14); }
+    }
+    /* la stella cadente: si esprime un desiderio, come si e sempre fatto */
+    if(!RIDOTTO){
+      if(!meteora&&now>metNext){ meteora={y0:H2*(0.06+Math.random()*0.22),t0:now,dur:4200,px:null,py:null}; }
+      if(meteora){
+        const e2=(now-meteora.t0)/meteora.dur;
+        if(e2>1){ meteora=null; metNext=now+16000+Math.random()*22000; }
+        else{
+          meteora.px=-30+(W+70)*e2; meteora.py=meteora.y0+H2*0.05*e2;
+          const g3=ctx2.createLinearGradient(meteora.px-64,meteora.py-8,meteora.px,meteora.py);
+          g3.addColorStop(0,'rgba('+CORE2+',0)'); g3.addColorStop(1,'rgba('+CORE2+',0.75)');
+          ctx2.strokeStyle=g3; ctx2.lineWidth=1.6; ctx2.beginPath();
+          ctx2.moveTo(meteora.px-64,meteora.py-8); ctx2.lineTo(meteora.px,meteora.py); ctx2.stroke();
+          ctx2.fillStyle='rgba('+CORE2+',0.95)'; ctx2.beginPath(); ctx2.arc(meteora.px,meteora.py,2.2,0,7); ctx2.fill();
+        }
       }
     }
     const vive=[];
@@ -6020,9 +6246,22 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     if(q.fatto){
       /* registra l'azione: così la Mente Osservatrice sa che l'hai DAVVERO compiuta */
       try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey(),nata:q.nata||''}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
+      try{
+        if(q.monte&&S.desiderio&&S.desiderio.id===q.monte){
+          S.desiderio.pietre.push({titolo:clampStr(q.titolo,160),giorno:todayKey()});
+          regCantiere('pietra',{msg:'spostata la n.'+S.desiderio.pietre.length+': '+clampStr(q.titolo,80)});
+          setTimeout(function(){ try{ prossimaPietra(); }catch(_){} },1500);   /* la montagna non aspetta: la prossima pietra si posa da sola */
+        }
+      }catch(_){}
     } else {
       /* annullamento: togli l'ultimo log di oggi per quel titolo */
       try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()){ S.questLog.splice(i,1); break; } } }catch(_){}
+      try{
+        if(q.monte&&S.desiderio&&S.desiderio.id===q.monte){
+          const ps=S.desiderio.pietre;
+          for(let i=ps.length-1;i>=0;i--){ if(ps[i].titolo===clampStr(q.titolo,160)&&ps[i].giorno===todayKey()){ ps.splice(i,1); break; } }
+        }
+      }catch(_){}
     }
     save();
     if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(rerender,600); }
