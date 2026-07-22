@@ -824,29 +824,8 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre).app-nasce #date-wrap>*,body:not(.anima-sempre).app-nasce #giorno-bar{animation:none}
 }
-/* ══════ IL SENTIERO VISIBILE — le pietre del cammino ══════
-   trenta giorni come pietre: ogni pietra porta il suo arco di fuoco com'era a fine giornata */
-#cammino{display:flex;align-items:flex-end;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-  padding:10px 2px 12px;margin:0 -2px;scrollbar-width:none;position:relative}
-#cammino::-webkit-scrollbar{display:none}
-#cammino::before{content:'';position:absolute;left:6px;right:6px;top:50%;height:1px;margin-top:-1px;
-  background:linear-gradient(90deg,transparent,rgba(245,242,234,.07) 12%,rgba(245,242,234,.07) 88%,rgba(232,168,76,.25))}
-.pietra{flex:none;width:44px;height:44px;position:relative;-webkit-tap-highlight-color:transparent}
-.pietra.oggi{width:52px;height:52px;margin-left:8px}
-.pietra.lun::after{content:'';position:absolute;left:50%;bottom:-5px;width:3px;height:3px;margin-left:-1.5px;
-  border-radius:50%;background:rgba(245,242,234,.18)}
-.p-oro{fill:#E8A84C}
-.p-oro.aud{fill:#F2C56B}
-.p-oro-az{stroke:rgba(217,116,75,.75);stroke-width:1.1}
-.p-pilota{fill:#E8A84C;animation:p-pilota 2.6s ease-in-out infinite}
+/* v145: le pietre del cammino sono emigrate nella stanza del giardino (v140) - qui resta solo il presente */
 @keyframes p-pilota{50%{opacity:.4}}
-.pietra svg{width:100%;height:100%;display:block}
-.pietra.oggi{width:28px;height:28px}
-.pietra.oggi svg circle.p-arco{filter:drop-shadow(0 0 3px rgba(232,168,76,.5))}
-.pietra .p-track{fill:none;stroke:rgba(245,242,234,.09);stroke-width:2}
-.pietra .p-arco{fill:none;stroke:#E8A84C;stroke-width:2.6;stroke-linecap:round}
-.pietra.spenta .p-track{stroke:rgba(245,242,234,.05)}
-.pietra .p-firma{fill:#B9402E}
 /* ══════ IL PATTO DEL MATTINO — la pergamena col fermaglio: l'invito del giorno ══════ */
 #patto{position:relative;margin:10px 2px 20px;padding:28px 14px 10px;border-radius:2px;
   background:linear-gradient(180deg,rgba(232,168,76,.05),rgba(245,242,234,.015));
@@ -950,6 +929,9 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 #stanza-rito .r-b{display:flex;gap:8px;margin-top:14px}
 #stanza-rito .r-b button{flex:1;padding:10px;border-radius:12px;font-size:14px;border:1px solid rgba(232,188,106,.5);background:rgba(232,188,106,.12);color:#e8dcc0}
 #stanza-rito .r-b #r-no{flex:.6;border-color:#2a332e;background:transparent;color:#8a927f}
+/* v144: il tocco lungo non deve svegliare la selezione testo di iOS (il menu Copia sopra il giardino) */
+body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+#stanza, #stanza *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 </style>
 </head>
 <body>
@@ -1028,7 +1010,6 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
       <div id="giorno-bar">
         <span id="day-line"></span>
       </div>
-      <div id="cammino" aria-label="Il sentiero degli ultimi trenta giorni"></div>
       <div id="patto" class="hidden"></div>
 
       <section id="sec-task">
@@ -1767,7 +1748,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.143 · 2026-07-21';
+const APP_VERSION='v60S.145 · 2026-07-22';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4695,6 +4676,7 @@ function _stanzaChiudi(){
 }
 function _stanzaApri(){
   if(_stanzaViva) return;
+  try{ const sel=window.getSelection&&window.getSelection(); if(sel&&sel.removeAllRanges) sel.removeAllRanges(); }catch(_){}   /* v144: nessuna selezione residua sotto la stanza */
   const dati=_stanzaDati(); const GG=dati.days;
   const el=document.createElement('div'); el.id='stanza';
   const num=function(v){ return String(v).replace('.',','); };
@@ -4933,6 +4915,7 @@ function _stanzaApri(){
   }
   window.addEventListener('pointerdown',function(e){
     if(_stanzaViva||!bersaglioLibero(e)) return;
+    try{ document.body.classList.add('no-sel'); }catch(_){}   /* v144: si spegne la selezione PRIMA che iOS decida */
     hx=e.clientX; hy=e.clientY; clearTimeout(hT);
     hT=setTimeout(function(){ hT=null; try{ _stanzaApri(); }catch(_){} },700);
   },{passive:true});
@@ -4940,7 +4923,7 @@ function _stanzaApri(){
     if(hT&&(Math.abs(e.clientX-hx)>12||Math.abs(e.clientY-hy)>12)){ clearTimeout(hT); hT=null; }
   },{passive:true});
   ['pointerup','pointercancel'].forEach(function(ev){
-    window.addEventListener(ev,function(){ clearTimeout(hT); hT=null; },{passive:true});
+    window.addEventListener(ev,function(){ clearTimeout(hT); hT=null; try{ document.body.classList.remove('no-sel'); }catch(_){} },{passive:true});
   });
 })();
 
@@ -5784,40 +5767,7 @@ function renderPatto(){
   const binp=box.querySelector('.patto-inp');
   if(binp) binp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); nasciPatto(); } });
 }
-/* ══════ IL SENTIERO VISIBILE ══════
-   Ogni pietra e un giorno: l'arco = quanto del cerchio fu dipinto, la firma = cerchio pieno.
-   Tutto ricalcolato da S.checks (indicizzato per data): nessuna migrazione, nessun nuovo stato. */
-function renderCammino(){
-  const box=document.getElementById('cammino'); if(!box) return;
-  const oggi=new Date(); const C=2*Math.PI*9;
-  let out='';
-  for(let i=29;i>=0;i--){
-    const d=new Date(oggi); d.setDate(d.getDate()-i);
-    const tk=d.toISOString().slice(0,10);
-    let p=0,done=0,tot=0;
-    try{ const f=fotoDi(S,tk,dowOf(d)); p=f.p||0; done=f.done||0; tot=f.tot||0; }catch(_){}
-    const haDati=(S.checks&&S.checks[tk])||!!((S.foto||{})[tk])||i===0;
-    const isOggi=(i===0);
-    const pieno=(tot>0&&done>=tot);
-    const oroV=((S.patti&&S.patti[tk])|0);
-    const off=(C*(1-Math.max(0,Math.min(1,p)))).toFixed(1);
-    const label=d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric'});
-    const lun=(dowOf(d)===0);
-    const pilota=(isOggi&&p<=0.001);
-    out+='<div class="pietra'+(isOggi?' oggi':'')+(haDati?'':' spenta')+(lun?' lun':'')+'" data-tk="'+tk+'" data-info="'+
-      label+(haDati?(' · '+done+'/'+tot+(pieno?' · cerchio pieno':'')+(oroV===2?' · azzardo vinto':(oroV===1?' · patto d\u2019oro':''))):' · nessun segno')+'">'+
-      '<svg viewBox="0 0 24 24"><circle class="p-track" cx="12" cy="12" r="9"/>'+
-      ((haDati&&p>0.001)?'<circle class="p-arco" cx="12" cy="12" r="9" transform="rotate(-100 12 12)" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off+'"/>':'')+
-      (pieno&&haDati?'<circle class="p-firma" cx="4.8" cy="8.6" r="2"/>':'')+
-      (pilota?'<circle class="p-pilota" cx="10.4" cy="3.1" r="1.7"/>':'')+
-      (oroV===1?'<circle class="p-oro" cx="12" cy="12" r="2"/>':'')+
-      (oroV===2?'<circle class="p-oro-az" cx="12" cy="12" r="4" fill="none"/><circle class="p-oro aud" cx="12" cy="12" r="2.4"/>':'')+
-      '</svg></div>';
-  }
-  box.innerHTML=out;
-  box.querySelectorAll('.pietra').forEach(el=>{ el.onclick=()=>{ try{ toast(el.dataset.info); }catch(_){} }; });
-  box.scrollLeft=box.scrollWidth;   /* oggi sempre in vista, a destra */
-}
+/* v145: renderCammino estirpato - il passato vive nella stanza del giardino */
 /* ══ L'ENSO ESPORTABILE — doppio tocco sul cerchio: l'istante diventa PNG ══
    Composizione manuale (niente serializzazione SVG): fondo nero, traccia, il fuoco vivo
    fotografato dal canvas rAF cosi com'e in questo istante, la firma se il giorno e sigillato.
@@ -6024,7 +5974,6 @@ function updateRing(){
     if(mk&&S.patti[tkM]!==mk){ S.patti[tkM]=mk; save(); }
     else if(!mk&&S.patti[tkM]){ delete S.patti[tkM]; save(); }
   }catch(_){}
-  try{ renderCammino(); }catch(_){}
   try{ renderPatto(); }catch(_){}
   /* la presenza dell'osservatrice: dopo la firma, una soglia dell'accumulo puo farsi voce — una al giorno */
   try{ const tkP=todayKey();
