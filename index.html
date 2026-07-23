@@ -756,6 +756,10 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 /* ══════ FRAME-LAVORO 3: IL SUSSURRO CHE SI SCRIVE ══════
    0-220ms la bolla affiora (13 frame) · dal frame 8 i caratteri emergono UNO PER FRAME (16ms)
    · una riga di 45 caratteri si scrive in ~720ms · il congedo esala in 27 frame */
+#obs-whisper .verd-tit{display:block;font-size:11.5px;letter-spacing:.04em;opacity:.72;margin-bottom:8px;font-style:normal}
+#obs-whisper .verd-b{font:inherit;font-style:normal;font-size:14px;letter-spacing:.02em;color:inherit;background:rgba(255,255,255,.06);border:1px solid rgba(159,216,196,.35);border-radius:10px;padding:8px 15px;margin:0 5px;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#obs-whisper .verd-b:active{transform:scale(.96)}
+#obs-whisper .verd-ok{font-size:13.5px;opacity:.85}
 #obs-whisper .w{display:inline-block;white-space:pre}
 #obs-whisper .c{display:inline-block;opacity:0;transform:translateY(5px);
   animation:sus-c .24s cubic-bezier(.22,1,.36,1) both}
@@ -1301,7 +1305,9 @@ function sanitizeObsLines(arr){   /* memoria del sussurro: le ultime righe dette
   for(const n of arr){
     if(!n||typeof n!=='object') continue;
     const riga=clampStr(n.riga,400).trim(); if(!riga) continue;
-    out.push({iso:(typeof n.iso==='string')?n.iso.slice(0,40):new Date().toISOString(),task:clampStr(n.task,120).trim(),riga:riga});
+    const v={iso:(typeof n.iso==='string')?n.iso.slice(0,40):new Date().toISOString(),task:clampStr(n.task,120).trim(),riga:riga};
+    if(n.verdetto===1||n.verdetto===0) v.verdetto=n.verdetto;         /* v147 */
+    out.push(v);
   }
   return out.slice(-12); /* memoria di lavoro, non archivio: le ultime 12 bastano */
 }
@@ -1419,9 +1425,11 @@ function sanitizeRegistro(arr){
     if(e.riga) v.riga=clampStr(e.riga,300);
     if(e.msg) v.msg=clampStr(e.msg,220);
     if(Number.isFinite(e.ms)&&e.ms>=0&&e.ms<600000) v.ms=Math.round(e.ms);
-    if(e.model) v.model=clampStr(e.model,40);                          /* v143: i costi del battito sopravvivono al riavvio */
+    if(e.model) v.model=clampStr(e.model,40);
+    if(e.salti) v.salti=clampStr(e.salti,80);                          /* v143: i costi del battito sopravvivono al riavvio */
     if(Number.isFinite(e.tin)) v.tin=Math.round(e.tin);
     if(Number.isFinite(e.tout)) v.tout=Math.round(e.tout);
+    if(e.verdetto===1||e.verdetto===0) v.verdetto=e.verdetto;         /* v147: il verdetto dell'amico viaggia nei backup */
     out.push(v);
   }
   return out;
@@ -1748,7 +1756,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.145 · 2026-07-22';
+const APP_VERSION='v60S.147 · 2026-07-23';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3851,6 +3859,7 @@ async function callAnthropic(opt){
   if(('onLine' in navigator)&&navigator.onLine===false) return {err:'offline'};
   const to=opt.timeout||25000; const chain=aiModels();
   let overloadRetried=false, rateRetried=false, reteRetried=false, senzaThinking=false;
+  const salti=[];   /* v146: la catena lascia traccia di chi ha saltato e perche */
   for(let mi=0; mi<chain.length; mi++){
     const model=chain[mi];
     const ctrl=('AbortController' in window)?new AbortController():null;
@@ -3887,14 +3896,14 @@ async function callAnthropic(opt){
       const u=data.usage||{};
       return {text:text, model:model,
         tin:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),
-        tout:u.output_tokens||0};
+        tout:u.output_tokens||0, salti:(salti.length?salti.join(' '):undefined)};
     }
     let detail=''; try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
     if(r.status===400&&/credit/i.test(detail)) return {err:'credito'};
     if(r.status===400&&body.thinking&&/thinking|budget|temperature/i.test(detail)&&!senzaThinking){
-      senzaThinking=true; mi--; continue;                              /* modello senza ragionamento: stessa voce, senza pensiero */
+      senzaThinking=true; salti.push(model.replace('claude-','')+':no-think'); mi--; continue;   /* modello senza ragionamento: stessa voce, senza pensiero */
     }
-    if(r.status===404||(r.status===400&&/model/i.test(detail))) continue;        /* modello assente → prossimo */
+    if(r.status===404||(r.status===400&&/model/i.test(detail))){ salti.push(model.replace('claude-','')+':assente'); continue; }        /* modello assente → prossimo */
     if(r.status===401||r.status===403) return {err:'chiave'};
     if(r.status===429){
       if(!rateRetried){ rateRetried=true;
@@ -3924,12 +3933,23 @@ const OBSERVER_LINE_SYS=
 "LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice con le parole dei dati - piena, quasi piena, a meta, rara, vuota.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
-"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna che la persona ha nominato: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
+"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna che la persona ha nominato: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
   const q=(S.quests||[]).find(x=>x&&x.id===id); if(q) return q.titolo;
   return null;
+}
+/* v146: la distanza nel tempo la scrive SEMPRE il client, in parole - mai aritmetica al modello */
+function paroleDistanza(gg){
+  gg=Math.max(0,Math.round(gg));
+  if(gg===0) return 'oggi';
+  if(gg===1) return 'ieri';
+  if(gg<7) return gg+' giorni fa';
+  if(gg<14) return 'una settimana fa';
+  if(gg<31) return Math.round(gg/7)+' settimane fa';
+  if(gg<62) return 'piu di un mese fa';
+  return 'mesi fa';
 }
 function buildLinePackage(id,title){
   const tk=todayKey(); const today=new Date(tk+'T12:00:00');
@@ -4045,7 +4065,11 @@ function buildLinePackage(id,title){
   const dia=[]; const arr=(S.diary||[]);
   for(let i=0;i<arr.length&&dia.length<3;i++){
     const t=(arr[i]&&arr[i].testo||'').toLowerCase();
-    if(kwRe.some(r=>r.test(t))) dia.push({quando:String(arr[i].iso||'').slice(0,10),testo:clampStr(arr[i].testo,220)});
+    if(kwRe.some(r=>r.test(t))){
+      const qd=String(arr[i].iso||'').slice(0,10);
+      const gg=/^\d{4}-\d{2}-\d{2}$/.test(qd)?Math.round((Date.parse(tk)-Date.parse(qd))/86400000):null;
+      dia.push({scritto:(gg==null?'data ignota':paroleDistanza(gg))+' ('+qd+')',testo:clampStr(arr[i].testo,220)});
+    }
   }
   pkg.diario_pertinente=dia;
   pkg.nota_utente=(window._notaPend&&window._notaPend.id===id&&window._notaPend.tk===tk)?window._notaPend.testo:null;
@@ -4091,12 +4115,16 @@ function buildLinePackage(id,title){
     if(sil>0) voce+='; il silenzio lo hai scelto '+(sil>10?'piu di dieci volte':W[sil]);
     pkg.la_tua_voce=voce;
   }catch(_){}
-  pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>({quando:String(n.iso||'').slice(0,10),task:n.task,riga:n.riga}));
+  pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>{
+    const qd=String(n.iso||'').slice(0,10);
+    const gg=/^\d{4}-\d{2}-\d{2}$/.test(qd)?Math.round((Date.parse(tk)-Date.parse(qd))/86400000):null;
+    return {detta:(gg==null?'':paroleDistanza(gg)),task:n.task,riga:n.riga};
+  });
   return pkg;
 }
 async function askObserverLine(pkg){
   const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:2800,thinking:2000,timeout:75000});
-  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0};
+  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined};
   const line=(res&&res.text)?clampStr(res.text,600).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* il silenzio scelto si rispetta - ma anche il silenzio ha un costo, e ora si vede */
   return Object.assign({riga:line},meta);
@@ -4443,9 +4471,11 @@ function _whisper(text){
   });
   void el.offsetWidth;   /* riavvia le animazioni al giro successivo */
   el.classList.add('entra');
+  el.style.pointerEvents=(window._verdettoRef&&window._verdettoRef.riga===String(text))?'auto':'none';   /* v147: solo un sussurro vero riceve il tocco */
+  if(window._verdettoRef&&window._verdettoRef.riga!==String(text)) window._verdettoRef=null;
   const durata=Math.min(14500, 3400 + String(text).length*70);
   _whisperTimer=setTimeout(()=>{ el.classList.remove('entra'); el.classList.add('esce'); }, durata);
-  _whisperTimer2=setTimeout(()=>{ el.classList.remove('esce'); el.innerHTML=''; }, durata+520);
+  _whisperTimer2=setTimeout(()=>{ el.classList.remove('esce'); el.innerHTML=''; el.style.pointerEvents='none'; window._verdettoRef=null; }, durata+520);
 }
 
 /* ══ LA NOTA ALL'OSSERVATRICE — tocco lungo su una riga: una parola tua, la riga rispondera ══ */
@@ -4545,6 +4575,7 @@ function regCantiere(tipo,dati){
       if(dati.model) v.model=clampStr(dati.model,40);                  /* v139: il costo del battito resta agli atti */
       if(Number.isFinite(dati.tin)) v.tin=Math.round(dati.tin);
       if(Number.isFinite(dati.tout)) v.tout=Math.round(dati.tout);
+      if(dati.salti) v.salti=clampStr(dati.salti,80);              /* v146: chi ha saltato nella catena, e perche */
     }
     const ult=(S.registro||[]).slice(-1)[0];
     if(ult&&v.tipo==='errore'&&ult.tipo==='errore'&&ult.msg===v.msg) return;   /* lo stesso errore a raffica si scrive una volta */
@@ -4911,7 +4942,7 @@ function _stanzaApri(){
   function bersaglioLibero(e){
     const el=e.target; if(!el||!el.closest) return el===document.body;
     if(el.closest('#stanza')) return false;
-    return !el.closest('button,input,textarea,select,a,label,.entry,.chk,.ttl,[data-tid],[data-qid],#mic,#foglio,#app .row,dialog');
+    return !el.closest('button,input,textarea,select,a,label,.entry,.chk,.ttl,[data-tid],[data-qid],#mic,#foglio,#app .row,dialog,#obs-whisper');
   }
   window.addEventListener('pointerdown',function(e){
     if(_stanzaViva||!bersaglioLibero(e)) return;
@@ -4946,17 +4977,71 @@ function observerLineFor(el){
       if(token!==_lineToken){ return; }                                /* superata da una spunta piu recente: la brace ormai vola per lei */
       if(resL&&resL.riga){
         const line=resL.riga;
-        try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
-        regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout});
+        regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout,salti:resL.salti});
+        window._verdettoRef={riga:String(line),aperto:false};   /* v147: il registro e scritto, la riga puo ricevere il verdetto */
+        try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
       }else{
         try{ window._braceEsito(null); }catch(_){}                       /* silenzio scelto o errore: la brace esala */
-        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout});
+        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti});
       }
     },800);
   }catch(_){}
 }
+/* ══ IL VERDETTO DELL'AMICO (v147) — pressione lunga su un sussurro appena nato:
+   due scelte, vera / scherziamo. Il verdetto si scrive nel registro accanto alla riga
+   (verdetto:1|0) e sulla memoria del sussurro, e viaggia nei backup. Fase 0 del cantiere. ══ */
+window._verdettoRef=null;
+function _verdettoApri(){
+  const el=_whisperEl, ref=window._verdettoRef;
+  if(!el||!ref||ref.aperto) return;
+  ref.aperto=true;
+  clearTimeout(_whisperTimer); clearTimeout(_whisperTimer2);   /* la bolla aspetta il verdetto */
+  el.classList.remove('esce'); el.classList.add('entra');
+  el.innerHTML='';
+  const tit=document.createElement('span'); tit.className='verd-tit'; tit.textContent='questa riga era…'; el.appendChild(tit);
+  const bV=document.createElement('button'); bV.className='verd-b'; bV.textContent='vera';
+  const bS=document.createElement('button'); bS.className='verd-b'; bS.textContent='scherziamo';
+  bV.addEventListener('click',function(e){ e.stopPropagation(); _verdettoSegna(1); });
+  bS.addEventListener('click',function(e){ e.stopPropagation(); _verdettoSegna(0); });
+  el.appendChild(bV); el.appendChild(bS);
+  _whisperTimer=setTimeout(_verdettoChiudi,8000);   /* nessuna scelta: la bolla se ne va senza verdetto */
+}
+function _verdettoSegna(v){
+  const el=_whisperEl, ref=window._verdettoRef;
+  if(!el||!ref) return;
+  try{
+    const rg=clampStr(ref.riga,300);
+    for(let i=(S.registro||[]).length-1;i>=0;i--){ const e=S.registro[i];
+      if(e&&e.tipo==='sussurro'&&e.riga===rg){ e.verdetto=v; break; } }
+    for(let i=(S.obsLines||[]).length-1;i>=0;i--){ const n=S.obsLines[i];
+      if(n&&n.riga===ref.riga){ n.verdetto=v; break; } }
+    save();
+  }catch(_){}
+  window._verdettoRef=null;
+  el.innerHTML=''; const ok=document.createElement('span'); ok.className='verd-ok'; ok.textContent=(v===1?'vera':'scherziamo')+' — segnato'; el.appendChild(ok);
+  clearTimeout(_whisperTimer); clearTimeout(_whisperTimer2);
+  _whisperTimer=setTimeout(()=>{ el.classList.remove('entra'); el.classList.add('esce'); },900);
+  _whisperTimer2=setTimeout(()=>{ el.classList.remove('esce'); el.innerHTML=''; el.style.pointerEvents='none'; },1420);
+}
+function _verdettoChiudi(){
+  const el=_whisperEl; window._verdettoRef=null;
+  if(!el) return;
+  el.classList.remove('entra'); el.classList.add('esce');
+  _whisperTimer2=setTimeout(()=>{ el.classList.remove('esce'); el.innerHTML=''; el.style.pointerEvents='none'; },520);
+}
+(function(){   /* la pressione lunga: 550ms fermi sulla bolla */
+  let vT=null,vx=0,vy=0;
+  document.addEventListener('pointerdown',function(e){
+    if(!window._verdettoRef||window._verdettoRef.aperto) return;
+    if(!(e.target&&e.target.closest&&e.target.closest('#obs-whisper'))) return;
+    vx=e.clientX; vy=e.clientY; clearTimeout(vT);
+    vT=setTimeout(function(){ vT=null; try{ _verdettoApri(); }catch(_){} },550);
+  },{passive:true});
+  document.addEventListener('pointermove',function(e){ if(vT&&(Math.abs(e.clientX-vx)>12||Math.abs(e.clientY-vy)>12)){ clearTimeout(vT); vT=null; } },{passive:true});
+  ['pointerup','pointercancel'].forEach(function(ev){ document.addEventListener(ev,function(){ clearTimeout(vT); vT=null; },{passive:true}); });
+})();
 let combo=0,lastCheck=0;
 
 /* ── Scritto distillato (battito "distillato"): un dono, nella voce dell'osservatrice ── */
