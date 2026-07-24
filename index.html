@@ -1236,7 +1236,9 @@ function sanitizeQuestLog(arr){
     const day=(typeof e.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.day))?e.day:'';
     if(!day) continue;
     const nata=(typeof e.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.nata))?e.nata:'';
-    out.push({titolo:titolo,day:day,nata:nata});
+    const v={titolo:titolo,day:day,nata:nata};
+    if(e.lasciata===1) v.lasciata=1;                                  /* v148: lasciata andare, non compiuta */
+    out.push(v);
   }
   return out.slice(-300); /* conserva gli ultimi 300 completamenti */
 }
@@ -1756,7 +1758,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.147 · 2026-07-23';
+const APP_VERSION='v60S.148 · 2026-07-24';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3668,7 +3670,8 @@ function buildObserverDigest(){
   /* azioni reali dalle spunte toccate (questLog), raggruppate per giorno */
   const log=Array.isArray(S.questLog)?S.questLog:[];
   const azioniPerGiorno={};
-  log.forEach(e=>{ if(!azioniPerGiorno[e.day]) azioniPerGiorno[e.day]=[]; azioniPerGiorno[e.day].push(e.titolo); });
+  log.forEach(e=>{ if(e.lasciata) return;   /* v148: una quest lasciata andare non e un fatto */
+    if(!azioniPerGiorno[e.day]) azioniPerGiorno[e.day]=[]; azioniPerGiorno[e.day].push(e.titolo); });
   const diario=(S.diary||[]).slice(0,30).map(e=>{
     const g=(e.iso||'').slice(0,10);
     const dettate=Array.isArray(e.done)?e.done.slice(0,12):[];
@@ -4486,6 +4489,8 @@ function apriNotaBox(div,id,titolo,isQuest){   /* LA CURA: aggiorna la riga, o l
   document.querySelectorAll('.nota-obs-box').forEach(x=>x.remove());
   const box=document.createElement('div'); box.className='nota-obs-box';
   box.innerHTML='<button class="cura-btn cura-agg">Aggiorna</button>'+
+    (isQuest?'<button class="cura-btn cura-rim">Rimanda\u2026</button>':'')+
+    (isQuest?'<button class="cura-btn cura-las">Lascia andare\u2026</button>':'')+
     (isQuest?'':'<button class="cura-btn cura-rip">Riposo oggi</button>')+
     (isQuest?'':'<button class="cura-btn cura-fer">In ferie\u2026</button>')+
     '<button class="cura-btn cura-via">Elimina</button>';
@@ -4518,6 +4523,55 @@ function apriNotaBox(div,id,titolo,isQuest){   /* LA CURA: aggiorna la riga, o l
   };
   box.querySelector('.cura-agg').onclick=()=>fase('agg');
   box.querySelector('.cura-via').onclick=()=>fase('via');
+  const brim=box.querySelector('.cura-rim');
+  if(brim) brim.onclick=()=>{   /* RIMANDA (v148): la quest non muore, cambia giorno */
+    const tkR=todayKey();
+    const salta=(n)=>{ const d=new Date(tkR+'T12:00:00'); d.setDate(d.getDate()+n); return localDayKey(d); };
+    const applica=(v)=>{
+      const q=(S.quests||[]).find(x=>x&&x.id===id); if(!q){ box.remove(); return; }
+      q.quando=v; q.fatto=false;
+      save(); box.remove();
+      try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
+      try{ toast('Rimandata al '+v.slice(8,10)+'/'+v.slice(5,7)+'.'); }catch(_){}
+    };
+    box.innerHTML='<button class="cura-btn cura-r1">domani</button>'+
+      '<button class="cura-btn cura-r7">+1 settimana</button>'+
+      '<button class="cura-btn cura-rd">data\u2026</button>';
+    box.querySelector('.cura-r1').onclick=()=>applica(salta(1));
+    box.querySelector('.cura-r7').onclick=()=>applica(salta(7));
+    box.querySelector('.cura-rd').onclick=()=>{
+      const min=salta(1);
+      box.innerHTML='<input class="patto-inp cura-data" type="date" min="'+min+'">'+
+        '<button class="patto-inp-ok cura-ok">Rimanda</button>';
+      const inp=box.querySelector('.cura-data'); inp.value=min;
+      box.querySelector('.cura-ok').onclick=()=>{
+        const v=String(inp.value||'');
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||v<=tkR){ try{ toast('Scegli un giorno da domani in poi'); }catch(_){} return; }
+        applica(v);
+      };
+      setTimeout(()=>{ try{ inp.focus(); }catch(_){} },60);
+    };
+  };
+  const blas=box.querySelector('.cura-las');
+  if(blas) blas.onclick=()=>{   /* LASCIA ANDARE (v148): esce dalle attive, resta agli atti */
+    box.innerHTML='<input class="patto-inp cura-inp" type="text" maxlength="200" enterkeyhint="done" placeholder="perch\u00e9 la lasci andare?">'+
+      '<button class="patto-inp-ok cura-ok">Lascia andare</button>';
+    const inp=box.querySelector('.cura-inp');
+    const okL=()=>{
+      const v=String(inp.value||'').trim();
+      if(v.length<3){ inp.value=''; inp.placeholder='due parole bastano: perch\u00e9 la lasci?'; return; }
+      const q=(S.quests||[]).find(x=>x&&x.id===id); if(!q){ box.remove(); return; }
+      try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey(),nata:q.nata||'',lasciata:1}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
+      S.quests=(S.quests||[]).filter(x=>!(x&&x.id===id));
+      try{ addDiary('Lascio andare \u00ab'+q.titolo+'\u00bb: '+v.slice(0,300),[],[],''); }catch(_){}
+      save(); box.remove();
+      try{ render(); }catch(_){} try{ updateRing(); }catch(_){} try{ renderDiary(); }catch(_){}
+      try{ toast('Lasciata andare. Resta agli atti.'); }catch(_){}
+    };
+    box.querySelector('.cura-ok').onclick=okL;
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); okL(); } });
+    setTimeout(()=>{ try{ inp.focus(); }catch(_){} },60);
+  };
   const bfer=box.querySelector('.cura-fer');
   if(bfer) bfer.onclick=()=>{   /* LE FERIE: scegli il giorno del ritorno; fino ad allora la task riposa e non conta */
     const min=new Date(Date.now()+86400000).toISOString().slice(0,10);
@@ -4657,7 +4711,7 @@ async function prossimaPietra(){
 function _stanzaDati(){
   const tk=todayKey(); const oggi=new Date(tk+'T12:00:00');
   const dEntry={}; (S.diary||[]).forEach(e=>{ if(e&&e.data){ dEntry[e.data]=e; } });   /* diary e newest-first: resta la voce PIU ANTICA del giorno */
-  const qT={}; (S.questLog||[]).forEach(q=>{ if(q&&q.day){ (qT[q.day]=qT[q.day]||[]).push(q.titolo); } });
+  const qT={}; (S.questLog||[]).forEach(q=>{ if(q&&q.day&&!q.lasciata){ (qT[q.day]=qT[q.day]||[]).push(q.titolo); } });   /* v148 */
   const days=[]; let totF=0,totP=0;
   for(let diff=27;diff>=0;diff--){
     const d=new Date(oggi); d.setDate(d.getDate()-diff); const k=localDayKey(d); const dw=dowOf(d);
@@ -6289,7 +6343,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
       }catch(_){}
     } else {
       /* annullamento: togli l'ultimo log di oggi per quel titolo */
-      try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()){ S.questLog.splice(i,1); break; } } }catch(_){}
+      try{ for(let i=S.questLog.length-1;i>=0;i--){ if(S.questLog[i].titolo===q.titolo&&S.questLog[i].day===todayKey()&&!S.questLog[i].lasciata){ S.questLog.splice(i,1); break; } } }catch(_){}
       try{
         if(q.monte&&S.desiderio&&S.desiderio.id===q.monte){
           const ps=S.desiderio.pietre;
