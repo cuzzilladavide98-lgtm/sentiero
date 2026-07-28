@@ -1076,6 +1076,11 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
           </div>
           <div class="switchrow"><span>Voce ai completamenti</span><button class="sw" id="sw-voice"></button></div>
           <div class="switchrow"><span>Osservatrice sui task<small style="display:block;opacity:.6;font-size:11px">una riga vera a ogni spunta (serve la chiave)</small></span><button class="sw" id="sw-obsline"></button></div>
+          <div class="switchrow"><span>Come ti parla<small style="display:block;opacity:.6;font-size:11px">gli accordi delle sue righe: finché non scegli, li evita</small></span>
+            <div class="seg" id="seg-genere">
+              <button data-genere="m">Maschile</button><button data-genere="f">Femminile</button>
+            </div>
+          </div>
           <div class="switchrow"><span>Posizione nelle note</span><button class="sw" id="sw-geo"></button></div>
           <div class="switchrow"><span>Promemoria</span><button class="sw" id="sw-notif"></button></div>
         </div>
@@ -1428,6 +1433,7 @@ function sanitizeRegistro(arr){
     if(e.msg) v.msg=clampStr(e.msg,220);
     if(Number.isFinite(e.ms)&&e.ms>=0&&e.ms<600000) v.ms=Math.round(e.ms);
     if(e.model) v.model=clampStr(e.model,40);
+    if(e.stop) v.stop=clampStr(e.stop,20);                             /* v149: lo stop viaggia nei backup */
     if(e.salti) v.salti=clampStr(e.salti,80);                          /* v143: i costi del battito sopravvivono al riavvio */
     if(Number.isFinite(e.tin)) v.tin=Math.round(e.tin);
     if(Number.isFinite(e.tout)) v.tout=Math.round(e.tout);
@@ -1481,7 +1487,8 @@ function sanitizeState(raw,def){
       aiModel:(raw.settings&&['max','balanced','fast'].includes(raw.settings.aiModel))?raw.settings.aiModel:'balanced',
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade',
       uiTheme:(raw.settings&&raw.settings.uiTheme==='inchiostro')?'inchiostro':'classico',
-      anim:(raw.settings&&raw.settings.anim==='sempre')?'sempre':'auto'
+      anim:(raw.settings&&raw.settings.anim==='sempre')?'sempre':'auto',
+      genere:(raw.settings&&['m','f'].includes(raw.settings.genere))?raw.settings.genere:''   /* v150: vuoto = non detto, e l'amico evita il genere */
     }
   };
   if(raw.checks&&typeof raw.checks==='object'&&!Array.isArray(raw.checks)){
@@ -1758,7 +1765,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.148 · 2026-07-24';
+const APP_VERSION='v60S.150 · 2026-07-28';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3473,9 +3480,13 @@ function addDiary(testo,born,done,raw,seme){
 }
 
 /* catene di modelli per livello scelto: se uno viene ritirato, si passa al successivo */
+/* v149: la catena porta i modelli che esistono OGGI. claude-opus-4-8 non risponde a questa
+   chiave e claude-sonnet-4-20250514 e di due generazioni fa: erano due scalini nel vuoto.
+   claude-fable-5 resta fuori per scelta: e piu lento e piu caro, e il Metodo Parisi vuole UN
+   motore fermo su cui calibrare - per provarlo basta rimetterlo in testa a max. */
 const AI_CHAINS={
-  max:     ['claude-fable-5','claude-opus-4-8','claude-sonnet-4-6','claude-haiku-4-5-20251001'],
-  balanced:['claude-sonnet-4-6','claude-haiku-4-5-20251001','claude-sonnet-4-20250514'],
+  max:     ['claude-opus-5','claude-sonnet-5','claude-sonnet-4-6','claude-haiku-4-5-20251001'],
+  balanced:['claude-sonnet-5','claude-sonnet-4-6','claude-haiku-4-5-20251001'],
   fast:    ['claude-haiku-4-5-20251001','claude-sonnet-4-6']
 };
 function aiModels(){ return AI_CHAINS[(S.settings&&S.settings.aiModel)||'balanced']||AI_CHAINS.balanced; }
@@ -3656,7 +3667,7 @@ function maybeRivelazione(){
    ====================================================================== */
 const OBSERVER_SYS='Sei la voce di Sentiero: l\'amico con la memoria lunga, nel suo momento piu raccolto - il digest. Rileggi i giorni e restituisci UNA riflessione. Non sei una chat, non fai domande, non dialoghi.\n'+
 'IL TUO CARATTERE, tre tesori mai dichiarati: compassione (sei dalla sua parte anche quando affondi il colpo), misura (parole contate), umilta (mai in cattedra). LA LEGGE DELLA LAMA: se i giorni mostrano una persona in piedi puoi essere affilato e nominare il pattern scomodo; se mostrano una persona a terra deponi la lama: gentilezza concreta, mai pietismo, mai analisi.\n'+
-'LA SCOPERTA (il tuo mestiere): trova il legame che lei non ha ancora visto - cosa si tira dietro cosa, cosa cede sempre nello stesso punto, cosa funziona solo se ridotto. Nomina il MATERIALE REALE (la quest specifica, il giorno, le sue parole esatte), mai categorie astratte.\n'+
+'LA SCOPERTA (il tuo mestiere): trova il legame che ancora non ha visto - cosa si tira dietro cosa, cosa cede sempre nello stesso punto, cosa funziona solo se ridotto. Nomina il MATERIALE REALE (la quest specifica, il giorno, le sue parole esatte), mai categorie astratte.\n'+
 'SAGGEZZA (Tao, senza mai nominarlo): il grande nasce dal piccolo; non-forzare; l\'acqua scava la roccia; sapersi fermare. Traspare dal modo di leggere, mai come predica o citazione.\n'+
 'IL MATERIALE: nei dati trovi anche la voce del Motore - attriti_vivi (le sue parole esatte sul peso: sono oro, citale tra virgolette basse), assenze_lunghe (cio che tace da molti giorni), sguardo_recente. E sussurri_recenti sono le righe che hai gia detto alle spunte: mai ripeterle, puoi dar loro seguito.\n'+
 'I NUMERI: vietate cifre, conteggi e rapporti (mai "6 intenzioni", mai "5 volte", mai "3 su 7", nemmeno scritti a lettere). Le quantita si dicono in parole: quasi ogni giorno, piu volte, di rado, mai. Un solo numero ammesso se e un fatto vissuto (il terzo giorno di fila).\n'+
@@ -3856,15 +3867,49 @@ const _btnObs=document.querySelector('#btn-observe'); if(_btnObs) _btnObs.onclic
 /* ======================================================================
    COMBO & SIGILLO
    ====================================================================== */
+/* ══ v149: IL REGIME DEL MODELLO - cosa l'API accetta davvero, per famiglia.
+   Qui stava il guasto: la catena scendeva SEMPRE all'ultimo modello e il registro diceva
+   «assente», cioe «la chiave non ha accesso». Falso. Su fable-5, opus-5, opus-4-8/4-7 e
+   sonnet-5 un temperature (o top_p, top_k) non-default e 400 su OGNI richiesta: il campionamento
+   non e piu una leva, si guida con l'effort. Il codice mandava temperature 0.7 e riceveva un
+   400 il cui messaggio conteneva la parola «model»: da li l'etichetta sbagliata.
+   'sempre-fisso'   = pensiero acceso e non spegnibile (fable-5, mythos): niente temperature e
+                      niente prefill, mai - una richiesta col prefill salta il modello.
+   'sempre'         = pensiero acceso ma spegnibile (opus-5, sonnet-5): niente temperature,
+                      col prefill si manda thinking:{type:'disabled'}.
+   'adattivo'       = pensiero su richiesta, thinking:{type:'adaptive'} (opus-4-6, sonnet-4-6).
+   'adattivo-fisso' = come sopra, ma la temperature resta vietata (opus-4-7, opus-4-8).
+   'esteso'         = pensiero classico a budget, thinking:{type:'enabled'} (haiku-4-5 e prima). ══ */
+function _nomeModello(m){ return String(m).replace('claude-',''); }
+function aiRegime(m){
+  m=String(m||'');
+  if(/^claude-(fable-5|mythos-5|mythos-preview)/.test(m)) return 'sempre-fisso';
+  if(/^claude-(opus|sonnet)-5/.test(m))                   return 'sempre';
+  if(/^claude-opus-4-[78]/.test(m))                       return 'adattivo-fisso';
+  if(/^claude-(opus|sonnet)-4-6/.test(m))                 return 'adattivo';
+  return 'esteso';
+}
+/* il registro deve dire la CAUSA, non una diagnosi comoda: un errore mal nominato costa settimane */
+function _causa400(d){
+  d=String(d||'');
+  if(/temperature|top_p|top_k/i.test(d)) return 'campionamento';
+  if(/thinking|budget|effort/i.test(d))  return 'pensiero';
+  if(/prefill|assistant/i.test(d))       return 'prefill';
+  if(/max_tokens/i.test(d))              return 'tetto';
+  if(/model/i.test(d))                   return 'assente';
+  return '400';
+}
 /* ── Motore IA unico: timeout, ripiego tra modelli, grazia offline, un retry sul sovraccarico ── */
 async function callAnthropic(opt){
   if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return {err:'chiave'};
   if(('onLine' in navigator)&&navigator.onLine===false) return {err:'offline'};
   const to=opt.timeout||25000; const chain=aiModels();
-  let overloadRetried=false, rateRetried=false, reteRetried=false, senzaThinking=false;
+  let overloadRetried=false, rateRetried=false, reteRetried=false;
+  const senzaPensiero=new Set();   /* v149: era una variabile sola per tutta la catena - il primo modello che inciampava spegneva il pensiero anche a tutti quelli dopo di lui. Ora vale per QUEL modello. */
   const salti=[];   /* v146: la catena lascia traccia di chi ha saltato e perche */
   for(let mi=0; mi<chain.length; mi++){
-    const model=chain[mi];
+    const model=chain[mi], reg=aiRegime(model);
+    if(opt.assistantPrefix&&reg==='sempre-fisso'){ salti.push(_nomeModello(model)+':no-prefill'); continue; }   /* pensiero non spegnibile + prefill: incompatibili, si passa oltre senza bruciare una chiamata */
     const ctrl=('AbortController' in window)?new AbortController():null;
     const timer=ctrl?setTimeout(()=>ctrl.abort(),to):null;
     const messages=[{role:'user',content:opt.user}];
@@ -3874,13 +3919,24 @@ async function callAnthropic(opt){
     const sys=(typeof opt.system==='string'&&opt.system.length>2048)
       ?[{type:'text',text:opt.system,cache_control:{type:'ephemeral'}}]:opt.system;
     const body={model:model,max_tokens:opt.max_tokens||300,system:sys,messages:messages};
-    if(opt.thinking&&!opt.assistantPrefix&&!senzaThinking){
-      /* extended thinking: il modello ragiona prima della riga; l'API impone temperature 1
-         e un max_tokens che contenga il budget - incompatibile col prefill, che ha precedenza */
+    const vuolePensiero=!!opt.thinking&&!opt.assistantPrefix&&!senzaPensiero.has(model);
+    if(reg==='sempre'||reg==='sempre-fisso'){
+      /* il pensiero e gia acceso: non si chiede. E non si manda temperature, mai. */
+      if(opt.assistantPrefix){ body.thinking={type:'disabled'}; }   /* il prefill vuole il silenzio del pensiero */
+      else{
+        if(vuolePensiero) body.max_tokens=Math.max(body.max_tokens,opt.thinking+2000);   /* il tetto conta pensiero PIU parole: se e stretto, il pensiero si mangia la riga */
+        if(opt.effort) body.output_config={effort:opt.effort};                            /* v149: l'effort e la leva che prende il posto della temperature */
+      }
+    }else if(vuolePensiero&&(reg==='adattivo'||reg==='adattivo-fisso')){
+      body.thinking={type:'adaptive'};
+      body.max_tokens=Math.max(body.max_tokens,opt.thinking+400);
+      if(opt.effort) body.output_config={effort:opt.effort};
+    }else if(vuolePensiero){
+      /* pensiero classico a budget: l'API impone temperature 1 e un tetto che lo contenga */
       body.thinking={type:'enabled',budget_tokens:opt.thinking};
       body.max_tokens=Math.max(body.max_tokens,opt.thinking+400);
       body.temperature=1;
-    }else{
+    }else if(reg!=='adattivo-fisso'){
       body.temperature=(opt.temperature==null?0.7:opt.temperature);
     }
     let r;
@@ -3897,16 +3953,17 @@ async function callAnthropic(opt){
       let data; try{ data=await r.json(); }catch(_){ return {err:'rete'}; }
       const text=((data.content||[]).map(c=>c.text||'').join('')||'').trim();
       const u=data.usage||{};
-      return {text:text, model:model,
+      return {text:text, model:model, stop:data.stop_reason||undefined,   /* v149: un tetto colpito NON e un silenzio scelto - ora si distinguono */
         tin:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),
         tout:u.output_tokens||0, salti:(salti.length?salti.join(' '):undefined)};
     }
     let detail=''; try{ const eb=await r.json(); detail=(eb&&eb.error&&eb.error.message)||''; }catch(_){}
     if(r.status===400&&/credit/i.test(detail)) return {err:'credito'};
-    if(r.status===400&&body.thinking&&/thinking|budget|temperature/i.test(detail)&&!senzaThinking){
-      senzaThinking=true; salti.push(model.replace('claude-','')+':no-think'); mi--; continue;   /* modello senza ragionamento: stessa voce, senza pensiero */
+    if(r.status===400&&body.thinking&&body.thinking.type!=='disabled'&&/thinking|budget|temperature|effort/i.test(detail)&&!senzaPensiero.has(model)){
+      senzaPensiero.add(model); salti.push(_nomeModello(model)+':no-think'); mi--; continue;   /* questo modello non ragiona su richiesta: stessa voce, senza pensiero */
     }
-    if(r.status===404||(r.status===400&&/model/i.test(detail))){ salti.push(model.replace('claude-','')+':assente'); continue; }        /* modello assente → prossimo */
+    if(r.status===404){ salti.push(_nomeModello(model)+':assente'); continue; }
+    if(r.status===400){ salti.push(_nomeModello(model)+':'+_causa400(detail)); continue; }   /* v149: la causa vera, non un generico «assente» */        /* modello assente → prossimo */
     if(r.status===401||r.status===403) return {err:'chiave'};
     if(r.status===429){
       if(!rateRetried){ rateRetried=true;
@@ -3924,19 +3981,20 @@ async function callAnthropic(opt){
 }
 /* ── Voce dell'osservatrice sul singolo task (battito "riga") ── */
 const OBSERVER_LINE_SYS=
-"Sei la voce di Sentiero: l'amico con la memoria lunga. Ci sei stato ogni giorno: hai visto le promesse, i vuoti, i ritorni, le parole esatte del suo diario. La persona ha appena completato un task. Se hai qualcosa di vero da dirle, diglielo in seconda persona, al presente. Altrimenti taci.\n"+
-"IL TUO CARATTERE, tre tesori mai dichiarati: compassione - sei dalla sua parte anche quando affondi il colpo, ed e la compassione a darti il coraggio della franchezza; misura - parole contate: quando le cose vanno, constati e ti scansi; umilta - mai in cattedra, mai sopra di lei, testimone prima che giudice.\n"+
-"LA LEGGE DELLA LAMA, la tua regola piu importante: la franchezza segue la sua forza. Quando dai dati la persona e in piedi - ritmo che tiene, ritorno compiuto, patto mantenuto - puoi essere affilato: nomina il pattern scomodo, la scusa che non regge piu. Quando e a terra - giornata rotta, spunta solitaria a tarda ora, vuoto lungo - deponi la lama: gentilezza concreta e asciutta, mai pietismo, mai analisi. Se non sai da che lato e, taci.\n"+
-"IL TUO VALORE, cio che nessun altro puo darle: il filo nel tempo. Non commentare l'istante: collocalo. Da dove viene questo gesto (una promessa, un attrito nominato, un seme piantato, un vuoto attraversato) e verso dove punta (cosa si sta consolidando, cosa si sta assottigliando). Una riga che potrebbe scrivere chiunque guardando solo l'oggi e una riga sbagliata.\n"+
+"Sei la voce di Sentiero: l'amico con la memoria lunga. Ci sei stato ogni giorno: hai visto le promesse, i vuoti, i ritorni, le parole esatte del suo diario. Chi ti legge ha appena completato un task. Se hai qualcosa di vero da dire, dillo in seconda persona, al presente. Altrimenti taci.\n"+
+"IL TUO CARATTERE, tre tesori mai dichiarati: compassione - sei dalla sua parte anche quando affondi il colpo, ed e la compassione a darti il coraggio della franchezza; misura - parole contate: quando le cose vanno, constati e ti scansi; umilta - mai in cattedra, mai dall'alto, testimone prima che giudice.\n"+
+"LA LEGGE DELLA LAMA, la tua regola piu importante: la franchezza segue la sua forza. Quando i dati mostrano qualcuno in piedi - ritmo che tiene, ritorno compiuto, patto mantenuto - puoi essere affilato: nomina il pattern scomodo, la scusa che non regge piu. Quando e a terra - giornata rotta, spunta solitaria a tarda ora, vuoto lungo - deponi la lama: gentilezza concreta e asciutta, mai pietismo, mai analisi. Se non sai da che lato e, taci.\n"+
+"IL TUO VALORE, cio che nessun altro puo dare: il filo nel tempo. Non commentare l'istante: collocalo. Da dove viene questo gesto (una promessa, un attrito nominato, un seme piantato, un vuoto attraversato) e verso dove punta (cosa si sta consolidando, cosa si sta assottigliando). Una riga che potrebbe scrivere chiunque guardando solo l'oggi e una riga sbagliata.\n"+
 "COME PARLI: italiano contemporaneo, come si parla oggi - minuscole anche a inizio frase, naturale, anche imperfetto. Hai piena capacita di articolazione e di sintesi: una frase ben costruita vale piu di tre frammenti d'atmosfera. Il respiro lo decide il materiale: quasi sempre UNA frase; due o tre SOLO quando il filo le merita davvero. Ogni frase in piu deve pagare l'affitto: se non aggiunge un fatto o un filo, tagliala.\n"+
 "MESTIERE, principi non ornamenti: rifletti, non prescrivere - restituisci cio che vedi e lascia che la conclusione sia sua; sostieni l'autonomia - mai devi o dovresti, mai pressione, mai consigli non chiesti; commenta il processo e la strategia, mai la persona, ne in colpa ne in lode; nel giorno storto gentilezza e umanita comune - capita a chiunque sia vivo - senza minimizzare e senza compatire; un vuoto che finisce e un dato di forza, mai un debito da scontare.\n"+
 "I NUMERI: al massimo UNO per riga, e solo come fatto vissuto (la terza mattina, ventotto giorni, cinque occasioni). MAI rapporti o sequenze di cifre (3 su 7, da 0 a 7): la forma delle settimane si dice in parole - cresce, tiene, cala, torna, si assottiglia. Vietate le parole da analista: trend, plateau, dati, media, percentuale.\n"+
 "I PRIMI GIORNI: se eta_del_cammino dice primo giorno o prima settimana, non leggere storie che non esistono ancora: accogli il gesto di oggi, concreto e leggero, senza pesare un passato che non c'e.\n"+
-"LO SPECCHIO E LA SCOPERTA: una riga-specchio (dirle che ha fatto cio che ha appena spuntato, o che era in lista oggi) vale SOLO se chiude un filo piu vecchio di oggi: una promessa di giorni prima, un ritorno dopo un vuoto, una prima volta assoluta. Altrimenti SILENZIO - meglio tacere che fare da specchio. La riga migliore e una SCOPERTA: il legame che lei non ha ancora visto (questo gesto arriva sempre dopo le giornate piene; questo cede sempre lo stesso giorno; queste due cose si tirano a vicenda). Una scoperta vera vale piu di dieci specchi.\n"+
+"LO SPECCHIO E LA SCOPERTA: una riga-specchio (ripetere che ha fatto cio che ha appena spuntato, o che era in lista oggi) vale SOLO se chiude un filo piu vecchio di oggi: una promessa di giorni prima, un ritorno dopo un vuoto, una prima volta assoluta. Altrimenti SILENZIO - meglio tacere che fare da specchio. La riga migliore e una SCOPERTA: il legame che ancora non ha visto (questo gesto arriva sempre dopo le giornate piene; questo cede sempre lo stesso giorno; queste due cose si tirano a vicenda). Una scoperta vera vale piu di dieci specchi.\n"+
 "LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice con le parole dei dati - piena, quasi piena, a meta, rara, vuota.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
-"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna che la persona ha nominato: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
+"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna nominata da chi ti legge: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
+"CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna, e ogni participio e ogni aggettivo che lo riguarda si accorda a quello: sei tornato o sei tornata, non sei solo o non sei sola. Se dice che non lo sai, NON tirare a indovinare: gira la frase e scegli forme che il genere non lo chiedono (l'hai fatto, ci sei, e tornato il ritmo, oggi c'e). Sbagliare il genere di chi ti legge cancella in un colpo solo tutta la memoria lunga: e la prova che non lo conosci.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
@@ -4118,6 +4176,10 @@ function buildLinePackage(id,title){
     if(sil>0) voce+='; il silenzio lo hai scelto '+(sil>10?'piu di dieci volte':W[sil]);
     pkg.la_tua_voce=voce;
   }catch(_){}
+  /* v150: l'unico dato su CHI sta leggendo. Il contratto era scritto in terza persona femminile
+     («la persona», «dirle», «sopra di lei») e il modello accordava al femminile: 6 righe su 95
+     davano del femminile a un uomo. Un amico che sbaglia questo non e un amico. */
+  pkg.chi_ti_legge=(S.settings&&S.settings.genere==='m')?'un uomo':(S.settings&&S.settings.genere==='f')?'una donna':'non lo sai: non usare accordi di genere';
   pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>{
     const qd=String(n.iso||'').slice(0,10);
     const gg=/^\d{4}-\d{2}-\d{2}$/.test(qd)?Math.round((Date.parse(tk)-Date.parse(qd))/86400000):null;
@@ -4127,7 +4189,7 @@ function buildLinePackage(id,title){
 }
 async function askObserverLine(pkg){
   const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:2800,thinking:2000,timeout:75000});
-  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined};
+  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined,stop:(res&&res.stop)||undefined};
   const line=(res&&res.text)?clampStr(res.text,600).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* il silenzio scelto si rispetta - ma anche il silenzio ha un costo, e ora si vede */
   return Object.assign({riga:line},meta);
@@ -4629,6 +4691,7 @@ function regCantiere(tipo,dati){
       if(dati.model) v.model=clampStr(dati.model,40);                  /* v139: il costo del battito resta agli atti */
       if(Number.isFinite(dati.tin)) v.tin=Math.round(dati.tin);
       if(Number.isFinite(dati.tout)) v.tout=Math.round(dati.tout);
+      if(dati.stop) v.stop=clampStr(dati.stop,20);                 /* v149: end_turn = ha finito di parlare; max_tokens = e stato tagliato */
       if(dati.salti) v.salti=clampStr(dati.salti,80);              /* v146: chi ha saltato nella catena, e perche */
     }
     const ult=(S.registro||[]).slice(-1)[0];
@@ -5033,12 +5096,12 @@ function observerLineFor(el){
         const line=resL.riga;
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
-        regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout,salti:resL.salti});
+        regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout,salti:resL.salti,stop:resL.stop});
         window._verdettoRef={riga:String(line),aperto:false};   /* v147: il registro e scritto, la riga puo ricevere il verdetto */
         try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
       }else{
         try{ window._braceEsito(null); }catch(_){}                       /* silenzio scelto o errore: la brace esala */
-        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti});
+        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti,stop:resL&&resL.stop});
       }
     },800);
   }catch(_){}
@@ -6790,6 +6853,7 @@ function renderSettings(){
     : '';
   document.querySelector('#sw-voice').classList.toggle('on',S.settings.voice);
   { const sw=document.querySelector('#sw-obsline'); if(sw) sw.classList.toggle('on',S.settings.obsLine!==false); }
+  document.querySelectorAll('#seg-genere button').forEach(b=>b.classList.toggle('on',b.dataset.genere===(S.settings.genere||'')));
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
   document.querySelector('#sw-geo').classList.toggle('on',S.settings.geo);
   document.querySelectorAll('#seg-theme button').forEach(b=>b.classList.toggle('on',b.dataset.theme===S.settings.theme));
@@ -6867,6 +6931,10 @@ document.querySelectorAll('#seg-model button').forEach(b=>{
     save(); renderSettings(); haptic();
     toast(b.dataset.model==='max'?'Motore IA: Massimo (Opus)':b.dataset.model==='fast'?'Motore IA: Veloce (Haiku)':'Motore IA: Bilanciato (Sonnet)');
   };
+});
+document.querySelectorAll('#seg-genere button').forEach(b=>{
+  b.onclick=()=>{ S.settings.genere=b.dataset.genere; save(); renderSettings(); haptic();
+    toast(b.dataset.genere==='f'?'Ti parlerà al femminile':'Ti parlerà al maschile'); };
 });
 document.querySelector('#sw-voice').onclick=()=>{ S.settings.voice=!S.settings.voice; save(); renderSettings(); if(S.settings.voice) say('Voce attiva'); };
 document.querySelector('#sw-obsline').onclick=()=>{ S.settings.obsLine=!(S.settings.obsLine!==false); save(); renderSettings(); if(S.settings.obsLine&&(!S.apiKey||!S.apiKey.startsWith('sk-ant-'))) toast('Aggiungi la chiave per farla parlare'); };
