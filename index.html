@@ -1115,6 +1115,11 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
           </div>
         </div>
         <p class="note" id="model-note"></p>
+        <div class="switchrow" style="margin-top:6px"><span>Banco del sussurro<small style="display:block;opacity:.6;font-size:11px">rigioca i pacchetti veri a vuoto: non tocca il diario né i sussurri</small></span>
+          <button class="act" id="btn-banco">Rigioca</button>
+        </div>
+        <p class="note" id="banco-note"></p>
+        <div class="group" id="banco-esiti"></div>
       </section>
 
       <section>
@@ -1157,7 +1162,7 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
    NUCLEO PURO — nessun DOM, nessun side effect: tutto testabile.
    ====================================================================== */
 /*CORE-START*/
-const LIMITS={TITLE:200,NOTE:300,DIARY:4000,RAW:4000,QMAX:100,DMAX:1000,SMAX:60};
+const LIMITS={TITLE:200,NOTE:300,DIARY:4000,RAW:4000,QMAX:100,DMAX:1000,SMAX:60,PKG:12,PKGB:9000};   /* v151: quanti pacchetti restano attaccati alle righe, e quanto grandi */
 function clampStr(v,max){ return (typeof v==='string'?v:'').slice(0,max); }
 const ALBA_MS=15600000;   /* 4h20m: il giorno di Sentiero riparte alle 4:20, non a mezzanotte */
 function localDayKey(d){
@@ -1421,6 +1426,28 @@ function sanitizeCapitoli(arr){   /* i capitoli: un mese rilegato non si riscriv
   }
   return out.sort((a,b)=>a.mese<b.mese?-1:1).slice(-24); /* due anni di capitoli bastano */
 }
+/* v157: IL BANCO. Rigioca i pacchetti gia salvati (v151) contro il contratto di adesso, a vuoto:
+   niente sussurri, niente registro dei battiti, niente diario. Serve a una cosa sola e importante:
+   provare una modifica del contratto sul materiale VERO prima di metterla addosso alla giornata di
+   qualcuno. Gli esiti restano nel backup, cosi in laboratorio si confrontano prima/dopo sullo
+   stesso identico pacchetto - che e l'unico confronto onesto che esista. */
+function sanitizeBanco(arr){
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  for(const e of arr.slice(-24)){
+    if(!e||typeof e!=='object') continue;
+    const v={iso:clampStr(e.iso,24),ver:clampStr(e.ver,24),task:clampStr(e.task,120),
+             prima:clampStr(e.prima,300),dopo:clampStr(e.dopo,300)};
+    if(!v.iso) continue;
+    if(e.model) v.model=clampStr(e.model,40);
+    if(Number.isFinite(e.ms)) v.ms=Math.round(e.ms);
+    if(e.pkg&&typeof e.pkg==='object'&&!Array.isArray(e.pkg)){
+      try{ const j=JSON.stringify(e.pkg); if(j.length<=LIMITS.PKGB) v.pkg=JSON.parse(j); }catch(_){}
+    }
+    out.push(v);
+  }
+  return out;
+}
 function sanitizeRegistro(arr){
   if(!Array.isArray(arr)) return [];
   const out=[];
@@ -1433,14 +1460,18 @@ function sanitizeRegistro(arr){
     if(e.msg) v.msg=clampStr(e.msg,220);
     if(Number.isFinite(e.ms)&&e.ms>=0&&e.ms<600000) v.ms=Math.round(e.ms);
     if(e.model) v.model=clampStr(e.model,40);
+    if(e.effort) v.effort=clampStr(e.effort,10);                       /* v155: la leva viaggia nei backup */
     if(e.stop) v.stop=clampStr(e.stop,20);                             /* v149: lo stop viaggia nei backup */
+    if(e.pkg&&typeof e.pkg==='object'&&!Array.isArray(e.pkg)){
+      try{ const j=JSON.stringify(e.pkg); if(j.length<=LIMITS.PKGB) v.pkg=JSON.parse(j); }catch(_){}   /* v151: il pacchetto viaggia nei backup */
+    }
     if(e.salti) v.salti=clampStr(e.salti,80);                          /* v143: i costi del battito sopravvivono al riavvio */
     if(Number.isFinite(e.tin)) v.tin=Math.round(e.tin);
     if(Number.isFinite(e.tout)) v.tout=Math.round(e.tout);
     if(e.verdetto===1||e.verdetto===0) v.verdetto=e.verdetto;         /* v147: il verdetto dell'amico viaggia nei backup */
     out.push(v);
   }
-  return out;
+  return potaPacchetti(out);
 }
 function sanitizeState(raw,def){
   raw=(raw&&typeof raw==='object'&&!Array.isArray(raw))?raw:{};
@@ -1452,6 +1483,7 @@ function sanitizeState(raw,def){
     observerNotes:sanitizeObserverNotes(raw.observerNotes),
     mastery:sanitizeMastery(raw.mastery),
     obsLines:sanitizeObsLines(raw.obsLines),
+    banco:sanitizeBanco(raw.banco),                                  /* v157: gli esiti del banco viaggiano nei backup: e li che si confrontano due contratti sullo STESSO materiale */
     registro:sanitizeRegistro(raw.registro),
     capitoli:sanitizeCapitoli(raw.capitoli),
     semi:sanitizeSemi(raw.semi),
@@ -1765,7 +1797,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.150 · 2026-07-28';
+const APP_VERSION='v60S.158 · 2026-07-28';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1785,7 +1817,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,banco:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -3534,6 +3566,62 @@ async function askClaude(transcript){
   return plan;
 }
 
+
+/* ══ IL BANCO DEL SUSSURRO (v157, infrastruttura B del Metodo Parisi) ══════════════════════
+   Prende i pacchetti conservati accanto alle righe passate (v151) e li rigioca contro il
+   contratto di ADESSO. A vuoto: nessun sussurro appare, nessuna brace vola, il registro dei
+   battiti non si sporca, il diario non si tocca. Solo un confronto: la riga di allora e la riga
+   di adesso, sullo stesso identico materiale. ═══════════════════════════════════════════════ */
+let _bancoInCorso=false;
+function bancoPacchetti(){
+  const out=[];
+  const reg=(S.registro||[]);
+  for(let i=reg.length-1;i>=0&&out.length<8;i--){
+    const e=reg[i];
+    if(e&&e.pkg&&(e.tipo==='sussurro'||e.tipo==='silenzio')) out.push(e);
+  }
+  return out.reverse();
+}
+function renderBanco(){
+  const box=document.querySelector('#banco-esiti'); if(!box) return;
+  const b=(S.banco||[]);
+  if(!b.length){ box.innerHTML=''; return; }
+  let h='';
+  b.slice(-8).reverse().forEach(x=>{
+    const uguale=(x.prima||'')===(x.dopo||'');
+    h+='<div class="switchrow" style="display:block;padding:12px 0">'
+      +'<div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.55">'+escapeHtml(x.task||'')+' · '+escapeHtml(String(x.iso||'').slice(0,16).replace('T',' '))+'</div>'
+      +'<div style="font-size:14px;opacity:.6;margin-top:6px">prima: '+escapeHtml(x.prima||'(silenzio)')+'</div>'
+      +'<div style="font-size:15px;margin-top:4px;color:var(--accent)">dopo: '+escapeHtml(x.dopo||'(silenzio)')+'</div>'
+      +(uguale?'<div style="font-size:12px;opacity:.45;margin-top:4px">identica</div>':'')
+      +'</div>';
+  });
+  box.innerHTML=h;
+}
+async function eseguiBanco(){
+  if(_bancoInCorso) return;
+  const note=document.querySelector('#banco-note'), btn=document.querySelector('#btn-banco');
+  const lotto=bancoPacchetti();
+  if(!lotto.length){ if(note) note.textContent='Nessun pacchetto conservato ancora: i pacchetti entrano nel registro dalla v151, dopo qualche spunta.'; return; }
+  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')){ if(note) note.textContent='Serve la chiave.'; return; }
+  _bancoInCorso=true; if(btn){ btn.disabled=true; btn.textContent='In corso…'; }
+  let fatti=0;
+  for(const e of lotto){
+    if(note) note.textContent='Rigioco '+(fatti+1)+' di '+lotto.length+'…';
+    const t0=Date.now();
+    let res=null;
+    try{ res=await askObserverLine(e.pkg); }catch(_){ res=null; }
+    S.banco=(S.banco||[]).concat([{iso:new Date().toISOString(),ver:APP_VERSION.slice(0,24),
+      task:clampStr(e.task||'',120),prima:clampStr(e.riga||'',300),
+      dopo:clampStr((res&&res.riga)||'',300),model:(res&&res.model)||'',ms:Date.now()-t0,pkg:e.pkg}]).slice(-24);
+    fatti++; save(); renderBanco();
+    await new Promise(s=>setTimeout(s,400));   /* il banco non ha fretta: e un laboratorio, non una spunta */
+  }
+  regCantiere('banco',{msg:'rigiocati '+fatti+' pacchetti'});
+  if(note) note.textContent='Fatti '+fatti+'. Gli esiti sono nel prossimo backup: prima e dopo sullo stesso pacchetto.';
+  if(btn){ btn.disabled=false; btn.textContent='Rigioca'; }
+  _bancoInCorso=false;
+}
 /* ══════ MOTORE MAESTRIA fase 1: il modello legge, il client conta ══════ */
 function processMastery(mo){
   if(!mo) return;
@@ -3990,16 +4078,44 @@ const OBSERVER_LINE_SYS=
 "I NUMERI: al massimo UNO per riga, e solo come fatto vissuto (la terza mattina, ventotto giorni, cinque occasioni). MAI rapporti o sequenze di cifre (3 su 7, da 0 a 7): la forma delle settimane si dice in parole - cresce, tiene, cala, torna, si assottiglia. Vietate le parole da analista: trend, plateau, dati, media, percentuale.\n"+
 "I PRIMI GIORNI: se eta_del_cammino dice primo giorno o prima settimana, non leggere storie che non esistono ancora: accogli il gesto di oggi, concreto e leggero, senza pesare un passato che non c'e.\n"+
 "LO SPECCHIO E LA SCOPERTA: una riga-specchio (ripetere che ha fatto cio che ha appena spuntato, o che era in lista oggi) vale SOLO se chiude un filo piu vecchio di oggi: una promessa di giorni prima, un ritorno dopo un vuoto, una prima volta assoluta. Altrimenti SILENZIO - meglio tacere che fare da specchio. La riga migliore e una SCOPERTA: il legame che ancora non ha visto (questo gesto arriva sempre dopo le giornate piene; questo cede sempre lo stesso giorno; queste due cose si tirano a vicenda). Una scoperta vera vale piu di dieci specchi.\n"+
-"LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice con le parole dei dati - piena, quasi piena, a meta, rara, vuota.\n"+
+"LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. Il campo attacchi_bruciati contiene lo scheletro delle tue ultime righe, gia estratto: se la riga che stai per dire comincia con uno di quegli scheletri, e sbagliata prima ancora di essere finita - buttala e ricomincia da un altro appiglio dei dati. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice con le parole dei dati - piena, quasi piena, a meta, rara, vuota.\n"+
+"ESEMPI, tutti veri, presi dal suo cammino.\n"+
+"COSI SI - \u00abieri sera lo avevi scritto: \u00abdomani alle 10 comincio a sistemare camera\u00bb - e l'hai fatto\u00bb: una promessa datata che oggi si chiude, parole sue, nessun commento sopra.\n"+
+"COSI SI - \u00abmezzanotte passata, due giorni saltati, e la sudatina e comunque qui - il primo ritorno dopo un buco doppio\u00bb: un solo numero, vissuto, e un fatto che oggi da solo non poteva dare.\n"+
+"COSI SI - \u00abnel diario di ieri avevi scritto \u00abdomani non fumare fino alle 19\u00bb - sono le 17:46 e il sigillo e ancora intatto\u00bb: l'ora serve alla frase, non la decora.\n"+
+"COSI NO - \u00ab6 su 7, streak a 1 - ieri tenuto\u00bb: due cifre e un rapporto. E un bollettino, e un bollettino non e un amico.\n"+
+"COSI NO - \u00abquasi le 18 e il caffe non l'hai preso\u00bb: specchio puro, niente che sia piu vecchio di oggi. Qui la risposta giusta era SILENZIO.\n"+
+"COSI NO - \u00ablo scrivevi gia un mese fa e oggi l'hai fatto davvero\u00bb detto su una quest che quest_nata dava per nata OGGI: un ricordo inventato. Un solo filo falso toglie credito a tutti quelli veri.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
-"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: usalo solo se e davvero legato a questo task. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna nominata da chi ti legge: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
+"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: il campo per dice QUALE parola ha fatto l'aggancio - guardala, e se quella parola nella voce vuol dire un'altra cosa, la voce non c'entra: scartala e non citarla. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna nominata da chi ti legge: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
 "CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna, e ogni participio e ogni aggettivo che lo riguarda si accorda a quello: sei tornato o sei tornata, non sei solo o non sei sola. Se dice che non lo sai, NON tirare a indovinare: gira la frase e scegli forme che il genere non lo chiedono (l'hai fatto, ci sei, e tornato il ritmo, oggi c'e). Sbagliare il genere di chi ti legge cancella in un colpo solo tutta la memoria lunga: e la prova che non lo conosci.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
   const q=(S.quests||[]).find(x=>x&&x.id===id); if(q) return q.titolo;
   return null;
+}
+/* v152: LA PIENEZZA SI DICE IN PAROLE, e il vocabolario e uno solo per tutto il pacchetto.
+   Qui stava il bollettino numerico: pkg.oggi passava {fatte:6,previste:7} - due interi affiancati,
+   cioe il rapporto che il contratto vieta, servito su un piatto. Il modello non lo calcolava:
+   lo COPIAVA. 36 violazioni su 77 nella baseline del 28/07 nascono da questa riga.
+   Il materiale batte il contratto: se la cifra non c'e, non si puo dire. */
+/* v153: L'ATTACCO BRUCIATO. Il contratto dice gia «mai due righe con la stessa costruzione» e il
+   modello lo viola 18 volte su 95 (baseline 28/07): deve accorgersi da solo di essersi ripetuto,
+   leggendo sei righe intere. Glielo diciamo noi: lo scheletro delle ultime righe, calcolato qui,
+   in chiaro. Stessa formula del giudice in laboratorio, cosi app e banco giudicano identico. */
+const _SK_FUNZ=new Set(['il','lo','la','i','gli','le','un','uno','una','e','ed','o','ma','di','a','da','in','con','su','per','tra','fra','che','non','del','della','dei','delle','al','alla','ai','alle','dal','dalla','nel','nella','si','ci','ti','ne']);
+function scheletroRiga(r){
+  const t=String(r||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\d+/g,'#').replace(/[^a-z#\s]/g,' ');
+  const tok=t.split(/\s+/).filter(Boolean).slice(0,8);
+  return tok.filter(w=>!_SK_FUNZ.has(w)).slice(0,4).join(' ');
+}
+function formaPienezza(dn,pl){
+  if(!pl) return 'nessuna prevista';
+  const r=dn/pl;
+  return dn===0?'vuota':r<0.34?'rara':r<0.67?'a meta':dn===pl?'piena':'quasi piena';
 }
 /* v146: la distanza nel tempo la scrive SEMPRE il client, in parole - mai aritmetica al modello */
 function paroleDistanza(gg){
@@ -4049,8 +4165,7 @@ function buildLinePackage(id,title){
     const etaGiorni=Math.max(0,Math.round((Date.parse(tk)-Date.parse(inizio))/86400000));
     pkg.eta_del_cammino=etaGiorni<1?'primo giorno':etaGiorni<7?'prima settimana':etaGiorni<31?'primo mese':'oltre un mese';
     /* l'arco: quattro settimane dette in PAROLE, mai in numeri - il modello ripete la forma che riceve */
-    const forma=function(dn,pl){ if(!pl) return 'nessuna prevista'; const r=dn/pl;
-      return dn===0?'vuota':r<0.34?'rara':r<0.67?'a meta':dn===pl?'piena':'quasi piena'; };
+    const forma=formaPienezza;   /* v152: un vocabolario solo, cosi l'arco e il giorno parlano la stessa lingua */
     const sett=[];
     for(let wk=3;wk>=0;wk--){
       let pl=0,dn=0;
@@ -4105,7 +4220,7 @@ function buildLinePackage(id,title){
   const dow=dowOf(today);
   const pr=computeProgress(S,tk,dow); const es=essentialStatus(S,tk,dow);
   const oggi=S.checks[tk]||{};
-  pkg.oggi={fatte:pr.done,previste:pr.total,titoli_fatte:Object.keys(oggi).filter(k=>oggi[k]===true).map(_titleById).filter(Boolean)};
+  pkg.oggi={giornata:formaPienezza(pr.done,pr.total),titoli_fatte:Object.keys(oggi).filter(k=>oggi[k]===true).map(_titleById).filter(Boolean)};   /* v152: MAI le due cifre affiancate */
   /* la coscienza del momento: l'ora vera, e se questa spunta apre o chiude il giorno */
   const adesso=new Date();
   pkg.ora=String(adesso.getHours()).padStart(2,'0')+':'+String(adesso.getMinutes()).padStart(2,'0');
@@ -4122,17 +4237,35 @@ function buildLinePackage(id,title){
   /* v136: S.diary ha il piu recente in TESTA (unshift) - il vecchio loop partiva dalla coda
      e serviva al modello le 3 voci piu VECCHIE dell'intero diario: da qui il falso filo del meccanico.
      Ora si parte dal presente; e il match e a confine di parola (mai piu Mandare->andare). */
-  const kwRe=kws.map(w=>new RegExp('(^|[^a-zàèéìòùé])'+w+'($|[^a-zàèéìòùé])'));
-  const dia=[]; const arr=(S.diary||[]);
-  for(let i=0;i<arr.length&&dia.length<3;i++){
+  const arr=(S.diary||[]);
+  /* v156: LA PAROLA RARA. Prima bastava UNA parola in comune col titolo perche una voce del diario
+     entrasse nel pacchetto: parole frequenti come «casa», «oggi», «fare» agganciavano tutto a tutto,
+     e il modello vedeva un filo dove c'era solo vocabolario (§7, problema #5).
+     Ora una parola aggancia solo se e RARA nel diario - se compare in meno di un quinto delle voci -
+     e la voce entra ordinata per quante parole rare condivide. E il pacchetto dice QUALE parola ha
+     fatto l'aggancio: cosi il modello puo scartare l'omonimia invece di berla. */
+  const df={};   /* in quante voci del diario compare ogni parola */
+  arr.forEach(v=>{
+    const visti=new Set(String(v&&v.testo||'').toLowerCase().split(/[^a-zàèéìòùé]+/).filter(w=>w.length>=4));
+    visti.forEach(w=>{ df[w]=(df[w]||0)+1; });
+  });
+  const sogliaDF=Math.max(2,Math.ceil(arr.length/5));   /* rara = meno di un quinto del diario */
+  const kwRare=kws.filter(w=>(df[w]||0)<sogliaDF);
+  const usate=kwRare.length?kwRare:kws;                 /* se sono tutte comuni si tiene il vecchio comportamento, ma si segnala */
+  const kwRe=usate.map(w=>({w:w,re:new RegExp('(^|[^a-zàèéìòùé])'+w+'($|[^a-zàèéìòùé])')}));
+  const cand=[];
+  for(let i=0;i<arr.length;i++){
     const t=(arr[i]&&arr[i].testo||'').toLowerCase();
-    if(kwRe.some(r=>r.test(t))){
-      const qd=String(arr[i].iso||'').slice(0,10);
-      const gg=/^\d{4}-\d{2}-\d{2}$/.test(qd)?Math.round((Date.parse(tk)-Date.parse(qd))/86400000):null;
-      dia.push({scritto:(gg==null?'data ignota':paroleDistanza(gg))+' ('+qd+')',testo:clampStr(arr[i].testo,220)});
-    }
+    const per=kwRe.filter(k=>k.re.test(t)).map(k=>k.w);
+    if(!per.length) continue;
+    const qd=String(arr[i].iso||'').slice(0,10);
+    const gg=/^\d{4}-\d{2}-\d{2}$/.test(qd)?Math.round((Date.parse(tk)-Date.parse(qd))/86400000):null;
+    cand.push({peso:per.length,i:i,voce:{scritto:(gg==null?'data ignota':paroleDistanza(gg))+' ('+qd+')',
+      testo:clampStr(arr[i].testo,220),
+      per:per.join(', ')+(kwRare.length?'':' (parola comune: aggancio debole, fidati poco)')}});
   }
-  pkg.diario_pertinente=dia;
+  cand.sort((a,b)=> b.peso-a.peso || a.i-b.i);          /* piu parole rare in comune prima, poi il piu recente */
+  pkg.diario_pertinente=cand.slice(0,3).map(c=>c.voce);
   pkg.nota_utente=(window._notaPend&&window._notaPend.id===id&&window._notaPend.tk===tk)?window._notaPend.testo:null;
   if(pkg.nota_utente) window._notaPend=null;   /* la nota si consuma: una parola, una risposta */
   /* il materiale del filo: cio che solo chi c'era puo collegare */
@@ -4152,7 +4285,7 @@ function buildLinePackage(id,title){
   try{
     const sv=(S.semi||[]).filter(s=>s&&s.stato==='piantato'&&s.testo).slice(-1)[0];
     if(sv){ const gg=Math.max(0,Math.round((today-new Date((sv.tk||tk)+'T12:00:00'))/86400000));
-      pkg.seme_piantato={domanda:clampStr(sv.testo,140),giorni_fa:gg}; }
+      pkg.seme_piantato={domanda:clampStr(sv.testo,140),scritto:paroleDistanza(gg)}; }   /* v152: in parole come tutte le altre distanze */
   }catch(_){}
   /* v137: la coscienza della voce - l'amico sa quanto ha gia parlato oggi e dosa da solo.
      regCantiere scrive t in UTC senza marcatore: si riappende la Z per riavere l'istante vero. */
@@ -4180,6 +4313,8 @@ function buildLinePackage(id,title){
      («la persona», «dirle», «sopra di lei») e il modello accordava al femminile: 6 righe su 95
      davano del femminile a un uomo. Un amico che sbaglia questo non e un amico. */
   pkg.chi_ti_legge=(S.settings&&S.settings.genere==='m')?'un uomo':(S.settings&&S.settings.genere==='f')?'una donna':'non lo sai: non usare accordi di genere';
+  /* v153: gli attacchi gia usati, in chiaro: il modello non deve dedurli, deve evitarli */
+  pkg.attacchi_bruciati=Array.from(new Set((S.obsLines||[]).slice(-6).map(n=>scheletroRiga(n.riga)).filter(Boolean)));
   pkg.righe_recenti=(S.obsLines||[]).slice(-6).map(n=>{
     const qd=String(n.iso||'').slice(0,10);
     const gg=/^\d{4}-\d{2}-\d{2}$/.test(qd)?Math.round((Date.parse(tk)-Date.parse(qd))/86400000):null;
@@ -4187,9 +4322,14 @@ function buildLinePackage(id,title){
   });
   return pkg;
 }
+/* v155: L'EFFORT E LA LEVA. Sui modelli 5 la temperature e vietata (v149): il campionamento non si
+   tocca piu. Al suo posto c'e output_config.effort, che regola quanto il modello lavora sull'intera
+   risposta, pensiero compreso. Sta qui, da solo, perche in calibratura si muove UNA cosa per volta
+   e deve essere una riga sola da cambiare - e finisce nel registro, se no non e misurabile. */
+const SUSSURRO_EFFORT='high';
 async function askObserverLine(pkg){
-  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:2800,thinking:2000,timeout:75000});
-  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined,stop:(res&&res.stop)||undefined};
+  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:2800,thinking:2000,effort:SUSSURRO_EFFORT,timeout:75000});
+  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined,stop:(res&&res.stop)||undefined,effort:SUSSURRO_EFFORT};
   const line=(res&&res.text)?clampStr(res.text,600).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* il silenzio scelto si rispetta - ma anche il silenzio ha un costo, e ora si vede */
   return Object.assign({riga:line},meta);
@@ -4680,6 +4820,16 @@ function attachNota(div,id,titolo,isQuest){
 /* ══ IL REGISTRO DI CANTIERE — la memoria tecnica dell'app: misura Sentiero, mai la vita.
    Sussurri e silenzi con la loro latenza, gli errori veri, un battito d'apertura al giorno.
    Vive nello stato: ogni backup esportato lo porta con se. Tetto duro: 250 voci. ══ */
+/* v151: solo gli ultimi LIMITS.PKG pacchetti restano attaccati. Il corpus vale, lo spazio no:
+   un pacchetto pesa quanto trenta righe, e il backup deve restare un file che si manda per mail. */
+function potaPacchetti(reg){
+  if(!Array.isArray(reg)) return reg;
+  let n=0;
+  for(let i=reg.length-1;i>=0;i--){
+    if(reg[i]&&reg[i].pkg){ n++; if(n>LIMITS.PKG) delete reg[i].pkg; }
+  }
+  return reg;
+}
 function regCantiere(tipo,dati){
   try{
     const v={t:new Date().toISOString().slice(0,19),tipo:String(tipo||'').slice(0,16),ver:APP_VERSION.slice(0,24)};
@@ -4691,12 +4841,21 @@ function regCantiere(tipo,dati){
       if(dati.model) v.model=clampStr(dati.model,40);                  /* v139: il costo del battito resta agli atti */
       if(Number.isFinite(dati.tin)) v.tin=Math.round(dati.tin);
       if(Number.isFinite(dati.tout)) v.tout=Math.round(dati.tout);
+      if(dati.effort) v.effort=clampStr(dati.effort,10);           /* v155: la leva com'era posizionata a quel battito */
       if(dati.stop) v.stop=clampStr(dati.stop,20);                 /* v149: end_turn = ha finito di parlare; max_tokens = e stato tagliato */
       if(dati.salti) v.salti=clampStr(dati.salti,80);              /* v146: chi ha saltato nella catena, e perche */
+      /* v151: IL REGISTRO DEI PACCHETTI. Accanto alla riga resta il JSON esatto che l'ha generata.
+         Da qui in poi ogni backup e un corpus prompt-in / riga-out: il giudice puo verificare
+         OGNI affermazione della riga contro i fatti che il modello aveva davvero davanti,
+         e nessuno deve piu dare voti a mano. */
+      if(dati.pkg&&typeof dati.pkg==='object'){
+        try{ const j=JSON.stringify(dati.pkg); if(j.length<=LIMITS.PKGB) v.pkg=JSON.parse(j); }catch(_){}
+      }
     }
     const ult=(S.registro||[]).slice(-1)[0];
     if(ult&&v.tipo==='errore'&&ult.tipo==='errore'&&ult.msg===v.msg) return;   /* lo stesso errore a raffica si scrive una volta */
     S.registro=(S.registro||[]).concat([v]).slice(-250);
+    potaPacchetti(S.registro);
     save();
   }catch(_){}
 }
@@ -5089,19 +5248,20 @@ function observerLineFor(el){
     _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
       try{ window._braceParte(el,rct); }catch(_){}                     /* la brace parte: il pensiero e in volo */
       const t0Linea=Date.now();
-      const resL=await askObserverLine(buildLinePackage(id,title));
+      const pkgL=buildLinePackage(id,title);                            /* v151: il pacchetto si tiene: e la prova a carico della riga */
+      const resL=await askObserverLine(pkgL);
       const msLinea=Date.now()-t0Linea;
       if(token!==_lineToken){ return; }                                /* superata da una spunta piu recente: la brace ormai vola per lei */
       if(resL&&resL.riga){
         const line=resL.riga;
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
-        regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout,salti:resL.salti,stop:resL.stop});
+        regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout,salti:resL.salti,stop:resL.stop,effort:resL.effort,pkg:pkgL});
         window._verdettoRef={riga:String(line),aperto:false};   /* v147: il registro e scritto, la riga puo ricevere il verdetto */
         try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
       }else{
         try{ window._braceEsito(null); }catch(_){}                       /* silenzio scelto o errore: la brace esala */
-        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti,stop:resL&&resL.stop});
+        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti,stop:resL&&resL.stop,effort:resL&&resL.effort,pkg:pkgL});   /* anche il silenzio ha un pacchetto: taceva a ragione o non aveva materiale? */
       }
     },800);
   }catch(_){}
@@ -6854,6 +7014,8 @@ function renderSettings(){
   document.querySelector('#sw-voice').classList.toggle('on',S.settings.voice);
   { const sw=document.querySelector('#sw-obsline'); if(sw) sw.classList.toggle('on',S.settings.obsLine!==false); }
   document.querySelectorAll('#seg-genere button').forEach(b=>b.classList.toggle('on',b.dataset.genere===(S.settings.genere||'')));
+  try{ renderBanco(); const bn=document.querySelector('#banco-note');
+    if(bn&&!bn.textContent){ const n=bancoPacchetti().length; bn.textContent=n?(n+' pacchetti conservati, pronti da rigiocare.'):'Nessun pacchetto conservato ancora.'; } }catch(_){}
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
   document.querySelector('#sw-geo').classList.toggle('on',S.settings.geo);
   document.querySelectorAll('#seg-theme button').forEach(b=>b.classList.toggle('on',b.dataset.theme===S.settings.theme));
@@ -6863,7 +7025,12 @@ function renderSettings(){
   const mdl=(S.settings.aiModel)||'balanced';
   document.querySelectorAll('#seg-model button').forEach(b=>b.classList.toggle('on',b.dataset.model===mdl));
   const mnote=document.querySelector('#model-note');
-  if(mnote) mnote.textContent={max:'Massimo: il modello più capace (Opus). Distillazione e osservazioni più fini, un po\' più lento e costoso.',balanced:'Bilanciato: Sonnet. Ottimo equilibrio tra qualità e velocità. Consigliato.',fast:'Veloce: Haiku. Risposte rapide e leggere, ideale per usi frequenti.'}[mdl];
+  /* v158: la nota diceva «Opus» e «Sonnet» a caso da quattro versioni. Ora dice la catena vera,
+     quella che parte davvero: se lo schermo mente sul motore, la telemetria non serve a niente. */
+  if(mnote) mnote.textContent={
+    max:'Massimo: Opus 5, poi Sonnet 5 se non risponde. La testa più forte per il filo nel tempo. Consigliato per il sussurro.',
+    balanced:'Bilanciato: Sonnet 5, poi Sonnet 4.6. Ottimo equilibrio fra qualità e velocità.',
+    fast:'Veloce: Haiku 4.5. Rapido e leggero, ma legge il passato peggio.'}[mdl];
   /* lista suoni personalizzati */
   const sfxEl=document.querySelector('#list-sfx');
   if(!SFX.length){ sfxEl.innerHTML='<p class="empty">Nessun suono caricato: combo e sigillo usano il tema sonoro.</p>'; }
@@ -6929,9 +7096,10 @@ document.querySelectorAll('#seg-model button').forEach(b=>{
   b.onclick=()=>{
     S.settings.aiModel=b.dataset.model;
     save(); renderSettings(); haptic();
-    toast(b.dataset.model==='max'?'Motore IA: Massimo (Opus)':b.dataset.model==='fast'?'Motore IA: Veloce (Haiku)':'Motore IA: Bilanciato (Sonnet)');
+    toast(b.dataset.model==='max'?'Motore IA: Opus 5':b.dataset.model==='fast'?'Motore IA: Haiku 4.5':'Motore IA: Sonnet 5');
   };
 });
+{ const bb=document.querySelector('#btn-banco'); if(bb) bb.onclick=()=>{ eseguiBanco(); }; }
 document.querySelectorAll('#seg-genere button').forEach(b=>{
   b.onclick=()=>{ S.settings.genere=b.dataset.genere; save(); renderSettings(); haptic();
     toast(b.dataset.genere==='f'?'Ti parlerà al femminile':'Ti parlerà al maschile'); };
