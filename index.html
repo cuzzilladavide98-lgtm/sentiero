@@ -1448,6 +1448,35 @@ function sanitizeBanco(arr){
   }
   return out;
 }
+/* v159: L'ARCHIVIO DEI DESIDERI. Fino alla v158 chiudere un desiderio faceva S.desiderio=null e
+   basta: cresta, pietre, date, tutto cancellato, e nel registro restava una riga di testo.
+   La v148 aveva gia risolto lo stesso problema per le quest (una quest lasciata resta agli atti
+   nel questLog): il desiderio non aveva mai ricevuto lo stesso rispetto. Le pietre che hai
+   spostato sono cose che hai fatto davvero: non si buttano perche la montagna e cambiata. */
+function sanitizeDesideri(arr){
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  for(const d of arr.slice(-12)){
+    if(!d||typeof d!=='object') continue;
+    const t=clampStr(d.testo,240).trim(); if(!t) continue;
+    out.push({id:clampStr(d.id,24)||coreUid(),testo:t,ostacolo:clampStr(d.ostacolo,240),
+      nata:clampStr(d.nata,10),chiusa:clampStr(d.chiusa,10),
+      esito:(['compiuto','lasciato','cambiato'].includes(d.esito)?d.esito:'lasciato'),
+      cresta:Array.isArray(d.cresta)?d.cresta.map(x=>clampStr(String(x),120)).filter(Boolean).slice(0,4):[],
+      pietre:Array.isArray(d.pietre)?d.pietre.filter(x=>x&&x.titolo).map(x=>({titolo:clampStr(x.titolo,160),giorno:clampStr(x.giorno,10)})).slice(0,200):[]});
+  }
+  return out;
+}
+/* chiude il desiderio in corso mettendolo agli atti. Restituisce il numero di pietre salvate. */
+function archiviaDesiderio(esito){
+  const d=S.desiderio; if(!d) return 0;
+  S.desideri=(S.desideri||[]).concat([{id:d.id,testo:d.testo,ostacolo:d.ostacolo,nata:d.nata,
+    chiusa:todayKey(),esito:esito,cresta:(d.cresta||[]).slice(),pietre:(d.pietre||[]).slice()}]).slice(-12);
+  const n=(d.pietre||[]).length;
+  regCantiere('desiderio',{msg:esito+': '+clampStr(d.testo,90)+' \u00b7 '+n+' pietre agli atti'});
+  S.desiderio=null; save();
+  return n;
+}
 function sanitizeRegistro(arr){
   if(!Array.isArray(arr)) return [];
   const out=[];
@@ -1499,6 +1528,7 @@ function sanitizeState(raw,def){
         nata:(typeof d.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d.nata))?d.nata:'',
         cresta:Array.isArray(d.cresta)?d.cresta.map(x=>clampStr(String(x),120)).filter(Boolean).slice(0,4):[],
         pietre:Array.isArray(d.pietre)?d.pietre.filter(x=>x&&x.titolo).map(x=>({titolo:clampStr(x.titolo,160),giorno:clampStr(x.giorno,10)})).slice(0,200):[]}; })(raw.desiderio),
+    desideri:sanitizeDesideri(raw.desideri),                          /* v159: i desideri chiusi restano agli atti, con le loro pietre */
     checks:{},
     streak:(Number.isInteger(raw.streak)&&raw.streak>=0&&raw.streak<100000)?raw.streak:0,
     lastSealed:(typeof raw.lastSealed==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastSealed))?raw.lastSealed:'',
@@ -1797,7 +1827,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.158 · 2026-07-28';
+const APP_VERSION='v60S.159 · 2026-07-29';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1817,7 +1847,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,banco:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -5066,9 +5096,18 @@ function _stanzaApri(){
     if(d.cresta&&d.cresta.length) hh+='<div class="g-cresta">'+d.cresta.map(function(c){return '<i>'+String(c).replace(/</g,'&lt;')+'</i>';}).join(' \u00b7 ')+'</div>';
     hh+='<div class="g-fatti"><span>'+n+' pietre spostate</span>'
       +(viva?'<span class="pv">pietra viva: '+String(viva.titolo).replace(/</g,'&lt;')+'</span>':'')+'</div>';
-    hh+='<div class="g-azioni">'
+    const arch=(S.desideri||[]);
+    if(arch.length){
+      const np=arch.reduce((a,x)=>a+((x.pietre||[]).length),0);
+      hh+='<div class="g-cresta" style="opacity:.5">prima di questo: '+arch.length+(arch.length===1?' desiderio':' desideri')+', '+np+(np===1?' pietra':' pietre')+' spostate</div>';
+    }
+    /* v159: tre uscite, non due. «e cambiato» e la terza, ed e quella vera quasi sempre:
+       i passi spostano la persona, e la persona sposta il desiderio. Non e una resa. */
+    hh+='<div class="g-azioni" id="d-azioni">'
       +(!viva?'<button id="d-posa">posa la prossima pietra</button>':'')
-      +'<button id="d-fatto">\u00e8 compiuto</button><button id="d-via">lascia andare</button></div>';
+      +'<button id="d-fatto">\u00e8 compiuto</button>'
+      +'<button id="d-cambia">\u00e8 cambiato</button>'
+      +'<button id="d-via">lascia andare</button></div>';
     box.innerHTML=hh; box.classList.add('on'); el.classList.remove('svelato');
     const bp=box.querySelector('#d-posa');
     if(bp) bp.addEventListener('click',async function(){
@@ -5078,25 +5117,45 @@ function _stanzaApri(){
       else if(t){ cardDesiderio(); try{ toast('Posata: \u00ab'+t+'\u00bb'); }catch(_){} }
       else{ this.disabled=false; this.textContent='riprova'; }
     });
-    let conf1=false,conf2=false;
+    /* v159: la conferma era il bottone stesso che diventava una domanda, e non c'era nessun «si»
+       da premere: chi tocca una volta resta li a guardare una domanda senza risposta - ed e il
+       motivo per cui un desiderio lasciato andare il 28 luglio era ancora al suo posto il 29.
+       Ora la domanda e una domanda, e sotto ci sono due bottoni veri. */
+    function chiedi(domanda,etichetta,poi){
+      const az=box.querySelector('#d-azioni'); if(!az) return;
+      az.innerHTML='<div class="g-voce" style="margin:0 0 8px">'+domanda+'</div>'
+        +'<button id="d-si">'+etichetta+'</button><button id="d-no">annulla</button>';
+      az.querySelector('#d-no').addEventListener('click',function(){ cardDesiderio(); });
+      az.querySelector('#d-si').addEventListener('click',function(){ this.disabled=true; poi(); });
+    }
     box.querySelector('#d-fatto').addEventListener('click',function(){
-      if(!conf1){ conf1=true; this.textContent='confermi? la montagna \u00e8 mossa'; return; }
-      regCantiere('desiderio',{msg:'compiuto: '+clampStr(d.testo,100)});
-      S.desiderio=null; save(); box.classList.remove('on');
-      try{ toast('La montagna \u00e8 mossa. Le pietre restano nel registro.'); }catch(_){}
+      chiedi('la montagna \u00e8 mossa?','s\u00ec, \u00e8 compiuto',function(){
+        const n=archiviaDesiderio('compiuto'); box.classList.remove('on');
+        try{ toast('La montagna \u00e8 mossa. '+n+(n===1?' pietra resta':' pietre restano')+' agli atti.'); }catch(_){}
+      });
+    });
+    box.querySelector('#d-cambia').addEventListener('click',function(){
+      chiedi('il desiderio \u00e8 cambiato: le pietre gi\u00e0 spostate restano, e ne esprimi uno nuovo.','s\u00ec, ne esprimo un altro',function(){
+        const n=archiviaDesiderio('cambiato'); box.classList.remove('on');
+        try{ toast(n+(n===1?' pietra resta':' pietre restano')+' agli atti. Ora la stella ascolta.'); }catch(_){}
+        ritoApri();
+      });
     });
     box.querySelector('#d-via').addEventListener('click',function(){
-      if(!conf2){ conf2=true; this.textContent='confermi? si lascia andare'; return; }
-      regCantiere('desiderio',{msg:'lasciato: '+clampStr(d.testo,100)});
-      S.desiderio=null; save(); box.classList.remove('on');
-      try{ toast('Lasciato andare. Il cielo non giudica.'); }catch(_){}
+      chiedi('si lascia andare? le pietre spostate restano agli atti.','s\u00ec, lascio andare',function(){
+        const n=archiviaDesiderio('lasciato'); box.classList.remove('on');
+        try{ toast('Lasciato andare. Il cielo non giudica. '+n+(n===1?' pietra resta':' pietre restano')+' agli atti.'); }catch(_){}
+      });
     });
   }
   el.addEventListener('pointerdown',function(e){
     if(e.target&&(e.target.id==='stanza-x'||e.target.closest&&e.target.closest('#stanza-giorno,#stanza-rito,#stanza-rito *'))) return;
     const px=e.clientX, py=e.clientY;
     if(meteora&&meteora.px!=null&&Math.hypot(px-meteora.px,py-meteora.py)<48){ ritoApri(); return; }
-    if(S.desiderio&&Math.hypot(px-CAIRN.x,py-CAIRN.y)<32){ cardDesiderio(); return; }
+    /* v159: il cerchio del cairn apre sempre. Prima, senza desiderio, l'unica porta era la stella
+       cadente: 4,2 secondi ogni 16-38, e con le animazioni ridotte non passava MAI - chi ha il
+       risparmio di moto attivo non poteva esprimere un desiderio, mai. */
+    if(Math.hypot(px-CAIRN.x,py-CAIRN.y)<34){ if(S.desiderio) cardDesiderio(); else ritoApri(); return; }
     let best=-1,bd=1e9;
     for(let i=0;i<piante.length;i++){ const pl=piante[i];
       const tx=pl.bx+pl.nx*pl.h, ty=pl.by+pl.ny*pl.h;
@@ -5169,6 +5228,14 @@ function _stanzaApri(){
         ctx2.beginPath(); ctx2.arc(lx,ly,1.7,0,7); ctx2.fill();
         ctx2.fillStyle='rgba('+CIELO2+',0.12)'; ctx2.beginPath(); ctx2.arc(lx,ly,5,0,7); ctx2.fill();
       }
+    }
+    /* v159: senza desiderio resta comunque un segno tappabile: il posto dove poggerebbe la prima pietra */
+    if(!S.desiderio){
+      const gv=ctx2.createRadialGradient(CAIRN.x,CAIRN.y,0,CAIRN.x,CAIRN.y,26);
+      gv.addColorStop(0,'rgba('+ORO+',0.055)'); gv.addColorStop(1,'rgba(0,0,0,0)');
+      ctx2.fillStyle=gv; ctx2.beginPath(); ctx2.arc(CAIRN.x,CAIRN.y,26,0,7); ctx2.fill();
+      ctx2.strokeStyle='rgba('+ORO+',0.30)'; ctx2.lineWidth=0.9; ctx2.setLineDash([2,4]);
+      ctx2.beginPath(); ctx2.ellipse(CAIRN.x,CAIRN.y,9,4.5,0,0,7); ctx2.stroke(); ctx2.setLineDash([]);
     }
     /* l'ometto di pietre: il desiderio che si muove, una pietra alla volta */
     if(S.desiderio){
