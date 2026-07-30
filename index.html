@@ -913,7 +913,7 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 #stanza-velo .frase{font-size:15.5px;line-height:1.55;color:#f5eedc;margin-top:10px}
 #stanza-velo .frase b{color:#e8bc6a;font-style:italic;font-size:1.15em}
 #stanza-giorno{position:absolute;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:3;background:rgba(13,18,15,.94);border:1px solid rgba(232,188,106,.4);border-radius:14px;padding:14px 16px;opacity:0;transform:translateY(18px);transition:opacity .35s,transform .35s;pointer-events:none}
-#stanza-giorno.on{opacity:1;transform:none}
+#stanza-giorno.on{opacity:1;transform:none;pointer-events:auto}   /* v161: la regola base la spegne al tocco e la .on non la riaccendeva: dalla v143 la card si vedeva, si toccava e non rispondeva. Ogni bottone che ci e passato dentro - posa la pietra, e compiuto, lascia andare, e cambiato, e il dettaglio dei giorni nel giardino - non ha mai funzionato. */
 #stanza-giorno .g-testa{color:#e8bc6a;font-weight:700;font-size:14.5px;letter-spacing:.02em}
 #stanza-giorno .g-fatti{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
 #stanza-giorno .g-fatti span{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.3);border-radius:12px;padding:3px 10px;font-size:12.5px;color:#f5eedc}
@@ -1827,7 +1827,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.159 · 2026-07-29';
+const APP_VERSION='v60S.161 · 2026-07-30';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
