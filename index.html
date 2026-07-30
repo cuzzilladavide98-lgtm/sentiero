@@ -896,6 +896,14 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 .item.passo.done .chk-mark path{stroke:#241A08}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #patto{animation:none}
+/* ════════ il frutto di ieri: la prima cosa che vedi, una volta al giorno ════════ */
+#frutto{margin:14px 0 4px;background:rgba(13,18,15,.72);border:1px solid rgba(232,188,106,.34);border-radius:16px;padding:20px 20px 16px;position:relative}
+#frutto.hidden{display:none}
+#frutto .fr-testa{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:14px}
+#frutto .fr-lettura{font-family:var(--serif);font-size:19px;line-height:1.5;color:var(--t1);margin:0 0 12px}
+#frutto .fr-albero{font-family:var(--serif);font-size:15.5px;line-height:1.55;color:rgba(245,242,234,.62);margin:0 0 12px}
+#frutto .fr-mossa{font-size:14px;line-height:1.5;color:var(--accent);margin:0;padding-top:12px;border-top:1px solid rgba(232,188,106,.18)}
+#frutto .fr-x{position:absolute;top:10px;right:10px;width:30px;height:30px;border:0;background:transparent;color:rgba(245,242,234,.35);font-size:17px;line-height:1;padding:0}
   body:not(.anima-sempre) #patto .patto-fermaglio b{animation:none}
 }
 
@@ -1011,6 +1019,7 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
   <main>
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
+      <div id="frutto" class="hidden"></div>
       <div id="giorno-bar">
         <span id="day-line"></span>
       </div>
@@ -1431,6 +1440,17 @@ function sanitizeCapitoli(arr){   /* i capitoli: un mese rilegato non si riscriv
    provare una modifica del contratto sul materiale VERO prima di metterla addosso alla giornata di
    qualcuno. Gli esiti restano nel backup, cosi in laboratorio si confrontano prima/dopo sullo
    stesso identico pacchetto - che e l'unico confronto onesto che esista. */
+function sanitizeFrutti(arr){
+  if(!Array.isArray(arr)) return [];
+  const out=[];
+  for(const e of arr.slice(-40)){
+    if(!e||typeof e!=='object') continue;
+    const tk=clampStr(e.tk,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(tk)) continue;
+    out.push({tk:tk,lettura:clampStr(e.lettura,400),albero:clampStr(e.albero,240),
+      alberoId:clampStr(e.alberoId,60),mossa:clampStr(e.mossa,240),chiuso:e.chiuso===true});
+  }
+  return out;
+}
 function sanitizeBanco(arr){
   if(!Array.isArray(arr)) return [];
   const out=[];
@@ -1512,7 +1532,8 @@ function sanitizeState(raw,def){
     observerNotes:sanitizeObserverNotes(raw.observerNotes),
     mastery:sanitizeMastery(raw.mastery),
     obsLines:sanitizeObsLines(raw.obsLines),
-    banco:sanitizeBanco(raw.banco),                                  /* v157: gli esiti del banco viaggiano nei backup: e li che si confrontano due contratti sullo STESSO materiale */
+    banco:sanitizeBanco(raw.banco),
+    frutti:sanitizeFrutti(raw.frutti),                               /* v162: i frutti gia raccolti, per non ripetere l'albero */                                  /* v157: gli esiti del banco viaggiano nei backup: e li che si confrontano due contratti sullo STESSO materiale */
     registro:sanitizeRegistro(raw.registro),
     capitoli:sanitizeCapitoli(raw.capitoli),
     semi:sanitizeSemi(raw.semi),
@@ -1827,7 +1848,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.161 · 2026-07-30';
+const APP_VERSION='v60S.162 · 2026-07-30';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1847,7 +1868,7 @@ const defaultState={
     {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
     {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
   ],
-  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
+  checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],frutti:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
 let S=load();
@@ -3651,6 +3672,255 @@ async function eseguiBanco(){
   if(note) note.textContent='Fatti '+fatti+'. Gli esiti sono nel prossimo backup: prima e dopo sullo stesso pacchetto.';
   if(btn){ btn.disabled=false; btn.textContent='Rigioca'; }
   _bancoInCorso=false;
+}
+/* ══ IL FRUTTO DI IERI ══════════════════════════════════════════════════════════════════════
+   Tre righe, tutte calcolate qui: nessuna chiamata al modello, nessuna invenzione possibile.
+     LETTURA — cosa ha detto l'amico ieri, parola per parola (o, se ha taciuto, la forma del giorno)
+     ALBERO  — una cosa vera da settimane, che spiega perche quel frutto e venuto cosi
+     MOSSA   — una cosa per stasera, e SOLO una che nell'orologio viene ancora dopo
+   Un numero per riga, mai un rapporto: la legge del sussurro vale anche qui. ══════════════ */
+
+function _fPar(n){
+  const W=['zero','una','due','tre','quattro','cinque','sei','sette','otto','nove','dieci',
+           'undici','dodici','tredici','quattordici','quindici','sedici','diciassette','diciotto','diciannove','venti'];
+  return (n>=0&&n<W.length)?W[n]:String(n);
+}
+function _fGiorno(i){ return ['lunedì','martedì','mercoledì','giovedì','venerdì','sabato','domenica'][i]; }
+function _fIeri(tk){ const d=new Date(tk+'T12:00:00'); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); }
+function _fDow(tk){ return (new Date(tk+'T12:00:00').getDay()+6)%7; }
+function _fPrevista(t,tk){ return !!(t&&Array.isArray(t.days)&&t.days.includes(_fDow(tk)))||!!(t&&t.date&&t.date===tk); }
+function _fFatta(S,t,tk){ return !!(S.checks&&S.checks[tk]&&S.checks[tk][t.id]===true); }
+function _fGiorni(S){ return Object.keys(S.checks||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort(); }
+/* le quest ricorrenti con un titolo ambiguo vanno distinte, se no ogni lettura che le tocca e cieca */
+function _fTitolo(S,t){
+  const uguali=(S.scheduled||[]).filter(x=>x&&x.titolo===t.titolo);
+  if(uguali.length<2||!t.time) return t.titolo;
+  const h=parseInt(String(t.time).slice(0,2),10);
+  return t.titolo+(h<13?' del mattino':' del pomeriggio');
+}
+
+/* ── LETTURA ──────────────────────────────────────────────────────────────── */
+function frGenereSbagliato(S,r){
+  const g=(S&&S.settings&&S.settings.genere)||'';
+  if(g!=='m'&&g!=='f') return false;
+  const fem=/\b(sei|eri|ti sei|non sei|saresti)\s+\w*(ata|uta|ita)\b|\btu stessa\b/i.test(r);
+  const mas=/\b(sei|eri|ti sei|non sei|saresti)\s+\w*(ato|uto|ito)\b|\btu stesso\b/i.test(r);
+  return g==='m'?fem:mas;
+}
+const _F_RITORNO=/(torna|tornano|tornato|tornata|ritorno|riapre|ripres|dopo un vuoto|mancate di fila|saltat)/i;
+function frLettura(S,tk){
+  const ieri=_fIeri(tk);
+  const righe=[];
+  (S.registro||[]).forEach(e=>{
+    if(e&&e.tipo==='sussurro'&&e.riga&&String(e.t||'').slice(0,10)===ieri) righe.push(String(e.riga));
+  });
+  (S.obsLines||[]).forEach(n=>{
+    if(n&&n.riga&&String(n.iso||'').slice(0,10)===ieri&&righe.indexOf(String(n.riga))<0) righe.push(String(n.riga));
+  });
+  const punteggio=r=>{
+    let p=0;
+    if(_F_RITORNO.test(r)) p+=6;                                  /* il ritorno e l'unita che emoziona */
+    if(/«[^»]{4,}»/.test(r)) p+=4;                 /* parole sue fra virgolette: vale doppio */
+    if(/\b\d+\s+su\s+\d+\b/.test(r)) p-=10;                       /* bollettino in cifre: fuori */
+    if((r.match(/\b(vuota|rara|a met[a\u00e0]|piena)\b/gi)||[]).length>=3) p-=10;   /* bollettino in parole: fuori uguale */
+    if(/\b(trend|plateau|media|percentual)/i.test(r)) p-=8;
+    if((r.match(/\b\d+\b/g)||[]).length>1) p-=5;
+    /* l'archivio contiene righe scritte prima della v150, quando il contratto dava del femminile:
+       riservirle di prima mattina significa rifare la stessa ferita una seconda volta. */
+    if(frGenereSbagliato(S,r)) p-=20;
+    if(r.length<45) p-=2;
+    return p;
+  };
+  righe.sort((a,b)=>punteggio(b)-punteggio(a));
+  if(righe.length&&punteggio(righe[0])>-3) return {testo:righe[0],fonte:'sussurro'};
+  /* l'amico ha taciuto: allora la forma del giorno, che e comunque una lettura e non un conteggio */
+  const ore=[];
+  (S.registro||[]).forEach(e=>{
+    if(e&&(e.tipo==='sussurro'||e.tipo==='silenzio')&&String(e.t||'').slice(0,10)===ieri) ore.push(String(e.t).slice(11,16));
+  });
+  const fatte=Object.keys((S.checks&&S.checks[ieri])||{}).filter(k=>S.checks[ieri][k]===true).length;
+  if(!fatte) return {testo:'ieri non è rimasta traccia di niente.',fonte:'vuoto'};
+  if(ore.length>=2){
+    ore.sort();
+    const h0=parseInt(ore[0].slice(0,2),10), h1=parseInt(ore[ore.length-1].slice(0,2),10);
+    if(h1-h0<=3) return {testo:'ieri tutto quello che hai fatto sta in poche ore, una accanto all\'altra.',fonte:'forma'};
+    return {testo:'ieri hai tenuto aperta la giornata dal mattino fino a sera.',fonte:'forma'};
+  }
+  return {testo:fatte===1?'ieri è rimasta in piedi una cosa sola.':'ieri le cose sono state chiuse senza che l\'amico dicesse niente.',fonte:'forma'};
+}
+
+/* ── ALBERO ───────────────────────────────────────────────────────────────── */
+function frAlberi(S,tk){
+  const out=[]; const gg=_fGiorni(S).filter(d=>d<tk);
+  if(gg.length<10) return out;
+  const att=(S.scheduled||[]).filter(t=>t&&t.id&&t.titolo&&Array.isArray(t.days)&&t.days.length);
+  /* catene: A tira C. Solo un verso, quello piu forte, e solo con abbastanza occasioni */
+  /* Una correlazione e simmetrica, una frase no: «quando fai X, Y arriva» dice che X viene PRIMA.
+     Se l'orologio dice il contrario la frase e falsa anche se i numeri tornano - e la stessa
+     superstizione dell'ordine gia trovata sulla mossa. Quindi la catena si racconta SEMPRE nel
+     verso del tempo, e la probabilita si ricalcola in quel verso. */
+  const ore=frOreTipiche(S);
+  const viste={};
+  att.forEach(a=>att.forEach(c=>{
+    if(a.id===c.id) return;
+    const chiave=[a.id,c.id].sort().join('|');
+    const com=gg.filter(d=>_fPrevista(a,d)&&_fPrevista(c,d));
+    if(com.length<20) return;
+    const ha=frOraDi(S,a,ore), hc=frOraDi(S,c,ore);
+    if(ha!==null&&hc!==null&&ha>hc+0.5) return;      /* verso sbagliato: la coppia si guarda dall'altro lato */
+    const fa=com.filter(d=>_fFatta(S,a,d)), na=com.filter(d=>!_fFatta(S,a,d));
+    if(fa.length<8||na.length<8) return;
+    const p1=fa.filter(d=>_fFatta(S,c,d)).length/fa.length;
+    const p0=na.filter(d=>_fFatta(S,c,d)).length/na.length;
+    const salto=p1-p0;
+    if(salto<0.20) return;
+    if(viste[chiave]&&viste[chiave]>=salto) return;
+    viste[chiave]=salto;
+    const forza=p1>=0.99?'arriva sempre, senza una sola eccezione':p1>=0.8?'arriva quasi sempre':'arriva molto più spesso';
+    out.push({id:'catena:'+chiave,peso:salto+0.5,tira:c.id,
+      testo:'quando fai «'+_fTitolo(S,a)+'», «'+_fTitolo(S,c)+'» '+forza+'.'});
+  }));
+  /* ritorni e strisce */
+  att.forEach(t=>{
+    const p=gg.filter(d=>_fPrevista(t,d));
+    let best=0,cur=0,rit=0,vuoto=0;
+    p.forEach(d=>{
+      const ok=_fFatta(S,t,d);
+      cur=ok?cur+1:0; if(cur>best) best=cur;
+      if(ok){ if(vuoto>=2) rit++; vuoto=0; } else vuoto++;
+    });
+    if(rit>=3) out.push({id:'ritorni:'+t.id,peso:0.4+rit/20,tira:t.id,
+      testo:'«'+_fTitolo(S,t)+'» l\'hai ripresa '+_fPar(rit)+' volte dopo averla mollata.'});
+    if(best>=5) out.push({id:'striscia:'+t.id,peso:0.3+best/40,tira:t.id,
+      testo:'su «'+_fTitolo(S,t)+'» sei arrivato a '+_fPar(best)+' volte di fila: è la tua striscia più lunga su questa.'});
+  });
+  /* il giorno della settimana */
+  const perd={}; gg.forEach(d=>{ const k=_fDow(d);
+    (perd[k]=perd[k]||[]).push(Object.keys(S.checks[d]||{}).filter(x=>S.checks[d][x]===true).length); });
+  const tutti=[].concat.apply([],Object.keys(perd).map(k=>perd[k]));
+  const media=tutti.reduce((a,b)=>a+b,0)/(tutti.length||1);
+  Object.keys(perd).forEach(k=>{
+    if(perd[k].length<5) return;
+    const m=perd[k].reduce((a,b)=>a+b,0)/perd[k].length;
+    if(m-media>=0.8) out.push({id:'sett:'+k,peso:0.35,testo:'il '+_fGiorno(+k)+' è il giorno in cui ti riesce di più, da settimane.'});
+    if(media-m>=0.8) out.push({id:'sett:'+k,peso:0.35,testo:'il '+_fGiorno(+k)+' è il giorno in cui lasci cadere di più, e succede da settimane.'});
+  });
+  return out.sort((a,b)=>b.peso-a.peso);
+}
+function frAlbero(S,tk){
+  const cand=frAlberi(S,tk);
+  if(!cand.length) return null;
+  /* quando TUTTI gli alberi sono gia stati detti non si ricasca sul primo - si prende quello
+     detto piu tempo fa. Cosi due giorni di fila non possono mai avere lo stesso albero. */
+  const usati=(S.frutti||[]).map(f=>f&&f.alberoId).filter(Boolean);
+  const quandoUltimo=id=>{ const i=usati.lastIndexOf(id); return i<0?-1:i; };
+  const ord=cand.slice().sort((a,b)=>{
+    const ua=quandoUltimo(a.id), ub=quandoUltimo(b.id);
+    if(ua!==ub) return ua-ub;          /* mai detto (-1) prima di tutti; poi il piu vecchio */
+    return b.peso-a.peso;
+  });
+  const scelto=ord[0];
+  /* se l'unico albero disponibile e proprio quello di ieri, si tace: meglio una carta di due righe
+     che la stessa frase due mattine di fila. */
+  const detti=(S.frutti||[]).map(f=>f&&f.alberoId).filter(Boolean);
+  const ieriAlbero=detti.length?detti[detti.length-1]:'';
+  if(scelto&&scelto.id===ieriAlbero) return null;
+  return scelto;
+}
+
+/* ── MOSSA ────────────────────────────────────────────────────────────────── */
+/* l'ora tipica in cui una quest viene chiusa: dal registro, che e l'unica traccia oraria vera */
+function frOreTipiche(S){
+  const per={};
+  (S.registro||[]).forEach(e=>{
+    if(!e||(e.tipo!=='sussurro'&&e.tipo!=='silenzio')||!e.task||!e.t) return;
+    /* regCantiere scrive l'istante in UTC senza marcatore: senza la Z si legge due ore indietro
+       e la regola dell'orologio sbaglia di due ore, che e esattamente l'errore da evitare qui. */
+    const d=new Date(String(e.t)+'Z');
+    if(isNaN(d.getTime())) return;
+    (per[e.task]=per[e.task]||[]).push(d.getHours()+d.getMinutes()/60);
+  });
+  const out={};
+  Object.keys(per).forEach(k=>{ const v=per[k]; if(v.length>=3) out[k]=v.reduce((a,b)=>a+b,0)/v.length; });
+  return out;
+}
+/* l'ora di una quest: prima quella che le hai messo tu, poi quella che risulta dai fatti.
+   La tua batte la media, perche due quest con lo stesso titolo nel registro si confondono. */
+function frOraDi(S,t,ore){
+  if(t&&typeof t.time==='string'&&/^\d{2}:\d{2}$/.test(t.time)){
+    return parseInt(t.time.slice(0,2),10)+parseInt(t.time.slice(3),10)/60;
+  }
+  const h=ore[t&&t.titolo];
+  return (h===undefined)?null:h;
+}
+function frMossa(S,tk,oraOra,albero){
+  const dow=_fDow(tk);
+  const oggi=(S.scheduled||[]).filter(t=>t&&t.id&&_fPrevista(t,tk)&&!_fFatta(S,t,tk));
+  if(!oggi.length) return null;
+  const ore=frOreTipiche(S);
+  /* SOLO una quest che nell'orologio viene ancora dopo: dire «comincia da X» quando X e gia passata
+     e una superstizione, non un consiglio. */
+  const dopo=oggi.filter(t=>{ const h=frOraDi(S,t,ore); return h===null?true:(h>=oraOra-0.5); });
+  if(!dopo.length) return null;
+  let scelta=null;
+  if(albero&&albero.tira) scelta=dopo.filter(t=>t.id===albero.tira)[0]||null;
+  if(!scelta){
+    /* altrimenti quella che manca da piu tempo fra le previste di oggi */
+    let peggio=-1;
+    dopo.forEach(t=>{
+      const gg=_fGiorni(S).filter(d=>d<tk&&_fPrevista(t,d)).slice(-14);
+      let vuoto=0; for(let i=gg.length-1;i>=0;i--){ if(_fFatta(S,t,gg[i])) break; vuoto++; }
+      if(vuoto>peggio){ peggio=vuoto; scelta=t; }
+    });
+  }
+  if(!scelta) return null;
+  const h=frOraDi(S,scelta,ore);
+  const quando=(h===null)?'':(h>=19?' — di solito la chiudi di sera':h>=14?' — di solito la chiudi nel pomeriggio':h>=11?' — di solito verso mezzogiorno':' — di solito la chiudi al mattino');
+  return {id:scelta.id,testo:'oggi c\'è ancora «'+_fTitolo(S,scelta)+'»'+quando+'.'};
+}
+
+/* ── IL FRUTTO ────────────────────────────────────────────────────────────── */
+function costruisciFrutto(S,tk,oraOra){
+  try{
+    const lettura=frLettura(S,tk);
+    const albero=frAlbero(S,tk);
+    const mossa=frMossa(S,tk,(typeof oraOra==='number'?oraOra:new Date().getHours()),albero);
+    if(!lettura) return null;
+    return {tk:tk,lettura:lettura.testo,fonte:lettura.fonte,
+      albero:albero?albero.testo:'',alberoId:albero?albero.id:'',
+      mossa:mossa?mossa.testo:''};
+  }catch(_){ return null; }
+}
+/* ── la carta: si compone una volta al mattino, si chiude e resta chiusa ── */
+function fruttoDiOggi(){
+  const tk=todayKey();
+  const gia=(S.frutti||[]).filter(f=>f&&f.tk===tk)[0];
+  if(gia) return gia;
+  const nuovo=costruisciFrutto(S,tk,new Date().getHours());
+  if(!nuovo) return null;
+  nuovo.chiuso=false;
+  S.frutti=(S.frutti||[]).concat([nuovo]).slice(-40);
+  save();
+  try{ regCantiere('frutto',{msg:(nuovo.albero?'con albero':'senza albero')+(nuovo.mossa?' + mossa':'')}); }catch(_){}
+  return nuovo;
+}
+function renderFrutto(){
+  const el=document.querySelector('#frutto'); if(!el) return;
+  const f=fruttoDiOggi();
+  if(!f||f.chiuso){ el.classList.add('hidden'); el.innerHTML=''; return; }
+  el.innerHTML='<button class="fr-x" id="fr-chiudi" aria-label="Chiudi il frutto">\u00d7</button>'
+    +'<div class="fr-testa">il frutto di ieri</div>'
+    +'<p class="fr-lettura">'+escapeHtml(f.lettura)+'</p>'
+    +(f.albero?'<p class="fr-albero">'+escapeHtml(f.albero)+'</p>':'')
+    +(f.mossa?'<p class="fr-mossa">'+escapeHtml(f.mossa)+'</p>':'');
+  el.classList.remove('hidden');
+  const x=el.querySelector('#fr-chiudi');
+  if(x) x.onclick=()=>{
+    const tk=todayKey();
+    (S.frutti||[]).forEach(g=>{ if(g&&g.tk===tk) g.chiuso=true; });
+    save(); el.classList.add('hidden'); el.innerHTML='';
+    try{ haptic(); }catch(_){}
+  };
 }
 /* ══════ MOTORE MAESTRIA fase 1: il modello legge, il client conta ══════ */
 function processMastery(mo){
@@ -7589,7 +7859,8 @@ try{ initDay(); }catch(_){}
 try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
-try{ maybeChiudiCapitolo(); }catch(_){}   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
+try{ maybeChiudiCapitolo(); }catch(_){}
+try{ renderFrutto(); }catch(_){}   /* il frutto di ieri: la prima cosa che vedi, e si compone da solo */   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
 /* il segnavia impara a tacere: dal 21\u00b0 giorno attivo si attenua quando non serve, torna al tocco */
 (function(){
   try{ if(anzianita(S)<2) return; }catch(_){ return; }
