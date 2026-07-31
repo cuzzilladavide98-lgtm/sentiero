@@ -896,14 +896,7 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 .item.passo.done .chk-mark path{stroke:#241A08}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #patto{animation:none}
-/* ════════ il frutto di ieri: la prima cosa che vedi, una volta al giorno ════════ */
-#frutto{margin:14px 0 4px;background:rgba(13,18,15,.72);border:1px solid rgba(232,188,106,.34);border-radius:16px;padding:20px 20px 16px;position:relative}
-#frutto.hidden{display:none}
-#frutto .fr-testa{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:14px}
-#frutto .fr-lettura{font-family:var(--serif);font-size:19px;line-height:1.5;color:var(--t1);margin:0 0 12px}
-#frutto .fr-albero{font-family:var(--serif);font-size:15.5px;line-height:1.55;color:rgba(245,242,234,.62);margin:0 0 12px}
-#frutto .fr-mossa{font-size:14px;line-height:1.5;color:var(--accent);margin:0;padding-top:12px;border-top:1px solid rgba(232,188,106,.18)}
-#frutto .fr-x{position:absolute;top:10px;right:10px;width:30px;height:30px;border:0;background:transparent;color:rgba(245,242,234,.35);font-size:17px;line-height:1;padding:0}
+
   body:not(.anima-sempre) #patto .patto-fermaglio b{animation:none}
 }
 
@@ -944,6 +937,17 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 /* v144: il tocco lungo non deve svegliare la selezione testo di iOS (il menu Copia sopra il giardino) */
 body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
 #stanza, #stanza *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* ════════ IL FRUTTO DI IERI (v163) — al livello piu alto del foglio, MAI dentro una media query ════════ */
+#frutto{margin:16px 2px 6px;background:linear-gradient(165deg,rgba(26,32,27,.96),rgba(13,18,15,.96));border:1px solid rgba(232,188,106,.5);border-radius:18px;padding:22px 20px 14px;position:relative;box-shadow:0 10px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(245,242,234,.06)}
+#frutto.hidden{display:none}
+#frutto .fr-testa{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#E8A84C;margin-bottom:14px}
+#frutto .fr-lettura{font-family:var(--serif);font-size:19.5px;line-height:1.5;color:var(--t1);margin:0 0 12px}
+#frutto .fr-albero{font-family:var(--serif);font-style:italic;font-size:15px;line-height:1.55;color:rgba(245,242,234,.6);margin:0 0 12px}
+#frutto .fr-mossa{font-size:14px;line-height:1.5;color:#E8A84C;margin:0}
+#frutto .fr-piede{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(232,188,106,.16)}
+#frutto .fr-piede button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.4);border-radius:12px;padding:8px 16px;font-size:13.5px;color:#E8DCC0}
+#frutto .fr-piede #fr-condividi{border-color:rgba(232,188,106,.6);color:#E8A84C}
 </style>
 </head>
 <body>
@@ -1447,7 +1451,7 @@ function sanitizeFrutti(arr){
     if(!e||typeof e!=='object') continue;
     const tk=clampStr(e.tk,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(tk)) continue;
     out.push({tk:tk,lettura:clampStr(e.lettura,400),albero:clampStr(e.albero,240),
-      alberoId:clampStr(e.alberoId,60),mossa:clampStr(e.mossa,240),chiuso:e.chiuso===true});
+      alberoId:clampStr(e.alberoId,60),mossa:clampStr(e.mossa,240),chiuso:e.chiuso===true,visto:e.visto===true});
   }
   return out;
 }
@@ -1848,7 +1852,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.162 · 2026-07-30';
+const APP_VERSION='v60S.163 · 2026-07-30';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3728,6 +3732,8 @@ function frLettura(S,tk){
     /* l'archivio contiene righe scritte prima della v150, quando il contratto dava del femminile:
        riservirle di prima mattina significa rifare la stessa ferita una seconda volta. */
     if(frGenereSbagliato(S,r)) p-=20;
+    if(r.length>170) p-=4;                                        /* la carta del mattino vuole una riga che si legge in un fiato */
+    if(r.length>230) p-=6;
     if(r.length<45) p-=2;
     return p;
   };
@@ -3891,7 +3897,8 @@ function costruisciFrutto(S,tk,oraOra){
       mossa:mossa?mossa.testo:''};
   }catch(_){ return null; }
 }
-/* ── la carta: si compone una volta al mattino, si chiude e resta chiusa ── */
+/* ── la carta (v163): si compone alla PRIMA apertura del giorno, si legge, e non torna.
+   E si porta fuori: disegnata su canvas nello stile dell'app e consegnata al foglio di iOS. ── */
 function fruttoDiOggi(){
   const tk=todayKey();
   const gia=(S.frutti||[]).filter(f=>f&&f.tk===tk)[0];
@@ -3904,23 +3911,62 @@ function fruttoDiOggi(){
   try{ regCantiere('frutto',{msg:(nuovo.albero?'con albero':'senza albero')+(nuovo.mossa?' + mossa':'')}); }catch(_){}
   return nuovo;
 }
+function _frCapo(x,testo,px,y,maxW,lh,font,colore){
+  x.font=font; x.fillStyle=colore;
+  const parole=String(testo).split(' '); let riga='';
+  parole.forEach(w=>{
+    const t=riga?riga+' '+w:w;
+    if(x.measureText(t).width>maxW&&riga){ x.fillText(riga,px,y); y+=lh; riga=w; }
+    else riga=t;
+  });
+  if(riga){ x.fillText(riga,px,y); y+=lh; }
+  return y;
+}
+async function condividiFrutto(f){
+  try{
+    const W=1080,Hc=1350, cv=document.createElement('canvas'); cv.width=W; cv.height=Hc;
+    const x=cv.getContext('2d');
+    x.fillStyle='#0d120f'; x.fillRect(0,0,W,Hc);
+    const g=x.createRadialGradient(W/2,300,0,W/2,300,900);
+    g.addColorStop(0,'rgba(232,188,106,.14)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=g; x.fillRect(0,0,W,Hc);
+    for(let i=0;i<70;i++){ x.fillStyle='rgba(245,242,234,'+(0.06+Math.random()*0.22)+')';
+      x.beginPath(); x.arc(Math.random()*W,Math.random()*Hc*0.5,Math.random()*1.6+0.4,0,7); x.fill(); }
+    x.strokeStyle='rgba(232,188,106,.55)'; x.lineWidth=3; x.strokeRect(46,46,W-92,Hc-92);
+    x.textAlign='left';
+    const d=new Date(f.tk+'T12:00:00');
+    const quando=d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+    x.font='600 30px -apple-system,sans-serif'; x.fillStyle='#E8A84C';
+    x.fillText(('IL FRUTTO DI '+quando).toUpperCase(),96,150);
+    let y=260;
+    y=_frCapo(x,f.lettura,96,y,W-192,68,'italic 52px Georgia,serif','#F5F2EA');
+    if(f.albero){ y+=34; y=_frCapo(x,f.albero,96,y,W-192,54,'italic 38px Georgia,serif','rgba(245,242,234,.62)'); }
+    x.font='30px -apple-system,sans-serif'; x.fillStyle='rgba(245,242,234,.38)';
+    x.fillText('sentiero',96,Hc-104);
+    const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+    const file=new File([blob],'sentiero-frutto-'+f.tk+'.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); }
+    else if(navigator.share){ await navigator.share({title:'Sentiero',text:f.lettura}); }
+    else{ try{ toast('La condivisione non è disponibile qui'); }catch(_){} }
+  }catch(e){ if(!(e&&e.name==='AbortError')){ try{ toast('Condivisione non riuscita'); }catch(_){} } }
+}
 function renderFrutto(){
   const el=document.querySelector('#frutto'); if(!el) return;
   const f=fruttoDiOggi();
-  if(!f||f.chiuso){ el.classList.add('hidden'); el.innerHTML=''; return; }
-  el.innerHTML='<button class="fr-x" id="fr-chiudi" aria-label="Chiudi il frutto">\u00d7</button>'
-    +'<div class="fr-testa">il frutto di ieri</div>'
+  /* la carta vive UNA apertura: quella in cui nasce. Vista una volta, le aperture dopo tacciono. */
+  if(!f||f.chiuso||f.visto){ el.classList.add('hidden'); el.innerHTML=''; return; }
+  (S.frutti||[]).forEach(g=>{ if(g&&g.tk===f.tk) g.visto=true; });
+  save();
+  el.innerHTML='<div class="fr-testa">il frutto di ieri</div>'
     +'<p class="fr-lettura">'+escapeHtml(f.lettura)+'</p>'
     +(f.albero?'<p class="fr-albero">'+escapeHtml(f.albero)+'</p>':'')
-    +(f.mossa?'<p class="fr-mossa">'+escapeHtml(f.mossa)+'</p>':'');
+    +(f.mossa?'<p class="fr-mossa">'+escapeHtml(f.mossa)+'</p>':'')
+    +'<div class="fr-piede"><button id="fr-condividi">Condividi</button><button id="fr-chiudi">Chiudi</button></div>';
   el.classList.remove('hidden');
-  const x=el.querySelector('#fr-chiudi');
-  if(x) x.onclick=()=>{
-    const tk=todayKey();
-    (S.frutti||[]).forEach(g=>{ if(g&&g.tk===tk) g.chiuso=true; });
-    save(); el.classList.add('hidden'); el.innerHTML='';
-    try{ haptic(); }catch(_){}
-  };
+  const chiudi=()=>{ (S.frutti||[]).forEach(g=>{ if(g&&g.tk===f.tk) g.chiuso=true; });
+    save(); el.classList.add('hidden'); el.innerHTML=''; try{ haptic(); }catch(_){} };
+  const bx=el.querySelector('#fr-chiudi'); if(bx) bx.onclick=chiudi;
+  const bc=el.querySelector('#fr-condividi'); if(bc) bc.onclick=()=>{ condividiFrutto(f); };
 }
 /* ══════ MOTORE MAESTRIA fase 1: il modello legge, il client conta ══════ */
 function processMastery(mo){
