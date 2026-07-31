@@ -1451,7 +1451,7 @@ function sanitizeFrutti(arr){
     if(!e||typeof e!=='object') continue;
     const tk=clampStr(e.tk,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(tk)) continue;
     out.push({tk:tk,lettura:clampStr(e.lettura,400),albero:clampStr(e.albero,240),
-      alberoId:clampStr(e.alberoId,60),mossa:clampStr(e.mossa,240),chiuso:e.chiuso===true,visto:e.visto===true});
+      alberoId:clampStr(e.alberoId,60),mossa:clampStr(e.mossa,240),chiuso:e.chiuso===true,visto:e.visto===true,silenzio:e.silenzio===true});
   }
   return out;
 }
@@ -1852,7 +1852,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.163 · 2026-07-30';
+const APP_VERSION='v60S.164 · 2026-07-31';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3897,18 +3897,100 @@ function costruisciFrutto(S,tk,oraOra){
       mossa:mossa?mossa.testo:''};
   }catch(_){ return null; }
 }
+/* ══ IL FRUTTO SCRITTO (v164) ═══════════════════════════════════════════════════════════════
+   La carta calcolata garantiva la verita ma non il senso: righe di ieri rilette stamattina coi
+   deittici rotti, correlazioni vere e vuote, e il dialetto interno («rara») colato addosso a chi
+   legge. Da qui: i FATTI restano del client, la SCRITTURA e del modello, ogni mattina, per
+   stamattina. E davanti c'e un veto meccanico: lessico interno, rapporti, genere sbagliato -
+   NIENTE CARTA. Meglio nessun frutto che un frutto morto. ═══════════════════════════════ */
+const FRUTTO_SYS=
+"Sei la voce del mattino di Sentiero. Scrivi IL FRUTTO DI IERI: la prima cosa che la persona legge aprendo la giornata.\n"+
+"COSA: DUE o TRE frasi brevi su cosa e stato davvero ieri, viste da stamattina. Non un elenco: una lettura - cosa tiene, cosa e tornato, cosa manca, cosa lega i fatti fra loro.\n"+
+"LINGUA: italiano di tutti i giorni, come si parla a un amico al bar. La carta puo finire su WhatsApp: deve capirla chiunque, anche chi non sa cosa sia Sentiero. Minuscole anche a inizio frase.\n"+
+"VIETATO, pena il cestino: le parole interne dell'app (vuota, rara, a meta, piena, quasi piena, occasioni previste, arco, task, quest, streak, spunta, rituale); i rapporti numerici (3 su 7, sette su sette); piu di UN numero in tutto; ieri detto come se fosse oggi (le righe_di_ieri sono scritte DENTRO ieri: raccontale da stamattina, non copiarle); lodi generiche, esclamazioni, emoji, morale in coda.\n"+
+"I NOMI: usa i nomi veri delle cose della persona (il libro, le proteine, l'allenamento, il meccanico), mai i titoli tecnici fra virgolette.\n"+
+"CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna: ogni accordo segue quello. Se non lo sai, gira la frase.\n"+
+"SILENZIO: se il materiale non regge due frasi vere e comprensibili, rispondi con la sola parola SILENZIO. Nessuna carta e meglio di una carta vuota.\n"+
+"Rispondi SOLO con un oggetto JSON: {\"frutto\":\"...\"} oppure SILENZIO.";
+function fruttoPacchetto(S,tk){
+  const ieri=_fIeri(tk);
+  const p={};
+  try{ const d=new Date(ieri+'T12:00:00');
+    p.ieri=d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'}); }catch(_){ p.ieri=ieri; }
+  p.chi_ti_legge=(S.settings&&S.settings.genere==='m')?'un uomo':(S.settings&&S.settings.genere==='f')?'una donna':'non lo sai: non usare accordi di genere';
+  const fatteIds=Object.keys((S.checks&&S.checks[ieri])||{}).filter(k=>S.checks[ieri][k]===true);
+  const nome=id=>{ const t=(S.scheduled||[]).find(x=>x&&x.id===id)||(S.quests||[]).find(x=>x&&x.id===id)||(S.questLog||[]).find(x=>x&&x.id===id); return t?_fTitolo(S,t):null; };
+  p.fatte_ieri=fatteIds.map(nome).filter(Boolean);
+  p.ritorni_di_ieri=[];
+  (S.scheduled||[]).forEach(t=>{
+    if(!t||!t.id||!Array.isArray(t.days)||!t.days.length) return;
+    if(!_fPrevista(t,ieri)||!_fFatta(S,t,ieri)) return;
+    const prima=_fGiorni(S).filter(d=>d<ieri&&_fPrevista(t,d));
+    let vuoto=0; for(let i=prima.length-1;i>=0;i--){ if(_fFatta(S,t,prima[i])) break; vuoto++; }
+    if(vuoto>=2) p.ritorni_di_ieri.push({cosa:_fTitolo(S,t),dopo:_fPar(vuoto)+' volte saltata'});
+  });
+  p.mancate_ieri=(S.scheduled||[]).filter(t=>t&&t.id&&Array.isArray(t.days)&&t.days.length&&_fPrevista(t,ieri)&&!_fFatta(S,t,ieri)).map(t=>_fTitolo(S,t));
+  try{ if(S.patto&&S.patto.tk===ieri){ const q=nome(S.patto.id);
+    if(q) p.patto_di_ieri={promessa:q,mantenuto:fatteIds.indexOf(S.patto.id)>=0,azzardo:!!S.patto.audace}; } }catch(_){}
+  p.radici=frAlberi(S,tk).slice(0,3).map(a=>a.testo);
+  p.righe_di_ieri=[];
+  (S.registro||[]).forEach(e=>{ if(e&&e.tipo==='sussurro'&&e.riga&&String(e.t||'').slice(0,10)===ieri) p.righe_di_ieri.push(String(e.riga).slice(0,220)); });
+  p.righe_di_ieri=p.righe_di_ieri.slice(0,6);
+  p.diario_di_ieri=(S.diary||[]).filter(x=>x&&x.data===ieri&&x.testo).slice(0,3).map(x=>String(x.testo).slice(0,200));
+  return p;
+}
+function fruttoVeto(S,testo){
+  const t=String(testo||'');
+  if(!t||t.length<40) return 'corto';
+  if(t.length>420) return 'lungo';
+  const ti=t.toLowerCase();
+  const banditi=['vuota','rara','a metà','quasi piena','occasioni previste','arco delle','task','quest','streak','spunta','rituale'];
+  for(const b of banditi){ if(ti.indexOf(b)>=0) return 'lessico interno: '+b; }
+  if(/\b\d+\s+su\s+\d+\b/.test(ti)) return 'rapporto numerico';
+  if((t.match(/\b\d+\b/g)||[]).length>1) return 'piu di un numero';
+  if(t.indexOf('!')>=0) return 'esclamazione';
+  if(frGenereSbagliato(S,t)) return 'genere sbagliato';
+  return null;
+}
+async function scriviFrutto(S,tk){
+  const pkg=fruttoPacchetto(S,tk);
+  if(!pkg.fatte_ieri.length&&!pkg.mancate_ieri.length) return {silenzio:true,perche:'ieri vuoto'};
+  const res=await callAnthropic({system:FRUTTO_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),
+    max_tokens:2600,thinking:1800,effort:SUSSURRO_EFFORT,timeout:75000});
+  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined};
+  if(!res||res.err) return {errore:res?res.err:'nulla',meta:meta};
+  const testo=String(res.text||'').trim();
+  if(/^silenzio[.!…]?$/i.test(testo)) return {silenzio:true,perche:'scelto',meta:meta};
+  let riga='';
+  try{ const j=extractJson(testo.startsWith('{')?testo:'{'+testo); riga=String((j&&j.frutto)||'').trim(); }catch(_){}
+  if(!riga) riga=testo.replace(/^\{?\s*"?frutto"?\s*:\s*"?/,'').replace(/"?\s*\}?$/,'').trim();
+  const veto=fruttoVeto(S,riga);
+  if(veto) return {veto:veto,meta:meta};
+  return {riga:clampStr(riga,420),meta:meta};
+}
 /* ── la carta (v163): si compone alla PRIMA apertura del giorno, si legge, e non torna.
    E si porta fuori: disegnata su canvas nello stile dell'app e consegnata al foglio di iOS. ── */
-function fruttoDiOggi(){
+async function fruttoDiOggi(){
   const tk=todayKey();
   const gia=(S.frutti||[]).filter(f=>f&&f.tk===tk)[0];
-  if(gia) return gia;
-  const nuovo=costruisciFrutto(S,tk,new Date().getHours());
-  if(!nuovo) return null;
-  nuovo.chiuso=false;
-  S.frutti=(S.frutti||[]).concat([nuovo]).slice(-40);
-  save();
-  try{ regCantiere('frutto',{msg:(nuovo.albero?'con albero':'senza albero')+(nuovo.mossa?' + mossa':'')}); }catch(_){}
+  if(gia) return gia.silenzio?null:gia;
+  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return null;   /* senza chiave niente frutto: nessun surrogato */
+  const t0=Date.now();
+  let esito=null;
+  try{ esito=await scriviFrutto(S,tk); }catch(_){ esito=null; }
+  const ms=Date.now()-t0;
+  if(!esito||esito.errore){ try{ regCantiere('frutto',{msg:'errore: '+((esito&&esito.errore)||'nulla'),ms:ms}); }catch(_){}
+    return null; }                                               /* errore di rete: il giorno NON si consuma, si riprova all'apertura dopo */
+  if(esito.silenzio||esito.veto){
+    S.frutti=(S.frutti||[]).concat([{tk:tk,silenzio:true}]).slice(-40); save();
+    try{ regCantiere('frutto',{msg:esito.veto?('veto: '+esito.veto):('silenzio: '+(esito.perche||'')),ms:ms,
+      model:esito.meta&&esito.meta.model,tin:esito.meta&&esito.meta.tin,tout:esito.meta&&esito.meta.tout}); }catch(_){}
+    return null; }
+  const mossa=frMossa(S,tk,new Date().getHours(),null);
+  const nuovo={tk:tk,lettura:esito.riga,albero:'',alberoId:'',mossa:mossa?mossa.testo:'',chiuso:false,visto:false};
+  S.frutti=(S.frutti||[]).concat([nuovo]).slice(-40); save();
+  try{ regCantiere('frutto',{msg:'scritto',ms:ms,model:esito.meta&&esito.meta.model,
+    tin:esito.meta&&esito.meta.tin,tout:esito.meta&&esito.meta.tout,salti:esito.meta&&esito.meta.salti}); }catch(_){}
   return nuovo;
 }
 function _frCapo(x,testo,px,y,maxW,lh,font,colore){
@@ -3941,25 +4023,30 @@ async function condividiFrutto(f){
     let y=260;
     y=_frCapo(x,f.lettura,96,y,W-192,68,'italic 52px Georgia,serif','#F5F2EA');
     if(f.albero){ y+=34; y=_frCapo(x,f.albero,96,y,W-192,54,'italic 38px Georgia,serif','rgba(245,242,234,.62)'); }
-    x.font='30px -apple-system,sans-serif'; x.fillStyle='rgba(245,242,234,.38)';
-    x.fillText('sentiero',96,Hc-104);
-    const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+    /* v164: la carta condivisa si ritaglia sul testo - niente meta immagine vuota */
+    const fine=Math.min(Hc,Math.max(680,y+170));
+    const cv2=document.createElement('canvas'); cv2.width=W; cv2.height=fine;
+    const x2=cv2.getContext('2d');
+    x2.drawImage(cv,0,0,W,fine,0,0,W,fine);
+    x2.fillStyle='#0d120f'; x2.fillRect(40,fine-100,W-80,60);
+    x2.strokeStyle='rgba(232,188,106,.55)'; x2.lineWidth=3; x2.strokeRect(46,46,W-92,fine-92);
+    x2.font='30px -apple-system,sans-serif'; x2.fillStyle='rgba(245,242,234,.38)';
+    x2.fillText('sentiero',96,fine-96);
+    const blob=await new Promise(r=>cv2.toBlob(r,'image/png'));
     const file=new File([blob],'sentiero-frutto-'+f.tk+'.png',{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); }
     else if(navigator.share){ await navigator.share({title:'Sentiero',text:f.lettura}); }
     else{ try{ toast('La condivisione non è disponibile qui'); }catch(_){} }
   }catch(e){ if(!(e&&e.name==='AbortError')){ try{ toast('Condivisione non riuscita'); }catch(_){} } }
 }
-function renderFrutto(){
+async function renderFrutto(){
   const el=document.querySelector('#frutto'); if(!el) return;
-  const f=fruttoDiOggi();
-  /* la carta vive UNA apertura: quella in cui nasce. Vista una volta, le aperture dopo tacciono. */
+  const f=await fruttoDiOggi();
   if(!f||f.chiuso||f.visto){ el.classList.add('hidden'); el.innerHTML=''; return; }
   (S.frutti||[]).forEach(g=>{ if(g&&g.tk===f.tk) g.visto=true; });
   save();
   el.innerHTML='<div class="fr-testa">il frutto di ieri</div>'
     +'<p class="fr-lettura">'+escapeHtml(f.lettura)+'</p>'
-    +(f.albero?'<p class="fr-albero">'+escapeHtml(f.albero)+'</p>':'')
     +(f.mossa?'<p class="fr-mossa">'+escapeHtml(f.mossa)+'</p>':'')
     +'<div class="fr-piede"><button id="fr-condividi">Condividi</button><button id="fr-chiudi">Chiudi</button></div>';
   el.classList.remove('hidden');
@@ -6463,7 +6550,7 @@ function renderPatto(){
         try{ const f=await askSfida(bsf.dataset.sfida); if(f&&!inp.value) inp.value=f; }catch(_){}
         inp.placeholder='come la alzi, oggi?\u2026';
       }
-      setTimeout(()=>inp.focus(),60);
+      inp.focus();
     }
   };
   const bst=box.querySelector('[data-sfida-stabile]');
@@ -6483,8 +6570,14 @@ function renderPatto(){
   box.querySelectorAll('.patto-nuovo').forEach(bnu=>{ bnu.onclick=()=>{
     if(nbox){ nbox.dataset.audace=bnu.classList.contains('azz-nuovo')?'1':'';
       box.querySelectorAll('.patto-nuovo').forEach(x=>x.classList.add('hidden'));
+      /* v164: la casella nasceva in FONDO al foglio (fuori schermo) e il focus era in un
+         setTimeout - iOS apre la tastiera solo dentro il gesto. Ora la casella si sposta
+         accanto al bottone toccato e il focus e sincrono. */
+      try{ bnu.insertAdjacentElement('afterend',nbox); }catch(_){}
       nbox.classList.remove('hidden');
-      const inp=nbox.querySelector('.patto-inp'); if(inp) setTimeout(()=>inp.focus(),60); }
+      const inp=nbox.querySelector('.patto-inp');
+      if(inp){ inp.focus(); try{ nbox.scrollIntoView({block:'center'}); }catch(_){} }
+    }
   };});
   const bok=box.querySelector('.patto-inp-ok');
   const nasciPatto=()=>{
