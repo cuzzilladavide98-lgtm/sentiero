@@ -1060,6 +1060,11 @@ body[data-pane="quest"] #satellite{display:none}
 #toast .toast-annulla{margin-left:12px;background:none;border:.5px solid rgba(232,168,76,.55);
   border-radius:999px;padding:5px 13px;font-size:13px;color:var(--accent);position:relative}
 #toast .toast-annulla::after{content:'';position:absolute;left:-8px;right:-8px;top:-11px;bottom:-11px}
+/* v177: .toast ha pointer-events:none (giusto: la pillola non deve rubare i tocchi alla pagina).
+   Ma pointer-events si eredita, e il bottone dentro nasceva morto: "Rimettila" non era premibile
+   nemmeno una volta. Si riabilita SOLO sul bottone e SOLO mentre il toast e in scena: fuori scena
+   il toast resta nel DOM a opacita 0, e un bottone invisibile ma cliccabile sarebbe un muro peggiore. */
+#toast.show .toast-annulla{pointer-events:auto}
 </style>
 </head>
 <body>
@@ -1983,7 +1988,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.176 · 2026-08-01';
+const APP_VERSION='v60S.177 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
