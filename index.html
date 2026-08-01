@@ -979,10 +979,10 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
         <div id="rivelazione" class="hidden"></div>
         <div id="live"></div>
         <div class="btn-row hidden" id="confirm-row">
-          <button class="act" id="btn-discard">Scarta</button>
+          <button class="act" id="btn-discard">Butta</button>
           <button class="act primary distilla-cta" id="btn-save">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:7px"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4"/><path d="M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z"/></svg>
-          Distilla</button>
+          Tieni</button>
         </div>
         <div class="btn-row hidden" id="prio-row">
           <button class="act" id="btn-prio-no">Tutte normali</button>
@@ -1035,7 +1035,7 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
       </section>
 
       <section id="sec-today-quests">
-        <div class="sec-head">Quest di oggi</div>
+        <div class="sec-head">Le cose di oggi</div>
         <div class="group" id="list-quest-today"></div>
       </section>
 
@@ -1087,8 +1087,8 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
               <button data-anim="auto">Di sistema</button><button data-anim="sempre">Sempre</button>
             </div>
           </div>
-          <div class="switchrow"><span>Voce ai completamenti</span><button class="sw" id="sw-voice"></button></div>
-          <div class="switchrow"><span>Osservatrice sui task<small style="display:block;opacity:.6;font-size:11px">una riga vera a ogni spunta (serve la chiave)</small></span><button class="sw" id="sw-obsline"></button></div>
+          <div class="switchrow"><span>La voce che legge ad alta voce</span><button class="sw" id="sw-voice"></button></div>
+          <div class="switchrow"><span>La voce che commenta<small style="display:block;opacity:.6;font-size:11px">una riga vera quando chiudi una cosa (serve la chiave)</small></span><button class="sw" id="sw-obsline"></button></div>
           <div class="switchrow"><span>Come ti parla<small style="display:block;opacity:.6;font-size:11px">gli accordi delle sue righe: finché non scegli, li evita</small></span>
             <div class="seg" id="seg-genere">
               <button data-genere="m">Maschile</button><button data-genere="f">Femminile</button>
@@ -1128,7 +1128,7 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
           </div>
         </div>
         <p class="note" id="model-note"></p>
-        <div class="switchrow" style="margin-top:6px"><span>Banco del sussurro<small style="display:block;opacity:.6;font-size:11px">rigioca i pacchetti veri a vuoto: non tocca il diario né i sussurri</small></span>
+        <div class="switchrow" style="margin-top:6px"><span>Prova delle righe<small style="display:block;opacity:.6;font-size:11px">per il laboratorio: rigioca le righe passate, non tocca niente di tuo</small></span>
           <button class="act" id="btn-banco">Rigioca</button>
         </div>
         <p class="note" id="banco-note"></p>
@@ -1136,7 +1136,7 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
       </section>
 
       <section>
-        <div class="sec-head">Task pianificate</div>
+        <div class="sec-head">Le cose che si ripetono</div>
         <div class="group" id="list-sched"></div>
         <input type="text" id="new-task-txt" placeholder="Es. 80 g proteine">
         <div class="seg" id="task-mode" style="margin-top:14px">
@@ -1149,7 +1149,7 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
           <input type="date" id="new-task-date">
         </div>
         <input type="time" id="new-task-time">
-        <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi task</button></div>
+        <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi</button></div>
       </section>
 
       <section>
@@ -1852,7 +1852,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.164 · 2026-07-31';
+const APP_VERSION='v60S.166 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3055,16 +3055,6 @@ function focusTarget(extra){
   }catch(_){ return false; }
 }
 /* leva dell'osservatrice: trasforma la riflessione nella mossa concreta che indica */
-function observerToMove(){
-  try{
-    const mv=pickNextMove();
-    showPane('oggi');
-    setTimeout(()=>{ if(mv){ if(!focusTarget({target:mv.targetId,kind:mv.kind})) scrollToSoft('#sec-today-quests'); } else { try{ toast('Il cerchio e gia leggero: niente da forzare ora.'); }catch(_){} } },140);
-  }catch(_){}
-}
-let _lastNextMoveKey='';   /* anti-ripetizione: nextMoveReady suona solo quando la mossa cambia */
-let _lastUserAct=0;        /* timestamp dell'ultimo gesto reale: i suoni automatici partono solo dietro un'azione, mai a freddo */
-let _laterOpen=false;      /* pannello "Più tardi": ripiegato di default */
 function renderFlow(){
   const el=document.querySelector('#flow'); if(!el) return;
   if(recording||distilling){ el.innerHTML=''; return; }
@@ -3555,7 +3545,7 @@ document.querySelector('#btn-save').onclick=async()=>{
   }finally{
     clearInterval(wispTimer);
     distilling=false;
-    btn.textContent='Distilla'; btn.disabled=false;
+    btn.textContent='Tieni'; btn.disabled=false;
     live.classList.remove('distill');
     renderFlow();
   }
@@ -3910,6 +3900,7 @@ const FRUTTO_SYS=
 "VIETATO, pena il cestino: le parole interne dell'app (vuota, rara, a meta, piena, quasi piena, occasioni previste, arco, task, quest, streak, spunta, rituale); i rapporti numerici (3 su 7, sette su sette); piu di UN numero in tutto; ieri detto come se fosse oggi (le righe_di_ieri sono scritte DENTRO ieri: raccontale da stamattina, non copiarle); lodi generiche, esclamazioni, emoji, morale in coda.\n"+
 "I NOMI: usa i nomi veri delle cose della persona (il libro, le proteine, l'allenamento, il meccanico), mai i titoli tecnici fra virgolette.\n"+
 "CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna: ogni accordo segue quello. Se non lo sai, gira la frase.\n"+
+"IL RESPIRO: frasi corte. Dodici parole per frase, non venti. Almeno una frase sotto le otto parole, e mettila in fondo: chiude. Il punto fermo, non il trattino - al massimo uno in tutta la carta. Non far girare le frasi su e, sono, hai: cerca un verbo che faccia qualcosa. Prima la cosa concreta (l'ora, l'oggetto, le sue parole), poi cosa vuol dire.\n"+
 "SILENZIO: se il materiale non regge due frasi vere e comprensibili, rispondi con la sola parola SILENZIO. Nessuna carta e meglio di una carta vuota.\n"+
 "Rispondi SOLO con un oggetto JSON: {\"frutto\":\"...\"} oppure SILENZIO.";
 function fruttoPacchetto(S,tk){
@@ -3944,12 +3935,21 @@ function fruttoVeto(S,testo){
   if(!t||t.length<40) return 'corto';
   if(t.length>420) return 'lungo';
   const ti=t.toLowerCase();
-  const banditi=['vuota','rara','a metà','quasi piena','occasioni previste','arco delle','task','quest','streak','spunta','rituale'];
-  for(const b of banditi){ if(ti.indexOf(b)>=0) return 'lessico interno: '+b; }
+  /* v166: prima era indexOf, e «quest» beccava «questo», «questa», «queste» - cioe meta delle
+     frasi italiane finivano nel cestino. Le parole vanno cercate INTERE. */
+  const banditi=[/\bvuota\b/,/\brar[ae]\b/,/\ba met[aà]\b/,/\bquasi piena\b/,/\boccasioni previste\b/,
+                 /\barco delle\b/,/\btask\b/,/\bquest\b/,/\bquests\b/,/\bstreak\b/,/\bspunt[ae]\b/,/\britual[ei]\b/];
+  for(const b of banditi){ const m=ti.match(b); if(m) return 'lessico interno: '+m[0]; }
   if(/\b\d+\s+su\s+\d+\b/.test(ti)) return 'rapporto numerico';
   if((t.match(/\b\d+\b/g)||[]).length>1) return 'piu di un numero';
   if(t.indexOf('!')>=0) return 'esclamazione';
   if(frGenereSbagliato(S,t)) return 'genere sbagliato';
+  /* v166: il respiro. Non blocco per una frase pesante: blocco i due guasti grossi, il fiato
+     unico e la frase fiume - quelli che il giudice trova sull'83% e sul 38% delle righe passate. */
+  const _fr=t.split(/(?<=[.?\u2026])\s+/).filter(x=>x.trim());
+  if(_fr.length<2) return 'fiato unico: nessun punto in mezzo';
+  if(_fr.some(x=>x.split(/\s+/).length>26)) return 'frase fiume';
+  if((t.match(/\s[\u2014\u2013-]\s/g)||[]).length>1) return 'troppi trattini';
   return null;
 }
 async function scriviFrutto(S,tk){
@@ -4149,7 +4149,7 @@ function maybeLascito(){
     if(S.mastery&&S.mastery.quest[c.id]) delete S.mastery.quest[c.id];
     save(); render(); try{ updateRing(); }catch(_){}
     box.classList.add('hidden'); box.innerHTML='';
-    toast('Deposta. Senza colpa.');
+    toast('Messa gi\u00f9. Va bene cos\u00ec.');
   };
 }
 function maybeRivelazione(){
@@ -4302,14 +4302,12 @@ function buildObserverLocal(digest){
 let observing=false;
 async function observe(silent){
   if(observing) return; observing=true;
-  const btn=document.querySelector('#btn-observe');
-  const noteEl=document.querySelector('#observer-note');
   try{
     const digest=buildObserverDigest();
     const range={from:(digest.diario.length?digest.diario[digest.diario.length-1].giorno:null),to:digest.oggi};
     let result=null;
+    const t0Dig=Date.now();
     if(S.apiKey){
-      if(!silent){ if(btn){ btn.textContent='Osservo...'; btn.disabled=true; } if(noteEl) noteEl.innerHTML='<span class="obs-thinking">sto osservando<i></i><i></i><i></i></span>'; }
       try{ result=await askObserver(digest); }catch(_){ result=null; }
     }
     if(!result||!result.note||!String(result.note).trim()){ result=buildObserverLocal(digest); try{ result._locale=true; }catch(_){} } /* fallback: offline, IA non disponibile o nota vuota */
@@ -4325,9 +4323,8 @@ async function observe(silent){
     };
     S.observerNotes.push(entry);
     S.observerNotes=sanitizeObserverNotes(S.observerNotes);
-    save(); if(!silent) _streamObs=true; renderObserver(); if(!silent){ try{ playEventSound('observerReady'); }catch(_){} try{ haptic(); }catch(_){} }
+    save(); if(!silent){ try{ playEventSound('observerReady'); }catch(_){} try{ haptic(); }catch(_){} }
   }finally{
-    if(!silent){ if(btn){ btn.textContent='Osserva'; btn.disabled=false; } if(noteEl) noteEl.classList.remove('observing'); }
     observing=false;
   }
 }
@@ -4342,7 +4339,6 @@ function maybeObserveAuto(){
   }catch(_){}
 }
 function fmtObsDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
-let _streamObs=false;
 function streamInto(el,text,opt){
   if(!el) return;
   opt=opt||{};
@@ -4360,30 +4356,8 @@ function streamInto(el,text,opt){
     setTimeout(step,pause);
   })();
 }
-function streamObserverNote(text){ streamInto(document.querySelector('#observer-note'),text,{speed:28}); }
-function renderObserver(){
-  const noteEl=document.querySelector('#observer-note'); if(!noteEl) return;
-  const metaEl=document.querySelector('#observer-meta');
-  const patEl=document.querySelector('#observer-patterns');
-  const histEl=document.querySelector('#observer-history');
-  const notes=S.observerNotes||[];
-  const actBtn=document.querySelector('#btn-obs-act');
-  if(actBtn){ actBtn.onclick=observerToMove; actBtn.classList.toggle('hidden',!notes.length); }
-  if(!notes.length){
-    noteEl.textContent='La mente non ha ancora osservato. Premi Osserva quando vuoi uno specchio.';
-    if(metaEl) metaEl.textContent=''; if(patEl) patEl.innerHTML=''; if(histEl) histEl.innerHTML=''; return;
-  }
-  const last=notes[notes.length-1];
-  if(_streamObs){ _streamObs=false; streamObserverNote(last.note); }
-  else { noteEl.textContent=last.note; }
-  if(metaEl) metaEl.textContent=fmtObsDate(last.createdAt);
-  if(patEl) patEl.innerHTML=(last.detectedPatterns||[]).map(p=>'<span class="obs-tag">'+escapeHtml(p)+'</span>').join('');
-  if(histEl){
-    const prev=notes.slice(0,-1).slice(-5).reverse();
-    histEl.innerHTML=prev.length?('<div class="obs-hist-head">tracce precedenti</div>'+prev.map(n=>'<div class="obs-hist"><span class="obs-hist-date">'+fmtObsDate(n.createdAt)+'</span>'+escapeHtml(n.note)+'</div>').join('')):'';
-  }
-}
-const _btnObs=document.querySelector('#btn-observe'); if(_btnObs) _btnObs.onclick=observe;
+/* v165: rimossa la stanza-fantasma dell'osservatrice (bottone e riquadri non esistono piu nell'HTML).
+   Le 48 osservazioni restano in S.observerNotes e nei backup: quando la stanza tornera, saranno li. */
 
 /* ======================================================================
    COMBO & SIGILLO
@@ -4523,6 +4497,17 @@ const OBSERVER_LINE_SYS=
 "LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
 "MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: il campo per dice QUALE parola ha fatto l'aggancio - guardala, e se quella parola nella voce vuol dire un'altra cosa, la voce non c'entra: scartala e non citarla. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna nominata da chi ti legge: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
 "CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna, e ogni participio e ogni aggettivo che lo riguarda si accorda a quello: sei tornato o sei tornata, non sei solo o non sei sola. Se dice che non lo sai, NON tirare a indovinare: gira la frase e scegli forme che il genere non lo chiedono (l'hai fatto, ci sei, e tornato il ritmo, oggi c'e). Sbagliare il genere di chi ti legge cancella in un colpo solo tutta la memoria lunga: e la prova che non lo conosci.\n"+
+"LINGUA PIANA: le tue righe possono finire sotto gli occhi di chiunque. Vietate le parole di sistema: task, quest, rituale, streak, arco, occasioni previste, spunta. Le cose si chiamano coi loro nomi (il libro, il sonno, il caffe, le proteine, l\u2019allenamento). Se una parola non la useresti parlando a voce con un amico, non usarla.\n"+
+"IL RESPIRO. Nei libri che ama: dodici parole per frase, una frase su tre sotto le otto, quasi mai un trattino. Nelle tue: venti parole, il sei per cento corte, un trattino a riga. Quindi: MAI un fiato solo, spezza. Il punto fermo e il tuo strumento, il trattino no - se stai per metterne uno, prova prima il punto. Chiudi con una frase corta che atterra, e dopo il colpo non spiegare piu niente. E guarda il verbo: se la riga gira su e, sono, hai, non sta succedendo niente.\n"+
+"COSI NO, COSI SI - righe tue, riparate.\n"+
+"NO: \u00abotto occasioni consecutive mancate, e oggi questo torna \u2014 \u00e8 il ritorno piu lungo che hai attraversato in questo cammino\u00bb. Venti parole, un fiato, un trattino, e gira su \u00e8.\n"+
+"SI: \u00abotto volte di fila non \u00e8 successo. oggi si. non eri mai tornato da cosi lontano\u00bb. Tre frasi, quattordici parole, nessun trattino.\n"+
+"NO: \u00abla settimana quasi piena di adesso assomiglia a quella di un mese fa \u2014 la caduta di mezzo non ha lasciato traccia\u00bb.\n"+
+"SI: \u00abquesta settimana somiglia a quella di un mese fa. quella storta in mezzo non ha lasciato segno\u00bb.\n"+
+"NO: \u00abieri mancata, oggi \u00e8 qui \u2014 la settimana resta quasi piena\u00bb.\n"+
+"SI: \u00abieri saltata. oggi no\u00bb. Quando non c'e altro da dire, quattro parole bastano.\n"+
+"LA DOMANDA: ogni tanto puoi farne una, vera, non retorica. Finora non ne hai mai fatta nessuna.\n"+
+"IL DETTAGLIO PRIMA DEL SENSO: l'ora, l'oggetto, la parola sua. Prima la cosa che si tocca, poi cosa vuol dire - mai il contrario.\n"+
 "CONFINI: niente lode generica, niente esclamazioni, niente aforismi, niente morale in coda, niente emoji. Se nei dati c'e nota_utente non vuota, rispondi a QUELLA. Italiano. Nessun preambolo, niente virgolette intorno alla riga intera (le \u00abvirgolette basse\u00bb per parole sue vanno bene): solo la frase o le frasi, oppure SILENZIO.";
 function _titleById(id){
   const s=(S.scheduled||[]).find(x=>x&&x.id===id); if(s) return s.titolo;
@@ -5472,51 +5457,51 @@ function _stanzaApri(){
     if(S.desiderio){ cardDesiderio(); return; }
     const r=el.querySelector('#stanza-rito');
     r.innerHTML='<div class="r-box">'
-     +'<div class="r-t">esprimi un desiderio</div>'
-     +'<div class="r-l">la montagna, con parole tue</div>'
+     +'<div class="r-t">la cosa grande che vuoi</div>'
+     +'<div class="r-l">scrivila con parole tue</div>'
      +'<textarea id="r-des" rows="2"></textarea>'
      +'<div class="r-l">cosa te lo ha impedito, finora?</div>'
      +'<textarea id="r-ost" rows="2"></textarea>'
-     +'<div class="r-b"><button id="r-va">affida alla stella</button><button id="r-no">non ora</button></div>'
+     +'<div class="r-b"><button id="r-va">Comincia</button><button id="r-no">non ora</button></div>'
      +'</div>';
     r.classList.add('on');
     r.querySelector('#r-no').addEventListener('click',ritoChiudi);
     r.querySelector('#r-va').addEventListener('click',async function(){
       const t1=r.querySelector('#r-des').value.trim(), t2=r.querySelector('#r-ost').value.trim();
       if(!t1){ r.querySelector('#r-des').focus(); return; }
-      const b=this; b.disabled=true; b.textContent='la stella ascolta\u2026';
+      const b=this; b.disabled=true; b.textContent='un attimo\u2026';
       let esito=null; try{ esito=await esprimiDesiderio(t1,t2); }catch(_){}
-      if(esito){ ritoChiudi(); try{ toast('La prima pietra: \u00ab'+esito+'\u00bb \u2014 \u00e8 tra le tue quest.'); }catch(_){} }
-      else{ b.disabled=false; b.textContent='il cielo non ha risposto \u2014 riprova'; }
+      if(esito){ ritoChiudi(); try{ toast('Il primo passo: \u00ab'+esito+'\u00bb \u2014 \u00e8 tra le cose di oggi.'); }catch(_){} }
+      else{ b.disabled=false; b.textContent='non ha funzionato \u2014 riprova'; }
     });
   }
   function cardDesiderio(){
     if(!S.desiderio){ ritoApri(); return; }
     const d=S.desiderio, box=el.querySelector('#stanza-giorno');
     const viva=_pietraViva(); const n=(d.pietre||[]).length;
-    let hh='<div class="g-testa">il desiderio \u2014 nato '+_stanzaNomeGiorno(d.nata)+'</div>'
+    let hh='<div class="g-testa">quello che vuoi \u2014 da '+_stanzaNomeGiorno(d.nata)+'</div>'
      +'<div class="g-voce">\u00ab'+String(d.testo).replace(/</g,'&lt;')+'\u00bb</div>';
     if(d.cresta&&d.cresta.length) hh+='<div class="g-cresta">'+d.cresta.map(function(c){return '<i>'+String(c).replace(/</g,'&lt;')+'</i>';}).join(' \u00b7 ')+'</div>';
-    hh+='<div class="g-fatti"><span>'+n+' pietre spostate</span>'
-      +(viva?'<span class="pv">pietra viva: '+String(viva.titolo).replace(/</g,'&lt;')+'</span>':'')+'</div>';
+    hh+='<div class="g-fatti"><span>'+n+' passi fatti</span>'
+      +(viva?'<span class="pv">il passo di adesso: '+String(viva.titolo).replace(/</g,'&lt;')+'</span>':'')+'</div>';
     const arch=(S.desideri||[]);
     if(arch.length){
       const np=arch.reduce((a,x)=>a+((x.pietre||[]).length),0);
-      hh+='<div class="g-cresta" style="opacity:.5">prima di questo: '+arch.length+(arch.length===1?' desiderio':' desideri')+', '+np+(np===1?' pietra':' pietre')+' spostate</div>';
+      hh+='<div class="g-cresta" style="opacity:.5">prima di questo: '+arch.length+(arch.length===1?' desiderio':' desideri')+', '+np+(np===1?' passo fatto':' passi fatti')+'</div>';
     }
     /* v159: tre uscite, non due. «e cambiato» e la terza, ed e quella vera quasi sempre:
        i passi spostano la persona, e la persona sposta il desiderio. Non e una resa. */
     hh+='<div class="g-azioni" id="d-azioni">'
-      +(!viva?'<button id="d-posa">posa la prossima pietra</button>':'')
+      +(!viva?'<button id="d-posa">il prossimo passo</button>':'')
       +'<button id="d-fatto">\u00e8 compiuto</button>'
       +'<button id="d-cambia">\u00e8 cambiato</button>'
       +'<button id="d-via">lascia andare</button></div>';
     box.innerHTML=hh; box.classList.add('on'); el.classList.remove('svelato');
     const bp=box.querySelector('#d-posa');
     if(bp) bp.addEventListener('click',async function(){
-      this.disabled=true; this.textContent='il Motore pensa\u2026';
+      this.disabled=true; this.textContent='un attimo\u2026';
       let t=null; try{ t=await prossimaPietra(); }catch(_){}
-      if(t==='COMPIUTO'){ box.classList.remove('on'); S.desiderio=null; save(); try{ toast('La montagna \u00e8 mossa.'); }catch(_){} }
+      if(t==='COMPIUTO'){ box.classList.remove('on'); S.desiderio=null; save(); try{ toast('Fatto davvero.'); }catch(_){} }
       else if(t){ cardDesiderio(); try{ toast('Posata: \u00ab'+t+'\u00bb'); }catch(_){} }
       else{ this.disabled=false; this.textContent='riprova'; }
     });
@@ -5532,22 +5517,22 @@ function _stanzaApri(){
       az.querySelector('#d-si').addEventListener('click',function(){ this.disabled=true; poi(); });
     }
     box.querySelector('#d-fatto').addEventListener('click',function(){
-      chiedi('la montagna \u00e8 mossa?','s\u00ec, \u00e8 compiuto',function(){
+      chiedi('\u00e8 fatta davvero?','s\u00ec, \u00e8 fatta',function(){
         const n=archiviaDesiderio('compiuto'); box.classList.remove('on');
-        try{ toast('La montagna \u00e8 mossa. '+n+(n===1?' pietra resta':' pietre restano')+' agli atti.'); }catch(_){}
+        try{ toast('Fatta. '+n+(n===1?' passo resta':' passi restano')+' salvati.'); }catch(_){}
       });
     });
     box.querySelector('#d-cambia').addEventListener('click',function(){
-      chiedi('il desiderio \u00e8 cambiato: le pietre gi\u00e0 spostate restano, e ne esprimi uno nuovo.','s\u00ec, ne esprimo un altro',function(){
+      chiedi('\u00e8 cambiato: i passi gi\u00e0 fatti restano, e ne scrivi uno nuovo.','s\u00ec, ne scrivo un altro',function(){
         const n=archiviaDesiderio('cambiato'); box.classList.remove('on');
-        try{ toast(n+(n===1?' pietra resta':' pietre restano')+' agli atti. Ora la stella ascolta.'); }catch(_){}
+        try{ toast(n+(n===1?' passo resta':' passi restano')+' salvati. Scrivi il nuovo.'); }catch(_){}
         ritoApri();
       });
     });
     box.querySelector('#d-via').addEventListener('click',function(){
-      chiedi('si lascia andare? le pietre spostate restano agli atti.','s\u00ec, lascio andare',function(){
+      chiedi('lo lasci andare? i passi fatti restano salvati.','s\u00ec, lascio andare',function(){
         const n=archiviaDesiderio('lasciato'); box.classList.remove('on');
-        try{ toast('Lasciato andare. Il cielo non giudica. '+n+(n===1?' pietra resta':' pietre restano')+' agli atti.'); }catch(_){}
+        try{ toast('Lasciato andare. '+n+(n===1?' passo resta':' passi restano')+' salvati.'); }catch(_){}
       });
     });
   }
@@ -5828,30 +5813,8 @@ async function askObserverDistill(pkg){
   return {err:(res&&res.err)||'modello'};
 }
 let _lastDistill='';
-async function runDistill(){
-  const out=document.querySelector('#distill-out'), txt=document.querySelector('#distill-text'), btn=document.querySelector('#btn-distill');
-  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')){ toast('Serve la chiave per scrivere il dono'); return; }
-  out.classList.remove('hidden'); txt.textContent=''; if(btn){ btn.disabled=true; btn.textContent='Sto rileggendo…'; }
-  try{ playEventSound('distillStart'); }catch(_){}
-  let res; try{ res=await askObserverDistill(buildPeriodPackage()); }catch(_){ res={err:'rete'}; }
-  if(btn){ btn.disabled=false; btn.textContent='Scrivi il dono'; }
-  if(res&&res.text){
-    _lastDistill=res.text;
-    try{ streamInto(txt,res.text,{speed:24}); }catch(_){ txt.textContent=res.text; }
-    try{ playEventSound('distillSuccess'); }catch(_){}
-  } else {
-    const m={chiave:'Chiave non valida: ricontrolla in Impostazioni.',limite:'Troppe richieste ora: riprova tra poco.',occupato:'I server sono molto carichi: riprova tra poco.',timeout:'Ci ha messo troppo: riprova.',offline:'Sei offline: riprova quando torni in rete.',rete:'Niente rete: riprova quando sei online.'}[res&&res.err]||'Non è riuscita a scrivere ora. Riprova.';
-    txt.textContent=m; _lastDistill='';
-  }
-}
-{ const b=document.querySelector('#btn-distill'); if(b) b.onclick=runDistill; }
-{ const b=document.querySelector('#btn-distill-close'); if(b) b.onclick=()=>{ document.querySelector('#distill-out').classList.add('hidden'); }; }
-const _bds=document.querySelector('#btn-distill-share'); if(_bds) _bds.onclick=async()=>{
-  if(!_lastDistill) return;
-  try{ if(navigator.share){ await navigator.share({text:_lastDistill}); return; } }catch(_){}
-  try{ await navigator.clipboard.writeText(_lastDistill); toast('Copiato: incollalo dove vuoi'); }
-  catch(_){ toast('Copia non riuscita'); }
-};
+/* v165: rimosso runDistill - pannello morto, i suoi elementi non esistono dall'HTML da molte versioni */
+/* v165: rimossa anche la coda del pannello (close/share): elementi inesistenti */
 function onComplete(el){
   const now=Date.now();
   combo=(now-lastCheck<10000)?combo+1:1;
@@ -6502,13 +6465,13 @@ function renderPatto(){
   box.dataset.tk=tk;
   box.classList.remove('hidden');
   box.innerHTML='<div class="patto-angoli"></div><div class="patto-fermaglio"><b></b></div>'+
-    '<span class="patto-eyebrow">il patto del mattino</span>'+
-    '<span class="patto-title">Quale sar\u00e0 il passo che conta?</span>'+
+    '<span class="patto-eyebrow">la promessa del mattino</span>'+
+    '<span class="patto-title">Cosa conta davvero, oggi?</span>'+
     sched.slice(0,6).concat(qOggi).map(t=>'<button class="patto-r" data-id="'+t.id+'">'+escapeHtml(t.titolo||'')+'</button>').join('')+
     (function(){ const az=azzardoCandidates(sched,S.mastery);
-      return '<div class="azz-head">l\u2019azzardo \u2014 il passo che rimandi</div>'+
+      return '<div class="azz-head">la scommessa \u2014 la cosa che rimandi da troppo</div>'+
         az.map(c=>'<button class="patto-r azz-r" data-id="'+c.id+'">'+escapeHtml(c.titolo)+'</button>').join('')+
-        '<button class="patto-nuovo azz-nuovo">+ scrivi l\u2019azzardo</button>'; })()+
+        '<button class="patto-nuovo azz-nuovo">+ scrivi la scommessa</button>'; })()+
     (function(){ let sf=null; try{ sf=sfidaCandidate(S,tk); }catch(_){}
       if(!sf) return '';
       if(!S.sfide) S.sfide={};
@@ -6517,18 +6480,18 @@ function renderPatto(){
           e.taciFino=d.toISOString().slice(0,10); e.giorni=[]; e.forma=''; save(); }
         return ''; }
       const e=S.sfide[sf.id]||(S.sfide[sf.id]={prop:'',taciFino:'',forma:'',giorni:[],stabile:''});
-      if(sf.tipo==='stabile') return '<div class="azz-head sfida-head">la sfida che cresce \u2014 tre assaggi vinti</div>'+
-        '<button class="patto-r sfida-r" data-sfida-stabile="'+sf.id+'">\u00ab'+escapeHtml(sf.forma)+'\u00bb \u00b7 rendila la nuova forma</button>';
+      if(sf.tipo==='stabile') return '<div class="azz-head sfida-head">alzata tre volte: rendila la nuova normalit\u00e0</div>'+
+        '<button class="patto-r sfida-r" data-sfida-stabile="'+sf.id+'">\u00ab'+escapeHtml(sf.forma)+'\u00bb \u00b7 da oggi vale questa</button>';
       if(e.prop!==tk){ e.prop=tk; save(); }
-      return '<div class="azz-head sfida-head">la sfida che cresce \u2014 \u00e8 matura</div>'+
-        '<button class="patto-r sfida-r" data-sfida="'+sf.id+'" data-forma="'+escapeHtml(sf.forma||'')+'">'+escapeHtml(sf.titolo)+' \u00b7 alzala</button>'; })()+
+      return '<div class="azz-head sfida-head">una cosa ti riesce quasi sempre: alzala di un pelo</div>'+
+        '<button class="patto-r sfida-r" data-sfida="'+sf.id+'" data-forma="'+escapeHtml(sf.forma||'')+'">'+escapeHtml(sf.titolo)+' \u00b7 prova ad alzarla</button>'; })()+
     '<button class="patto-nuovo">+ un passo nuovo</button>'+
     '<div class="patto-nuovo-box hidden"><input class="patto-inp" type="text" maxlength="80" placeholder="l\'idea di stamattina\u2026" enterkeyhint="done"><button class="patto-inp-ok">Patto</button></div>'+
-    '<button class="patto-no">oggi nessun patto</button>';
+    '<button class="patto-no">oggi niente promesse</button>';
   box.querySelectorAll('.patto-r').forEach(bt=>{ bt.onclick=()=>{
     const audace=bt.classList.contains('azz-r');
     S.patto={tk:tk,id:bt.dataset.id,audace:audace}; save();
-    try{ if(anzianita(S)<1) toast(audace?'Azzardo accettato. La firma della sera sapr\u00e0.':'Patto stretto. La firma della sera sapr\u00e0.'); }catch(_){}
+    try{ if(anzianita(S)<1) toast(audace?'Scommessa presa: stasera si vede.':'Promessa presa: stasera si vede.'); }catch(_){}
     try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
   };});
   const bn=box.querySelector('.patto-no');
@@ -6560,7 +6523,7 @@ function renderPatto(){
     const e=(S.sfide||{})[id];
     if(t&&e&&e.forma){
       t.titolo=e.forma; e.stabile=tk; e.giorni=[]; e.forma=''; save();
-      try{ toast('La sfida \u00e8 la nuova forma: \u00ab'+t.titolo+'\u00bb'); }catch(_){}
+      try{ toast('Da oggi vale: \u00ab'+t.titolo+'\u00bb'); }catch(_){}
       box.dataset.tk='';
       try{ render(); }catch(_){} try{ renderPatto(); }catch(_){} try{ updateRing(); }catch(_){}
     }
@@ -6589,7 +6552,7 @@ function renderPatto(){
       const e=S.sfide[sfId]||(S.sfide[sfId]={prop:tk,taciFino:'',forma:'',giorni:[],stabile:''});
       e.forma=titolo; e.giorni=(e.giorni||[]).concat([tk]).slice(-8);
       S.patto={tk:tk,id:sfId,audace:true}; save();
-      try{ toast('\u00ab'+titolo+'\u00bb \u2014 assaggio della sfida. La firma della sera sapr\u00e0.'); }catch(_){}
+      try{ toast('\u00ab'+titolo+'\u00bb \u2014 oggi si prova cos\u00ec. Stasera si vede.'); }catch(_){}
       try{ render(); }catch(_){} try{ updateRing(); }catch(_){}
       return;
     }
@@ -6835,7 +6798,7 @@ function updateRing(){
   try{ const tk2=todayKey();
     if(S.patto&&S.patto.tk===tk2&&(S.checks[tk2]||{})[S.patto.id]&&S.lastSealed===tk2&&window._pattoDetto!==tk2){
       window._pattoDetto=tk2; const audD=!!(S.patto&&S.patto.audace);
-      setTimeout(()=>{ try{ toast(audD?'L\u2019azzardo \u00e8 stato vinto.':'Il patto \u00e8 stato mantenuto.'); }catch(_){} },1900);
+      setTimeout(()=>{ try{ toast(audD?'La scommessa \u00e8 vinta.':'Promessa mantenuta.'); }catch(_){} },1900);
     } }catch(_){}
   try{ setTimeout(()=>{ perle(); try{ maybeDono(); }catch(_){} try{ maybeSemina(); }catch(_){} },2800); }catch(_){}   /* il ritardo copre il testo in streaming; poi perla > dono > seme */
   try{ renderFlow(); }catch(_){}
@@ -6870,7 +6833,6 @@ function render(bornIds){
   S_(()=>renderDiary());
   S_(()=>renderSettings());
   S_(()=>renderStreak());
-  S_(()=>renderObserver());
   S_(()=>updateRing());
   S_(()=>renderFlow());
 }
@@ -6897,7 +6859,7 @@ function buildTaskRow(t,checks){
     S.essentials=S.essentials||[];
     const i=S.essentials.indexOf(t.id);
     if(i>=0) S.essentials.splice(i,1);
-    else { S.essentials.push(t.id); if(S.essentials.length===1) toast('Essenziale segnato: il giorno si chiuderà su questi'); }
+    else { S.essentials.push(t.id); if(S.essentials.length===1) toast('Segnata come importante: stasera conta questa'); }
     save(); renderTasks(); updateRing();
   };
   div.querySelector('.chk').onclick=()=>{
@@ -7331,7 +7293,7 @@ function capitoloRigaLocale(f){
   if(rAtt>=0.5) return 'Un mese a giorni alterni: il ritmo c\u2019e, cerca solo di non spezzarsi ai bordi.';
   return 'Poche pietre, ma vere. Il sentiero non misura la lunghezza del passo: misura che tu sia passato.';
 }
-const CAPITOLO_SYS='Sei l\u2019osservatrice di Sentiero. Un mese di cammino si chiude e diventa capitolo: rileggilo e restituisci UNA riga sola.\n'+
+const CAPITOLO_SYS='Sei la voce di Sentiero. Un mese si chiude: rileggilo e restituisci UNA riga sola, in italiano semplice, senza parole di sistema (task, quest, arco, rituale). Corta: sotto le quindici parole, nessun trattino.\n'+
 'VOCE: calma, essenziale, un filo di Tao senza mai nominarlo. Niente domande, niente esclamazioni, niente elenchi.\n'+
 'REGOLA ASSOLUTA: VIETATO qualsiasi numero o cifra nel testo. Parla per immagini del ritmo: costanza, vuoti, ritorni, il finale che cresce, il fuoco che dura.\n'+
 'Guarda i DATI: giorni attivi contro vuoti, cerchi pieni, patti d\u2019oro, dove si addensa il mese (inizio, centro, fine), il confronto col capitolo precedente se c\u2019e.\n'+
@@ -7532,7 +7494,7 @@ function renderSettings(){
     dd.appendChild(b);
   });
   const el=document.querySelector('#list-sched');
-  if(!S.scheduled.length){ el.innerHTML='<p class="empty">Nessuna task pianificata.</p>'; }
+  if(!S.scheduled.length){ el.innerHTML='<p class="empty">Niente di ricorrente ancora: aggiungi qui sotto.</p>'; }
   else{
     el.innerHTML='';
     S.scheduled.forEach(t=>{
@@ -7587,7 +7549,7 @@ document.querySelector('#sw-geo').onclick=()=>{
     if(!('geolocation' in navigator)){ toast('Posizione non supportata qui'); return; }
     S.settings.geo=true; save(); renderSettings();
     capturePos(); /* fa apparire subito la richiesta di permesso iOS */
-    toast('Le prossime note ricorderanno dov\u2019eri');
+    toast('Da ora le note salvano anche il posto');
   } else {
     S.settings.geo=false; lastPos=null; save(); renderSettings();
     toast('Posizione spenta: le note non la registrano pi\u00f9');
