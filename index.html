@@ -19,7 +19,6 @@
 <link rel="apple-touch-startup-image" href="./splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
 <link rel="apple-touch-startup-image" href="./splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
 <meta name="color-scheme" content="dark">
-<style>html{background:#070A09}body{background:#070A09}</style>
 <style>
 /* ═══════════════════════════════════════════════════════
    SENTIERO v19 — "Bussola"
@@ -969,6 +968,21 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
 #soglia .sg-piede button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.42);border-radius:13px;padding:9px 17px;font-size:13.5px;color:#E8DCC0}
 #soglia .sg-attesa{width:26px;height:1px;background:rgba(232,188,106,.5);animation:sg-resp 1.9s ease-in-out infinite}
 @keyframes sg-resp{0%,100%{transform:scaleX(.3);opacity:.35}50%{transform:scaleX(1);opacity:.9}}
+
+/* ════════ FASE 2 (v170) — la pill «dove sono» ════════
+   #btn-pin aveva SEI regole in cascata: una vecchia lo teneva a 44x44 (era un bottone-icona),
+   una nuova gli dava padding e border-radius da pillola. La vecchia non veniva mai annullata,
+   quindi il contenuto restava schiacciato in un quadrato e il testo andava a capo dentro il
+   cerchio. Qui la larghezza torna al contenuto e l'altezza a 32; l'area toccabile resta 44
+   grazie a un ::after invisibile: il dito ha il suo spazio, l'occhio no. */
+#btn-pin{width:auto;height:32px;min-width:0;padding:0 12px;position:relative;white-space:nowrap;line-height:1}
+#btn-pin span{white-space:nowrap;flex:none}
+#btn-pin::after{content:'';position:absolute;left:-4px;right:-4px;top:-6px;bottom:-6px;border-radius:999px}
+#btn-pin svg.share{margin-left:2px}
+/* respiro fra la pill e l'anello: erano 6px, ne servono 16 */
+#hd-dx{gap:16px}
+/* testata raccolta: la pill non e solo invisibile, e anche intoccabile (restava un bersaglio fantasma) */
+body.testa-raccolta #btn-pin{pointer-events:none}
 </style>
 </head>
 <body>
@@ -1873,7 +1887,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.169 · 2026-08-01';
+const APP_VERSION='v60S.171 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3183,6 +3197,7 @@ function foglioDopoVoce(){
     fg.style.transform='translate(-50%,'+ty+'px)';
     fg.style.setProperty('--fp',(d==='picco')?'1':'0');
     fpScroll=(d==='picco')?1:0;                       /* cambiando fermata il morphing riparte da capo */
+    try{ document.body.classList.toggle('testa-raccolta',d==='picco'); }catch(_){}
     corpo.style.overflowY=(d==='pieno')?'auto':'hidden';
     if(d==='pieno'){ try{ requestAnimationFrame(fpDaScroll); }catch(_){} }   /* si entra a «pieno» gia scrollati: la testata si adegua subito */
     try{ document.body.setAttribute('data-foglio',d); }catch(_){}
@@ -3203,6 +3218,7 @@ function foglioDopoVoce(){
     if(Math.abs(v-fpScroll)<0.004) return;
     fpScroll=v;
     fg.style.setProperty('--fp',v.toFixed(4));
+    try{ document.body.classList.toggle('testa-raccolta',v>0.6); }catch(_){}
   }
   corpo.addEventListener('scroll',function(){
     if(rafS) return;
