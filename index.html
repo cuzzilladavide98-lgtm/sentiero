@@ -388,7 +388,20 @@ section{margin-top:38px}
 .entry.via-entry{animation:entry-esala .24s ease both;pointer-events:none}
 @keyframes entry-esala{to{opacity:0;transform:translateX(16px)}}
 .entry.via-entry.chiudi{transition:height .22s cubic-bezier(.4,0,.6,1),padding .22s cubic-bezier(.4,0,.6,1);overflow:hidden}
+/* ════════ FASE 9 (v182) — LE GIORNATE ════════
+   L'intestazione si incolla in cima mentre scorri: main e lo scorrevole (il JS
+   gli mette overflow-y:auto quando il foglio e a pieno), quindi top:0 la ferma
+   giusto sotto la testata. Il fondo e quello del foglio: cosi le voci le passano
+   sotto e spariscono invece di sovrapporsi.
+   I chip delle quest (✦ e ✓) non li tocco: sono suoi. */
+.d-giorno{position:sticky;top:0;z-index:3;display:flex;align-items:baseline;gap:9px;
+  padding:16px 0 9px;background:var(--foglio-bg-opaco)}
+.dg-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;
+  color:var(--t1);letter-spacing:-.02em}
+.dg-nome{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);
+  text-transform:lowercase}
 .entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-right:64px}
+.entry-date .ed-meta{margin-left:0}
 .ed-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;color:var(--t1);letter-spacing:-.02em}
 .ed-mo{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);text-transform:lowercase}
 .ed-meta{font-family:var(--sans);font-size:13.5px;color:var(--t3);letter-spacing:.02em;margin-left:auto;align-self:center;text-transform:lowercase}
@@ -1047,9 +1060,18 @@ body.testa-raccolta #btn-pin{pointer-events:none}
    Un titolo lungo occupava quattro righe di serif grande: con undici impegni servivano quattro
    schermate. Ora il titolo si ferma a due righe e la nota a una, con i puntini; il tocco sulla
    riga apre tutto e un secondo tocco richiude. Il testo intero resta sempre nel DOM. */
-.item .ttl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.item .meta{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.item.aperta .ttl,.item.aperta .meta{display:block;-webkit-line-clamp:none;overflow:visible}
+/* ════════ FASE 8 (v181) — UNA LEGGE SOLA SUL TESTO ════════
+   Qui c'era una regola morta e non lo sapeva nessuno: .item .ttl chiedeva due
+   righe, ma piu avanti .item .txt .ttl dichiara display:inline - tre classi
+   contro due, quindi vinceva - e -webkit-line-clamp funziona solo su
+   display:-webkit-box. I titoli si sono sempre visti interi; il sottotitolo
+   invece veniva mozzato a una riga davvero. Due leggi opposte dentro la stessa
+   riga.
+   Da qui in avanti ce n'e una: IL TESTO NON SI TAGLIA. Quello che hai scritto
+   si legge tutto, e se una parola non ci sta va a capo invece di uscire dallo
+   schermo. Niente puntini, niente «ancora», niente gesti in piu per leggere
+   una cosa che avevi gia scritto tu. */
+.item .meta{display:block}
 
 /* ════════ LA CHIAMATA A TERRA (v175) ════════
    Il seme faceva una domanda scritta e pretendeva una risposta parlata: cinque semi, zero
@@ -1135,6 +1157,14 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
   font-size:14px;color:var(--t2)}
 #terra-piede .primo{border-color:hsla(var(--terra-h) 80% 66% / .6);color:hsl(var(--terra-h) 90% 74%)}
 #terra-piede .primo:disabled{opacity:.4}
+
+/* le parole che non ci stanno vanno a capo. break-word e non anywhere: si spezza
+   solo quando serve davvero, cosi le parole normali restano intere.
+   (Oggi in casa tua la parola piu lunga e di 17 caratteri e non serve a niente:
+   serve il giorno che incolli un link o un nome composto, e senza questa riga
+   quel testo uscirebbe dallo schermo e overflow-x:hidden se lo mangerebbe.) */
+.item .txt,.entry p,.entry.seme .seme-q,#observer-note,#observer-meta,
+.patto-chiusa,.patto-title,.patto-r,#terra-dom,#day-line,.obs-tag{overflow-wrap:break-word}
 
 /* ════════ FASE 7 (v176) — i controlli di riga ════════
    Calendario e × erano grigi, stessa taglia, stesso peso: un'azione neutra e una distruttiva
@@ -2078,7 +2108,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.180 · 2026-08-01';
+const APP_VERSION='v60S.182 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -8028,8 +8058,27 @@ function renderDiary(){
   const el=document.querySelector('#list-diario');
   if(!S.diary.length){ setEmpty(el,'Il diario e vuoto. Non va riempito: va lasciato dietro ogni azione vera.','speak','Registra la prima nota'); return; }
   el.innerHTML='';
+  /* v182 (Fase 9): il giorno si scriveva su OGNI voce. Con centosedici voci lo
+     stesso «1 agosto» tornava sei volte di fila, e il diario sembrava un elenco
+     di ricevute invece che di giornate. Ora la data si dice una volta sola, in
+     testa al gruppo, e resta appiccicata in alto mentre scorri quel giorno. */
+  let _giornoIn=null, _nEntry=0;
+  const _chiaveGiorno=e=>{ try{ return localDayKey(new Date(e.iso)); }catch(_){ return e.data||''; } };
   S.diary.forEach(e=>{
+    const _k=_chiaveGiorno(e);
+    if(_k&&_k!==_giornoIn){
+      _giornoIn=_k;
+      const t=document.createElement('div'); t.className='d-giorno';
+      const dd=new Date(_k+'T12:00:00');
+      t.innerHTML='<span class="dg-num">'+dd.getDate()+'</span>'+
+        '<span class="dg-nome">'+escapeHtml(_stanzaNomeGiorno(_k).replace(' '+dd.getDate()+' ',' '))+'</span>';
+      el.appendChild(t);
+    }
     const div=document.createElement('div'); div.className='entry';
+    /* la scaletta d'entrata stava su .entry:nth-child, che conta TUTTI i fratelli:
+       con le intestazioni in mezzo si sarebbe spostata di uno. Qui si dichiara. */
+    if(_nEntry<6) div.style.animationDelay=(0.02+_nEntry*0.05).toFixed(2)+'s';
+    _nEntry++;
     const d=new Date(e.iso);
     const txt=e.raw||e.testo;
     const born=Array.isArray(e.born)?e.born:[];
@@ -8043,17 +8092,13 @@ function renderDiary(){
       const stS=((S.semi||[]).find(s=>s.id===e.seme)||{}).stato||'piantato';
       div.innerHTML=
         '<div class="entry-date">'+
-          '<span class="ed-num">'+giorno+'</span>'+
-          '<span class="ed-mo">'+mese+'</span>'+
           '<span class="ed-meta">seme '+(stS==='risposto'?'\u00b7 risposta raccolta':'\u00b7 tocca per rispondere a voce')+'</span>'+
         '</div>'+
         '<p class="seme-q">'+escapeHtml(txt)+'</p>';
       if(stS!=='risposto') div.onclick=()=>{ try{ semeRispondiUI(e.seme,txt); }catch(_){} };
     } else div.innerHTML=
       '<div class="entry-date">'+
-        '<span class="ed-num">'+giorno+'</span>'+
-        '<span class="ed-mo">'+mese+'</span>'+
-        '<span class="ed-meta">'+dow+' · '+ora+
+        '<span class="ed-meta">'+ora+
           (e.pos?' · <a class="posa" href="'+mapsUrl(e.pos)+'" target="_blank" rel="noopener">dov\u2019ero</a>':'')+
         '</span>'+
       '</div>'+
