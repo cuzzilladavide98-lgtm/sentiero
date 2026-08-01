@@ -38,6 +38,11 @@
   --safe-bot:env(safe-area-inset-bottom);
   --foglio-bg:rgba(7,10,9,0.72);
   --foglio-bg-opaco:rgba(7,10,9,0.94);
+  --terra-h:212;         /* la chiamata a terra ha una tinta sua, dichiarata:
+                            cambiarla resta un numero solo */
+  --terra-s:82%;
+  --terra:hsl(var(--terra-h) var(--terra-s) 64%);
+  --kb:0px;              /* quanto spazio si prende la tastiera di iOS */
   --serif:"New York","Iowan Old Style",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
 }
@@ -917,6 +922,21 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 /* e il titolo si scalda di un soffio: non un altro colore, la stessa carta piu accesa */
 .item.passo .txt .ttl{color:#FBF3E4}
 .item.passo.done .prio{animation:none;opacity:.5}
+/* ══════ v179 — LA PERGAMENA RICHIUSA ══════
+   Stessa luce della riga: la carta e la stella parlano la stessa lingua. */
+#patto.chiusa{padding:14px 14px 13px;animation:none}
+#patto.chiusa .patto-fermaglio{display:none}
+#patto.chiusa .patto-eyebrow{text-align:left;margin-bottom:8px}
+.patto-chiusa{display:flex;align-items:flex-start;gap:10px;text-align:left;
+  font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.36;color:var(--t1)}
+.patto-luce{flex:none;width:9px;height:9px;margin-top:6px;border-radius:50%;
+  background:radial-gradient(circle,#FFF6E2 0%,#F2C56B 34%,rgba(242,197,107,.6) 60%,transparent 76%);
+  box-shadow:0 0 7px 2px rgba(242,197,107,.50),0 0 18px 6px rgba(242,197,107,.20);
+  animation:patto-respiro 4.6s ease-in-out infinite}
+#patto.tenuta .patto-luce{animation:none;opacity:.45}
+/* «tenuta» e un fatto, non una pacca sulla spalla: piccola, spenta, senza numeri */
+.patto-tenuta{display:block;margin-top:8px;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--t3)}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #patto{animation:none}
 
@@ -1034,34 +1054,86 @@ body.testa-raccolta #btn-pin{pointer-events:none}
 /* ════════ LA CHIAMATA A TERRA (v175) ════════
    Il seme faceva una domanda scritta e pretendeva una risposta parlata: cinque semi, zero
    risposte. Non mancava la domanda, mancava la porta. Qui c'e la porta, e si scrive. */
-#satellite{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border:none;
-  background:none;padding:0;z-index:4;transform-origin:50% 50%;animation:sat-orbita 14s linear infinite}
-#satellite svg{width:40px;height:40px;display:block;animation:sat-dritto 14s linear infinite}
-#satellite .sat-corpo{fill:rgba(232,168,76,.16);stroke:var(--accent);stroke-width:1.3}
-#satellite .sat-oblo{fill:rgba(245,242,234,.9)}
-#satellite .sat-ala{stroke:var(--accent);stroke-width:1.2;stroke-linecap:round;fill:none;opacity:.75}
-#satellite .sat-scia{stroke:var(--accent);stroke-width:1.1;fill:none;opacity:.5}
-#satellite:active svg{transform:scale(.9)}
-body:not(.anima-sempre) #satellite,body:not(.anima-sempre) #satellite svg{animation:none}
-body[data-pane="quest"] #satellite{display:none}
-@keyframes sat-orbita{from{transform:rotate(0deg) translateX(126px)}to{transform:rotate(360deg) translateX(126px)}}
-@keyframes sat-dritto{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+/* ── LA LUCE (v180) ──────────────────────────────────────────────────
+   Il satellite era un SVG appoggiato sul cielo: contorni netti, e un oblo
+   bianco pieno piantato al centro esatto della rotazione - l'unica cosa
+   opaca e ferma su tutto lo schermo. E girava attorno al centro di
+   #mic-wrap, che non e il microfono: e una scatola alta il doppio. Per
+   questo vagava nel vuoto.
+   Qui non c'e nessun disegno: c'e un alone, della stessa pasta delle
+   stelle, e l'aggancio al centro vero del cerchio lo calcola il motore
+   misurando il bottone. Si muove solo per transform: mai left, mai top. */
+#terra-luce{position:fixed;left:0;top:0;width:44px;height:44px;margin:-22px 0 0 -22px;
+  border:none;background:none;padding:0;z-index:6;
+  will-change:transform;transform:translate3d(-100px,-100px,0)}
+#terra-luce .nucleo{position:absolute;inset:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center}
+#terra-luce .nucleo::before{content:'';width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle,#ffffff 0%,hsl(var(--terra-h) 100% 88%) 22%,
+    var(--terra) 46%,hsla(var(--terra-h) var(--terra-s) 50% / .55) 68%,transparent 78%);
+  box-shadow:0 0 12px 3px hsla(var(--terra-h) 92% 62% / .55),
+             0 0 34px 10px hsla(var(--terra-h) 88% 52% / .30),
+             0 0 70px 26px hsla(var(--terra-h) 84% 46% / .13);
+  transform:scale(var(--luce-k,1))}
+.terra-scia{position:fixed;left:0;top:0;width:1px;height:1px;z-index:5;pointer-events:none;
+  will-change:transform,opacity;opacity:0}
+.terra-scia::before{content:'';position:absolute;left:50%;top:50%;width:var(--sd,6px);height:var(--sd,6px);
+  margin:calc(var(--sd,6px) / -2) 0 0 calc(var(--sd,6px) / -2);border-radius:50%;
+  background:radial-gradient(circle,hsla(var(--terra-h) 96% 78% / .9) 0%,
+    hsla(var(--terra-h) var(--terra-s) 58% / .5) 45%,transparent 72%);
+  filter:blur(.6px)}
+body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:none}
+/* il fiore: l'istante in cui la luce smette di essere un punto e diventa il
+   bordo della scheda. Un solo elemento, scalato: nessun frame in piu. */
+#terra-fiore{position:fixed;left:0;top:0;width:10px;height:10px;margin:-5px 0 0 -5px;z-index:131;
+  border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,#fff 0%,hsl(var(--terra-h) 100% 86%) 30%,
+    hsla(var(--terra-h) var(--terra-s) 58% / .55) 60%,transparent 76%);
+  will-change:transform,opacity}
 
-#terra{position:fixed;inset:0;z-index:130;background:rgba(7,10,9,.93);display:flex;align-items:flex-end;justify-content:center;
-  padding:0 0 env(safe-area-inset-bottom);opacity:1;transition:opacity .32s ease}
+/* Il velo sta al livello del <body>, MAI dentro #app: #app ha un transform, e
+   un antenato trasformato diventa il riferimento dei figli position:fixed. Era
+   quello a far scendere il pannello di mezzo schermo e a lasciarlo tagliato
+   sotto il bordo del telefono. */
+#terra{position:fixed;inset:0;z-index:130;opacity:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 108%,hsla(var(--terra-h) 60% 22% / .55) 0%,
+    rgba(5,8,11,.90) 46%,rgba(3,5,7,.96) 100%);
+  transition:opacity .34s cubic-bezier(.22,1,.36,1)}
+#terra.acceso{opacity:1;pointer-events:auto}
 #terra.hidden{display:none}
 #terra.via{opacity:0;pointer-events:none}
-#terra-foglio{width:100%;max-width:480px;background:#0d120f;border-top:1px solid rgba(232,188,106,.4);
-  border-radius:20px 20px 0 0;padding:22px 22px calc(20px + env(safe-area-inset-bottom))}
-#terra-testa{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#E8A84C;margin-bottom:16px}
+/* due strati apposta: il foglio porta la traslazione della TASTIERA, la carta
+   porta l'entrata. Due transform sullo stesso elemento si darebbero contro. */
+#terra-foglio{position:fixed;left:50%;bottom:0;width:100%;max-width:480px;z-index:132;
+  transform:translateX(-50%) translateY(calc(var(--kb) * -1));
+  transition:transform .26s cubic-bezier(.32,.72,0,1);pointer-events:none}
+#terra-carta{position:relative;background:linear-gradient(180deg,#0b1017 0%,#080c11 100%);
+  border-top:1px solid hsla(var(--terra-h) 70% 62% / .45);border-radius:22px 22px 0 0;
+  padding:24px 22px calc(18px + env(safe-area-inset-bottom));
+  box-shadow:0 -22px 60px -18px hsla(var(--terra-h) 80% 40% / .30);
+  opacity:0;transform:scaleY(.55) translateY(26px);transform-origin:50% 0%;pointer-events:none}
+#terra.aperto #terra-carta{opacity:1;transform:none;pointer-events:auto;
+  transition:opacity .26s ease .04s,transform .46s cubic-bezier(.19,1.06,.28,1) .02s}
+#terra.chiudendo #terra-carta{opacity:0;transform:scaleY(.5) translateY(30px);
+  transition:opacity .20s ease,transform .26s cubic-bezier(.4,0,.7,.2)}
+#terra-carta::before{content:'';position:absolute;left:14%;right:14%;top:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,hsl(var(--terra-h) 96% 76%),transparent);
+  opacity:0;transform:scaleX(.2)}
+#terra.aperto #terra-carta::before{opacity:1;transform:none;
+  transition:opacity .3s ease,transform .5s cubic-bezier(.19,1.06,.28,1)}
+#terra-testa{font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+  color:hsl(var(--terra-h) 70% 70%);margin-bottom:14px}
 #terra-dom{font-family:var(--serif);font-size:20px;line-height:1.45;color:var(--t1);margin-bottom:16px}
+#terra-dom .w{display:inline-block;opacity:0;transform:translateY(6px)}
+#terra.aperto #terra-dom .w{animation:terra-w .34s cubic-bezier(.22,1,.36,1) both}
+@keyframes terra-w{to{opacity:1;transform:none}}
 #terra-txt{width:100%;background:rgba(245,242,234,.04);border:.5px solid rgba(245,242,234,.14);border-radius:14px;
   padding:14px;font-family:var(--serif);font-size:17px;line-height:1.5;color:var(--t1);resize:none;box-sizing:border-box}
-#terra-txt:focus{outline:none;border-color:rgba(232,168,76,.5)}
+#terra-txt:focus{outline:none;border-color:hsla(var(--terra-h) 80% 66% / .6)}
 #terra-piede{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}
-#terra-piede button{background:none;border:.5px solid rgba(245,242,234,.2);border-radius:13px;padding:10px 18px;
+#terra-piede button{background:none;border:.5px solid rgba(245,242,234,.2);border-radius:13px;padding:11px 18px;min-height:44px;
   font-size:14px;color:var(--t2)}
-#terra-piede .primo{border-color:rgba(232,168,76,.55);color:var(--accent)}
+#terra-piede .primo{border-color:hsla(var(--terra-h) 80% 66% / .6);color:hsl(var(--terra-h) 90% 74%)}
 #terra-piede .primo:disabled{opacity:.4}
 
 /* ════════ FASE 7 (v176) — i controlli di riga ════════
@@ -1084,6 +1156,9 @@ body[data-pane="quest"] #satellite{display:none}
 #toast.show .toast-annulla{pointer-events:auto}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) .item.passo .prio{animation:none}
+  body:not(.anima-sempre) .patto-luce{animation:none}
+  body:not(.anima-sempre) #terra-carta,body:not(.anima-sempre) #terra-dom .w,
+  body:not(.anima-sempre) #terra-fiore{animation:none!important;transition:none!important}
 }
 </style>
 </head>
@@ -1107,14 +1182,6 @@ body[data-pane="quest"] #satellite{display:none}
             <circle class="fs fs1" cx="14" cy="60" r="1.7"/><circle class="fs fs2" cx="15" cy="59" r="1.2"/><circle class="fs fs3" cx="13" cy="61" r="1.4"/>
           </svg>
           <div id="seal-dot"></div>
-        </button>
-        <button id="satellite" aria-label="Chiamata a terra: scrivi invece di parlare">
-          <svg viewBox="0 0 40 40" aria-hidden="true">
-            <ellipse class="sat-corpo" cx="20" cy="21" rx="8.5" ry="7"/>
-            <circle class="sat-oblo" cx="20" cy="20" r="3.4"/>
-            <path class="sat-ala" d="M11.5 20 L4 17.5 M11.5 22.5 L4.5 24.5 M28.5 20 L36 17.5 M28.5 22.5 L35.5 24.5"/>
-            <path class="sat-scia" d="M20 28.5 q-2 4 0 7 q2-3 0-7"/>
-          </svg>
         </button>
         <div id="mic-label">Tieni premuto il cerchio per parlare</div>
         <div id="ring-count"></div>
@@ -1166,17 +1233,6 @@ body[data-pane="quest"] #satellite{display:none}
   </header>
 
   <div id="soglia" class="hidden"><div id="soglia-corpo"></div></div>
-  <div id="terra" class="hidden" role="dialog" aria-label="Chiamata a terra">
-    <div id="terra-foglio">
-      <div id="terra-testa"></div>
-      <div id="terra-dom"></div>
-      <textarea id="terra-txt" rows="6" placeholder="scrivi qui, come viene" enterkeyhint="done"></textarea>
-      <div id="terra-piede">
-        <button id="terra-no">Chiudi</button>
-        <button id="terra-ok" class="primo">Raccogli</button>
-      </div>
-    </div>
-  </div>
   <main>
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
@@ -1324,6 +1380,20 @@ body[data-pane="quest"] #satellite{display:none}
 <canvas id="fx"></canvas>
 <div id="flash"></div>
 <div id="word-stage"></div>
+<button id="terra-luce" aria-label="Chiamata a terra: scrivi invece di parlare"><span class="nucleo"></span></button>
+<div class="terra-scia"></div><div class="terra-scia"></div><div class="terra-scia"></div>
+<div id="terra" class="hidden" role="dialog" aria-label="Chiamata a terra">
+  <div id="terra-foglio"><div id="terra-carta">
+    <div id="terra-testa"></div>
+    <div id="terra-dom"></div>
+    <textarea id="terra-txt" rows="5" placeholder="scrivi qui, come viene" enterkeyhint="done"></textarea>
+    <div id="terra-piede">
+      <button id="terra-no">Chiudi</button>
+      <button id="terra-ok" class="primo">Raccogli</button>
+    </div>
+  </div></div>
+</div>
+<div id="terra-fiore"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -2008,7 +2078,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.178 · 2026-08-01';
+const APP_VERSION='v60S.180 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -6728,10 +6798,31 @@ function renderPatto(){
   let no=false; try{ no=(localStorage.getItem('sentiero-patto-no')===tk); }catch(_){}
   let sched=[]; try{ sched=scheduledFor(S,dowOf(),tk)||[]; }catch(_){}
   let qOggi=[]; try{ qOggi=(S.quests||[]).filter(q=>q&&q.id&&!q.fatto&&(!q.quando||q.quando<=tk)).slice(0,3); }catch(_){}   /* anche le quest del giorno sono passi che contano */
-  if(scelto||no||(!sched.length&&!qOggi.length)){ box.innerHTML=''; box.classList.add('hidden'); box.dataset.tk=''; return; }
+  /* v179: prima, appena sceglievi, la pergamena spariva del tutto. La promessa
+     durava il tempo di farla. Ora la carta si richiude su una riga sola e resta
+     sotto gli occhi tutto il giorno. Nessun contatore, nessun sollecito: dice
+     solo cosa hai promesso stamattina. */
+  if(scelto){
+    const pq=(S.quests||[]).find(x=>x&&x.id===S.patto.id)||(S.scheduled||[]).find(x=>x&&x.id===S.patto.id);
+    if(!pq){ box.innerHTML=''; box.classList.add('hidden'); box.dataset.tk=''; box.dataset.stato=''; return; }
+    let fatta=false; try{ fatta=!!pq.fatto||!!((S.checks[tk]||{})[S.patto.id]); }catch(_){}
+    const firma=tk+'|'+S.patto.id+'|'+(fatta?'1':'0');
+    if(box.dataset.stato===firma) return;          /* gia in scena e uguale: non si ridisegna */
+    box.dataset.stato=firma; box.dataset.tk=tk;
+    box.classList.remove('hidden'); box.classList.add('chiusa');
+    box.classList.toggle('tenuta',fatta);
+    box.innerHTML='<div class="patto-angoli"></div>'+
+      '<span class="patto-eyebrow">la promessa del mattino</span>'+
+      '<span class="patto-chiusa"><i class="patto-luce"></i><span>'+
+        escapeHtml(clampStr(pq.titolo||'',140))+'</span></span>'+
+      (fatta?'<span class="patto-tenuta">tenuta</span>':'');
+    return;
+  }
+  if(no||(!sched.length&&!qOggi.length)){ box.innerHTML=''; box.classList.add('hidden');
+    box.dataset.tk=''; box.dataset.stato=''; return; }
   if(box.dataset.tk===tk&&box.innerHTML){ box.classList.remove('hidden'); return; }   /* gia in scena: l'ingresso non si rigioca */
-  box.dataset.tk=tk;
-  box.classList.remove('hidden');
+  box.dataset.tk=tk; box.dataset.stato='';
+  box.classList.remove('hidden'); box.classList.remove('chiusa'); box.classList.remove('tenuta');
   box.innerHTML='<div class="patto-angoli"></div><div class="patto-fermaglio"><b></b></div>'+
     '<span class="patto-eyebrow">la promessa del mattino</span>'+
     '<span class="patto-title">Cosa conta davvero, oggi?</span>'+
@@ -7545,24 +7636,180 @@ function terraDomanda(){
   }catch(_){}
   return {id:'',testo:'cosa e successo davvero, oggi?',volante:true};
 }
+/* la domanda si scrive parola per parola: e una voce che parla, non un cartello */
+function scriviTerraDomanda(testo){
+  const d=document.querySelector('#terra-dom'); if(!d) return;
+  d.innerHTML='';
+  String(testo||'').split(' ').forEach((w,i)=>{
+    const sp=document.createElement('span'); sp.className='w'; sp.textContent=w;
+    sp.style.animationDelay=(120+i*26)+'ms';
+    d.appendChild(sp); d.appendChild(document.createTextNode(' '));
+  });
+}
 function apriTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
   _terraSeme=terraDomanda();
   el.querySelector('#terra-testa').textContent='chiamata a terra';
-  el.querySelector('#terra-dom').textContent=_terraSeme.testo;
+  scriviTerraDomanda(_terraSeme.testo);
   const txt=el.querySelector('#terra-txt');
   txt.value='';
   const ok=el.querySelector('#terra-ok');
   ok.disabled=true;
   txt.oninput=()=>{ ok.disabled=txt.value.trim().length<2; };
-  el.classList.remove('hidden','via');
-  setTimeout(()=>{ try{ txt.focus(); }catch(_){} },60);
+  el.classList.remove('hidden','via','chiudendo');
+  /* niente fuoco automatico sul campo: la tastiera coprirebbe l'apertura e su
+     iOS, fuori dal gesto, non si alzerebbe comunque. Prima leggi, poi tocchi. */
+  if(window._terraLuce&&window._terraLuce.apri) window._terraLuce.apri();
+  else { el.classList.add('acceso','aperto'); }   /* mai una porta che non si apre */
 }
 function chiudiTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
-  el.classList.add('via');
-  setTimeout(()=>{ try{ el.classList.add('hidden'); }catch(_){} },340);
+  try{ const t=el.querySelector('#terra-txt'); if(t) t.blur(); }catch(_){}
+  if(window._terraLuce&&window._terraLuce.chiudi) window._terraLuce.chiudi();
+  else { el.classList.add('via'); setTimeout(()=>{ try{ el.classList.add('hidden'); }catch(_){} },340); }
 }
+
+/* ══ IL MOTORE DELLA LUCE (v180) ═══════════════════════════════════════════════════
+   Un solo rAF. Si muove soltanto transform e opacity: tutto il resto costa un
+   frame. Tre stati - orbita, volo, atterrata - e nessuna coda di timeout che si
+   accavalla. ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  const luce=document.getElementById('terra-luce'); if(!luce) return;
+  const scie=[].slice.call(document.querySelectorAll('.terra-scia'));
+  const el=document.getElementById('terra');
+  const fiore=document.getElementById('terra-fiore');
+  const carta=document.getElementById('terra-carta');
+  if(!el||!fiore||!carta) return;
+  const GIRO=26000, VOLO=440;
+  let CX=0, CY=0, RR=120, ang=-Math.PI/2, t0=performance.now(), stato='orbita', volo=null;
+  const STORIA=[];
+
+  function calmo(){
+    try{ if(S.settings&&S.settings.anim==='sempre') return false;
+      return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(_){ return false; }
+  }
+  /* il centro VERO del cerchio: si misura il bottone, non la scatola che lo contiene.
+     r=79 su un viewBox 200 e il raggio del tracciato: la luce corre sull'anello. */
+  function misura(){
+    try{ const m=document.getElementById('mic');
+      if(m){ const r=m.getBoundingClientRect();
+        if(r.width){ CX=r.left+r.width/2; CY=r.top+r.height/2; RR=(79/200)*r.width; return; } }
+    }catch(_){}
+    CX=innerWidth/2; CY=innerHeight*0.3; RR=Math.min(innerWidth,innerHeight)*0.28;
+  }
+  misura();
+  addEventListener('resize',misura); addEventListener('orientationchange',misura);
+  try{ const m=document.getElementById('mic'); if(m&&window.ResizeObserver) new ResizeObserver(misura).observe(m); }catch(_){}
+
+  function punto(a){ return {x:CX+Math.cos(a)*RR, y:CY+Math.sin(a)*RR}; }
+  function poni(e,x,y,op){
+    e.style.transform='translate3d('+x.toFixed(2)+'px,'+y.toFixed(2)+'px,0)';
+    if(op!=null) e.style.opacity=op;
+  }
+
+  function frame(now){
+    requestAnimationFrame(frame);
+    if(document.hidden) return;
+    if(stato==='orbita'&&document.body.getAttribute('data-pane')==='quest') return;   /* coperta: zero lavoro */
+    let x,y,k=1,op=1;
+    if(stato==='orbita'){
+      ang=((now-t0)/GIRO)*Math.PI*2 - Math.PI/2;
+      const p=punto(ang); x=p.x; y=p.y;
+      k=1+Math.sin(now/1400)*0.10;         /* il respiro, appena percettibile */
+    } else if(stato==='volo'){
+      const u=Math.min(1,(now-volo.t)/VOLO);
+      const e=u<0.5 ? 4*u*u*u : 1-Math.pow(-2*u+2,3)/2, m=1-e;
+      x=m*m*m*volo.x0+3*m*m*e*volo.cx1+3*m*e*e*volo.cx2+e*e*e*volo.x1;
+      y=m*m*m*volo.y0+3*m*m*e*volo.cy1+3*m*e*e*volo.cy2+e*e*e*volo.y1;
+      k=1+e*2.6;
+      op=u>0.86?Math.max(0,(1-u)/0.14):1;
+      if(u>=1){ if(volo.verso==='giu'){ stato='atterrata'; sboccia(volo.x1,volo.y1); }
+                else { stato='orbita'; t0=performance.now()-((ang+Math.PI/2)/(Math.PI*2))*GIRO; } }
+    } else { x=volo?volo.x1:CX; y=volo?volo.y1:CY; op=0; }
+
+    poni(luce,x,y,op);
+    luce.style.setProperty('--luce-k',k);
+    STORIA.push(x,y); if(STORIA.length>80) STORIA.splice(0,2);
+    for(let i=0;i<scie.length;i++){
+      const j=STORIA.length/2-1-(i+1)*5;
+      if(j<0){ scie[i].style.opacity=0; continue; }
+      scie[i].style.setProperty('--sd',(7-i*1.4).toFixed(1)+'px');
+      poni(scie[i],STORIA[j*2],STORIA[j*2+1],(stato==='orbita'?1:op)*(0.40-i*0.11));
+    }
+  }
+  requestAnimationFrame(frame);
+
+  function sboccia(x,y){
+    try{ carta.style.transformOrigin=((x/(innerWidth||1))*100).toFixed(1)+'% 0%'; }catch(_){}
+    if(calmo()){ el.classList.add('aperto'); return; }
+    fiore.style.transition='none';
+    fiore.style.transform='translate3d('+x+'px,'+y+'px,0) scale(1)';
+    fiore.style.opacity='0';
+    requestAnimationFrame(()=>{
+      fiore.style.transition='transform .34s cubic-bezier(.16,.9,.3,1),opacity .34s ease';
+      fiore.style.transform='translate3d('+x+'px,'+y+'px,0) scale(9,2.2)';
+      fiore.style.opacity='1';
+      setTimeout(()=>{ fiore.style.transition='transform .3s ease,opacity .3s ease';
+        fiore.style.transform='translate3d('+x+'px,'+y+'px,0) scale(22,.6)';
+        fiore.style.opacity='0'; },180);
+    });
+    setTimeout(()=>el.classList.add('aperto'),150);
+  }
+
+  window._terraLuce={
+    apri(){
+      el.classList.add('acceso');
+      misura();
+      let alt=0; try{ alt=carta.getBoundingClientRect().height; }catch(_){}
+      if(!alt) alt=Math.min(innerHeight*0.52,420);
+      const x1=innerWidth/2, y1=innerHeight-alt;
+      if(calmo()||stato!=='orbita'){ stato='atterrata'; volo={x1:x1,y1:y1}; sboccia(x1,y1); return; }
+      const p0=punto(ang), tg={x:-Math.sin(ang),y:Math.cos(ang)};
+      volo={verso:'giu',t:performance.now(),x0:p0.x,y0:p0.y,
+        cx1:p0.x+tg.x*RR*0.55, cy1:p0.y+tg.y*RR*0.55,
+        cx2:x1, cy2:y1-Math.max(90,alt*0.42), x1:x1, y1:y1};
+      stato='volo';
+    },
+    chiudi(){
+      el.classList.add('chiudendo'); el.classList.remove('aperto','acceso');
+      setTimeout(()=>{
+        el.classList.remove('chiudendo'); el.classList.add('hidden');
+        const p=punto(ang);
+        if(calmo()||!volo){ stato='orbita'; t0=performance.now()-((ang+Math.PI/2)/(Math.PI*2))*GIRO; return; }
+        const tg={x:-Math.sin(ang),y:Math.cos(ang)};
+        volo={verso:'su',t:performance.now(),x0:volo.x1,y0:volo.y1,
+          cx1:volo.x1, cy1:volo.y1-140,
+          cx2:p.x+tg.x*RR*0.55, cy2:p.y+tg.y*RR*0.55, x1:p.x, y1:p.y};
+        stato='volo';
+      },300);
+    }
+  };
+
+  /* ── LA TASTIERA ────────────────────────────────────────────────────
+     Su iOS la tastiera NON rimpicciolisce il layout: ci si mette sopra.
+     Un pannello ancorato in basso ci finisce sotto per forza, ed e cosi
+     che si finiva a scrivere alla cieca. visualViewport e l'unico che
+     dice quanto schermo resta davvero. */
+  const vv=window.visualViewport;
+  const txt=document.getElementById('terra-txt');
+  function tastiera(){
+    if(!vv) return;
+    const h=Math.max(0, innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty('--kb', h+'px');
+    if(!txt) return;
+    try{
+      const alto=carta.getBoundingClientRect().height;
+      if(alto > vv.height-24 && txt.rows>2) txt.rows=txt.rows-1;
+    }catch(_){}
+  }
+  if(vv){ vv.addEventListener('resize',tastiera); vv.addEventListener('scroll',tastiera); }
+  if(txt){
+    txt.addEventListener('focus',()=>setTimeout(tastiera,60));
+    txt.addEventListener('blur',()=>{ txt.rows=5; setTimeout(tastiera,80); });
+  }
+  /* il velo si tocca e si chiude: ma solo il velo, non la carta */
+  el.addEventListener('click',e=>{ if(e.target===el) chiudiTerra(); });
+})();
 async function raccogliTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
   const txt=el.querySelector('#terra-txt');
@@ -7945,7 +8192,7 @@ document.querySelectorAll('#seg-model button').forEach(b=>{
     toast(b.dataset.model==='max'?'Motore IA: Opus 5':b.dataset.model==='fast'?'Motore IA: Haiku 4.5':'Motore IA: Sonnet 5');
   };
 });
-{ const sa=document.querySelector('#satellite'); if(sa) sa.onclick=(e)=>{ e.stopPropagation(); apriTerra(); };
+{ const sa=document.querySelector('#terra-luce'); if(sa) sa.onclick=(e)=>{ e.stopPropagation(); apriTerra(); };
   const tn=document.querySelector('#terra-no'); if(tn) tn.onclick=chiudiTerra;
   const to=document.querySelector('#terra-ok'); if(to) to.onclick=()=>{ raccogliTerra(); };
   const bb=document.querySelector('#btn-banco'); if(bb) bb.onclick=()=>{ eseguiBanco(); }; }
