@@ -900,6 +900,23 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 /* il timbro del patto e D'ORO, unico del giorno */
 .item.passo.done .chk::before{background:linear-gradient(160deg,#F2C56B,#B0731F)}
 .item.passo.done .chk-mark path{stroke:#241A08}
+/* ══════ v178 — LA STELLA DI OGGI ══════
+   Il patto si riconosceva da una spina di 3px a 10px FUORI dalla riga: su nero,
+   a mezzo metro, non la vedi. E se non la vedi, il patto non esiste - erano mesi
+   di promesse che nella lista non risultavano. Il segno rientra dentro la riga:
+   il pallino grigio della priorita, per quella riga sola, diventa una luce viva.
+   Stessa lingua del cielo, niente etichette, niente contatori: non e un premio,
+   e il posto dove guardare. */
+.item.passo .prio{background:radial-gradient(circle,#FFF6E2 0%,#F2C56B 34%,rgba(242,197,107,.6) 60%,transparent 76%);
+  box-shadow:0 0 7px 2px rgba(242,197,107,.50),0 0 18px 6px rgba(242,197,107,.20);
+  animation:patto-respiro 4.6s ease-in-out infinite}
+.item.passo.audace .prio{background:radial-gradient(circle,#FFF1E4 0%,#F2C56B 30%,rgba(217,116,75,.65) 60%,transparent 76%);
+  box-shadow:0 0 7px 2px rgba(217,116,75,.50),0 0 18px 6px rgba(217,116,75,.22)}
+/* il respiro: lentissimo, mai un lampeggio. Se pulsa in fretta diventa una notifica. */
+@keyframes patto-respiro{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.22);opacity:1}}
+/* e il titolo si scalda di un soffio: non un altro colore, la stessa carta piu accesa */
+.item.passo .txt .ttl{color:#FBF3E4}
+.item.passo.done .prio{animation:none;opacity:.5}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #patto{animation:none}
 
@@ -1065,6 +1082,9 @@ body[data-pane="quest"] #satellite{display:none}
    nemmeno una volta. Si riabilita SOLO sul bottone e SOLO mentre il toast e in scena: fuori scena
    il toast resta nel DOM a opacita 0, e un bottone invisibile ma cliccabile sarebbe un muro peggiore. */
 #toast.show .toast-annulla{pointer-events:auto}
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) .item.passo .prio{animation:none}
+}
 </style>
 </head>
 <body>
@@ -1988,7 +2008,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.177 · 2026-08-01';
+const APP_VERSION='v60S.178 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
