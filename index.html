@@ -19,6 +19,7 @@
 <link rel="apple-touch-startup-image" href="./splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
 <link rel="apple-touch-startup-image" href="./splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
 <meta name="color-scheme" content="dark">
+<style>html{background:#070A09}body{background:#070A09}</style>
 <style>
 /* ═══════════════════════════════════════════════════════
    SENTIERO v19 — "Bussola"
@@ -1872,7 +1873,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.168 · 2026-08-01';
+const APP_VERSION='v60S.169 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3181,10 +3182,32 @@ function foglioDopoVoce(){
     try{ document.body.classList.toggle('foglio-opaco',ridotto()); }catch(_){}
     fg.style.transform='translate(-50%,'+ty+'px)';
     fg.style.setProperty('--fp',(d==='picco')?'1':'0');
+    fpScroll=(d==='picco')?1:0;                       /* cambiando fermata il morphing riparte da capo */
     corpo.style.overflowY=(d==='pieno')?'auto':'hidden';
+    if(d==='pieno'){ try{ requestAnimationFrame(fpDaScroll); }catch(_){} }   /* si entra a «pieno» gia scrollati: la testata si adegua subito */
     try{ document.body.setAttribute('data-foglio',d); }catch(_){}
   }
   window.foglioVai=function(d){ if(d==='picco'||d==='mezzo'||d==='pieno') applica(d); };
+  /* ── FASE 1 (v169): lo scroll guida il morphing ────────────────────────────────────────
+     Il collasso della testata esisteva dalla v93 ma era agganciato alla POSIZIONE del foglio:
+     --fp saliva solo trascinando da mezzo a picco. Il contenuto pero scorre solo a «pieno»,
+     dove --fp vale 0 - cioe nell'unico stato in cui si legge, la testata restava grande.
+     Qui lo scroll del corpo guida lo stesso --fp, sui primi SCROLL_MORPH px. Niente DOM nuovo,
+     niente estetica nuova: si riusa il morphing gia tarato. */
+  const SCROLL_MORPH=120;
+  let rafS=0, fpScroll=0;
+  function fpDaScroll(){
+    if(det!=='pieno'||dragging) return;
+    const y=Math.max(0,corpo.scrollTop||0);
+    const v=Math.max(0,Math.min(1,y/SCROLL_MORPH));
+    if(Math.abs(v-fpScroll)<0.004) return;
+    fpScroll=v;
+    fg.style.setProperty('--fp',v.toFixed(4));
+  }
+  corpo.addEventListener('scroll',function(){
+    if(rafS) return;
+    rafS=requestAnimationFrame(function(){ rafS=0; fpDaScroll(); });
+  },{passive:true});
   /* il drag: maniglia e testata sempre, tutto il foglio quando e a picco */
   let dragging=false,p0=0,ty0=0,samples=[],pdGrip=false;
   function gomma(y){ const mn=posDi('pieno'), mx=posDi('picco');
