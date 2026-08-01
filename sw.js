@@ -1,10 +1,12 @@
-const CACHE = 'sentiero-v60s166';
+const CACHE = 'sentiero-v60s168';
+/* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
+   blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
+   sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui
+   l'audio tornera - semplicemente non si scaricano piu in anticipo. */
 const ASSETS = ['./', './index.html', './manifest.json',
   './icon-192.png', './icon-512.png', './icon-180.png',
-  'splash-1290x2796.png', 'splash-1179x2556.png', 'splash-1170x2532.png',
-  'splash-1125x2436.png', 'splash-828x1792.png', 'splash-750x1334.png',
-  './active_quest_v6_bandcore.wav', './tribal-drive.mp3', './atomic-tension.mp3',
-  './sewer-tension.mp3', './d-major.mp3', './f-major.mp3', './lead-guitar.mp3'];
+  './splash-1290x2796.png', './splash-1179x2556.png', './splash-1170x2532.png',
+  './splash-1125x2436.png', './splash-828x1792.png', './splash-750x1334.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {

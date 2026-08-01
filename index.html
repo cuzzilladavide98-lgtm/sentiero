@@ -11,7 +11,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Sentiero">
 <meta name="theme-color" content="#070A09">
-<!-- splash screen iOS: nere con enso, così il primo fotogramma combacia con l'app (niente lampo bianco) -->
+<!-- splash iOS: senza questi tag iOS riempie di BIANCO la finestra d'apertura. I file erano gia nel service worker, mancavano i link. -->
+<link rel="apple-touch-startup-image" href="./splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="./splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="./splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="./splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="./splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+<link rel="apple-touch-startup-image" href="./splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
 <meta name="color-scheme" content="dark">
 <style>
 /* ═══════════════════════════════════════════════════════
@@ -948,6 +954,20 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
 #frutto .fr-piede{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(232,188,106,.16)}
 #frutto .fr-piede button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.4);border-radius:12px;padding:8px 16px;font-size:13.5px;color:#E8DCC0}
 #frutto .fr-piede #fr-condividi{border-color:rgba(232,188,106,.6);color:#E8A84C}
+
+/* ════════ LA SOGLIA (v167) — la finestra fra il tocco e l'app non e piu vuota ════════ */
+#soglia{position:fixed;inset:0;z-index:120;background:#070A09;display:flex;align-items:center;justify-content:center;padding:28px 26px calc(28px + env(safe-area-inset-bottom));opacity:1;transition:opacity .6s ease}
+#soglia.hidden{display:none}
+#soglia.via{opacity:0;pointer-events:none}
+#soglia-corpo{max-width:520px;width:100%;opacity:0;transition:opacity .9s ease}
+#soglia-corpo.on{opacity:1}
+#soglia .sg-testa{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#E8A84C;margin-bottom:22px}
+#soglia .sg-lettura{font-family:var(--serif);font-size:23px;line-height:1.52;color:var(--t1);margin:0 0 18px}
+#soglia .sg-mossa{font-size:14.5px;line-height:1.5;color:#E8A84C;margin:0}
+#soglia .sg-piede{display:flex;gap:9px;margin-top:30px}
+#soglia .sg-piede button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.42);border-radius:13px;padding:9px 17px;font-size:13.5px;color:#E8DCC0}
+#soglia .sg-attesa{width:26px;height:1px;background:rgba(232,188,106,.5);animation:sg-resp 1.9s ease-in-out infinite}
+@keyframes sg-resp{0%,100%{transform:scaleX(.3);opacity:.35}50%{transform:scaleX(1);opacity:.9}}
 </style>
 </head>
 <body>
@@ -1020,10 +1040,10 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
     </div>
   </header>
 
+  <div id="soglia" class="hidden"><div id="soglia-corpo"></div></div>
   <main>
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
-      <div id="frutto" class="hidden"></div>
       <div id="giorno-bar">
         <span id="day-line"></span>
       </div>
@@ -1852,7 +1872,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.166 · 2026-08-01';
+const APP_VERSION='v60S.168 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4039,21 +4059,51 @@ async function condividiFrutto(f){
     else{ try{ toast('La condivisione non è disponibile qui'); }catch(_){} }
   }catch(e){ if(!(e&&e.name==='AbortError')){ try{ toast('Condivisione non riuscita'); }catch(_){} } }
 }
-async function renderFrutto(){
-  const el=document.querySelector('#frutto'); if(!el) return;
-  const f=await fruttoDiOggi();
-  if(!f||f.chiuso||f.visto){ el.classList.add('hidden'); el.innerHTML=''; return; }
-  (S.frutti||[]).forEach(g=>{ if(g&&g.tk===f.tk) g.visto=true; });
-  save();
-  el.innerHTML='<div class="fr-testa">il frutto di ieri</div>'
-    +'<p class="fr-lettura">'+escapeHtml(f.lettura)+'</p>'
-    +(f.mossa?'<p class="fr-mossa">'+escapeHtml(f.mossa)+'</p>':'')
-    +'<div class="fr-piede"><button id="fr-condividi">Condividi</button><button id="fr-chiudi">Chiudi</button></div>';
+/* ── LA SOGLIA (v167) ─────────────────────────────────────────────────────────────────────
+   Fra il tocco sull'icona e l'app c'era una finestra bianca di due secondi e mezzo. Il frutto
+   sta li: non e una carta dentro un cassetto, e la cosa che si attraversa per entrare.
+   Regole dure: se non c'e un frutto la soglia sparisce SUBITO, e non aspetta mai piu di sei
+   secondi. Nessuno deve restare fermo davanti a un'attesa che non porta niente. ─────────── */
+const SOGLIA_ATTESA=6000;
+function _sogliaVia(el){
+  if(!el||el.classList.contains('via')) return;
+  el.classList.add('via');
+  setTimeout(()=>{ try{ el.classList.add('hidden'); el.innerHTML='<div id="soglia-corpo"></div>'; }catch(_){} },650);
+}
+async function apriSoglia(){
+  const el=document.querySelector('#soglia'); if(!el) return;
+  const tk=todayKey();
+  const gia=(S.frutti||[]).filter(x=>x&&x.tk===tk)[0];
+  if(gia&&(gia.silenzio||gia.visto)) return;                    /* oggi e gia stato: si entra e basta */
+  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;
   el.classList.remove('hidden');
-  const chiudi=()=>{ (S.frutti||[]).forEach(g=>{ if(g&&g.tk===f.tk) g.chiuso=true; });
-    save(); el.classList.add('hidden'); el.innerHTML=''; try{ haptic(); }catch(_){} };
-  const bx=el.querySelector('#fr-chiudi'); if(bx) bx.onclick=chiudi;
-  const bc=el.querySelector('#fr-condividi'); if(bc) bc.onclick=()=>{ condividiFrutto(f); };
+  const corpo=el.querySelector('#soglia-corpo');
+  corpo.innerHTML='<div class="sg-attesa"></div>';
+  corpo.classList.add('on');
+  let chiusa=false;
+  const chiudi=()=>{ if(chiusa) return; chiusa=true; _sogliaVia(el); };
+  el.addEventListener('pointerdown',chiudi);                    /* un tocco e si entra, sempre */
+  const tetto=setTimeout(chiudi,SOGLIA_ATTESA);
+  let fr=null;
+  try{ fr=await fruttoDiOggi(); }catch(_){ fr=null; }
+  clearTimeout(tetto);
+  if(chiusa) return;
+  if(!fr||!fr.lettura){ chiudi(); return; }                     /* silenzio, veto o rete: via subito */
+  (S.frutti||[]).forEach(g=>{ if(g&&g.tk===fr.tk) g.visto=true; });
+  save();
+  corpo.classList.remove('on');
+  setTimeout(()=>{
+    if(chiusa) return;
+    corpo.innerHTML='<div class="sg-testa">il frutto di ieri</div>'
+      +'<p class="sg-lettura">'+escapeHtml(fr.lettura)+'</p>'
+      +(fr.mossa?'<p class="sg-mossa">'+escapeHtml(fr.mossa)+'</p>':'')
+      +'<div class="sg-piede"><button id="sg-cond">Condividi</button><button id="sg-entra">Entra</button></div>';
+    corpo.classList.add('on');
+    const bc=corpo.querySelector('#sg-cond');
+    if(bc) bc.onclick=(e)=>{ e.stopPropagation(); condividiFrutto(fr); };
+    const be=corpo.querySelector('#sg-entra');
+    if(be) be.onclick=(e)=>{ e.stopPropagation(); chiudi(); };
+  },250);
 }
 /* ══════ MOTORE MAESTRIA fase 1: il modello legge, il client conta ══════ */
 function processMastery(mo){
@@ -7961,7 +8011,7 @@ try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
 try{ maybeChiudiCapitolo(); }catch(_){}
-try{ renderFrutto(); }catch(_){}   /* il frutto di ieri: la prima cosa che vedi, e si compone da solo */   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
+try{ apriSoglia(); }catch(_){}   /* v167: il frutto sta nella finestra d'apertura, non nel cassetto */   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
 /* il segnavia impara a tacere: dal 21\u00b0 giorno attivo si attenua quando non serve, torna al tocco */
 (function(){
   try{ if(anzianita(S)<2) return; }catch(_){ return; }
