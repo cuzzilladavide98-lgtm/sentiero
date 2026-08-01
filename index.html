@@ -340,7 +340,7 @@ section{margin-top:38px}
  62%{transform:rotate(-3.6deg) scale(.985)}
  100%{opacity:1;transform:rotate(-4deg) scale(1)}}
 .item.justdone .chk{animation:sanguina .5s ease-out .12s both}
-@keyframes sanguina{0%{box-shadow:0 0 0 0 rgba(185,64,46,.45)}100%{box-shadow:0 0 0 10px rgba(185,64,46,0)}}
+@keyframes sanguina{0%{box-shadow:0 0 0 0 rgba(232,168,76,.45)}100%{box-shadow:0 0 0 10px rgba(232,168,76,0)}}   /* v173: l'alone del completamento era rosso come l'errore */
 .item.justdone .chk-mark path{transition-delay:.3s}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) .item.justdone .chk::before,body:not(.anima-sempre) .item.justdone .chk{animation:none}
@@ -986,6 +986,33 @@ body.testa-raccolta #btn-pin{pointer-events:none}
 
 /* ════════ FASE 4 (v172) — il capolettera segue il fuoco ════════ */
 .ini{color:var(--accent)}
+
+/* ════════ FASE 5 (v173) — gli stati ════════
+   Sistema approvato in Fase 3: FUOCO = cio che e vivo e fatto · SPENTO = cio che non c'e.
+   Nessun ruolo d'allarme: un colore d'allarme e la forma visiva di un rimprovero. */
+/* la spunta di completamento passa dal rosso al fuoco. Il rosso diceva insieme
+   «ce l'hai fatta» e «sto per cancellare»: due messaggi opposti, stesso colore. */
+.item .chk::before{background:linear-gradient(160deg,#F2C56B,#B0731F)}
+.chk-mark path{stroke:#241A08}
+/* fatto non vuol dire cancellato: il testo compiuto resta leggibile */
+.item.done .ttl{color:rgba(245,242,234,.62)}
+.item.done .ini{color:rgba(245,242,234,.62) !important}
+/* la data passata: spenta, non rossa */
+.item .meta.over{color:var(--t3)}
+/* il conteggio in testa alla sezione: un filtro, non un cartello */
+.sec-head .arretrate{margin-left:auto;background:none;border:.5px solid rgba(245,242,234,.16);border-radius:999px;
+  padding:3px 11px;font-size:12px;font-weight:400;color:var(--t3);letter-spacing:.02em;position:relative}
+.sec-head .arretrate::after{content:'';position:absolute;left:-6px;right:-6px;top:-11px;bottom:-11px}
+.sec-head .arretrate.on{border-color:var(--accent);color:var(--accent)}
+#sec-today-quests .sec-head{display:flex;align-items:center;gap:10px}
+
+/* ════════ FASE 6 (v174) — la densita delle righe ════════
+   Un titolo lungo occupava quattro righe di serif grande: con undici impegni servivano quattro
+   schermate. Ora il titolo si ferma a due righe e la nota a una, con i puntini; il tocco sulla
+   riga apre tutto e un secondo tocco richiude. Il testo intero resta sempre nel DOM. */
+.item .ttl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item .meta{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.item.aperta .ttl,.item.aperta .meta{display:block;-webkit-line-clamp:none;overflow:visible}
 </style>
 </head>
 <body>
@@ -1890,7 +1917,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.172 · 2026-08-01';
+const APP_VERSION='v60S.174 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -5314,6 +5341,24 @@ function apriNotaBox(div,id,titolo,isQuest){   /* LA CURA: aggiorna la riga, o l
     try{ toast('Riposo per oggi. Domani torna.'); }catch(_){}
   };
 }
+function attachDispiega(div){
+  /* v174 (Fase 6): un tocco sulla riga apre il testo intero, un secondo lo richiude.
+     Non interferisce con la spunta, il calendario, il cestino, ne col long-press della nota:
+     se il dito si e mosso o e passato mezzo secondo, questo tocco non conta. */
+  let x0=0,y0=0,t0=0;
+  div.addEventListener('pointerdown',e=>{
+    if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal,button')) return;
+    x0=e.clientX; y0=e.clientY; t0=Date.now();
+  });
+  div.addEventListener('pointerup',e=>{
+    if(!t0) return;
+    if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal,button')){ t0=0; return; }
+    const fermo=Math.abs(e.clientX-x0)<10&&Math.abs(e.clientY-y0)<10;
+    const breve=Date.now()-t0<500;
+    t0=0;
+    if(fermo&&breve) div.classList.toggle('aperta');
+  });
+}
 function attachNota(div,id,titolo,isQuest){
 
   let t=null,x0=0,y0=0;
@@ -6997,7 +7042,10 @@ function questWhen(q,tk,domani){
   let when='';
   if(q.quando){
     const lbl=q.quando===tk?'oggi':q.quando===domani?'domani':new Date(q.quando+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
-    when='<span class="meta'+(overdue?' over':future?' soon':'')+'">'+(overdue?'in ritardo · ':'')+lbl+(q.ora?' · '+q.ora:'')+'</span>';
+    /* v173 (Fase 5): via la parola «in ritardo». Ripetuta su righe consecutive costruiva un muro
+       accusatorio, e le Tre Leggi vietano la pressione sul ritardo. Resta la data, spenta:
+       la constatazione, non il rimprovero. Il conteggio sta una volta sola, in testa alla sezione. */
+    when='<span class="meta'+(overdue?' over':future?' soon':'')+'">'+lbl+(q.ora?' \u00b7 '+q.ora:'')+'</span>';
   } else if(q.ora){
     when='<span class="meta">'+q.ora+'</span>';
   }
@@ -7118,14 +7166,33 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   const cb=div.querySelector('.cal'); if(cb) cb.onclick=(e)=>{ e.stopPropagation(); addToCalendar(q); };
   div.querySelector('.del').onclick=()=>{ S.quests=S.quests.filter(x=>x!==q); save(); rerender(); updateRing(); };
   try{ attachNota(div,q.id,q.titolo,true); }catch(_){}
+  try{ attachDispiega(div); }catch(_){}
   return div;
 }
+let _soloArretrate=false;
 function renderTodayQuests(bornIds){
   bornIds=bornIds||[];
   const el=document.querySelector('#list-quest-today');
   const tk=todayKey();
   const domani=localDayKey(new Date(Date.now()+86400000));
-  const list=sortQuests(activeQuests(S,tk));
+  let list=sortQuests(activeQuests(S,tk));
+  const arretrate=list.filter(q=>q&&q.quando&&q.quando<tk&&!q.fatto);
+  /* il conteggio vive in testa alla sezione, una volta sola, e non e colorato d'allarme:
+     e un filtro, non un cartello. */
+  try{
+    const sez=document.querySelector('#sec-today-quests .sec-head');
+    if(sez){
+      const vecchio=sez.querySelector('.arretrate'); if(vecchio) vecchio.remove();
+      if(arretrate.length){
+        const b=document.createElement('button');
+        b.className='arretrate'+(_soloArretrate?' on':'');
+        b.textContent=arretrate.length+(arretrate.length===1?' da prima':' da prima');
+        b.onclick=()=>{ _soloArretrate=!_soloArretrate; renderTodayQuests([]); };
+        sez.appendChild(b);
+      } else if(_soloArretrate){ _soloArretrate=false; }
+    }
+  }catch(_){}
+  if(_soloArretrate&&arretrate.length) list=arretrate;
   if(!list.length){ setEmpty(el,'Nessuna quest per oggi. Una frase detta bene basta a far comparire il prossimo passo.','speak','Parla al cerchio'); return; }
   el.innerHTML='';
   list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>renderTodayQuests([]))));
