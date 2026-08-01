@@ -983,6 +983,9 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
 #hd-dx{gap:16px}
 /* testata raccolta: la pill non e solo invisibile, e anche intoccabile (restava un bersaglio fantasma) */
 body.testa-raccolta #btn-pin{pointer-events:none}
+
+/* ════════ FASE 4 (v172) — il capolettera segue il fuoco ════════ */
+.ini{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -1887,7 +1890,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.171 · 2026-08-01';
+const APP_VERSION='v60S.172 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -7052,11 +7055,18 @@ async function addToCalendar(q){
     toast('Evento pronto: se il Calendario non si apre, cercalo nei File e toccalo');
   }catch(_){ toast('Non riesco a creare l\u2019evento su questo dispositivo'); }
 }
-function inizialeQuest(titolo,id){   /* maiuscola miniata: colore stabile per id, palette tarata sul nero */
+function inizialeQuest(titolo,id){
+  /* v172 (Fase 4) — la maiuscola miniata.
+     Prima il colore era COL[hash(id)%4]: un resto di divisione, quattro tinte diverse riga per
+     riga, zero significato. L'audit della Fase 3 non ha trovato nessuna dimensione che valga la
+     pena mappare, quindi il capolettera diventa monocromatico e segue il FUOCO, come tutto il
+     resto di cio che e vivo. Il colore sta nel CSS, non piu inline: cosi il tema lo governa.
+     E si applica SOLO se il titolo comincia con una lettera: su una cifra faceva sembrare il
+     numero un dato staccato dal resto («40 gr proteine» con il 4 grande e d'oro). */
   const t=String(titolo||''); if(!t) return '';
-  const COL=['#E8A84C','#7FB8A4','#D9744B','#CE5A45'];
-  let h=0; for(const c of String(id||t)) h=(h*31+c.charCodeAt(0))|0;
-  return '<span class="ini" style="color:'+COL[Math.abs(h)%4]+'">'+escapeHtml(t.charAt(0).toUpperCase())+'</span>'+escapeHtml(t.slice(1));
+  const c0=t.charAt(0);
+  if(!/\p{L}/u.test(c0)) return escapeHtml(t);
+  return '<span class="ini">'+escapeHtml(c0.toUpperCase())+'</span>'+escapeHtml(t.slice(1));
 }
 function buildQuestRow(q,tk,domani,bornIds,rerender){
   const {when,future}=questWhen(q,tk,domani);
