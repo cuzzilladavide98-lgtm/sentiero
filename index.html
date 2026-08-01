@@ -114,7 +114,6 @@ body:not([data-foglio="picco"]) #flow{visibility:hidden}
 #dateline{transform:scale(calc(1 - 0.452*var(--fp,0)));transform-origin:left top}
 #btn-pin{opacity:calc(1 - var(--fp,0))}
 body[data-foglio="picco"] #btn-pin{pointer-events:none}
-#gb-ring{transform:translateY(calc(-50px*var(--fp,0))) scale(calc(1 - 0.381*var(--fp,0)));transform-origin:top right}
 main{flex:1;padding:0 28px calc(28px + var(--safe-bot));overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 /* la molla del v60S.80 e superata dal foglio: lo scroll vive nel corpo, solo a pieno */
 
@@ -187,13 +186,15 @@ header{padding:14px 28px 0}
 #btn-pin svg{width:13px;height:13px;stroke:var(--jade);flex:none}
 #btn-pin svg.share{stroke:var(--t2);opacity:.65}
 #giorno-bar{display:flex;align-items:center;min-height:44px;padding:4px 0 14px;margin-bottom:8px;border-bottom:.5px solid rgba(245,242,234,.08)}
-#gb-ring{width:84px;height:84px;flex:none}
+/* ════════ v184 — L'ANELLO TOLTO ════════
+   Erano due archi concentrici in una scatola di 84px: 6,1px di spazio fra loro,
+   3,8px quando il foglio si alza e l'anello si rimpicciolisce al 62%. I binari di
+   riferimento stavano a opacita 0,06 e 0,08 - su quello schermo non c'erano - e gli
+   archi si fermavano al 90% e all'88%, quindi nemmeno «pieno» sembrava pieno. Due
+   centimetri piu in la #ring-count dice la stessa cosa a parole, ed e esatta:
+   «5 / 11 · il cerchio si chiude». Non era un anello poco leggibile: era il
+   doppione illeggibile di una frase che funziona. Resta la frase. */
 #hd-dx{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
-.gb-t{stroke:rgba(245,242,234,.08);stroke-width:2.4}
-.gb-t2{stroke:rgba(245,242,234,.06);stroke-width:2}
-#gb-ring circle{fill:none;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.22,1,.36,1)}
-#gb-r1{stroke:rgba(127,184,164,.35);stroke-width:2.4;transform:rotate(-100deg);transform-origin:50% 50%}
-#gb-r2{stroke:var(--accent);stroke-width:2.8;transform:rotate(-100deg);transform-origin:50% 50%}
 #day-line{font-size:15px;color:var(--t3);letter-spacing:.04em;min-height:18px}
 #day-line.sealed{color:var(--accent)}
 .sec-toggle{cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;justify-content:space-between;align-items:center}
@@ -260,7 +261,6 @@ header,main{position:relative;z-index:1}
 #btn-pin{background:linear-gradient(180deg,rgba(245,242,234,.075),rgba(245,242,234,.035));
   box-shadow:inset 0 1px 0 rgba(245,242,234,.07),0 2px 8px rgba(0,0,0,.25);border-color:rgba(245,242,234,.08)}
 /* il mini anello del giorno respira appena quando il cerchio avanza */
-#gb-ring circle{filter:drop-shadow(0 0 3px rgba(232,168,76,.25))}
 /* Inchiostro: la stessa luce, temperatura giada-ambra piu profonda */
 body.theme-inchiostro::before{
   background:radial-gradient(120% 85% at 50% -12%,rgba(217,164,65,.13),transparent 58%),
@@ -398,8 +398,10 @@ section{margin-top:38px}
   padding:16px 0 9px;background:var(--foglio-bg-opaco)}
 .dg-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;
   color:var(--t1);letter-spacing:-.02em}
-.dg-nome{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);
+.dg-mo{font-family:var(--serif);font-size:17px;font-style:italic;color:var(--accent);
   text-transform:lowercase}
+.dg-dow{font-family:var(--sans);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--t3);margin-left:auto;align-self:center}
 .entry-date{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-right:64px}
 .entry-date .ed-meta{margin-left:0}
 .ed-num{font-family:var(--serif);font-size:34px;font-weight:400;line-height:.9;color:var(--t1);letter-spacing:-.02em}
@@ -715,7 +717,6 @@ body.theme-inchiostro .ed-num{font-size:24px;font-weight:400}
 body.theme-inchiostro #mic.rec::before{background:radial-gradient(circle,rgba(217,164,65,.16),transparent 66%)}
 body.theme-inchiostro #mic.rec::after{border-color:rgba(217,164,65,.4)}
 /* barra del giorno: mini doppio anello + eco */
-body.theme-inchiostro #gb-r1{stroke:rgba(159,216,196,.42)}
 body.theme-inchiostro #day-line{letter-spacing:.04em}
 /* card del flusso come nel mockup */
 body.theme-inchiostro .flow{background:#18211E;border:.5px solid rgba(245,242,234,.08);border-radius:16px;padding:14px 16px;color:var(--t2);text-align:left;max-width:100%}
@@ -1006,17 +1007,17 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
 #frutto .fr-piede #fr-condividi{border-color:rgba(232,188,106,.6);color:#E8A84C}
 
 /* ════════ LA SOGLIA (v167) — la finestra fra il tocco e l'app non e piu vuota ════════ */
-#soglia{position:fixed;inset:0;z-index:120;background:#070A09;display:flex;align-items:center;justify-content:center;padding:28px 26px calc(28px + env(safe-area-inset-bottom));opacity:1;transition:opacity .6s ease}
-#soglia.hidden{display:none}
-#soglia.via{opacity:0;pointer-events:none}
-#soglia-corpo{max-width:520px;width:100%;opacity:0;transition:opacity .9s ease}
-#soglia-corpo.on{opacity:1}
-#soglia .sg-testa{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#E8A84C;margin-bottom:22px}
-#soglia .sg-lettura{font-family:var(--serif);font-size:23px;line-height:1.52;color:var(--t1);margin:0 0 18px}
-#soglia .sg-mossa{font-size:14.5px;line-height:1.5;color:#E8A84C;margin:0}
-#soglia .sg-piede{display:flex;gap:9px;margin-top:30px}
-#soglia .sg-piede button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.42);border-radius:13px;padding:9px 17px;font-size:13.5px;color:#E8DCC0}
-#soglia .sg-attesa{width:26px;height:1px;background:rgba(232,188,106,.5);animation:sg-resp 1.9s ease-in-out infinite}
+#frutto-soglia{position:fixed;inset:0;z-index:120;background:#070A09;display:flex;align-items:center;justify-content:center;padding:28px 26px calc(28px + env(safe-area-inset-bottom));opacity:1;transition:opacity .6s ease}
+#frutto-soglia.hidden{display:none}
+#frutto-soglia.via{opacity:0;pointer-events:none}
+#frutto-corpo{max-width:520px;width:100%;opacity:0;transition:opacity .9s ease}
+#frutto-corpo.on{opacity:1}
+#frutto-soglia .sg-testa{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#E8A84C;margin-bottom:22px}
+#frutto-soglia .sg-lettura{font-family:var(--serif);font-size:23px;line-height:1.52;color:var(--t1);margin:0 0 18px}
+#frutto-soglia .sg-mossa{font-size:14.5px;line-height:1.5;color:#E8A84C;margin:0}
+#frutto-soglia .sg-piede{display:flex;gap:9px;margin-top:30px}
+#frutto-soglia .sg-piede button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.42);border-radius:13px;padding:9px 17px;font-size:13.5px;color:#E8DCC0}
+#frutto-soglia .sg-attesa{width:26px;height:1px;background:rgba(232,188,106,.5);animation:sg-resp 1.9s ease-in-out infinite}
 @keyframes sg-resp{0%,100%{transform:scaleX(.3);opacity:.35}50%{transform:scaleX(1);opacity:.9}}
 
 /* ════════ FASE 2 (v170) — la pill «dove sono» ════════
@@ -1257,12 +1258,11 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
         <span>dove sono</span>
         <svg class="share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>
       </button>
-      <svg id="gb-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="gb-t" cx="20" cy="20" r="16"/><circle class="gb-t2" cx="20" cy="20" r="10.5"/><circle id="gb-r1" cx="20" cy="20" r="16"/><circle id="gb-r2" cx="20" cy="20" r="10.5"/></svg>
       </div>
     </div>
   </header>
 
-  <div id="soglia" class="hidden"><div id="soglia-corpo"></div></div>
+  <div id="frutto-soglia" class="hidden"><div id="frutto-corpo"></div></div>
   <main>
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
@@ -2108,7 +2108,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.182 · 2026-08-01';
+const APP_VERSION='v60S.185 · 2026-08-01';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4346,16 +4346,23 @@ const SOGLIA_ATTESA=6000;
 function _sogliaVia(el){
   if(!el||el.classList.contains('via')) return;
   el.classList.add('via');
-  setTimeout(()=>{ try{ el.classList.add('hidden'); el.innerHTML='<div id="soglia-corpo"></div>'; }catch(_){} },650);
+  setTimeout(()=>{ try{ el.classList.add('hidden'); el.innerHTML='<div id="frutto-corpo"></div>'; }catch(_){} },650);
 }
 async function apriSoglia(){
-  const el=document.querySelector('#soglia'); if(!el) return;
+  /* v185: qui c'era scritto '#soglia', e nel documento di elementi con quel nome
+     ce n'erano DUE - questo e l'alba. querySelector prende sempre il primo, e il
+     primo e l'alba, che non ha nessun corpo dentro. Da li in giu era tutto morto:
+     corpo era null, corpo.innerHTML lanciava, e siccome apriSoglia e async il
+     try/catch attorno alla chiamata non prendeva niente. La porta del frutto non
+     si e mai aperta da quando esiste. */
+  const el=document.querySelector('#frutto-soglia'); if(!el) return;
   const tk=todayKey();
   const gia=(S.frutti||[]).filter(x=>x&&x.tk===tk)[0];
   if(gia&&(gia.silenzio||gia.visto)) return;                    /* oggi e gia stato: si entra e basta */
   if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;
   el.classList.remove('hidden');
-  const corpo=el.querySelector('#soglia-corpo');
+  const corpo=el.querySelector('#frutto-corpo');
+  if(!corpo) return;                                   /* mai piu in silenzio su un pezzo che manca */
   corpo.innerHTML='<div class="sg-attesa"></div>';
   corpo.classList.add('on');
   let chiusa=false;
@@ -7103,16 +7110,6 @@ function syncDayLine(){   /* striscia di stato in pagina Oggi: eco del cerchio +
   const rc=document.querySelector('#ring-count');
   dl.textContent=rc?rc.textContent:'';
   try{ dl.classList.toggle('sealed',micBtn.classList.contains('sealed')); }catch(_){}
-  try{
-    const tk=todayKey(),dw=dowOf();
-    const r=computeProgress(S,tk,dw), es=essentialStatus(S,tk,dw);
-    const C1=100.53,C2=65.97;
-    const r1=document.querySelector('#gb-r1'), r2=document.querySelector('#gb-r2');
-    if(r1){ r1.style.strokeDasharray=C1; r1.style.strokeDashoffset=(S.lastFullSealed===tk)?0:(C1-(C1*0.90)*r.p); }
-    if(r2){ const p2=es.total?(es.done/es.total):0; r2.style.strokeDasharray=C2;
-      r2.style.strokeDashoffset=(p2>=1||S.lastSealed===tk)?0:(C2-(C2*0.88)*p2);
-      r2.style.opacity=es.total?1:.25; }
-  }catch(_){}
 }
 function updateRing(){
   const tk=todayKey(),dow=dowOf();
@@ -8064,14 +8061,31 @@ function renderDiary(){
      testa al gruppo, e resta appiccicata in alto mentre scorri quel giorno. */
   let _giornoIn=null, _nEntry=0;
   const _chiaveGiorno=e=>{ try{ return localDayKey(new Date(e.iso)); }catch(_){ return e.data||''; } };
+  /* la giornata di Sentiero comincia all'alba (ALBA_MS), non a mezzanotte: quello
+     che scrivi alle due di notte sta sotto il giorno prima, ed e giusto. Ma senza
+     dirlo un «00:32» sotto «venerdi 31 luglio» sembra uno sbaglio. */
+  const _notte=d=>{ try{
+    const cal=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return localDayKey(d)!==cal;      /* la definizione, non un giro di date: la voce
+                                         sta in un giorno di Sentiero diverso dal suo
+                                         giorno di calendario. Confrontare i numeri
+                                         con la chiave del gruppo ne mancava due su
+                                         nove e non sapevo dire perche. */
+  }catch(_){ return false; } };
   S.diary.forEach(e=>{
     const _k=_chiaveGiorno(e);
     if(_k&&_k!==_giornoIn){
       _giornoIn=_k;
       const t=document.createElement('div'); t.className='d-giorno';
-      const dd=new Date(_k+'T12:00:00');
-      t.innerHTML='<span class="dg-num">'+dd.getDate()+'</span>'+
-        '<span class="dg-nome">'+escapeHtml(_stanzaNomeGiorno(_k).replace(' '+dd.getDate()+' ',' '))+'</span>';
+      /* v183: prima usciva «1 sabato agosto», che non si legge. La grammatica
+         giusta l'app ce l'ha gia nella sua testata - SABATO sopra, poi il numero
+         grande e il mese in corsivo - e questa intestazione e la stessa cosa, un
+         piano piu giu. _stanzaNomeGiorno da «sabato 1 agosto»: si prendono i tre
+         pezzi e si rimettono in quell'ordine, invece di ritagliare a stringhe. */
+      const _pz=_stanzaNomeGiorno(_k).split(' ');
+      t.innerHTML='<span class="dg-num">'+escapeHtml(_pz[1]||'')+'</span>'+
+        '<span class="dg-mo">'+escapeHtml(_pz[2]||'')+'</span>'+
+        '<span class="dg-dow">'+escapeHtml(_pz[0]||'')+'</span>';
       el.appendChild(t);
     }
     const div=document.createElement('div'); div.className='entry';
@@ -8098,7 +8112,7 @@ function renderDiary(){
       if(stS!=='risposto') div.onclick=()=>{ try{ semeRispondiUI(e.seme,txt); }catch(_){} };
     } else div.innerHTML=
       '<div class="entry-date">'+
-        '<span class="ed-meta">'+ora+
+        '<span class="ed-meta">'+ora+(_notte(d)?' \u00b7 notte':'')+
           (e.pos?' · <a class="posa" href="'+mapsUrl(e.pos)+'" target="_blank" rel="noopener">dov\u2019ero</a>':'')+
         '</span>'+
       '</div>'+
@@ -8664,7 +8678,13 @@ try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
 try{ maybeChiudiCapitolo(); }catch(_){}
-try{ apriSoglia(); }catch(_){}   /* v167: il frutto sta nella finestra d'apertura, non nel cassetto */   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
+/* v185: era «try{ apriSoglia(); }catch(_){}». Una funzione async NON lancia:
+   restituisce una promessa, e se quella si rompe il try/catch non vede niente.
+   E' cosi che un guasto e rimasto invisibile per diciotto versioni. Ora si
+   aggancia il catch alla promessa, e quello che cade finisce nel cantiere. */
+try{ const _ps=apriSoglia();
+  if(_ps&&_ps.catch) _ps.catch(function(e){ try{ regCantiere('errore',{msg:'soglia: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){} });
+}catch(_){}   /* v167: il frutto sta nella finestra d'apertura, non nel cassetto */   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
 /* il segnavia impara a tacere: dal 21\u00b0 giorno attivo si attenua quando non serve, torna al tocco */
 (function(){
   try{ if(anzianita(S)<2) return; }catch(_){ return; }
