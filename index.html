@@ -943,6 +943,25 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 /* «tenuta» e un fatto, non una pacca sulla spalla: piccola, spenta, senza numeri */
 .patto-tenuta{display:block;margin-top:8px;font-size:11px;letter-spacing:.22em;
   text-transform:uppercase;color:var(--t3)}
+
+/* ════════ v195 — LA DISTILLAZIONE ════════
+   La porta sta in fondo al diario, e compare solo quando il periodo ha sostanza.
+   Lo scritto, una volta nato, e una voce del diario con un segno suo. */
+#distilla{margin:26px 2px 8px;padding:18px 16px;border-radius:16px;text-align:center;
+  background:rgba(232,168,76,.05);border:.5px solid rgba(232,168,76,.22)}
+#distilla .dst-inv{font-family:var(--serif);font-size:16px;line-height:1.5;
+  color:var(--t2);margin:0 0 14px}
+#btn-distill{min-height:44px;padding:11px 20px;border:none;border-radius:999px;
+  background:var(--accent);color:#120C04;font-family:inherit;font-size:15px;font-weight:600}
+#btn-distill:active{transform:scale(.97)}
+#btn-distill:disabled{opacity:.55}
+.entry.lascito{border-left:2px solid rgba(232,168,76,.45);padding-left:14px}
+.entry.lascito .lasc-txt{margin-top:0;font-family:var(--serif);font-size:18px;
+  line-height:1.7;color:var(--t1);font-style:italic}
+.entry.lascito .lasc-piede{margin-top:14px}
+.entry.lascito .lasc-dona{min-height:44px;padding:9px 18px;border-radius:13px;
+  background:none;border:.5px solid rgba(232,168,76,.5);color:var(--accent);
+  font-family:inherit;font-size:14px}
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #patto{animation:none}
 
@@ -2100,7 +2119,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.194 · 2026-08-02';
+const APP_VERSION='v60S.195 · 2026-08-02';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -8040,6 +8059,75 @@ function renderCapitoli(){   /* la costellazione: cenere=spento, anello oro=parz
     (prec?'<div class="cap-prec">'+prec+'</div>':'')+
     '</div>';
 }
+/* ══ LA DISTILLAZIONE (v195) ═══════════════════════════════════════════════
+   Ventinove giorni diventano uno scritto breve. Non un riassunto: una lettura.
+   Si puo solo quando c'e materiale - se il periodo e magro non c'e nemmeno la
+   porta, come il frutto che tace invece di dire una cosa vuota. ══════════ */
+const DISTILLA_MINIMI = 10;      /* giorni attivi negli ultimi 29 */
+
+function _distillaMateriale(){
+  try{
+    const oggi = new Date(todayKey()+'T12:00:00');
+    let n = 0;
+    Object.keys(S.checks||{}).forEach(k=>{
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+      const d = Math.round((oggi-new Date(k+'T12:00:00'))/86400000);
+      if(d>=0 && d<=29 && Object.keys(S.checks[k]||{}).length) n++;
+    });
+    return n;
+  }catch(_){ return 0; }
+}
+
+function salvaLascito(testo){
+  /* stessa forma di addDiary, piu il segno: e una voce del diario, ma non
+     l'hai scritta tu. Il ramo che la veste in renderDiary guarda questo campo. */
+  S.diary.unshift({data:todayKey(), iso:new Date().toISOString(),
+    testo:clampStr(testo,LIMITS.DIARY), raw:'', born:[], done:[], pos:null,
+    seme:'', lascito:true});
+  if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX;
+  save();
+}
+
+let _distillando = false;
+async function distillaPeriodo(bottone){
+  if(_distillando) return;
+  _distillando = true;
+  const testoPrima = bottone ? bottone.textContent : '';
+  try{
+    if(!S.apiKey || !S.apiKey.startsWith('sk-ant-')){
+      try{ toast('Serve la chiave, in Altro.'); }catch(_){}
+      return;
+    }
+    if(bottone){ bottone.disabled = true; bottone.textContent = 'sto rileggendo…'; }
+    const pkg = buildPeriodPackage();
+    const res = await askObserverDistill(pkg);
+    const testo = res && res.text ? String(res.text).trim() : '';
+    if(!testo){
+      try{ toast('Non e venuto fuori niente. Riprova piu tardi.'); }catch(_){}
+      return;
+    }
+    salvaLascito(testo);
+    try{ renderDiary(); }catch(_){}
+    try{ haptic(true); }catch(_){}
+    /* lo scritto e appena nato: sta in cima, e ci si va */
+    try{ const el=document.querySelector('#list-diario .entry.lascito');
+      if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
+  } finally {
+    _distillando = false;
+    if(bottone){ bottone.disabled = false; bottone.textContent = testoPrima || 'Distilla questo periodo'; }
+  }
+}
+
+function condividiLascito(testo){
+  const t = String(testo||'').trim();
+  if(!t) return;
+  try{
+    if(navigator.share){ navigator.share({text:t}); return; }
+    if(navigator.clipboard){ navigator.clipboard.writeText(t); toast('Copiato'); return; }
+  }catch(_){}
+  try{ toast('Non riesco a condividerlo da qui'); }catch(_){}
+}
+
 function renderDiary(){
   try{ renderCapitoli(); }catch(_){}
   const el=document.querySelector('#list-diario');
@@ -8091,7 +8179,18 @@ function renderDiary(){
     const mese=d.toLocaleDateString('it-IT',{month:'short'}).replace('.','');
     const dow=d.toLocaleDateString('it-IT',{weekday:'long'});
     const ora=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-    if(e.seme){
+    if(e.lascito){
+      /* la voce dell'osservatrice: sta nel diario come tutte, ma si riconosce.
+         Il bottone dona: e la meta del suo mestiere, «da custodire e magari
+         donare a una sola persona». */
+      div.classList.add('lascito');
+      div.innerHTML=
+        '<div class="entry-date"><span class="ed-meta">l’osservatrice · '+ora+'</span></div>'+
+        '<p class="lasc-txt">'+escapeHtml(txt)+'</p>'+
+        '<div class="lasc-piede"><button class="lasc-dona">Dona</button></div>';
+      const bd=div.querySelector('.lasc-dona');
+      if(bd) bd.onclick=(ev)=>{ ev.stopPropagation(); condividiLascito(txt); };
+    } else if(e.seme){
       div.classList.add('seme');
       const stS=((S.semi||[]).find(s=>s.id===e.seme)||{}).stato||'piantato';
       div.innerHTML=
@@ -8138,6 +8237,26 @@ function renderDiary(){
     div.appendChild(del);
     el.appendChild(div);
   });
+
+  /* v195 — la porta della distillazione, in fondo. Compare solo se il periodo
+     ha sostanza: se non c'e materiale non c'e nemmeno l'invito. E non ricompare
+     se lo scritto di questo periodo e gia stato fatto: un lascito alla volta. */
+  try{
+    const giorni=_distillaMateriale();
+    const giaFatto=(S.diary||[]).some(x=>x&&x.lascito&&
+      Math.round((new Date(todayKey()+'T12:00:00')-new Date(x.iso))/86400000)<=29);
+    if(giorni>=DISTILLA_MINIMI && !giaFatto){
+      const box=document.createElement('div'); box.id='distilla';
+      box.innerHTML='<p class="dst-inv">Gli ultimi giorni hanno lasciato qualcosa. '+
+        'Vuoi che li rilegga e ne scriva una cosa sola?</p>'+
+        '<button id="btn-distill">Distilla questo periodo</button>';
+      const b=box.querySelector('#btn-distill');
+      if(b) b.onclick=()=>{ const pr=distillaPeriodo(b);
+        if(pr&&pr.catch) pr.catch(function(err){ try{ regCantiere('errore',
+          {msg:'distilla: '+String((err&&err.message)||err).slice(0,140)}); }catch(_){} }); };
+      el.appendChild(box);
+    }
+  }catch(_){}
 }
 
 /* ======================================================================
