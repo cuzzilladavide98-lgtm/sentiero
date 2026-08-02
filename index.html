@@ -34,6 +34,12 @@
   --accent:#E8A84C;      /* un solo accento, usato con parsimonia */
   --jade:#7FB8A4;
   --ember:#D9744B;
+  --ceralacca:#B9402E;   /* il rosso del SIGILLO. Stava in quattro punti come esadecimale
+                            sparso e l'audit della Fase 3 lo dava «fuori sistema»: non era
+                            fuori, era senza nome. Vale solo per la firma sul cerchio, le sue
+                            scintille e il fermaglio del capitolo - cioe ogni volta che
+                            qualcosa viene chiuso e sigillato. Non e un avviso: quello lo fa
+                            gia l'ember, ed e un altro mestiere. */
   --safe-top:env(safe-area-inset-top);
   --safe-bot:env(safe-area-inset-bottom);
   --foglio-bg:rgba(7,10,9,0.72);
@@ -140,7 +146,7 @@ header{padding:14px 28px 0}
 #cielo{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
 #mic,#mic-wrap{overflow:visible}
 
-#firma{fill:#B9402E;opacity:0;transform-origin:14px 60px}
+#firma{fill:var(--ceralacca);opacity:0;transform-origin:14px 60px}
 #mic.sealed #firma{opacity:1;animation:timbroensa .7s cubic-bezier(.2,1.5,.4,1) both}
 @keyframes timbroensa{0%{transform:scale(2.4);opacity:0}70%{transform:scale(.92);opacity:1}100%{transform:scale(1)}}
 .mic-glyph{fill:none;stroke:var(--t1);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round;
@@ -265,7 +271,6 @@ header,main{position:relative;z-index:1}
 body.theme-inchiostro::before{
   background:radial-gradient(120% 85% at 50% -12%,rgba(217,164,65,.13),transparent 58%),
              radial-gradient(150% 100% at 50% 118%,rgba(159,216,196,.10),transparent 64%)}
-body.theme-inchiostro nav{background:linear-gradient(0deg,rgba(11,15,14,.85) 40%,rgba(11,15,14,.35) 80%,transparent)}
 /* ══════ CANTIERE SPARKING — S2: GIRO VIVO ══════ */
 .item:active{transform:scale(.982);transition:transform .08s ease}
 .item{transition:transform .18s ease}
@@ -420,7 +425,7 @@ section{margin-top:38px}
   padding:30px 16px 16px;background:linear-gradient(180deg,rgba(245,242,234,.03),rgba(245,242,234,.008))}
 #capitoli .cap-fermaglio{position:absolute;top:-8px;left:50%;transform:translateX(-50%);
   width:48px;height:16px;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:0 6px}
-#capitoli .cap-fermaglio b{width:10px;height:10px;border-radius:50%;background:#B9402E;box-shadow:0 0 8px rgba(185,64,46,.35)}
+#capitoli .cap-fermaglio b{width:10px;height:10px;border-radius:50%;background:var(--ceralacca);box-shadow:0 0 8px rgba(185,64,46,.35)}
 #capitoli .cap-angoli::before,#capitoli .cap-angoli::after{content:'';position:absolute;width:12px;height:12px;pointer-events:none}
 #capitoli .cap-angoli::before{bottom:-4px;left:-4px;border-bottom:1.5px solid rgba(245,242,234,.45);border-left:1.5px solid rgba(245,242,234,.45)}
 #capitoli .cap-angoli::after{bottom:-4px;right:-4px;border-bottom:1.5px solid rgba(245,242,234,.45);border-right:1.5px solid rgba(245,242,234,.45)}
@@ -470,14 +475,6 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 .days button.on{background:var(--accent);border-color:var(--accent);color:#1a1208;font-weight:700}
 
 .note{font-size:14px;color:var(--t3);line-height:1.55;margin-top:8px}
-
-nav button{border:none;background:none;color:rgba(200,210,205,.35);transition:color .3s;
-  width:44px;height:32px;display:flex;align-items:center;justify-content:center;padding:0}
-nav button .ico{display:none}
-nav button::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;
-  transition:transform .3s cubic-bezier(.22,1,.36,1)}
-nav button.on::before{transform:scale(1.45)}
-nav button.on{color:var(--accent)}
 
 /* ════════ toast: testo che appare, niente pillola pesante ════════ */
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);
@@ -566,7 +563,6 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   #mic-wrap{top:calc(32% - 98px)}
   #mic-label{font-size:16px;margin-top:18px}
   .ed-num{font-size:30px}
-  nav button{padding:8px 16px}
 }
 /* Galaxy A14 5G e Android stretti (~360px): il caso più stretto */
 @media (max-width:365px){
@@ -577,8 +573,6 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   #mic-wrap{top:calc(32% - 92px)}
   .days{gap:5px}
   .days button{font-size:15px}
-  nav button{padding:8px 13px;font-size:13px}
-  nav .inner{gap:4px}
   button.act{padding:12px 20px;font-size:16.5px}
 }
 
@@ -598,7 +592,6 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   .ed-num{font-size:30px}
   .entry p{font-size:17px;line-height:1.7}
   .days button{max-width:38px;font-size:15px}
-  nav button{padding:8px 16px}
 }
 /* schermi molto stretti (Galaxy A14 ~360 e sotto): un altro gradino */
 @media (max-width:365px){
@@ -609,7 +602,6 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   #mic-wrap{top:calc(32% - 92px)}
   .days{gap:5px}
   .days button{max-width:34px;font-size:15px}
-  nav button{padding:8px 13px;font-size:13px}
   .seg{gap:14px}
 }
 
@@ -739,9 +731,6 @@ body.theme-inchiostro .sec-head{font-size:15.5px;text-transform:none;margin:0 0 
 body.theme-inchiostro .item{gap:12px;padding:12px 0}
 body.theme-inchiostro .item .chk{width:34px;height:34px}
 body.theme-inchiostro .entry{padding:16px 0}
-body.theme-inchiostro nav button{font-size:12px;letter-spacing:.05em;padding:8px 16px}
-body.theme-inchiostro nav button .ico{width:21px;height:21px}
-body.theme-inchiostro nav button.on{color:var(--accent)}
 body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 /* ══════ FRAME-LAVORO 1: LA CERIMONIA DEL SIGILLO ══════
    ~66 frame dal tocco: 0-1100ms il tratto corre a chiudersi · 1100 la firma si imprime
@@ -751,7 +740,7 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 @keyframes onda-sigillo{0%{opacity:.85;transform:scale(.9)}100%{opacity:0;transform:scale(1.24)}}
 #mic.pieno:not(.rec)::after{animation:onda-sigillo 1.05s ease-out .95s both,onda-doppia 1.15s ease-out 1.55s both}
 @keyframes onda-doppia{0%{opacity:.6;transform:scale(.95)}100%{opacity:0;transform:scale(1.34)}}
-.fs{fill:#B9402E;opacity:0;transform-origin:14px 60px}
+.fs{fill:var(--ceralacca);opacity:0;transform-origin:14px 60px}
 #mic.sealed .fs1{animation:fs-v .5s ease-out 1.12s both}
 #mic.sealed .fs2{animation:fs-v .55s ease-out 1.15s both}
 #mic.sealed .fs3{animation:fs-v .45s ease-out 1.13s both}
@@ -2108,7 +2097,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.185 · 2026-08-01';
+const APP_VERSION='v60S.189 · 2026-08-02';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -2161,6 +2150,12 @@ function save(){
 }
 try{ window.addEventListener('pagehide',()=>{ try{ save(); }catch(_){} }); }catch(_){}   /* iOS: salva anche se chiudi con lo swipe */
 const uid=coreUid;
+/* La ceralacca vive nel CSS, ma una tela non legge le variabili CSS: gliela si
+   passa a mano. Letta UNA volta sola - a ogni frame sarebbe un getComputedStyle
+   per frame - e con la sua stessa scorta, nel caso la variabile sparisca. */
+const CERALACCA=(function(){ try{
+  return (getComputedStyle(document.documentElement).getPropertyValue('--ceralacca')||'').trim()||'#B9402E';
+}catch(_){ return '#B9402E'; } })();
 const $=s=>document.querySelector(s);
 function toast(m){ const t=$('#toast');
   clearTimeout(toast._t); clearTimeout(toast._t2);
@@ -4198,7 +4193,7 @@ const FRUTTO_SYS=
 "VIETATO, pena il cestino: le parole interne dell'app (vuota, rara, a meta, piena, quasi piena, occasioni previste, arco, task, quest, streak, spunta, rituale); i rapporti numerici (3 su 7, sette su sette); piu di UN numero in tutto; ieri detto come se fosse oggi (le righe_di_ieri sono scritte DENTRO ieri: raccontale da stamattina, non copiarle); lodi generiche, esclamazioni, emoji, morale in coda.\n"+
 "I NOMI: usa i nomi veri delle cose della persona (il libro, le proteine, l'allenamento, il meccanico), mai i titoli tecnici fra virgolette.\n"+
 "CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna: ogni accordo segue quello. Se non lo sai, gira la frase.\n"+
-"IL RESPIRO: frasi corte. Dodici parole per frase, non venti. Almeno una frase sotto le otto parole, e mettila in fondo: chiude. Il punto fermo, non il trattino - al massimo uno in tutta la carta. Non far girare le frasi su e, sono, hai: cerca un verbo che faccia qualcosa. Prima la cosa concreta (l'ora, l'oggetto, le sue parole), poi cosa vuol dire.\n"+
+"IL RESPIRO: quattordici parole per frase, mai sopra venti. Una frase su tre sotto le otto parole, e l'ultima sia quella: chiude. IL TRATTINO NON CE L'HAI: nella prosa di Pavese, London e Pratchett sono tre ogni cento frasi. Dove ti viene, mettici un punto. Non far girare le frasi su e, sono, hai: cerca un verbo che faccia qualcosa. Prima la cosa concreta (l'ora, l'oggetto, le sue parole), poi cosa vuol dire.\n"+
 "SILENZIO: se il materiale non regge due frasi vere e comprensibili, rispondi con la sola parola SILENZIO. Nessuna carta e meglio di una carta vuota.\n"+
 "Rispondi SOLO con un oggetto JSON: {\"frutto\":\"...\"} oppure SILENZIO.";
 function fruttoPacchetto(S,tk){
@@ -4815,7 +4810,10 @@ const OBSERVER_LINE_SYS=
 "IL TUO CARATTERE, tre tesori mai dichiarati: compassione - sei dalla sua parte anche quando affondi il colpo, ed e la compassione a darti il coraggio della franchezza; misura - parole contate: quando le cose vanno, constati e ti scansi; umilta - mai in cattedra, mai dall'alto, testimone prima che giudice.\n"+
 "LA LEGGE DELLA LAMA, la tua regola piu importante: la franchezza segue la sua forza. Quando i dati mostrano qualcuno in piedi - ritmo che tiene, ritorno compiuto, patto mantenuto - puoi essere affilato: nomina il pattern scomodo, la scusa che non regge piu. Quando e a terra - giornata rotta, spunta solitaria a tarda ora, vuoto lungo - deponi la lama: gentilezza concreta e asciutta, mai pietismo, mai analisi. Se non sai da che lato e, taci.\n"+
 "IL TUO VALORE, cio che nessun altro puo dare: il filo nel tempo. Non commentare l'istante: collocalo. Da dove viene questo gesto (una promessa, un attrito nominato, un seme piantato, un vuoto attraversato) e verso dove punta (cosa si sta consolidando, cosa si sta assottigliando). Una riga che potrebbe scrivere chiunque guardando solo l'oggi e una riga sbagliata.\n"+
-"COME PARLI: italiano contemporaneo, come si parla oggi - minuscole anche a inizio frase, naturale, anche imperfetto. Hai piena capacita di articolazione e di sintesi: una frase ben costruita vale piu di tre frammenti d'atmosfera. Il respiro lo decide il materiale: quasi sempre UNA frase; due o tre SOLO quando il filo le merita davvero. Ogni frase in piu deve pagare l'affitto: se non aggiunge un fatto o un filo, tagliala.\n"+
+"COME PARLI: italiano contemporaneo, minuscole anche a inizio frase. DUE FRASI, non una. La prima dice il fatto. Punto fermo. La seconda e corta, sotto le otto parole, e gira: chiude, o contraddice, o tira il filo altrove. Quattordici parole per frase, mai sopra venti.\n"+
+"IL TRATTINO NON CE L'HAI. Misurato sulla prosa di Pavese, London e Pratchett: tre trattini ogni cento frasi. Nelle tue righe di ieri: settantacinque. Fai sempre la stessa cosa (fatto, trattino, senso) e quella costruzione ripetuta e il motivo per cui sembri un aforisma invece di una voce. Dove ti viene il trattino, mettici un punto e comincia la frase corta.\n"+
+"IL VERBO: le tue righe girano su e, sei, hai, era. Ne usi il doppio dei maestri. Un verbo che dice cosa una cosa E descrive uno stato; un verbo che dice cosa una cosa FA la muove. Non \u00abla sera e vuota\u00bb ma \u00abla sera si svuota\u00bb. Non \u00abhai tenuto il patto\u00bb ma \u00abil patto ha tenuto\u00bb. Al massimo una copula ogni dodici parole.\n"+
+"LA MOSSA, presa dai libri e non inventata. Pavese: \u00abAveva davanti la sua bibita e butto la sigaretta. Ma non si mosse.\u00bb London: \u00abQuando il suo corpo moriva, egli restava sempre Edoardo Morrell. Non ritornava mai a vite anteriori.\u00bb Il fatto per intero, poi la frase corta che lo gira. Nei tre libri questa mossa torna settecentosessantatre volte. Il trattino, mai.\n"+
 "MESTIERE, principi non ornamenti: rifletti, non prescrivere - restituisci cio che vedi e lascia che la conclusione sia sua; sostieni l'autonomia - mai devi o dovresti, mai pressione, mai consigli non chiesti; commenta il processo e la strategia, mai la persona, ne in colpa ne in lode; nel giorno storto gentilezza e umanita comune - capita a chiunque sia vivo - senza minimizzare e senza compatire; un vuoto che finisce e un dato di forza, mai un debito da scontare.\n"+
 "I NUMERI: al massimo UNO per riga, e solo come fatto vissuto (la terza mattina, ventotto giorni, cinque occasioni). MAI rapporti o sequenze di cifre (3 su 7, da 0 a 7): la forma delle settimane si dice in parole - cresce, tiene, cala, torna, si assottiglia. Vietate le parole da analista: trend, plateau, dati, media, percentuale.\n"+
 "I PRIMI GIORNI: se eta_del_cammino dice primo giorno o prima settimana, non leggere storie che non esistono ancora: accogli il gesto di oggi, concreto e leggero, senza pesare un passato che non c'e.\n"+
@@ -5579,24 +5577,14 @@ function attachScopri(div){
   div.addEventListener('pointerup',stop);
   div.addEventListener('pointercancel',stop);
 }
-function attachDispiega(div){
-  /* v174 (Fase 6): un tocco sulla riga apre il testo intero, un secondo lo richiude.
-     Non interferisce con la spunta, il calendario, il cestino, ne col long-press della nota:
-     se il dito si e mosso o e passato mezzo secondo, questo tocco non conta. */
-  let x0=0,y0=0,t0=0;
-  div.addEventListener('pointerdown',e=>{
-    if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal,button')) return;
-    x0=e.clientX; y0=e.clientY; t0=Date.now();
-  });
-  div.addEventListener('pointerup',e=>{
-    if(!t0) return;
-    if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal,button')){ t0=0; return; }
-    const fermo=Math.abs(e.clientX-x0)<10&&Math.abs(e.clientY-y0)<10;
-    const breve=Date.now()-t0<500;
-    t0=0;
-    if(fermo&&breve) div.classList.toggle('aperta');
-  });
-}
+/* v186 — attachDispiega e stata tolta.
+   Era della Fase 6: un tocco sulla riga apriva il titolo troncato. Ma nella
+   Fase 8 (v181) si e deciso che i titoli non si troncano piu, e con quella
+   decisione e sparita l'unica regola CSS che vestiva la classe «aperta».
+   Da allora la funzione girava lo stesso: due ascoltatori su OGNI riga, per
+   commutare una classe che non cambiava un pixel. Non un guasto - un gesto
+   che non risponde piu, e codice che il prossimo che passa deve capire per
+   scoprire che non serviva. */
 function attachNota(div,id,titolo,isQuest){
 
   let t=null,x0=0,y0=0;
@@ -6988,7 +6976,7 @@ function ensoEsporta(){
     }catch(_){}
     try{
       if(micBtn.classList.contains('sealed')){
-        ctx.fillStyle='#B9402E';
+        ctx.fillStyle=CERALACCA;
         ctx.beginPath(); ctx.arc((14+50)*k,(60+50)*k,5*k,0,Math.PI*2); ctx.fill();
         [[14-9,60-5,1.7],[15+7,59-8,1.2],[13-4,61+9,1.4]].forEach(s=>{
           ctx.beginPath(); ctx.arc((s[0]+50)*k,(s[1]+50)*k,s[2]*k,0,Math.PI*2); ctx.fill(); });
@@ -7429,7 +7417,6 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     }); }catch(_){}
   };
   try{ attachNota(div,q.id,q.titolo,true); }catch(_){}
-  try{ attachDispiega(div); }catch(_){}
   try{ attachScopri(div); }catch(_){}
   return div;
 }
@@ -8685,15 +8672,13 @@ try{ maybeChiudiCapitolo(); }catch(_){}
 try{ const _ps=apriSoglia();
   if(_ps&&_ps.catch) _ps.catch(function(e){ try{ regCantiere('errore',{msg:'soglia: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){} });
 }catch(_){}   /* v167: il frutto sta nella finestra d'apertura, non nel cassetto */   /* i capitoli: il mese finito si rilega da solo, alla prima apertura del nuovo */
-/* il segnavia impara a tacere: dal 21\u00b0 giorno attivo si attenua quando non serve, torna al tocco */
-(function(){
-  try{ if(anzianita(S)<2) return; }catch(_){ return; }
-  let tq=null;
-  const sveglia=()=>{ try{ document.body.classList.remove('nav-quieta'); }catch(_){}
-    clearTimeout(tq); tq=setTimeout(()=>{ try{ document.body.classList.add('nav-quieta'); }catch(_){} },5000); };
-  window.addEventListener('pointerdown',sveglia,{passive:true});
-  sveglia();
-})();
+/* v188 — tolto «il segnavia impara a tacere».
+   Non e stata una scelta di gusto: la barra che doveva attenuarsi NON ESISTE PIU.
+   Quando il foglio ha preso il posto delle pagine, il <nav> e sparito dal
+   documento e sono rimasti indietro il timer da cinque secondi, un ascoltatore
+   su ogni tocco della pagina, e quattordici regole CSS che vestivano un elemento
+   che non c'era. Se un giorno quell'idea torna - si attenua quando non serve, al
+   tocco riprende - va scritta su qualcosa che esiste. */
 try{ initSoundSystem(); }catch(_){}    /* Suoni dell'app: pre-decodifica i suoni già assegnati */
 window.addEventListener('pointerdown',()=>{ _lastUserAct=Date.now(); },{passive:true});  /* ogni tocco reale: i suoni automatici partono solo dietro un'azione */
 /* orologio del giorno: ogni minuto, se una task con orario è appena affiorata, aggiorna la lista da sola */
@@ -8718,15 +8703,11 @@ setInterval(()=>{
   window.addEventListener('touchend',firstGesture,{passive:true});
 })();
 /* la posizione si attiva solo su scelta esplicita (switch in Altro) o sul pin: niente richieste a freddo */
-/* large title iOS 26: compatta la testata allo scroll */
-try{
-  const mainEl=document.querySelector('main'), hdr=document.querySelector('header');
-  let ticking=false;
-  mainEl.addEventListener('scroll',()=>{
-    if(ticking) return; ticking=true;
-    requestAnimationFrame(()=>{ hdr.classList.toggle('scrolled', mainEl.scrollTop>16); ticking=false; });
-  },{passive:true});
-}catch(_){}
+/* v186 — tolto l'ascoltatore che commutava «scrolled».
+   Doveva compattare la testata allo scroll, ma nessuna regola CSS ha mai vestito
+   quella classe: il lavoro lo fa --fp, guidato da fpDaScroll, che e un'altra
+   strada per la stessa cosa. Era un residuo di un tentativo precedente, e
+   costava un rAF a ogni frame di scorrimento per non cambiare niente. */
 /* ── apertura: la SOGLIA è l'unica porta; qui restano i lavori di servizio ── */
 try{ const appEl=document.querySelector('#app'); if(appEl) appEl.style.opacity='1'; }catch(_){}
 try{ document.addEventListener('pointerdown',()=>{ try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){} },{once:true}); }catch(_){}
