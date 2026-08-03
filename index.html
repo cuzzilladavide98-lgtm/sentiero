@@ -1018,7 +1018,8 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
 #frutto .fr-piede #fr-condividi{border-color:rgba(232,188,106,.6);color:#E8A84C}
 
 /* ════════ LA SOGLIA (v167) — la finestra fra il tocco e l'app non e piu vuota ════════ */
-#frutto-soglia{position:fixed;inset:0;z-index:120;background:#070A09;display:flex;align-items:center;justify-content:center;padding:28px 26px calc(28px + env(safe-area-inset-bottom));opacity:1;transition:opacity .6s ease}
+#frutto-soglia{position:fixed;inset:0;z-index:205;   /* v196: era 120, sotto il 200 dell alba: alla prima apertura l alba lo copriva e il frutto si vedeva solo alla seconda */
+  background:#070A09;display:flex;align-items:center;justify-content:center;padding:28px 26px calc(28px + env(safe-area-inset-bottom));opacity:1;transition:opacity .6s ease}
 #frutto-soglia.hidden{display:none}
 #frutto-soglia.via{opacity:0;pointer-events:none}
 #frutto-corpo{max-width:520px;width:100%;opacity:0;transition:opacity .9s ease}
@@ -1273,7 +1274,6 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
     </div>
   </header>
 
-  <div id="frutto-soglia" class="hidden"><div id="frutto-corpo"></div></div>
   <main>
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
@@ -1423,6 +1423,13 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
 <div id="word-stage"></div>
 <button id="terra-luce" aria-label="Chiamata a terra: scrivi invece di parlare"><span class="nucleo"></span></button>
 <div class="terra-scia"></div><div class="terra-scia"></div><div class="terra-scia"></div>
+<!-- v196: la porta del frutto sta QUI, al livello del body, e non piu dentro #app.
+     #app ha un transform, e un antenato trasformato diventa il riferimento dei figli
+     position:fixed: il pannello si ancorava al foglio e scendeva di mezzo schermo -
+     tagliato in basso, coi bottoni fuori dal telefono. E' lo stesso identico guasto
+     che la v180 ha riparato per la Chiamata a terra. L'ho scritto nel codice e non
+     l'ho applicato alla porta accanto. -->
+<div id="frutto-soglia" class="hidden"><div id="frutto-corpo"></div></div>
 <div id="terra" class="hidden" role="dialog" aria-label="Chiamata a terra">
   <div id="terra-foglio"><div id="terra-carta">
     <div id="terra-testa"></div>
@@ -2119,7 +2126,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.195 · 2026-08-02';
+const APP_VERSION='v60S.196 · 2026-08-03';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -4374,6 +4381,13 @@ async function apriSoglia(){
      si e mai aperta da quando esiste. */
   const el=document.querySelector('#frutto-soglia'); if(!el) return;
   const tk=todayKey();
+  /* v196: l'alba dura un paio di secondi e si toglie da sola. Il frutto la aspetta,
+     invece di accendersi sotto o sopra mentre lei e ancora in scena. Con un tetto:
+     se per qualunque motivo l'alba restasse li, dopo cinque secondi si va avanti. */
+  await (async function(){ const t0=Date.now();
+    while(document.getElementById('soglia') && Date.now()-t0<5000){
+      await new Promise(r=>setTimeout(r,120));
+    } })();
   const gia=(S.frutti||[]).filter(x=>x&&x.tk===tk)[0];
   if(gia&&(gia.silenzio||gia.visto)) return;                    /* oggi e gia stato: si entra e basta */
   if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;
