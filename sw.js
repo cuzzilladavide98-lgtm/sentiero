@@ -1,12 +1,16 @@
-const CACHE = 'sentiero-v60s196';
+const CACHE = 'sentiero-v60s196-brand-2';
 /* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
    blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
    sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui
    l'audio tornera - semplicemente non si scaricano piu in anticipo. */
+/* Il precarico serve a far girare l'app senza rete. Icona e schermate di avvio
+   non servono all'app: se le prende iOS quando la metti in Home, una volta sola e
+   per conto suo. Precaricarle tutte e sei significava scaricare 1,1 MB di immagini
+   a ogni installazione perche il telefono ne usasse una, che poi nemmeno legge da
+   qui. Restano tutte nel repo e restano nel gestore fetch qui sotto: la prima volta
+   che una viene chiesta davvero, finisce in cache come tutto il resto. */
 const ASSETS = ['./', './index.html', './manifest.json',
-  './icon-192.png', './icon-512.png', './icon-180.png',
-  './splash-1290x2796.png', './splash-1179x2556.png', './splash-1170x2532.png',
-  './splash-1125x2436.png', './splash-828x1792.png', './splash-750x1334.png'];
+  './icon-180.png', './icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
