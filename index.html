@@ -959,6 +959,10 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
 .entry.lascito .lasc-txt{margin-top:0;font-family:var(--serif);font-size:18px;
   line-height:1.7;color:var(--t1);font-style:italic}
 .entry.lascito .lasc-piede{margin-top:14px}
+/* v197: la domanda sopra la nota. Sta in secondo piano rispetto alla risposta,
+   ma c'e: e la meta che mancava. */
+.entry-dom{margin:0 0 8px;font-family:var(--serif);font-size:15px;line-height:1.5;
+  color:var(--t3);font-style:italic}
 .entry.lascito .lasc-dona{min-height:44px;padding:9px 18px;border-radius:13px;
   background:none;border:.5px solid rgba(232,168,76,.5);color:var(--accent);
   font-family:inherit;font-size:14px}
@@ -1449,7 +1453,7 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
    NUCLEO PURO — nessun DOM, nessun side effect: tutto testabile.
    ====================================================================== */
 /*CORE-START*/
-const LIMITS={TITLE:200,NOTE:300,DIARY:4000,RAW:4000,QMAX:100,DMAX:1000,SMAX:60,PKG:12,PKGB:9000};   /* v151: quanti pacchetti restano attaccati alle righe, e quanto grandi */
+const LIMITS={TITLE:200,NOTE:300,DIARY:4000,RAW:4000,QMAX:100,DMAX:1000,DOM:200,SMAX:60,PKG:12,PKGB:9000};   /* v151: quanti pacchetti restano attaccati alle righe, e quanto grandi */
 function clampStr(v,max){ return (typeof v==='string'?v:'').slice(0,max); }
 const ALBA_MS=15600000;   /* 4h20m: il giorno di Sentiero riparte alle 4:20, non a mezzanotte */
 function localDayKey(d){
@@ -2126,7 +2130,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.196 · 2026-08-03';
+const APP_VERSION='v60S.197 · 2026-08-04';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3872,9 +3876,9 @@ document.querySelector('#btn-save').onclick=async()=>{
     renderFlow();
   }
 };
-function addDiary(testo,born,done,raw,seme){
+function addDiary(testo,born,done,raw,seme,dom){
   const lst=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,20).map(x=>x.slice(0,200)):[];
-  S.diary.unshift({data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos(),seme:clampStr(seme||'',40)});
+  S.diary.unshift({data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos(),seme:clampStr(seme||'',40),dom:clampStr(dom||'',LIMITS.DOM)});
   if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX;
 }
 
@@ -7672,16 +7676,133 @@ function semeRaccolto(){   /* il racconto e arrivato: il seme e risposto */
    Il resto della catena esisteva gia: la raccolta sa del seme («DOMANDA SEMINATA»), e la
    risposta finisce nel diario legata al suo id. ══════════════════════════════════════════ */
 let _terraSeme=null;
+/* ══ IL MOTORE DELLA CHIAMATA A TERRA (v197) ═══════════════════════════════
+   Fino alla v196 la domanda usciva da un vivaio di frasi scritte a mano, due per
+   casella, e la casella la sceglieva seminaCandidate - che pero risponde solo
+   di mattina presto o di sera a giornata sigillata. Aperta la porta nel
+   pomeriggio, seminaCandidate dava null, scattava il ripiego {senso,inizia} e il
+   vivaio restituiva sempre la prima delle sue due frasi. Sempre la stessa.
+   Aggravante: le domande volanti non finivano da nessuna parte, quindi la
+   memoria anti-ripetizione non le vedeva nemmeno.
+
+   Qui la domanda la fa il modello, e la fa sui suoi giorni.
+
+   La semina resta congelata, e resta giusto cosi: quella SPINGEVA una domanda
+   dentro la giornata senza che nessuno l'avesse chiesta, e infatti cinque semi
+   fecero zero risposte. La Chiamata a terra e il contrario: la porta la apre lui.
+   Domanda tirata, non spinta.
+
+   E la porta non deve mai far aspettare: la domanda si prepara PRIMA e sta nel
+   cassetto. Se il cassetto e vuoto, o non c'e chiave, o non c'e rete, si torna al
+   vivaio - che pero adesso ha la memoria buona e non ripete. ═══════════════ */
+const TERRA_SYS =
+'Sei l’osservatrice di Sentiero. Chi ti legge ha aperto una porta ed e venuto a chiederti una domanda. Non gliel’hai proposta tu: l’ha voluta lui.\n'+
+'VOCE: calma, affilata, un po’ audace. Minuscole, come si parla. Ironia asciutta ammessa.\n'+
+'VIETATO: retorica motivazionale, consigli, imperativi, esclamazioni, cifre. E il trattino, che non ce l’hai.\n'+
+'DA DOVE NASCE: dai suoi giorni, che ti arrivano qui sotto. Non da un tema generale. Se la domanda si potrebbe fare a chiunque, l’hai sbagliata.\n'+
+'Prendi DUE o TRE parole sue esatte e mettile fra virgolette basse «...». Esatte, non parafrasate. Se non trovi niente di suo da citare, allora parti da un fatto preciso dei suoi giorni.\n'+
+'NON RIPETERTI: in domande_fatte ci sono quelle che gli hai gia posto. Cambia immagine, cambia attacco, cambia struttura. E non tornare sullo stesso tema con altre parole: lo riconosce.\n'+
+'FORMATO: UNA domanda sola, sotto i centotrenta caratteri, finisce col punto interrogativo. Rispondi SOLO JSON compatto: {"domanda":"..."}';
+
+function terraPacchetto(){
+  /* gli ultimi quattordici giorni di diario, che e la materia che Davide ha
+     scelto, piu le domande gia fatte perche non tornino */
+  const oggi = new Date(todayKey()+'T12:00:00');
+  const giorni = [];
+  (S.diary||[]).forEach(v=>{
+    if(!v||!v.testo) return;
+    const d = Math.round((oggi-new Date((v.data||todayKey())+'T12:00:00'))/86400000);
+    if(d<0||d>14) return;
+    if(giorni.length<24) giorni.push({quando:v.data||'', testo:clampStr(v.testo,320)});
+  });
+  return {
+    giorni: giorni,
+    domande_fatte: (S.domChieste||[]).slice(-12).map(x=>x&&x.testo).filter(Boolean),
+    aperte: (S.quests||[]).filter(q=>q&&!q.fatto).slice(0,10).map(q=>clampStr(q.titolo||'',80))
+  };
+}
+
+async function askDomandaTerra(){
+  const res = await callAnthropic({system:TERRA_SYS,
+    user:'I SUOI GIORNI (JSON):\n'+JSON.stringify(terraPacchetto()),
+    assistantPrefix:'{', max_tokens:200, temperature:0.9, timeout:25000});
+  if(res.err) throw new Error(res.err);
+  const p = parseLooseJson(res.text);
+  const t = clampStr((p&&typeof p.domanda==='string')?p.domanda:'',LIMITS.DOM).trim();
+  if(!t) throw new Error('vuota');
+  return t;
+}
+
+let _terraPreparo = false;
+async function preparaDomandaTerra(forza){
+  if(_terraPreparo) return;
+  if(!forza && S.domPronta && S.domPronta.testo) return;   /* ce n'e gia una in attesa */
+  if(!S.apiKey || !S.apiKey.startsWith('sk-ant-')) return;  /* senza chiave resta il vivaio */
+  if(!(S.diary||[]).length) return;                         /* senza materia non si inventa niente */
+  _terraPreparo = true;
+  try{
+    const t = await askDomandaTerra();
+    const gia = new Set((S.domChieste||[]).map(x=>String((x&&x.testo)||'').toLowerCase().slice(0,50)));
+    if(t && !gia.has(t.toLowerCase().slice(0,50))){
+      S.domPronta = {testo:t, iso:new Date().toISOString()};
+      save();
+    }
+  }catch(e){
+    try{ regCantiere('terra',{msg:'domanda non preparata: '+String((e&&e.message)||e).slice(0,80)}); }catch(_){}
+  } finally { _terraPreparo = false; }
+}
+
+function terraRegistra(testo){
+  /* ogni domanda a cui ha davvero risposto entra in memoria, o il vivaio la
+     ripropone all'infinito - che e esattamente cio che succedeva */
+  const t = String(testo||'').trim();
+  if(!t) return;
+  if(!Array.isArray(S.domChieste)) S.domChieste=[];
+  S.domChieste.push({testo:clampStr(t,LIMITS.DOM), iso:new Date().toISOString()});
+  if(S.domChieste.length>40) S.domChieste = S.domChieste.slice(-40);
+}
+
+function _terraGiaFatta(testo,mem){
+  const n=t=>String(t||'').toLowerCase().replace(/[^a-z\u00e0-\u00f9 ]/g,'').slice(0,60);
+  const q=n(testo); if(!q) return true;
+  return (mem||[]).some(x=>n(x)===q);
+}
+function _terraVivaioLargo(mem){
+  /* tutte le caselle del vivaio, tranne germoglio che porta un segnaposto %T */
+  const tutte=[];
+  try{
+    Object.keys(SEME_VIVAIO).forEach(k=>{
+      const v=SEME_VIVAIO[k];
+      if(Array.isArray(v)){ if(k!=='germoglio') v.forEach(t=>tutte.push(t)); }
+      else Object.keys(v).forEach(g=>v[g].forEach(t=>tutte.push(t)));
+    });
+  }catch(_){ return ''; }
+  for(const t of tutte) if(!_terraGiaFatta(t,mem)) return t;
+  return '';
+}
 function terraDomanda(){
   /* prima una domanda vera gia piantata e senza risposta; se non c'e, se ne chiede una nuova
      al vivaio locale (nessuna chiamata al modello: la porta non deve mai far aspettare) */
   const aperti=(S.semi||[]).filter(s=>s&&s.testo&&(s.stato==='esalato'||s.stato==='piantato'));
   if(aperti.length) return aperti[aperti.length-1];
+  /* la domanda preparata dal motore: sta nel cassetto, esce senza far aspettare */
+  if(S.domPronta&&S.domPronta.testo) return {id:'',testo:S.domPronta.testo,volante:true,motore:true};
   try{
     const d=new Date(), tk=todayKey();
     const cand=seminaCandidate(S,{tk:tk,ora:d.getHours(),dow:dowOf(d),sealed:S.lastSealed===tk,vuoti:giorniVuoti(S,tk)})
       ||{tipo:'seme',asse:'senso',gesto:'inizia'};
-    const testo=semeVivaio(cand.tipo,cand.asse,cand.gesto,(S.semi||[]).map(s=>s.testo),cand.rifTesto);
+    /* la memoria comprende ora anche le domande volanti gia fatte: prima il
+       vivaio non le vedeva e restituiva eternamente la prima frase del pool */
+    const mem=(S.semi||[]).map(s=>s.testo).concat((S.domChieste||[]).map(x=>x&&x.testo)).filter(Boolean);
+    let testo=semeVivaio(cand.tipo,cand.asse,cand.gesto,mem,cand.rifTesto);
+    /* ogni casella del vivaio ha DUE frasi: alla terza apertura senza rete
+       semeVivaio ricomincia a girare sulle stesse. Allora si allarga a tutte le
+       caselle, che sono diciotto. Sempre un serbatoio finito, ma lungo il triplo
+       di una settimana offline. */
+    if(!testo||_terraGiaFatta(testo,mem)){
+      const largo=_terraVivaioLargo(mem);
+      if(largo) testo=largo;
+    }
     if(testo) return {id:'',testo:testo,volante:true};
   }catch(_){}
   return {id:'',testo:'cosa e successo davvero, oggi?',volante:true};
@@ -7867,6 +7988,9 @@ async function raccogliTerra(){
   if(testo.length<2) return;
   const ok=el.querySelector('#terra-ok');
   ok.disabled=true; ok.textContent='Raccolgo…';
+  /* v197: la domanda viaggia con lo scritto. Senza, nel diario resta una nota
+     sospesa a cui manca la meta - «sembra una nota presa a cavolo», dal campo. */
+  const _dom = (_terraSeme && _terraSeme.testo) ? String(_terraSeme.testo).trim() : '';
   /* il seme diventa la domanda a cui questo scritto risponde: la raccolta lo sa gia leggere */
   if(_terraSeme&&_terraSeme.id) window._semeAttivo={id:_terraSeme.id,testo:_terraSeme.testo};
   else if(_terraSeme&&_terraSeme.testo) window._semeAttivo={id:'',testo:_terraSeme.testo};
@@ -7902,15 +8026,21 @@ async function raccogliTerra(){
           S.scheduled.push(r);
         }
         try{ processMastery(out.motore); }catch(_){}
-        addDiary(out.diario||testo,nati,[],testo);
+        addDiary(out.diario||testo,nati,[],testo,'',_dom);
         fatto=true;
       }
     }
   }catch(_){ fatto=false; }
-  if(!fatto){ try{ addDiary(testo,[],[],testo); }catch(_){} }   /* senza chiave o con la rete rotta: lo scritto si salva comunque */
+  if(!fatto){ try{ addDiary(testo,[],[],testo,'',_dom); }catch(_){} }   /* senza chiave o con la rete rotta: lo scritto si salva comunque */
   try{ if(_terraSeme&&_terraSeme.id){ const s=(S.semi||[]).find(x=>x&&x.id===_terraSeme.id); if(s) s.stato='risposto'; } }catch(_){}
   window._semeAttivo=null;
+  /* la domanda risposta entra in memoria e il cassetto si svuota; poi se ne
+     prepara subito un'altra, cosi la prossima volta la porta e gia pronta */
+  try{ terraRegistra(_dom); }catch(_){}
+  if(S.domPronta && _dom && S.domPronta.testo===_dom) S.domPronta=null;
   save();
+  try{ const _pd=preparaDomandaTerra(true);
+       if(_pd&&_pd.catch) _pd.catch(function(e){ try{ regCantiere('errore',{msg:'preparaDomandaTerra: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} }); }catch(_){}
   try{ regCantiere('terra',{msg:(fatto?'raccolta':'salvata a mano')+' \u00b7 '+testo.length+' caratteri \u00b7 quest nuove '+nuove}); }catch(_){}
   ok.textContent='Raccogli';
   chiudiTerra();
@@ -8219,6 +8349,7 @@ function renderDiary(){
           (e.pos?' · <a class="posa" href="'+mapsUrl(e.pos)+'" target="_blank" rel="noopener">dov\u2019ero</a>':'')+
         '</span>'+
       '</div>'+
+      (e.dom?'<p class="entry-dom">'+escapeHtml(e.dom)+'</p>':'')+
       '<p>'+escapeHtml(txt)+'</p>'+
       (born.length?'<p class="tags born-t">✦ '+born.map(escapeHtml).join(' · ')+'</p>':'')+
       (done.length?'<p class="tags done-t">✓ '+done.map(escapeHtml).join(' · ')+'</p>':'');
@@ -8809,6 +8940,10 @@ try{ const _p=maybeChiudiCapitolo(); if(_p&&_p.catch) _p.catch(function(e){ try{
    non vedeva niente di tutto questo. Va prima della soglia: a chi arriva oggi non
    si mostra il frutto di ieri, si mostra la porta.
    (Chi ha gia dei dati non la vede: maybeOnboard se ne accorge da sola e passa oltre.) */
+/* v197: la domanda della Chiamata a terra si prepara adesso, in sottofondo, cosi
+   quando lui aprira la porta e gia nel cassetto e non deve aspettare nessuno. */
+try{ const _pt=preparaDomandaTerra();
+     if(_pt&&_pt.catch) _pt.catch(function(e){ try{ regCantiere('errore',{msg:'preparaDomandaTerra: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} }); }catch(_){}
 try{ maybeOnboard(); }catch(e){ try{ regCantiere('errore',{msg:'onboard: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){} }
 /* v185: era «try{ apriSoglia(); }catch(_){}». Una funzione async NON lancia:
    restituisce una promessa, e se quella si rompe il try/catch non vede niente.
