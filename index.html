@@ -57,6 +57,10 @@
                             cambiarla resta un numero solo */
   --terra-s:82%;
   --terra:hsl(var(--terra-h) var(--terra-s) 64%);
+  --notte-h:276;         /* v198: la stanza della sera. E la sola cosa viola
+                            dell'app, e sta fuori: dentro la stanza non c'e. */
+  --notte-s:74%;
+  --notte:hsl(var(--notte-h) var(--notte-s) 68%);
   --kb:0px;              /* quanto spazio si prende la tastiera di iOS */
   --serif:"New York","Iowan Old Style",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
@@ -963,6 +967,61 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
    ma c'e: e la meta che mancava. */
 .entry-dom{margin:0 0 8px;font-family:var(--serif);font-size:15px;line-height:1.5;
   color:var(--t3);font-style:italic}
+
+/* ════════ v198 — LA STANZA DELLA SERA ════════════════════════════════════════
+   Il satellite viola: stesso anello del microfono, punto opposto, giro piu lento.
+   Piu grande e piu luminoso dell'azzurro, perche quella e una porta di servizio e
+   questa e una stanza. ═══════════════════════════════════════════════════════ */
+#notte-luce{position:fixed;left:0;top:0;width:56px;height:56px;margin:-28px 0 0 -28px;
+  border:none;background:none;padding:0;z-index:6;
+  will-change:transform;transform:translate3d(-100px,-100px,0)}
+#notte-luce.hidden{display:none}
+#notte-luce .nucleo{position:absolute;inset:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center}
+#notte-luce .nucleo::before{content:'';width:13px;height:13px;border-radius:50%;
+  background:radial-gradient(circle,#ffffff 0%,hsl(var(--notte-h) 100% 90%) 20%,
+    var(--notte) 44%,hsla(var(--notte-h) var(--notte-s) 52% / .60) 66%,transparent 82%);
+  box-shadow:0 0 14px 5px hsla(var(--notte-h) var(--notte-s) 62% / .42),
+             0 0 34px 14px hsla(var(--notte-h) var(--notte-s) 58% / .18);
+  transform:scale(var(--luce-k,1))}
+.notte-scia{position:fixed;left:0;top:0;width:1px;height:1px;z-index:5;pointer-events:none;
+  will-change:transform,opacity;opacity:0}
+.notte-scia::before{content:'';position:absolute;left:50%;top:50%;
+  width:var(--sd,8px);height:var(--sd,8px);
+  margin:calc(var(--sd,8px) / -2) 0 0 calc(var(--sd,8px) / -2);border-radius:50%;
+  background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 74% / .85) 0%,transparent 70%)}
+body[data-pane="quest"] #notte-luce,body[data-pane="quest"] .notte-scia{display:none}
+#notte-fiore{position:fixed;left:0;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;z-index:141;
+  border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,#fff 0%,hsl(var(--notte-h) 100% 86%) 40%,transparent 72%)}
+
+/* LA CARTA. Tradotta dal NXTPAPER, che non e e-ink: e uno schermo reso opaco.
+   Le sue tre proprieta vere, portate qui: superficie diffusa (grana, zero
+   gradienti luminosi), niente luce blu (tutto vira al caldo), e la Max Ink che
+   toglie di mezzo tutto il resto (qui dentro non c'e nessun altro elemento).
+   Il fondo non e nero puro: il nero e un vuoto, la carta e una superficie. Ma
+   sta a luminanza bassissima, cosi di notte non brucia e l'OLED lavora poco. */
+#stanza{position:fixed;inset:0;z-index:140;opacity:0;pointer-events:none;
+  background:#12100C;transition:opacity .42s ease}
+#stanza.aperta{opacity:1;pointer-events:auto}
+#stanza.hidden{display:none}
+#stanza-grana{position:absolute;inset:0;pointer-events:none;opacity:.055;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+#stanza-carta{position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:calc(var(--safe-top) + 26px) 24px calc(var(--safe-bot) + 18px);
+  transform:translateY(calc(var(--kb) * -1));
+  transition:transform .26s cubic-bezier(.32,.72,0,1)}
+#stanza-testa{font-size:11px;letter-spacing:.30em;text-transform:uppercase;
+  color:#8A8172;margin-bottom:22px;flex:none}
+#stanza-txt{flex:1;width:100%;background:none;border:none;outline:none;padding:0;
+  font-family:var(--serif);font-size:19px;line-height:1.78;color:#E9E2D2;
+  resize:none;box-sizing:border-box;caret-color:var(--notte)}
+#stanza-txt::placeholder{color:#8A8172}   /* 4,9:1 sulla carta: sotto non si legge */
+#stanza-piede{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;flex:none}
+#stanza-piede button{background:none;border:.5px solid rgba(233,226,210,.22);
+  border-radius:13px;padding:11px 18px;min-height:44px;font-size:14px;color:#C4BCA9}
+#stanza-piede .primo{border-color:rgba(233,226,210,.5);color:#E9E2D2}
+#stanza-piede .primo:disabled{opacity:.4}
 .entry.lascito .lasc-dona{min-height:44px;padding:9px 18px;border-radius:13px;
   background:none;border:.5px solid rgba(232,168,76,.5);color:var(--accent);
   font-family:inherit;font-size:14px}
@@ -1427,6 +1486,12 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
 <div id="word-stage"></div>
 <button id="terra-luce" aria-label="Chiamata a terra: scrivi invece di parlare"><span class="nucleo"></span></button>
 <div class="terra-scia"></div><div class="terra-scia"></div><div class="terra-scia"></div>
+<!-- v198: la seconda luce. Piu grande, piu lenta, viola. Compare alle 19 e resta
+     fino alle 4:20, che e l'alba di Sentiero: esiste esattamente per la sera e la
+     notte. Sta qui, al livello del body, per la stessa ragione della porta del
+     frutto: #app ha un transform e si porterebbe dietro i position:fixed. -->
+<button id="notte-luce" class="hidden" aria-label="La stanza: scrivi a lungo"><span class="nucleo"></span></button>
+<div class="notte-scia"></div><div class="notte-scia"></div><div class="notte-scia"></div>
 <!-- v196: la porta del frutto sta QUI, al livello del body, e non piu dentro #app.
      #app ha un transform, e un antenato trasformato diventa il riferimento dei figli
      position:fixed: il pannello si ancorava al foglio e scendeva di mezzo schermo -
@@ -1446,6 +1511,20 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
   </div></div>
 </div>
 <div id="terra-fiore"></div>
+<!-- v198: LA STANZA. A schermo pieno, non un foglio che sale: e un altro luogo,
+     non un pannello sopra questo. Dentro non c'e nient'altro. -->
+<div id="stanza" class="hidden" role="dialog" aria-label="La stanza">
+  <div id="stanza-grana" aria-hidden="true"></div>
+  <div id="stanza-carta">
+    <div id="stanza-testa">la stanza</div>
+    <textarea id="stanza-txt" placeholder="qui si scrive a lungo" enterkeyhint="return"></textarea>
+    <div id="stanza-piede">
+      <button id="stanza-no">Chiudi</button>
+      <button id="stanza-ok" class="primo">Raccogli</button>
+    </div>
+  </div>
+</div>
+<div id="notte-fiore"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -2130,7 +2209,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.197 · 2026-08-04';
+const APP_VERSION='v60S.198 · 2026-08-04';
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -7676,6 +7755,100 @@ function semeRaccolto(){   /* il racconto e arrivato: il seme e risposto */
    Il resto della catena esisteva gia: la raccolta sa del seme («DOMANDA SEMINATA»), e la
    risposta finisce nel diario legata al suo id. ══════════════════════════════════════════ */
 let _terraSeme=null;
+/* ══ LA RACCOLTA CONDIVISA (v198) ══════════════════════════════════════════
+   La Chiamata a terra e la stanza della sera scrivono nello stesso diario e
+   fanno nascere le stesse quest. Una funzione sola, due porte. ═══════════ */
+async function scrittoNelDiario(testo, dom){
+  let fatto=false, nuove=0;
+  try{
+    if(S.apiKey&&S.apiKey.startsWith('sk-ant-')){
+      const out=await askClaude(testo);
+      if(out){
+        if(!Array.isArray(S.quests)) S.quests=[];
+        const nati=[];
+        (out.quests||[]).forEach(nq=>{
+          if(!nq||!nq.titolo) return;
+          const ex=nq.id?S.quests.find(q=>q&&q.id===nq.id):null;
+          if(ex){ Object.assign(ex,nq,{id:ex.id}); return; }
+          const tit=String(nq.titolo).trim().toLowerCase();
+          const dup=S.quests.find(q=>q&&!q.fatto&&String(q.titolo||'').trim().toLowerCase()===tit);
+          if(dup){ Object.assign(dup,nq,{id:dup.id}); return; }
+          if(!nq.id) nq.id=uid();
+          if(!nq.nata) nq.nata=todayKey();
+          S.quests.push(nq); nati.push(nq.titolo); nuove++;
+        });
+        S.quests=sortQuests(S.quests);
+        for(const r of (out.rituali||[])){
+          if((S.scheduled||[]).length>=LIMITS.SMAX) break;
+          if(!r||!r.titolo) continue;
+          if(S.scheduled.some(t=>t&&String(t.titolo||'').trim().toLowerCase()===String(r.titolo).trim().toLowerCase())) continue;
+          S.scheduled.push(r);
+        }
+        try{ processMastery(out.motore); }catch(_){}
+        addDiary(out.diario||testo,nati,[],testo,'',dom);
+        fatto=true;
+      }
+    }
+  }catch(_){ fatto=false; }
+  if(!fatto){ try{ addDiary(testo,[],[],testo,'',dom); }catch(_){} }   /* senza chiave o con la rete rotta: lo scritto si salva comunque */
+  return {fatto:fatto, nuove:nuove};
+}
+
+/* ══ LA STANZA DELLA SERA (v198) ═══════════════════════════════════════════
+   Dalle 19 alle 4:20. Non e un orario tondo scelto a caso: 4:20 e l'alba di
+   Sentiero, il momento in cui il giorno gira. La stanza dura esattamente quanto
+   la sera e la notte, e la mattina non esiste.
+   Quello che ci scrivi va nel diario come tutto il resto: e un altro modo di
+   entrare, non un altro archivio. ═════════════════════════════════════════ */
+const STANZA_DA = 19*60;                  /* le diciannove */
+const STANZA_A  = ALBA_MS/60000;          /* 260 minuti: le 4:20 */
+function stanzaOra(quando){
+  const d = quando || new Date();
+  const m = d.getHours()*60 + d.getMinutes();
+  return m>=STANZA_DA || m<STANZA_A;
+}
+
+function apriStanza(){
+  const el=document.getElementById('stanza'); if(!el) return;
+  const txt=el.querySelector('#stanza-txt'), ok=el.querySelector('#stanza-ok');
+  txt.value=''; ok.disabled=true;
+  txt.oninput=()=>{ ok.disabled=txt.value.trim().length<2; };
+  el.classList.remove('hidden');
+  /* due fotogrammi: senza, la transizione parte da uno stato che il browser non
+     ha ancora visto e la stanza compare di scatto invece di accendersi */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('aperta')));
+  try{ haptic(); }catch(_){}
+}
+function chiudiStanza(){
+  const el=document.getElementById('stanza'); if(!el) return;
+  el.classList.remove('aperta');
+  try{ const t=el.querySelector('#stanza-txt'); if(t) t.blur(); }catch(_){}
+  setTimeout(()=>{ el.classList.add('hidden'); }, 440);
+}
+let _stanzaRaccolgo=false;
+async function raccogliStanza(){
+  if(_stanzaRaccolgo) return;
+  const el=document.getElementById('stanza'); if(!el) return;
+  const txt=el.querySelector('#stanza-txt');
+  const testo=String(txt.value||'').trim();
+  if(testo.length<2) return;
+  _stanzaRaccolgo=true;
+  const ok=el.querySelector('#stanza-ok');
+  ok.disabled=true; ok.textContent='Raccolgo…';
+  let esito={fatto:false,nuove:0};
+  try{ esito = await scrittoNelDiario(testo,''); }
+  finally{
+    _stanzaRaccolgo=false;
+    ok.textContent='Raccogli';
+  }
+  save();
+  try{ regCantiere('stanza',{msg:(esito.fatto?'raccolta':'salvata a mano')+' · '+testo.length+' caratteri · quest nuove '+esito.nuove}); }catch(_){}
+  chiudiStanza();
+  try{ render(); renderDiary(); }catch(_){}
+  try{ haptic(); }catch(_){}
+  try{ toast(esito.fatto?(esito.nuove?('Raccolto · '+esito.nuove+(esito.nuove===1?' cosa nuova':' cose nuove')):'Raccolto nel diario'):'Salvato nel diario'); }catch(_){}
+}
+
 /* ══ IL MOTORE DELLA CHIAMATA A TERRA (v197) ═══════════════════════════════
    Fino alla v196 la domanda usciva da un vivaio di frasi scritte a mano, due per
    casella, e la casella la sceglieva seminaCandidate - che pero risponde solo
@@ -7981,6 +8154,98 @@ function chiudiTerra(){
   /* il velo si tocca e si chiude: ma solo il velo, non la carta */
   el.addEventListener('click',e=>{ if(e.target===el) chiudiTerra(); });
 })();
+
+/* ══ IL SATELLITE DELLA SERA (v198) ════════════════════════════════════════
+   Stesso anello del microfono, punto opposto a quello azzurro, giro piu lento:
+   cosi non si raggiungono mai e non si sovrappongono. Compare alle 19 e sparisce
+   alle 4:20. Un solo requestAnimationFrame, e si ferma quando la pagina e coperta
+   o quando l'ora non e la sua: fuori orario non consuma niente. ══════════ */
+(function(){
+  const luce=document.getElementById('notte-luce'); if(!luce) return;
+  const scie=[].slice.call(document.querySelectorAll('.notte-scia'));
+  const el=document.getElementById('stanza');
+  const fiore=document.getElementById('notte-fiore');
+  if(!el||!fiore) return;
+  const GIRO=34000;   /* piu lento dell'azzurro, che gira in 26 secondi */
+  let CX=0, CY=0, RR=120, ang=Math.PI/2, t0=performance.now(), acceso=false;
+  const STORIA=[];
+  function calmo(){ try{ if(S.settings&&S.settings.anim==='sempre') return false;
+    return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(_){ return false; } }
+  function misura(){
+    try{ const m=document.getElementById('mic');
+      if(m){ const r=m.getBoundingClientRect();
+        if(r.width){ CX=r.left+r.width/2; CY=r.top+r.height/2; RR=(79/200)*r.width; return; } } }catch(_){}
+    CX=innerWidth/2; CY=innerHeight*0.3; RR=Math.min(innerWidth,innerHeight)*0.28;
+  }
+  misura(); addEventListener('resize',misura); addEventListener('orientationchange',misura);
+  try{ const m=document.getElementById('mic'); if(m&&window.ResizeObserver) new ResizeObserver(misura).observe(m); }catch(_){}
+  function poni(e,x,y,op){ e.style.transform='translate3d('+x.toFixed(2)+'px,'+y.toFixed(2)+'px,0)';
+    if(op!=null) e.style.opacity=op; }
+  function orario(){
+    const c = (typeof stanzaOra==='function') ? stanzaOra() : false;
+    if(c!==acceso){
+      acceso=c;
+      luce.classList.toggle('hidden',!c);
+      if(!c){ scie.forEach(x=>x.style.opacity=0); }
+    }
+    return c;
+  }
+  orario(); setInterval(orario, 30000);
+  document.addEventListener('visibilitychange',orario);
+  function frame(now){
+    requestAnimationFrame(frame);
+    if(document.hidden) return;
+    if(!acceso) return;                                   /* fuori orario: zero lavoro */
+    if(document.body.getAttribute('data-pane')==='quest') return;
+    if(el.classList.contains('aperta')) return;           /* stanza aperta: la copre */
+    ang=((now-t0)/GIRO)*Math.PI*2 + Math.PI/2;
+    const x=CX+Math.cos(ang)*RR, y=CY+Math.sin(ang)*RR;
+    const k=1+Math.sin(now/1700)*0.13;                    /* respira piu ampio dell'azzurro */
+    poni(luce,x,y,1);
+    luce.style.setProperty('--luce-k',k.toFixed(3));
+    STORIA.push(x,y); if(STORIA.length>80) STORIA.splice(0,2);
+    for(let i=0;i<scie.length;i++){
+      const j=STORIA.length/2-1-(i+1)*5;
+      if(j<0){ scie[i].style.opacity=0; continue; }
+      scie[i].style.setProperty('--sd',(9-i*1.6).toFixed(1)+'px');
+      poni(scie[i],STORIA[j*2],STORIA[j*2+1],0.44-i*0.12);
+    }
+  }
+  requestAnimationFrame(frame);
+  function sboccia(x,y){
+    if(calmo()) return;
+    fiore.style.transition='none';
+    fiore.style.transform='translate3d('+x+'px,'+y+'px,0) scale(1)';
+    fiore.style.opacity='1';
+    requestAnimationFrame(()=>{
+      fiore.style.transition='transform .5s cubic-bezier(.16,.9,.3,1),opacity .5s ease';
+      fiore.style.transform='translate3d('+x+'px,'+y+'px,0) scale(120)';
+      fiore.style.opacity='0';
+    });
+  }
+  luce.addEventListener('click',()=>{
+    const p={x:CX+Math.cos(ang)*RR, y:CY+Math.sin(ang)*RR};
+    sboccia(p.x,p.y);
+    try{ apriStanza(); }catch(_){}
+  });
+  /* la tastiera: senza visualViewport iOS non ridimensiona la pagina e il piede
+     della stanza finisce sotto i tasti. Stessa lezione della v180. */
+  const vv=window.visualViewport;
+  if(vv){
+    const tastiera=()=>{
+      const h=Math.max(0, innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--kb', h+'px');
+    };
+    vv.addEventListener('resize',tastiera); vv.addEventListener('scroll',tastiera);
+  }
+  const no=document.getElementById('stanza-no'), ok=document.getElementById('stanza-ok');
+  if(no) no.addEventListener('click',()=>{ try{ chiudiStanza(); }catch(_){} });
+  if(ok) ok.addEventListener('click',()=>{
+    try{ const p=raccogliStanza();
+      if(p&&p.catch) p.catch(function(e){ try{ regCantiere('errore',{msg:'raccogliStanza: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} });
+    }catch(_){}
+  });
+})();
 async function raccogliTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
   const txt=el.querySelector('#terra-txt');
@@ -8000,38 +8265,11 @@ async function raccogliTerra(){
      il diario ripulito, le quest nuove con la stessa regola di fusione, i rituali con la stessa
      guardia sui doppioni, e il Motore Maestria. Restano fuori le letture da confermare e la
      domanda sulle priorita: quelle chiedono un'interfaccia, e la loro casa e la sera. */
-  let fatto=false, nuove=0;
-  try{
-    if(S.apiKey&&S.apiKey.startsWith('sk-ant-')){
-      const out=await askClaude(testo);
-      if(out){
-        if(!Array.isArray(S.quests)) S.quests=[];
-        const nati=[];
-        (out.quests||[]).forEach(nq=>{
-          if(!nq||!nq.titolo) return;
-          const ex=nq.id?S.quests.find(q=>q&&q.id===nq.id):null;
-          if(ex){ Object.assign(ex,nq,{id:ex.id}); return; }
-          const tit=String(nq.titolo).trim().toLowerCase();
-          const dup=S.quests.find(q=>q&&!q.fatto&&String(q.titolo||'').trim().toLowerCase()===tit);
-          if(dup){ Object.assign(dup,nq,{id:dup.id}); return; }
-          if(!nq.id) nq.id=uid();
-          if(!nq.nata) nq.nata=todayKey();
-          S.quests.push(nq); nati.push(nq.titolo); nuove++;
-        });
-        S.quests=sortQuests(S.quests);
-        for(const r of (out.rituali||[])){
-          if((S.scheduled||[]).length>=LIMITS.SMAX) break;
-          if(!r||!r.titolo) continue;
-          if(S.scheduled.some(t=>t&&String(t.titolo||'').trim().toLowerCase()===String(r.titolo).trim().toLowerCase())) continue;
-          S.scheduled.push(r);
-        }
-        try{ processMastery(out.motore); }catch(_){}
-        addDiary(out.diario||testo,nati,[],testo,'',_dom);
-        fatto=true;
-      }
-    }
-  }catch(_){ fatto=false; }
-  if(!fatto){ try{ addDiary(testo,[],[],testo,'',_dom); }catch(_){} }   /* senza chiave o con la rete rotta: lo scritto si salva comunque */
+  /* v198: questo blocco stava scritto qui dentro. Ora vive in scrittoNelDiario,
+     perche la stanza della sera fa la stessa identica cosa: duplicarlo voleva dire
+     due posti dove correggere lo stesso guasto. */
+  const _r = await scrittoNelDiario(testo, _dom);
+  const fatto = _r.fatto, nuove = _r.nuove;
   try{ if(_terraSeme&&_terraSeme.id){ const s=(S.semi||[]).find(x=>x&&x.id===_terraSeme.id); if(s) s.stato='risposto'; } }catch(_){}
   window._semeAttivo=null;
   /* la domanda risposta entra in memoria e il cassetto si svuota; poi se ne
