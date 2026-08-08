@@ -2209,7 +2209,29 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.198 · 2026-08-04';
+const APP_VERSION='v60S.199 · 2026-08-08';
+
+/* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
+   Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
+   Cercandola ho scoperto che era usata due volte e dichiarata zero. Il lint dei
+   muri, con la famiglia O scritta per l'occasione, ne ha trovate TRE - e la terza,
+   _laterOpen, e anche lei LETTA al primo uso: un secondo errore vivo che nessuno
+   aveva mai visto.
+
+   Giravano per caso. In JavaScript non stretto ASSEGNARE un nome non dichiarato
+   lo crea come globale, quindi «_whisperTimer=setTimeout(...)» funziona. Ma
+   LEGGERLO prima di averlo mai assegnato e ReferenceError, ed e esattamente cio
+   che faceva renderFlow con «if(_k!==_lastNextMoveKey)»: ogni giro moriva li, e
+   tutto cio che veniva dopo in quella funzione non girava.
+
+   Si dichiarano con var e non con let: le funzioni si sollevano e possono essere
+   chiamate prima che questa riga venga eseguita. Con let sarebbe zona morta
+   temporale, cioe lo stesso errore con un nome piu elegante. */
+var _lastNextMoveKey='', _lastUserAct=0, _laterOpen=false;
+/* e _lastUserAct qualcuno deve pure aggiornarla, o il suono della prossima mossa
+   non parte mai: era letta e mai scritta. */
+try{ ['pointerdown','keydown'].forEach(function(ev){
+  addEventListener(ev,function(){ _lastUserAct=Date.now(); },{passive:true,capture:true}); }); }catch(_){}
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -3889,6 +3911,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         for(const r of (out.rituali||[])){
           if((S.scheduled||[]).length>=LIMITS.SMAX) break;
           if(S.scheduled.some(t=>t.titolo.trim().toLowerCase()===r.titolo.trim().toLowerCase())) continue;
+          if(!r.nata) r.nata=todayKey();   /* v199: vedi sopra */
           S.scheduled.push(r);
           bornRit.push(r.titolo+' ('+r.days.map(d=>DAYS_IT[d]).join('')+(r.time?' '+r.time:'')+')');
         }
@@ -4305,7 +4328,8 @@ const FRUTTO_SYS=
 "VIETATO, pena il cestino: le parole interne dell'app (vuota, rara, a meta, piena, quasi piena, occasioni previste, arco, task, quest, streak, spunta, rituale); i rapporti numerici (3 su 7, sette su sette); piu di UN numero in tutto; ieri detto come se fosse oggi (le righe_di_ieri sono scritte DENTRO ieri: raccontale da stamattina, non copiarle); lodi generiche, esclamazioni, emoji, morale in coda.\n"+
 "I NOMI: usa i nomi veri delle cose della persona (il libro, le proteine, l'allenamento, il meccanico), mai i titoli tecnici fra virgolette.\n"+
 "CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna: ogni accordo segue quello. Se non lo sai, gira la frase.\n"+
-"IL RESPIRO: quattordici parole per frase, mai sopra venti. Una frase su tre sotto le otto parole, e l'ultima sia quella: chiude. IL TRATTINO NON CE L'HAI: nella prosa di Pavese, London e Pratchett sono tre ogni cento frasi. Dove ti viene, mettici un punto. Non far girare le frasi su e, sono, hai: cerca un verbo che faccia qualcosa. Prima la cosa concreta (l'ora, l'oggetto, le sue parole), poi cosa vuol dire.\n"+
+"IL RESPIRO: quattordici parole per frase, mai sopra venti. Una frase su tre sotto le otto parole, e l'ultima sia quella: chiude. IL TRATTINO NON CE L'HAI: nella prosa di Pavese, London e Pratchett sono tre ogni cento frasi. Dove ti viene, mettici un punto. Non far girare le frasi su e, sono, hai: cerca un verbo che faccia qualcosa. Prima la cosa concreta (l'oggetto, le sue parole), poi cosa vuol dire.\n"+
+"L'ORA NON CE L'HAI. Sentiero registra quando lui SEGNA una cosa, non quando la fa: puo allenarsi a mezzogiorno e spuntarla a mezzanotte. Non dire mai a che ora ha fatto qualcosa, non dire che e partito tardi, non dire che un orario slitta. Se in righe_di_ieri trovi frasi che lo fanno, erano sbagliate: non riprenderle.\n"+
 "SILENZIO: se il materiale non regge due frasi vere e comprensibili, rispondi con la sola parola SILENZIO. Nessuna carta e meglio di una carta vuota.\n"+
 "Rispondi SOLO con un oggetto JSON: {\"frutto\":\"...\"} oppure SILENZIO.";
 function fruttoPacchetto(S,tk){
@@ -4947,7 +4971,8 @@ const OBSERVER_LINE_SYS=
 "COSI NO - \u00ablo scrivevi gia un mese fa e oggi l'hai fatto davvero\u00bb detto su una quest che quest_nata dava per nata OGGI: un ricordo inventato. Un solo filo falso toglie credito a tutti quelli veri.\n"+
 "SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
 "LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
-"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: il campo per dice QUALE parola ha fatto l'aggancio - guardala, e se quella parola nella voce vuol dire un'altra cosa, la voce non c'entra: scartala e non citarla. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna nominata da chi ti legge: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta. L'ora e il momento (prima spunta del giorno, giorno completo) possono dare vita alla riga, mai citati in modo meccanico.\n"+
+"MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, il seme piantato, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: il campo per dice QUALE parola ha fatto l'aggancio - guardala, e se quella parola nella voce vuol dire un'altra cosa, la voce non c'entra: scartala e non citarla. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna nominata da chi ti legge: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta.\n"+
+"L'ORA: quello che ricevi e ora_in_cui_ha_segnato, cioe il minuto in cui ha toccato lo schermo. NON e l'ora in cui ha fatto la cosa, e quella tu non la sai. Puo aver corso a mezzogiorno e averlo segnato a mezzanotte. Quindi: mai dire ne far capire quando una cosa e stata fatta, ne che sia cominciata tardi, ne che l'orario stia scivolando. Puoi dire a che ora CHIUDE la lista o segna le cose, perche quello e vero. Il momento (prima spunta del giorno, giorno completo) puo dare vita alla riga, mai citato in modo meccanico.\n"+
 "CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna, e ogni participio e ogni aggettivo che lo riguarda si accorda a quello: sei tornato o sei tornata, non sei solo o non sei sola. Se dice che non lo sai, NON tirare a indovinare: gira la frase e scegli forme che il genere non lo chiedono (l'hai fatto, ci sei, e tornato il ritmo, oggi c'e). Sbagliare il genere di chi ti legge cancella in un colpo solo tutta la memoria lunga: e la prova che non lo conosci.\n"+
 "LINGUA PIANA: le tue righe possono finire sotto gli occhi di chiunque. Vietate le parole di sistema: task, quest, rituale, streak, arco, occasioni previste, spunta. Le cose si chiamano coi loro nomi (il libro, il sonno, il caffe, le proteine, l\u2019allenamento). Se una parola non la useresti parlando a voce con un amico, non usarla.\n"+
 "IL RESPIRO. Nei libri che ama: dodici parole per frase, una frase su tre sotto le otto, quasi mai un trattino. Nelle tue: venti parole, il sei per cento corte, un trattino a riga. Quindi: MAI un fiato solo, spezza. Il punto fermo e il tuo strumento, il trattino no - se stai per metterne uno, prova prima il punto. Chiudi con una frase corta che atterra, e dopo il colpo non spiegare piu niente. E guarda il verbo: se la riga gira su e, sono, hai, non sta succedendo niente.\n"+
@@ -4998,6 +5023,24 @@ function paroleDistanza(gg){
   if(gg<62) return 'piu di un mese fa';
   return 'mesi fa';
 }
+/* v199 — QUANDO E NATO UN RITUALE.
+   Nessuno dei rituali di Davide aveva una data di nascita: il campo non esisteva.
+   Per quelli che ci sono gia la si deduce dal primo giorno in cui e stato spuntato,
+   che e la sola traccia vera che ne resta. Se non e mai stato spuntato non si puo
+   sapere, e allora si torna al comportamento di prima invece di inventare. */
+function _nascitaRituale(S,sched){
+  if(!sched) return '';
+  if(typeof sched.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(sched.nata)) return sched.nata;
+  let prima='';
+  try{
+    const ck=S.checks||{};
+    Object.keys(ck).forEach(function(k){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return;
+      if(ck[k]&&ck[k][sched.id]===true&&(!prima||k<prima)) prima=k;
+    });
+  }catch(_){}
+  return prima;
+}
 function buildLinePackage(id,title){
   const tk=todayKey(); const today=new Date(tk+'T12:00:00');
   const NOMI=['lunedi','martedi','mercoledi','giovedi','venerdi','sabato','domenica'];
@@ -5033,6 +5076,15 @@ function buildLinePackage(id,title){
     }catch(_){}
     if(!inizio||inizio>tk) inizio=tk;
     const etaGiorni=Math.max(0,Math.round((Date.parse(tk)-Date.parse(inizio))/86400000));
+  /* v199 — L'INIZIO GIUSTO. «inizio» e il primo giorno del cammino intero (Anna,
+     giorno uno). Ma un rituale nato ieri non puo aver mancato i giorni in cui non
+     esisteva. Il 7 agosto Sentiero ha detto a Davide che il respiro consapevole
+     «saltava da ventotto giorni di fila»: era nato il giorno prima. Da qui il conto
+     parte dal piu recente fra i due inizi. */
+  const _nasc=_nascitaRituale(S,sched);
+  const inizioRit=(_nasc&&_nasc>inizio)?_nasc:inizio;
+  const etaRit=Math.max(0,Math.round((Date.parse(tk)-Date.parse(inizioRit))/86400000));
+  pkg.eta_del_rituale=etaRit<1?'nato oggi':etaRit<2?'nato ieri':etaRit<7?'nato in questa settimana':etaRit<31?'nato in questo mese':'c\u2019e da oltre un mese';
     pkg.eta_del_cammino=etaGiorni<1?'primo giorno':etaGiorni<7?'prima settimana':etaGiorni<31?'primo mese':'oltre un mese';
     /* l'arco: quattro settimane dette in PAROLE, mai in numeri - il modello ripete la forma che riceve */
     const forma=formaPienezza;   /* v152: un vocabolario solo, cosi l'arco e il giorno parlano la stessa lingua */
@@ -5042,7 +5094,7 @@ function buildLinePackage(id,title){
       for(let diff=wk*7;diff<wk*7+7;diff++){
         const d=new Date(today); d.setDate(d.getDate()-diff);
         const k=localDayKey(d);
-        if(k<inizio) continue;                           /* prima dell'inizio non esisteva nulla da mancare */
+        if(k<inizioRit) continue;                           /* prima dell'inizio non esisteva nulla da mancare */
         if(sched.days.includes(dowOf(d))){ pl++; if(S.checks[k]&&S.checks[k][id]===true) dn++; }
       }
       sett.push(forma(dn,pl));
@@ -5053,7 +5105,7 @@ function buildLinePackage(id,title){
     for(let diff=1;diff<=28;diff++){
       const d=new Date(today); d.setDate(d.getDate()-diff);
       const k=localDayKey(d);
-      if(k<inizio) break;
+      if(k<inizioRit) break;
       if(!sched.days.includes(dowOf(d))) continue;
       if(S.checks[k]&&S.checks[k][id]===true) break;
       mancateFila++;
@@ -5093,7 +5145,11 @@ function buildLinePackage(id,title){
   pkg.oggi={giornata:formaPienezza(pr.done,pr.total),titoli_fatte:Object.keys(oggi).filter(k=>oggi[k]===true).map(_titleById).filter(Boolean)};   /* v152: MAI le due cifre affiancate */
   /* la coscienza del momento: l'ora vera, e se questa spunta apre o chiude il giorno */
   const adesso=new Date();
-  pkg.ora=String(adesso.getHours()).padStart(2,'0')+':'+String(adesso.getMinutes()).padStart(2,'0');
+  /* v199 — il nome dice la verita. Questa e l'ora in cui ha toccato lo schermo,
+     e Sentiero non sa a che ora abbia fatto la cosa: i checks salvano solo true.
+     Chiamandolo «ora» il modello lo leggeva come l'ora del fatto e ne usciva
+     «l'allenamento partito dopo le undici» per un allenamento delle dodici. */
+  pkg.ora_in_cui_ha_segnato=String(adesso.getHours()).padStart(2,'0')+':'+String(adesso.getMinutes()).padStart(2,'0');
   if(pr.done===1) pkg.momento='prima spunta del giorno';
   if(pr.total>0&&pr.done>=pr.total) pkg.momento='con questa il giorno e completo';
   if(es.total) pkg.oggi.essenziali=(es.done>=es.total?'tutti fatti':es.done===0?'ancora nessuno':'in parte fatti');
@@ -7782,6 +7838,7 @@ async function scrittoNelDiario(testo, dom){
           if((S.scheduled||[]).length>=LIMITS.SMAX) break;
           if(!r||!r.titolo) continue;
           if(S.scheduled.some(t=>t&&String(t.titolo||'').trim().toLowerCase()===String(r.titolo).trim().toLowerCase())) continue;
+          if(!r.nata) r.nata=todayKey();   /* v199: senza, il conto delle mancate parte dall'inizio del cammino */
           S.scheduled.push(r);
         }
         try{ processMastery(out.motore); }catch(_){}
