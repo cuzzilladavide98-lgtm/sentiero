@@ -1629,6 +1629,7 @@ function sanitizeDiary(arr){
        .lasc-txt, .lasc-dona, e il bottone «dona») che non compariva piu.
        Nel documento risultava «non ancora usata»: era usata e si spegneva da sola. */
     if(e.lascito===true) v.lascito=true;
+    if(e.peso===true) v.peso=true;                    /* v201: il marchio del peso, che deve durare */
     out.push(v);
     if(out.length>=LIMITS.DMAX) break;
   }
@@ -2206,8 +2207,11 @@ function aiOutputToState(parsed){
   if(!Array.isArray(parsed.quests)) return null;
   /* rituali dettati a voce: stessa validazione di quelli creati a mano (id, days 0-6, orario) */
   const rituali=sanitizeScheduled(Array.isArray(parsed.rituali)?parsed.rituali.map(r=>({titolo:r&&r.titolo,days:r&&r.days,time:r&&r.time})):[]);
+  /* v201: "peso" passa di qui o non arriva da nessuna parte. Questa e la stessa
+     lista fissa che nella v200 mangiava dom, nata e lascito, solo un piano piu
+     in alto: qui non si perde un campo salvato, si perde un campo appena letto. */
   return {quests:sanitizeQuests(parsed.quests),diario:clampStr(parsed.diario,LIMITS.DIARY).trim(),
-    rituali:rituali,non_eseguibile:clampStr(parsed.non_eseguibile,160).trim()};
+    rituali:rituali,peso:parsed.peso===true,non_eseguibile:clampStr(parsed.non_eseguibile,160).trim()};
 }
 function nextReminderDelays(state,now){
   const dow=dowOf(now),out=[];
@@ -2236,7 +2240,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.200 · 2026-08-09';
+const APP_VERSION='v60S.201 · 2026-08-09';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -3920,9 +3924,20 @@ document.querySelector('#btn-save').onclick=async()=>{
       if(out){
         /* LA FUSIONE (v133): il contratto e un DELTA - il modello consegna solo quest nuove e
            modificate, il client conserva tutte le altre. L'omissione non e piu un errore possibile. */
+        /* v201 — DA UN DOLORE NON NASCE UN COMPITO.
+           Il modello dice "peso":true quando il racconto porta sofferenza grave e reale.
+           Allora la raccolta si ferma qui: niente quest, niente rituali. Lo scritto si
+           salva intero e marcato. Il caso che ha deciso la regola: uno racconta che gli
+           e morta la nonna e che e rimasto un'ora in macchina davanti a casa sua; la
+           macchina fa il suo mestiere e la mattina dopo gli apre davanti la quest
+           "Andare da nonna", con l'anello di progresso. Nessun errore di codice: era
+           il codice a essere costruito cosi.
+           La guardia sta in DUE punti perche le strade sono due: qui il microfono,
+           e in scrittoNelDiario la Chiamata a terra e la stanza della sera. */
+        const pesa=(out.peso===true);
         if(!Array.isArray(S.quests)) S.quests=[];
         let nuoveN=0, aggN=0;
-        (out.quests||[]).forEach(nq=>{
+        if(!pesa) (out.quests||[]).forEach(nq=>{
           if(!nq||!nq.titolo) return;
           const ex=nq.id?S.quests.find(q=>q&&q.id===nq.id):null;
           if(ex){ Object.assign(ex,nq,{id:ex.id}); aggN++; return; }
@@ -3935,7 +3950,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         if(nuoveN||aggN){ try{ regCantiere('fusione',{msg:'quest nuove '+nuoveN+' \u00b7 aggiornate '+aggN}); }catch(_){} }
         /* rituali nati a voce: fusione in scheduled, con guardia client-side sui titoli gia esistenti */
         const bornRit=[];
-        for(const r of (out.rituali||[])){
+        if(!pesa) for(const r of (out.rituali||[])){
           if((S.scheduled||[]).length>=LIMITS.SMAX) break;
           if(S.scheduled.some(t=>t.titolo.trim().toLowerCase()===r.titolo.trim().toLowerCase())) continue;
           if(!r.nata) r.nata=todayKey();   /* v199: vedi sopra */
@@ -3946,7 +3961,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         const bornIds=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.id);
         const bornTitles=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.titolo);
         const doneTitles=S.quests.filter(q=>{const b=beforeMap.get(q.id);return b&&!b.fatto&&q.fatto;}).map(q=>q.titolo);
-        addDiary(out.diario||transcript,bornTitles.concat(bornRit.map(t=>'Rituale: '+t)),doneTitles,transcript);
+        addDiary(out.diario||transcript,bornTitles.concat(bornRit.map(t=>'Rituale: '+t)),doneTitles,transcript,'','',pesa);
         save(); render(bornIds);
         bornIds.forEach((_,i)=>sAppear(i));
         setTimeout(()=>{ /* scintille su ogni quest appena nata, a cascata */
@@ -4005,9 +4020,14 @@ document.querySelector('#btn-save').onclick=async()=>{
     renderFlow();
   }
 };
-function addDiary(testo,born,done,raw,seme,dom){
+function addDiary(testo,born,done,raw,seme,dom,peso){
   const lst=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,20).map(x=>x.slice(0,200)):[];
-  S.diary.unshift({data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos(),seme:clampStr(seme||'',40),dom:clampStr(dom||'',LIMITS.DOM)});
+  const v={data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos(),seme:clampStr(seme||'',40),dom:clampStr(dom||'',LIMITS.DOM)};
+  /* v201: il marchio resta sulla voce, non sul momento. Serve dopo, e serve
+     soprattutto offline: l'osservatrice locale gira senza chiave e non legge il
+     testo - senza questo segno non avrebbe modo di sapere che giorno era. */
+  if(peso===true) v.peso=true;
+  S.diary.unshift(v);
   if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX;
 }
 
@@ -4046,8 +4066,9 @@ async function askClaude(transcript){
 '12. MENZIONI: array degli id toccati dal racconto in QUALUNQUE modo, anche negati o al futuro.\n'+
 '13. ATTRITI (campo importante: cercali DAVVERO, torna indietro a controllare): qualsiasi segnale di fatica, rimando o peso verso un id - "dovrei", "prima o poi", "non ho ancora", "non riesco", "mi pesa", "non ho voglia", "di nuovo non", sfoghi anche indiretti ("uff, la palestra"). Riporta la frase ESATTA: [{"id","frase"}]. Se il racconto contiene anche un solo lamento legato a un id, l\'array NON deve restare vuoto.\n'+
 '14. SGUARDO: classifica il diario: 1=cronaca, 2=osservazione su di se, 3=pattern/connessione causale su di se. Vale il livello massimo presente: {"livello":N,"segnale":"frase"}.\n'+
+'15. PESO — il campo piu delicato del contratto, e quello dove sbagliare in eccesso costa quanto sbagliare in difetto. Metti "peso":true SOLO se il racconto porta sofferenza grave e reale: un lutto, una malattia seria propria o di una persona vicina, un pensiero di farsi del male o di non esserci piu, violenza o paura in casa, un crollo che non e la stanchezza di una giornata. In tutti gli altri casi "peso":false. NON sono peso e devono restare false: la giornata storta, la rabbia per il lavoro, la stanchezza, lo sfogo, il litigio, il non avere voglia, il sentirsi indietro, la tristezza che passa - sono la materia normale di un diario, e un diario che si allarma a ogni lunedi storto diventa inutilizzabile. Nel dubbio: false. Quando "peso" e true lascia VUOTI "quests", "rituali" e "attriti": da un dolore non nasce un compito. "diario" si compila sempre, come al punto 8, con le parole dell\'utente intatte.\n'+
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
-'{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"non_eseguibile":""}';
+'{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"peso":false,"non_eseguibile":""}';
   const res=await callAnthropic({system:sys,user:(window._semeAttivo?'DOMANDA SEMINATA (il racconto risponde a questa):\n'+window._semeAttivo.testo+'\n\n':'')+'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript,assistantPrefix:'{',max_tokens:1500,temperature:0.2,timeout:45000});
   if(res.err){ const e=res.err;
     if(e==='chiave') throw new Error('AUTH');
@@ -7849,7 +7870,8 @@ async function scrittoNelDiario(testo, dom){
       if(out){
         if(!Array.isArray(S.quests)) S.quests=[];
         const nati=[];
-        (out.quests||[]).forEach(nq=>{
+        const pesa=(out.peso===true);   /* v201: la stessa guardia della distillazione a voce, vedi il commento la */
+        if(!pesa) (out.quests||[]).forEach(nq=>{
           if(!nq||!nq.titolo) return;
           const ex=nq.id?S.quests.find(q=>q&&q.id===nq.id):null;
           if(ex){ Object.assign(ex,nq,{id:ex.id}); return; }
@@ -7861,7 +7883,7 @@ async function scrittoNelDiario(testo, dom){
           S.quests.push(nq); nati.push(nq.titolo); nuove++;
         });
         S.quests=sortQuests(S.quests);
-        for(const r of (out.rituali||[])){
+        if(!pesa) for(const r of (out.rituali||[])){
           if((S.scheduled||[]).length>=LIMITS.SMAX) break;
           if(!r||!r.titolo) continue;
           if(S.scheduled.some(t=>t&&String(t.titolo||'').trim().toLowerCase()===String(r.titolo).trim().toLowerCase())) continue;
@@ -7869,7 +7891,7 @@ async function scrittoNelDiario(testo, dom){
           S.scheduled.push(r);
         }
         try{ processMastery(out.motore); }catch(_){}
-        addDiary(out.diario||testo,nati,[],testo,'',dom);
+        addDiary(out.diario||testo,nati,[],testo,'',dom,pesa);
         fatto=true;
       }
     }
