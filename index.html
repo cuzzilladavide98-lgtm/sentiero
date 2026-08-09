@@ -1582,7 +1582,17 @@ function sanitizeScheduled(arr){
     let days=Array.isArray(t.days)?t.days.filter(x=>Number.isInteger(x)&&x>=0&&x<=6):[];
     days=[...new Set(days)].sort((a,b)=>a-b);
     if(!days.length&&!date) continue;   /* serve almeno uno dei due */
-    out.push({id,titolo,days,time,date});
+    /* v200: stessa malattia di sanitizeDiary, stesso giorno. La v199 aveva dato ai
+       rituali una data di nascita perche' Sentiero accusava un'abitudine creata ieri
+       di aver saltato ventotto giorni; scrittoNelDiario la scrive, e qui veniva
+       buttata a ogni avvio. Nel backup dell'8 agosto: 14 rituali, nessuno con "nata"
+       (le quest ce l'hanno tutte, perche' sanitizeQuests la conserva).
+       Il guasto era mezzo nascosto: _nascitaRituale sa dedurre la nascita dal primo
+       giorno spuntato, quindi per i rituali vecchi il conto tornava lo stesso. Non
+       tornava proprio nel caso che la v199 voleva correggere - il rituale nato oggi
+       e mai ancora spuntato - dove non c'e' niente da dedurre. */
+    const nata=(typeof t.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t.nata))?t.nata:'';
+    out.push({id,titolo,days,time,date,nata});
     if(out.length>=LIMITS.SMAX) break;
   }
   return out;
@@ -1602,7 +1612,24 @@ function sanitizeDiary(arr){
     const testo=clampStr(e.testo,LIMITS.DIARY);
     if(!testo) continue;
     const iso=(typeof e.iso==='string'&&!isNaN(Date.parse(e.iso)))?e.iso:new Date().toISOString();
-    out.push({data:clampStr(e.data,10),iso,testo,raw:clampStr(e.raw,LIMITS.RAW),born:lst(e.born),done:lst(e.done),pos:posOf(e.pos),seme:clampStr(e.seme||'',40)});
+    const v={data:clampStr(e.data,10),iso,testo,raw:clampStr(e.raw,LIMITS.RAW),born:lst(e.born),done:lst(e.done),pos:posOf(e.pos),seme:clampStr(e.seme||'',40)};
+    /* v200: qui mancava "dom", e questo gira a OGNI avvio. La v197 aveva insegnato
+       all'app a salvare la domanda della Chiamata a terra accanto alla risposta;
+       il sanitizzatore la ributtava via al riavvio successivo, e poi save() riscriveva
+       lo stato potato. Nel backup dell'8 agosto: 139 voci, zero con la domanda.
+       Non era "quel dato non fu salvato": era salvato e poi mangiato.
+       La lezione non e su "dom": e che un sanitizzatore che ricostruisce con una lista
+       fissa e' un buco silenzioso, perche' il campo nuovo non da' nessun errore -
+       sparisce e basta. Ogni campo che addDiary sa scrivere va aggiunto QUI SOTTO. */
+    if(e.dom) v.dom=clampStr(e.dom,LIMITS.DOM);
+    /* e "lascito" e il segno della distillazione del periodo (v195): non l'hai
+       scritta tu, l'ha scritta l'osservatrice, e renderDiary la veste diversa
+       guardando questo campo. Perso il segno, al riavvio la distillazione tornava
+       una voce di diario qualunque - con tutto il suo CSS (.entry.lascito,
+       .lasc-txt, .lasc-dona, e il bottone «dona») che non compariva piu.
+       Nel documento risultava «non ancora usata»: era usata e si spegneva da sola. */
+    if(e.lascito===true) v.lascito=true;
+    out.push(v);
     if(out.length>=LIMITS.DMAX) break;
   }
   return out;
@@ -2209,7 +2236,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.199 · 2026-08-08';
+const APP_VERSION='v60S.200 · 2026-08-09';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
