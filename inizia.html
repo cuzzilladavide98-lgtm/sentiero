@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sentiero</title>
+<meta name="description" content="Un diario che ti ascolta e tiene il filo delle cose che vuoi fare. Gratis, senza account, tutto sul tuo telefono.">
+<meta name="theme-color" content="#070a09">
+<link rel="icon" href="./icon-192.png">
+<!-- Nessuna richiesta esterna: niente font remoti, niente statistiche, niente
+     di niente. La pagina si apre anche senza rete, e chi la riceve non lascia
+     una traccia da nessuna parte solo per averla letta. -->
+<style>
+:root{
+  --bg:#070a09;
+  --t1:#F5F2EA;
+  --t2:rgba(245,242,234,.62);
+  --t3:rgba(245,242,234,.48);
+  --accent:#E8A84C;
+  --jade:#7FB8A4;
+  --serif:"New York","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--bg);color:var(--t1);font-family:var(--sans);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  padding:0 22px calc(64px + env(safe-area-inset-bottom));
+}
+main{max-width:34rem;margin:0 auto}
+header{padding:calc(52px + env(safe-area-inset-top)) 0 8px;text-align:center}
+header img{width:82px;height:82px;border-radius:20px;display:block;margin:0 auto 20px}
+h1{font-family:var(--serif);font-weight:400;font-size:40px;letter-spacing:.01em;line-height:1.1}
+.sotto{color:var(--t2);font-size:17px;margin-top:10px}
+h2{font-family:var(--serif);font-weight:400;font-size:24px;margin:44px 0 12px;letter-spacing:.01em}
+p{margin:0 0 14px;color:var(--t1)}
+p.calmo{color:var(--t2)}
+strong{font-weight:600}
+em{font-style:italic;color:var(--t1)}
+ul{list-style:none;margin:0 0 14px}
+li{position:relative;padding-left:20px;margin-bottom:9px;color:var(--t2)}
+li::before{content:'';position:absolute;left:2px;top:.72em;width:6px;height:6px;border-radius:50%;background:var(--t3)}
+ol{margin:0 0 14px 0;padding-left:1.25em}
+ol li{padding-left:4px;color:var(--t2)}
+ol li::before{display:none}
+.leggi{border-left:2px solid rgba(232,168,76,.45);padding:2px 0 2px 16px;margin:0 0 18px}
+.leggi p{color:var(--t1);font-family:var(--serif);font-size:19px;line-height:1.5;margin:0}
+.via{display:block;text-align:center;min-height:56px;padding:17px 26px;margin:30px 0 10px;
+  background:var(--accent);color:#1a1208;font-weight:700;font-size:17.5px;
+  border-radius:16px;text-decoration:none;box-shadow:0 6px 22px rgba(232,168,76,.22)}
+.via:active{transform:scale(.985)}
+.indirizzo{text-align:center;color:var(--t3);font-size:14px;word-break:break-all;margin-bottom:6px}
+.scheda{border:.5px solid rgba(245,242,234,.13);border-radius:16px;padding:18px 18px 6px;margin:0 0 14px}
+.scheda h3{font-size:15px;font-weight:600;color:var(--t1);margin:0 0 10px;letter-spacing:.01em}
+.nota{color:var(--t3);font-size:14.5px;line-height:1.55;margin-top:10px}
+footer{margin:52px 0 0;padding-top:22px;border-top:.5px solid rgba(245,242,234,.10);
+  color:var(--t3);font-size:14px;text-align:center}
+a{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <img src="./icon-192.png" alt="Sentiero">
+    <h1>Sentiero</h1>
+    <p class="sotto">Un diario che tiene il filo.</p>
+  </header>
+
+  <p>Parli, o scrivi. Sentiero tiene da parte le cose che hai detto di voler fare
+  e non te le lascia sparire. La sera ti dice una riga su come stanno andando i
+  tuoi giorni. Al mattino ce n'è un'altra, su ieri.</p>
+
+  <p class="calmo">Non è un'app per la produttività, e si vede da cosa non ha.</p>
+
+  <h2>Tre cose che non fa</h2>
+  <div class="leggi">
+    <p>Non conta i giorni di fila.<br>Non ti dà un punteggio.<br>Non ti mette fretta se sei in ritardo.</p>
+  </div>
+  <p class="calmo">Non sono dimenticanze: sono la ragione per cui esiste. Se un
+  giorno una funzione sembra chiedere una di queste cose, è la funzione a essere
+  sbagliata.</p>
+
+  <h2>Non chiede niente</h2>
+  <ul>
+    <li>Nessun account, nessuna email, nessuna password.</li>
+    <li>Non costa niente, e non c'è una versione a pagamento da comprare.</li>
+    <li>Quello che scrivi resta sul tuo telefono. Non passa da nessun server, perché un server non c'è.</li>
+    <li>Nessuna pubblicità, nessuna statistica, nessuno che guarda.</li>
+  </ul>
+  <p class="calmo">Puoi portartelo via quando vuoi: dalle impostazioni salvi tutto
+  in un file tuo, e se cancelli l'app non resta niente da nessuna parte.</p>
+
+  <a class="via" href="./">Apri Sentiero</a>
+  <p class="indirizzo">cuzzilladavide98-lgtm.github.io/sentiero</p>
+
+  <h2>Mettilo in Home</h2>
+  <p class="calmo">Si apre nel browser, ma sta meglio come app. Ci vogliono dieci secondi.</p>
+
+  <div class="scheda">
+    <h3>iPhone e iPad</h3>
+    <ol>
+      <li>Apri l'indirizzo qui sopra <strong>con Safari</strong>.</li>
+      <li>Tocca <strong>Condividi</strong>, il quadrato con la freccia in su.</li>
+      <li>Scorri e tocca <strong>Aggiungi a Home</strong>.</li>
+    </ol>
+    <p class="nota">Deve essere Safari: da Chrome, su iPhone, questa voce non
+    compare. È una regola di iOS, non nostra.</p>
+  </div>
+
+  <div class="scheda">
+    <h3>Android</h3>
+    <ol>
+      <li>Apri l'indirizzo con <strong>Chrome</strong>.</li>
+      <li>Tocca i <strong>tre puntini</strong> in alto a destra.</li>
+      <li>Tocca <strong>Installa app</strong>, oppure <em>Aggiungi a schermata Home</em>.</li>
+    </ol>
+  </div>
+
+  <div class="scheda">
+    <h3>Computer</h3>
+    <ol>
+      <li>Funziona nel browser così com'è.</li>
+      <li>Su Chrome ed Edge c'è un'icona di installazione nella barra dell'indirizzo.</li>
+    </ol>
+  </div>
+
+  <h2>Se hai una chiave</h2>
+  <p class="calmo">C'è una seconda marcia, e si chiama <em>Sentiero &mdash; versione
+  Generativa</em>. Con una chiave di Anthropic incollata nelle impostazioni, le
+  cose da fare nascono da sole mentre parli, con il giorno e l'ora; la domanda
+  della sera te la scrive un modello sui tuoi ultimi giorni; al mattino trovi una
+  lettura più larga.</p>
+  <p class="calmo">C'è una cosa che solo quella versione sa fare, ed è giusto
+  dirla: la <em>distillazione del periodo</em>. Dopo settimane di tracce scrive
+  una pagina sola che tiene insieme un mese e ne tira un senso. Le altre voci
+  nominano un fatto in due frasi, e quello Sentiero lo fa da sé; un mese intero
+  in un paragrafo, no.</p>
+
+  <p class="calmo">Il consumo lo paghi tu, direttamente ad Anthropic: noi non
+  vediamo la chiave e non ci passa in mezzo niente. Ed è una scelta, non un
+  seguito obbligato: <strong>senza chiave l'app si chiama Sentiero e funziona per
+  intero.</strong></p>
+
+  <h2>Due parole oneste</h2>
+  <p class="calmo">Sentiero legge quello che scrivi e ti risponde, ma non è un
+  terapeuta e non ci prova. Quando in una giornata scrivi qualcosa di pesante fa
+  un passo indietro: non ne ricava compiti da fare, e non ti dice come stai
+  andando. Se stai attraversando qualcosa di grosso, un'app non basta: parlane
+  con qualcuno.</p>
+
+  <footer>
+    Pensato da Davide Cuzzilla, usato da entrambi.<br>
+    Condividilo se anche tu pensi che possa aiutare qualcun altro. Grazie
+  </footer>
+
+</main>
+</body>
+</html>
