@@ -2336,7 +2336,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.219 · 2026-08-10';
+const APP_VERSION='v60S.220 · 2026-08-10';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -2402,8 +2402,19 @@ function linguaApp(){
   return 'it';                       /* la casa di partenza, finche non ce n'e un'altra completa */
 }
 function locale(){ return (LINGUE_NOTE[linguaApp()]||LINGUE_NOTE.it).locale; }
+/* v220 — LA RIPARAZIONE.
+   La v216 aveva spezzato questa funzione a meta: uno script di innesto cercava
+   «la prima graffa chiusa dopo l'apertura» per trovarne la fine, e trovava
+   quella del try. «}catch(_){}» si e spaccato in «}c» + «atch(_){}», con
+   ottomila righe infilate in mezzo. Da li in poi il file non compilava piu, e
+   l'app non partiva: schermata bianca, nessun messaggio, niente.
+   Quattro versioni consegnate cosi - v216, v217, v218, v219 - con trentatre
+   banchi verdi ogni volta, perche i banchi provano FRAMMENTI e nessuno leggeva
+   il file come lo legge un browser. Adesso c'e provaSintassi, ed e il primo. */
 function applicaLingua(){
-  try{ document.documentElement.setAttribute('lang',linguaApp()); }c
+  try{ document.documentElement.setAttribute('lang',linguaApp()); }catch(_){}
+}
+
 /*SCRITTE-INIZIO*/
 /* ══ LE LINGUE SONO PACCHETTI (v218) ════════════════════════════════════════
    Fino alla v217 la seconda lingua stava DENTRO l'app: dizionario e schemi
@@ -2497,8 +2508,6 @@ async function accendiLingua(){
   return ok;
 }
 /*SCRITTE-FINE*/
-atch(_){}
-}
 
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
