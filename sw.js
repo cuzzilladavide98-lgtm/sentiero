@@ -1,4 +1,4 @@
-const CACHE = 'sentiero-v60s211';
+const CACHE = 'sentiero-v60s218';
 /* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
    blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
    sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui
@@ -10,7 +10,8 @@ const CACHE = 'sentiero-v60s211';
    qui. Restano tutte nel repo e restano nel gestore fetch qui sotto: la prima volta
    che una viene chiesta davvero, finisce in cache come tutto il resto. */
 const ASSETS = ['./', './index.html', './manifest.json',
-  './icon-180.png', './icon-192.png'];
+  './icon-180.png', './icon-192.png',
+  './lingue/en.json'];   /* v218: i pacchetti delle lingue viaggiano con l'app: offline dal primo avvio */
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {

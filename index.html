@@ -538,6 +538,7 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 @keyframes ob-traccia{0%{stroke-dashoffset:503}100%{stroke-dashoffset:40}}
 .ob-title{font-family:var(--serif);font-weight:400;font-size:32px;letter-spacing:.02em;color:var(--t1);margin-bottom:16px;text-transform:lowercase}
 .ob-sub{font-family:var(--serif);font-size:17px;line-height:1.65;color:var(--t2);margin-bottom:40px}
+.ob-piccolo{font-size:14px;opacity:.62;margin-top:10px}
 .ob-go{border:none;background:none;color:var(--accent);font-size:18px;font-weight:600;padding:12px 32px;transition:opacity .15s,transform .15s}
 .ob-go:active{opacity:.5;transform:scale(.96)}
 .ob-note{font-size:14px;color:var(--t3);line-height:1.5;margin-top:24px;min-height:18px}
@@ -1001,6 +1002,34 @@ body[data-pane="quest"] #notte-luce,body[data-pane="quest"] .notte-scia{display:
    toglie di mezzo tutto il resto (qui dentro non c'e nessun altro elemento).
    Il fondo non e nero puro: il nero e un vuoto, la carta e una superficie. Ma
    sta a luminanza bassissima, cosi di notte non brucia e l'OLED lavora poco. */
+/* ── IL FOGLIO DELLE PROPOSTE (v212) ─────────────────────────────────────
+   Sale dal basso, non copre tutto: quello che hai appena detto resta dietro.
+   Bersagli a 44 punti, come chiede il controllo qualita a ogni consegna. */
+#proposte{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.55);
+  display:flex;align-items:flex-end;justify-content:center}
+#proposte.hidden{display:none}
+#proposte-carta{width:100%;max-width:520px;background:#0d100f;
+  border-top-left-radius:22px;border-top-right-radius:22px;
+  padding:20px 20px calc(18px + env(safe-area-inset-bottom));
+  border:.5px solid rgba(245,242,234,.12);max-height:82vh;overflow:auto}
+#proposte-testa{font-size:14px;color:var(--t3);margin-bottom:14px;letter-spacing:.02em}
+.prop{display:flex;align-items:flex-start;gap:12px;padding:12px 0;min-height:44px;
+  border-bottom:.5px solid rgba(245,242,234,.07)}
+.prop:last-of-type{border-bottom:none}
+.prop-chk{flex:none;width:24px;height:24px;margin-top:2px;border-radius:7px;
+  border:1.5px solid rgba(245,242,234,.32);position:relative}
+.prop-chk::before{content:'';position:absolute;left:-10px;right:-10px;top:-10px;bottom:-10px}
+.prop.on .prop-chk{background:var(--accent);border-color:var(--accent)}
+.prop.on .prop-chk::after{content:'';position:absolute;left:8px;top:3px;width:6px;height:12px;
+  border:solid #1a1208;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.prop-txt{flex:1 1 auto;font-size:17px;color:var(--t1);line-height:1.4}
+.prop-quando{display:block;font-size:13px;color:var(--t3);margin-top:3px}
+#proposte-piede{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+#proposte-piede button{min-height:44px;padding:12px 22px;border:none;background:none;
+  color:var(--t2);font-size:16.5px;font-family:inherit;border-radius:14px}
+#proposte-piede button.primo{color:var(--accent);font-weight:600}
+#proposte-piede button:active{opacity:.55}
+
 #stanza{position:fixed;inset:0;z-index:140;opacity:0;pointer-events:none;
   background:#12100C;transition:opacity .42s ease}
 #stanza.aperta{opacity:1;pointer-events:auto}
@@ -1333,7 +1362,15 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
       <circle class="ob-stroke" cx="100" cy="100" r="80" transform="rotate(-100 100 100)" stroke-dasharray="503" stroke-dashoffset="503"/>
     </svg>
     <h1 class="ob-title">sentiero</h1>
-    <p class="ob-sub">Parla. Le tue parole diventano quest da compiere, e ogni giorno si chiude come un cerchio.</p>
+    <!-- v214 — LA PRIMA SCHERMATA CHE VEDE UNO SCONOSCIUTO.
+         Diceva: «Parla. Le tue parole diventano quest da compiere.» Due cose
+         sbagliate nella stessa riga. La prima: senza chiave non e vero, e chi
+         riceve l'app in regalo non ha una chiave. La seconda: «quest» e gergo
+         interno - la stessa parola che fruttoVeto vieta al modello perche non la
+         capisce nessuno da fuori. Qui dentro non deve esserci niente che vada
+         spiegato: e la riga che decide se uno resta o chiude. -->
+    <p class="ob-sub">Parla, o scrivi. Le cose che vuoi fare restano qui e non si perdono, e ogni giorno si chiude come un cerchio.</p>
+    <p class="ob-sub ob-piccolo">Niente account, niente da pagare. Resta tutto sul tuo telefono.</p>
     <button class="ob-go" id="ob-go">Inizia</button>
     <p class="ob-note" id="ob-note"></p>
   </div>
@@ -1503,6 +1540,16 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
       </section>
 
       <section>
+        <!-- v215: la lingua. «Come il telefono» e la scelta di partenza: chi
+             riceve l'app non deve configurare niente perche funzioni. -->
+        <div class="sec-head">Lingua</div>
+        <div class="seg" id="seg-lingua">
+          <button data-lingua="">Come il telefono</button><button data-lingua="it">Italiano</button><button data-lingua="en">English</button>
+        </div>
+        <p class="note" id="lingua-note"></p>
+      </section>
+
+      <section>
         <div class="sec-head">Dati</div>
         <div class="btn-row">
           <button class="act" id="btn-export">Esporta backup</button>
@@ -1555,6 +1602,19 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
     <div id="stanza-piede">
       <button id="stanza-no">Chiudi</button>
       <button id="stanza-ok" class="primo">Raccogli</button>
+    </div>
+  </div>
+</div>
+<!-- v212: IL FOGLIO DELLE PROPOSTE. Figlio diretto del <body>, come la stanza:
+     #app ha un transform, e un antenato trasformato diventa il riferimento dei
+     figli position:fixed. E la famiglia N del lint, e ci siamo cascati due volte. -->
+<div id="proposte" class="hidden" role="dialog" aria-label="Cose sentite">
+  <div id="proposte-carta">
+    <div id="proposte-testa">ho sentito queste cose</div>
+    <div id="proposte-lista"></div>
+    <div id="proposte-piede">
+      <button id="proposte-no">Nessuna</button>
+      <button id="proposte-ok" class="primo">Tieni</button>
     </div>
   </div>
 </div>
@@ -1989,6 +2049,8 @@ function sanitizeState(raw,def){
       obsLine:!(raw.settings&&raw.settings.obsLine===false),
       notif:!!(raw.settings&&raw.settings.notif===true),
       geo:!!(raw.settings&&raw.settings.geo===true),
+      /* v215: la lingua scelta a mano; vuota = come il telefono */
+      lingua:(raw.settings&&LINGUE_NOTE[raw.settings.lingua])?raw.settings.lingua:'',
       music:false,   /* AUDIO SPENTO */
       aiModel:(raw.settings&&['max','balanced','fast'].includes(raw.settings.aiModel))?raw.settings.aiModel:'balanced',
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade',
@@ -2274,7 +2336,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.211 · 2026-08-10';
+const APP_VERSION='v60S.218 · 2026-08-10';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -2306,6 +2368,138 @@ try{
     try{ if(e&&e.preventDefault) e.preventDefault(); }catch(_){}
   });
 }catch(_){}
+
+/* ══ LA LINGUA COME DATO (v215) ═════════════════════════════════════════════
+   Primo passo verso la globalizzazione, e non e tradurre le scritte: e smettere
+   di scrivere «it-IT» dentro il codice. Finche la lingua e una costante, ogni
+   traduzione e una modifica al motore; quando e un dato, aggiungere una lingua
+   diventa aggiungere una riga a una tabella.
+
+   QUELLO CHE QUESTO PASSO GIA RISOLVE DA SOLO, prima di qualunque traduzione:
+   chi non parla italiano dettava dentro un riconoscitore impostato su it-IT, e
+   quello gli trascriveva l'inglese in fonetica italiana - cioe spazzatura nel
+   diario. E le date gli uscivano in italiano. Adesso la dettatura e le date
+   seguono il telefono, o quello che sceglie lui.
+
+   QUELLO CHE NON RISOLVE, e va detto: l'interfaccia resta in italiano, e resta
+   italiano tutto il motore locale - l'estrattore del microfono, il vivaio delle
+   domande, le forme dell'osservatrice, le soglie del giudice prese su Pavese,
+   London e Pratchett. Una versione inglese non e una traduzione: e un secondo
+   motore. Questo passo e il telaio su cui montarlo. */
+const LINGUE_NOTE={
+  it:{tag:'it',locale:'it-IT',nome:'Italiano'},
+  en:{tag:'en',locale:'en-US',nome:'English'}
+};
+function linguaApp(){
+  try{
+    const scelta=S&&S.settings&&S.settings.lingua;
+    if(scelta&&LINGUE_NOTE[scelta]) return scelta;
+  }catch(_){}
+  try{
+    const dal=(navigator.language||navigator.userLanguage||'it').slice(0,2).toLowerCase();
+    if(LINGUE_NOTE[dal]) return dal;
+  }catch(_){}
+  return 'it';                       /* la casa di partenza, finche non ce n'e un'altra completa */
+}
+function locale(){ return (LINGUE_NOTE[linguaApp()]||LINGUE_NOTE.it).locale; }
+function applicaLingua(){
+  try{ document.documentElement.setAttribute('lang',linguaApp()); }c
+/*SCRITTE-INIZIO*/
+/* ══ LE LINGUE SONO PACCHETTI (v218) ════════════════════════════════════════
+   Fino alla v217 la seconda lingua stava DENTRO l'app: dizionario e schemi
+   dell'estrattore, tutti inline. Con dieci lingue sarebbero stati tre megabyte
+   da scaricare anche a chi ne usa una.
+
+   Adesso ogni lingua che non sia l'italiano e un file: lingue/en.json, accanto
+   all'app nello stesso repo. L'app lo chiede una volta, il service worker lo
+   mette in cache come tutto il resto, e da li in poi funziona offline per
+   sempre - come la calcolatrice. Aggiungere una lingua vuol dire aggiungere un
+   file, senza toccare una riga di codice.
+
+   L'ITALIANO RESTA DENTRO, e non e un privilegio: e la garanzia che l'app
+   funzioni al primo avvio senza chiedere niente a nessuno, anche se la rete non
+   c'e e il pacchetto non e ancora arrivato. Chi apre Sentiero e in italiano non
+   scarica niente, mai.
+
+   E se il pacchetto non arriva? Le scritte restano in italiano e l'estrattore
+   tace. Mai un buco, mai una chiave nuda: la stessa regola di sempre. */
+let PACCHETTO=null;                       /* la lingua caricata, o niente */
+const _PACK_LS='sentiero-lingua-';        /* copia di scorta, per quando il service worker non c'e ancora */
+
+function _packLeggiCache(l){
+  try{ const t=localStorage.getItem(_PACK_LS+l); if(t) return JSON.parse(t); }catch(_){}
+  return null;
+}
+function _packScriviCache(l,d){
+  try{ localStorage.setItem(_PACK_LS+l,JSON.stringify(d)); }catch(_){}
+}
+async function caricaLingua(l){
+  if(l==='it'){ PACCHETTO=null; return true; }               /* l'italiano e in casa */
+  if(PACCHETTO&&PACCHETTO.lingua===l) return true;
+  const salvato=_packLeggiCache(l);
+  if(salvato&&salvato.lingua===l){ PACCHETTO=salvato; return true; }
+  try{
+    const r=await fetch('./lingue/'+l+'.json',{cache:'force-cache'});
+    if(!r.ok) return false;
+    const d=await r.json();
+    if(!d||d.lingua!==l) return false;
+    PACCHETTO=d; _packScriviCache(l,d);
+    return true;
+  }catch(_){ return false; }
+}
+function _tNorm(s){ return String(s).trim().replace(/[’ʼ‘]/g,"'").replace(/\s+/g,' '); }
+let _tIndice=null;
+function _tCostruisci(){
+  const d=(PACCHETTO&&PACCHETTO.scritte)||{}, out={};
+  for(const k in d) out[_tNorm(k)]=d[k];
+  return out;
+}
+/* T(testo) — la traduzione se c'e, l'italiano se manca. Mai un buco. */
+function T(t){
+  const l=linguaApp();
+  if(l==='it'||!PACCHETTO||PACCHETTO.lingua!==l) return t;
+  if(!_tIndice||_tIndice._l!==l){ _tIndice=_tCostruisci(); _tIndice._l=l; }
+  return _tIndice[_tNorm(t)]||t;
+}
+let _tradOrig=[];
+function traduciPagina(){
+  try{
+    _tradOrig.forEach(o=>{ try{ if(o.attr) o.el.setAttribute(o.attr,o.testo); else o.nodo.textContent=o.testo; }catch(_){} });
+    _tradOrig=[];
+    if(linguaApp()==='it'||!PACCHETTO) return;
+    const salta={SCRIPT:1,STYLE:1,NOSCRIPT:1};
+    const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    const nodi=[];
+    let n; while((n=w.nextNode())){
+      if(n.parentNode&&salta[n.parentNode.nodeName]) continue;
+      const t=n.textContent, s=t.trim();
+      if(s.length<2) continue;
+      const tr=T(s);
+      if(tr!==s) nodi.push({nodo:n,testo:t,nuovo:t.replace(s,tr)});
+    }
+    nodi.forEach(x=>{ _tradOrig.push({nodo:x.nodo,testo:x.testo}); x.nodo.textContent=x.nuovo; });
+    ['placeholder','aria-label','title'].forEach(a=>{
+      document.querySelectorAll('['+a+']').forEach(el=>{
+        const v=el.getAttribute(a); if(!v) return;
+        const tr=T(v.trim());
+        if(tr!==v.trim()){ _tradOrig.push({el:el,attr:a,testo:v}); el.setAttribute(a,tr); }
+      });
+    });
+  }catch(_){}
+}
+/* la lingua si accende in due tempi: subito quello che si puo fare a secco,
+   poi il pacchetto quando arriva. */
+async function accendiLingua(){
+  try{ applicaLingua(); }catch(_){}
+  const ok=await caricaLingua(linguaApp());
+  try{ traduciPagina(); }catch(_){}
+  try{ renderLingua(); }catch(_){}
+  return ok;
+}
+/*SCRITTE-FINE*/
+atch(_){}
+}
+
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Maestria','Pieno','Tao'];
@@ -3181,7 +3375,7 @@ let itVoice=null;
 function pickVoice(){
   try{
     const vs=speechSynthesis.getVoices();
-    itVoice=vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith('it'))||null;
+    itVoice=vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith(linguaApp()))||null;
   }catch(_){}
 }
 if('speechSynthesis' in window){ pickVoice(); try{speechSynthesis.onvoiceschanged=pickVoice;}catch(_){} }
@@ -3191,7 +3385,7 @@ function say(word,lvl){
   try{
     if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(word);
-    u.lang='it-IT'; if(itVoice) u.voice=itVoice;
+    u.lang=locale(); if(itVoice) u.voice=itVoice;
     /* l'annunciatore si esalta col combo, stile Candy Crush */
     const L=Math.max(1,Math.min(lvl||1,6));
     if(S.settings.theme==='arcade'){ u.pitch=Math.min(2,1+(L-1)*0.14); u.rate=1+(L-1)*0.05; }
@@ -3455,8 +3649,8 @@ document.querySelector('#btn-pin').onclick=()=>{
    HEADER / TABS
    ====================================================================== */
 function renderStreak(){
-  { const _d=new Date(); $('#dateline').innerHTML='<span class="d-num">'+_d.getDate()+'</span><span class="d-mese">'+_d.toLocaleDateString('it-IT',{month:'long'})+'</span>'; }
-  try{ const gd=$('#gb-dow'); if(gd) gd.textContent=new Date().toLocaleDateString('it-IT',{weekday:'long'}); }catch(_){}
+  { const _d=new Date(); $('#dateline').innerHTML='<span class="d-num">'+_d.getDate()+'</span><span class="d-mese">'+_d.toLocaleDateString(locale(),{month:'long'})+'</span>'; }
+  try{ const gd=$('#gb-dow'); if(gd) gd.textContent=new Date().toLocaleDateString(locale(),{weekday:'long'}); }catch(_){}
 }
 function scrollToSoft(sel){
   try{
@@ -3786,7 +3980,7 @@ try{ if(anzianita(S)>=1&&SR){
 function startRec(){
   committedText=''; sessionFinal=''; interimText='';
   rec=new SR();
-  rec.lang='it-IT'; rec.interimResults=true;
+  rec.lang=locale(); rec.interimResults=true;
   rec.continuous=!SR_ANDROID;   /* iOS: flusso continuo come sempre. Android: UN finale per sessione - impossibile duplicare - e il riavvio in onend cuce i segmenti */
   rec.onstart=()=>{
     /* il microfono è DAVVERO attivo: solo ora invitiamo a parlare ed entriamo in rosso */
@@ -4034,7 +4228,13 @@ document.querySelector('#btn-save').onclick=async()=>{
          l'osservatrice e domattina il frutto sappiano come parlare. */
       addDiary(transcript,[],[],'','','',pesoLocale(transcript));
       save(); render();
-      toast('Nota salvata nel diario');
+      /* v212: la nota e salva, e adesso l'estrattore di casa guarda cosa c'era
+         dentro. Quello che trova si PROPONE: non entra da solo nella lista. */
+      let _prop=[];
+      try{ _prop=distillaLocale(transcript,todayKey()); }catch(_){ _prop=[]; }
+      let _aperto=false;
+      try{ _aperto=apriProposte(_prop); }catch(_){ _aperto=false; }
+      toast(_aperto?'Nota salvata. Ho sentito qualcosa da fare.':'Nota salvata nel diario');
       try{ semeRaccolto(); }catch(_){}
       resetCapture();
       foglioDopoVoce();
@@ -4053,6 +4253,17 @@ document.querySelector('#btn-save').onclick=async()=>{
     else if(code==='BUSY') msg='Server IA sovraccarichi: riprova tra poco. Trascritto salvato.';
     else if(err&&err.name==='AbortError') msg='IA troppo lenta (timeout): riprova. Trascritto salvato.';
     else if(err instanceof TypeError) msg='Rete assente o bloccata: controlla la connessione. Trascritto salvato.';
+    /* v212 — IL CASO DEL 10 AGOSTO. Davide aveva finito i crediti senza saperlo,
+       ha dettato una nota e quella e finita solo nel diario: momento perso, e
+       l'app non gliel'ha nemmeno detto in modo utile. Adesso, quando il modello
+       doveva rispondere e non ce l'ha fatta - per qualunque ragione - subentra
+       l'estrattore di casa e propone quello che ha sentito. La nota non basta:
+       serve che le cose da fare escano comunque. */
+    let _propE=[];
+    try{ _propE=distillaLocale(transcript,todayKey()); }catch(_){ _propE=[]; }
+    let _apertoE=false;
+    try{ _apertoE=apriProposte(_propE); }catch(_){ _apertoE=false; }
+    if(_apertoE) msg=msg.replace(/Trascritto salvato\.?/,'Intanto le cerco io.');
     toast(msg);
   }finally{
     clearInterval(wispTimer);
@@ -4062,6 +4273,362 @@ document.querySelector('#btn-save').onclick=async()=>{
     renderFlow();
   }
 };
+/*MICROFONO-LOCALE-INIZIO*/
+
+/* ── i mattoni ────────────────────────────────────────────────────────────── */
+function _micNorm(t){
+  let s=String(t||'').toLowerCase();
+  try{ s=s.normalize('NFD').replace(/[̀-ͯ]/g,''); }catch(_){}
+  return s.replace(/\s+/g,' ').trim();
+}
+/* i verbi all'infinito: in italiano finiscono in -are/-ere/-ire, anche riflessivi.
+   Da soli non bastano (anche «mare» finisce in -are), e infatti non si cercano da
+   soli: si cercano dopo un marcatore, o in testa a una frase. */
+/* La radice puo essere corta: «dare», «fare», «dire» hanno una lettera sola prima
+   della desinenza, e chiedendone tre si perdevano «Fare 1200 €» e «dare
+   un'occhiata». Serve solo che la parola intera arrivi a quattro lettere. */
+const _MIC_INF=/^[a-z']+(?:are|arsi|ere|ersi|ire|irsi|arla|arlo|arli|arle|erla|erlo|irla|irlo)$/;
+/* «fare» stava qui dentro come verbo servile, e si mangiava «Fare 1200 € prima di
+   domenica»: e uno dei verbi piu concreti che ci siano. Restano fuori solo quelli
+   che da soli non sono mai una cosa da fare. */
+const _MIC_NONVERBI=new Set(['essere','avere','stare','potere','volere','dovere','sapere',
+  'mare','sere','pere','vere','opere','genere','carattere','padre','madre','ere','aria','storie',
+  'care','cara','ore','rare','pure','dure','mere','chiare','sere','vere','oltre','altre','nostre','vostre']);
+/* parole che finiscono in -o e non sono verbi alla prima persona: senza questo
+   elenco «il momento», «un attimo», «il giorno» diventerebbero cose da fare. */
+const _MIC_NON_IO=new Set(['solo','modo','tempo','giorno','momento','ufficio','primo','secondo','anno',
+  'mese','tutto','poco','molto','troppo','subito','presto','dopo','prima','sopra','sotto','dentro',
+  'fuori','vicino','lontano','domano','pero','ancoro','bello','nuovo','vecchio','stesso','altro',
+  'quello','questo','loro','uno','no','ho','so','sto','vo','po','pomeriggio','lavoro','numero',
+  'gruppo','punto','posto','pezzo','pezzo','conto','termine','sguardo','ricordo','bisogno','esempio',
+  'periodo','progetto','contratto','appuntamento','corso','centro','stato','caso','cambio','peso',
+  /* i servili non sono la cosa da fare: se dopo «devo» non c'e un infinito, il
+     titolo non puo essere «devo». Usciva «Devo essere in via Saluzzo 46». */
+  'devo','debbo','voglio','posso','riesco','dovro','saro','faro','andro']);
+const _MIC_TEMPO_FUT=/\b(domani|dopodomani|stasera|stamattina|stamane|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|alle |dalle |entro |fra |tra |prossim|a partire da)/;
+function _micEInfinito(p){ return p.length>=4&&_MIC_INF.test(p)&&!_MIC_NONVERBI.has(p); }
+/* «essere» e «stare» da soli non sono cose da fare, ma «devo essere in via
+   Saluzzo alle sei e un quarto» e un appuntamento in piena regola. Valgono solo
+   quando reggono un luogo, ed e la forma con cui si dicono gli appuntamenti. */
+const _MIC_LUOGO=/^(in|a|al|allo|alla|ai|alle|agli|da|dal|dalla|presso|davanti|sotto|sopra|vicino)$/;
+function _micEsserciDove(norm,i){
+  return (norm[i]==='essere'||norm[i]==='stare')&&norm[i+1]&&_MIC_LUOGO.test(norm[i+1]);
+}
+
+/* i marcatori che annunciano una cosa da fare. Presi dalle sue note vere:
+   «devo contattare», «ho da contattare», «mi devo ricordare che devo chiedere»,
+   «quando possibile dare un'occhiata», «ho un appuntamento per vedere». */
+const _MIC_MARCA=[
+  'devo','dovrei','dovro','ho da','mi tocca','bisogna','voglio','vorrei','mi ricordo che devo',
+  'mi devo ricordare di','devo ricordarmi di','mi sa che devo','ho bisogno di','e ora di',
+  'appuntamento per','serve','va','provo a','cerco di','penso di','conto di','mi piacerebbe',
+  'quando possibile','appena posso','se posso','mi ricordo che','ricordarmi di','da'
+];
+/* le parole che chiudono un titolo: quello che viene dopo e contorno, non la cosa */
+const _MIC_TAGLIA=/\b(perche|perche'|cosi|siccome|dato che|visto che|in modo tale che|in modo che|altrimenti|comunque|pero|ma insomma)\b/;
+
+/* ── il tempo ─────────────────────────────────────────────────────────────── */
+const _MIC_DOW={'lunedi':1,'martedi':2,'mercoledi':3,'giovedi':4,'venerdi':5,'sabato':6,'domenica':0};
+const _MIC_MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const _MIC_NUM={'una':1,'uno':1,'un':1,'due':2,'tre':3,'quattro':4,'cinque':5,'sei':6,'sette':7,'otto':8,
+  'nove':9,'dieci':10,'undici':11,'dodici':12,'tredici':13,'quattordici':14,'quindici':15,'sedici':16,
+  'diciassette':17,'diciotto':18,'diciannove':19,'venti':20,'ventuno':21,'trenta':30};
+function _micISO(d){ return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function _micPiu(oggiISO,n){ const d=new Date(oggiISO+'T12:00:00'); d.setDate(d.getDate()+n); return _micISO(d); }
+function _micQuando(t,oggiISO){
+  const s=_micNorm(t);
+  if(/\bdopodomani\b/.test(s)) return _micPiu(oggiISO,2);
+  if(/\bdomani\b/.test(s)) return _micPiu(oggiISO,1);
+  if(/\b(oggi|stasera|stamattina|stamane|stanotte|nel pomeriggio|a pranzo)\b/.test(s)) return oggiISO;
+  let m=s.match(/\bfra\s+(\w+)\s+giorn/)||s.match(/\btra\s+(\w+)\s+giorn/);
+  if(m){ const n=_MIC_NUM[m[1]]||parseInt(m[1],10); if(n>0&&n<400) return _micPiu(oggiISO,n); }
+  m=s.match(/\b(?:fra|tra)\s+(\w+)\s+settiman/);
+  if(m){ const n=_MIC_NUM[m[1]]||parseInt(m[1],10); if(n>0&&n<60) return _micPiu(oggiISO,n*7); }
+  m=s.match(/\b(?:fra|tra)\s+(\w+)\s+mes/);
+  if(m){ const n=_MIC_NUM[m[1]]||parseInt(m[1],10); if(n>0&&n<40) return _micPiu(oggiISO,n*30); }
+  m=s.match(/\b(\d{1,2})\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\b/);
+  if(m){ const g=+m[1], mese=_MIC_MESI.indexOf(m[2]); const oggi=new Date(oggiISO+'T12:00:00');
+    let anno=oggi.getFullYear(); const d=new Date(anno,mese,g,12,0,0);
+    /* «il 4 agosto» detto il 10 agosto vuol dire sei giorni fa, non fra un anno.
+       Si passa all'anno prossimo solo se la data e vecchia di piu di un mese. */
+    if((oggi-d)>31*86400000) d.setFullYear(anno+1);
+    return _micISO(d); }
+  for(const g in _MIC_DOW){
+    if(new RegExp('\\b'+g+'\\b').test(s)){
+      const oggi=new Date(oggiISO+'T12:00:00'); let delta=(_MIC_DOW[g]-oggi.getDay()+7)%7;
+      if(delta===0) delta=7;                       /* «giovedi» detto di giovedi vuol dire il prossimo */
+      return _micPiu(oggiISO,delta);
+    }
+  }
+  return '';
+}
+function _micOra(t){
+  const s=_micNorm(t);
+  let m=s.match(/\balle\s+(\d{1,2})[:.](\d{2})\b/); if(m) return _mic2(m[1])+':'+m[2];
+  m=s.match(/\b(?:alle|dalle|entro le|per le)\s+(\d{1,2})\b/);
+  if(m){ let h=+m[1]; if(h<=12&&/\b(pomeriggio|sera|stasera)\b/.test(s)) h+=12; if(h<24) return _mic2(h)+':00'; }
+  m=s.match(/\b(?:alle|dalle|entro le|per le)\s+([a-z]+)\b/);
+  if(m&&_MIC_NUM[m[1]]!==undefined){ let h=_MIC_NUM[m[1]];
+    if(h<=12&&/\b(pomeriggio|sera|stasera)\b/.test(s)) h+=12;
+    if(h<=12&&/\bdi mattina|del mattino|mattina\b/.test(s)&&h<7) h+=0;
+    if(h>=0&&h<24) return _mic2(h)+':00'; }
+  if(/\bstasera\b/.test(s)) return '20:00';
+  if(/\b(stamattina|stamane|di mattina|del mattino)\b/.test(s)) return '09:00';
+  if(/\ba pranzo\b/.test(s)) return '13:00';
+  if(/\bnel pomeriggio|di pomeriggio\b/.test(s)) return '15:00';
+  return '';
+}
+function _mic2(n){ n=+n; return (n<10?'0':'')+n; }
+function _micPrio(t){
+  const s=_micNorm(t);
+  if(/\b(urgente|urgentissimo|assolutamente|entro oggi|subito|non posso rimandare)\b/.test(s)) return 1;
+  if(/\b(importante|mi preme|entro domani|il prima possibile|quanto prima)\b/.test(s)) return 2;
+  return 3;
+}
+
+/* ── il taglio in frasi ───────────────────────────────────────────────────── */
+function _micFrasi(testo){
+  return String(testo||'')
+    .split(/(?<=[.;!?])\s+|\s+(?:e\s+poi|poi|inoltre|dopodiche|dopo di che)\s+/i)
+    /* una parola sola basta se e un infinito: la sua nota piu corta e «Fumare» */
+    .map(x=>x.trim()).filter(x=>x&&(x.split(/\s+/).length>=2||_micEInfinito(_micNorm(x))));
+}
+
+/* ── il titolo ────────────────────────────────────────────────────────────── */
+function _micTitolo(parole,da){
+  let fine=parole.length;
+  for(let i=da;i<parole.length;i++){
+    if(_MIC_TAGLIA.test(_micNorm(parole[i]))){ fine=i; break; }
+  }
+  let out=parole.slice(da,fine);
+  /* via la coda temporale: la data e l'ora vivono nei loro campi, non nel nome */
+  while(out.length>2&&/^(oggi|domani|dopodomani|stasera|stamattina|stamane|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|alle|dalle|entro|per|il|la|nel|in|a|di)$/.test(_micNorm(out[out.length-1]))) out.pop();
+  out=out.slice(0,12);
+  let t=out.join(' ').replace(/[,;:]+$/,'').trim();
+  if(t.length<3) return '';
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+
+/* ── L'ESTRATTORE ─────────────────────────────────────────────────────────── */
+function distillaLocaleIT(testo,oggiISO){
+  const fuori=[], visti={};
+  const tuttoQuando=_micQuando(testo,oggiISO), tuttoOra=_micOra(testo);
+  for(const frase of _micFrasi(testo)){
+    const parole=frase.split(/\s+/);
+    const norm=parole.map(_micNorm);
+    let da=-1;
+    /* 1 · un marcatore, e subito dopo un infinito */
+    for(let i=0;i<norm.length&&da<0;i++){
+      for(const mk of _MIC_MARCA){
+        const pezzi=mk.split(' ');
+        if(norm.slice(i,i+pezzi.length).join(' ')===mk){
+          for(let j=i+pezzi.length;j<Math.min(i+pezzi.length+3,norm.length);j++){
+            if(_micEInfinito(norm[j])||_micEsserciDove(norm,j)){ da=j; break; }
+          }
+        }
+        if(da>=0) break;
+      }
+    }
+    /* 2 · un infinito in testa alla frase, o quasi: «Implementare in Sentiero…»,
+           «Quando possibile dare un'occhiata…». Tre parole di tolleranza bastano
+           a coprire gli attacchi che usa davvero. */
+    if(da<0){ for(let i=0;i<Math.min(3,norm.length);i++){ if(_micEInfinito(norm[i])){ da=i; break; } } }
+    /* 3 · «per» + infinito: «un appuntamento per vedere un appartamento» */
+    if(da<0){
+      for(let i=0;i<norm.length-1;i++){
+        if(norm[i]==='per'&&_micEInfinito(norm[i+1])){ da=i+1; break; }
+      }
+    }
+    /* 4 · IL PRESENTE CHE VALE PER FUTURO. In italiano parlato «domani mattina
+           alle nove misuro la porta» e un impegno quanto «devo misurare». Il
+           segnale non e il verbo da solo - sarebbe rumore - ma il verbo alla
+           prima persona INSIEME a un tempo futuro nella stessa frase. */
+    if(da<0&&_MIC_TEMPO_FUT.test(_micNorm(frase))){
+      for(let i=0;i<norm.length;i++){
+        const w=norm[i];
+        if(w.length>=4&&/o$/.test(w)&&!_MIC_NON_IO.has(w)&&!/^(gi|se|ci|vi)o$/.test(w)){ da=i; break; }
+      }
+    }
+    /* 5 · «e» / «ed» + infinito: «Nota per il 4 agosto e scrivere ad Adele» */
+    if(da<0){
+      for(let i=0;i<norm.length-1;i++){
+        if((norm[i]==='e'||norm[i]==='ed')&&_micEInfinito(norm[i+1])){ da=i+1; break; }
+      }
+    }
+    if(da<0) continue;
+    /* LA NEGAZIONE, e non e un dettaglio: su «no non provare a fumare erba»
+       usciva la proposta «Provare a fumare erba», cioe il contrario esatto di
+       quello che aveva detto. Una nota che nega non e una cosa da fare: si lascia
+       stare. Meglio perdere una proposta che ribaltarne il senso. */
+    const primaDelVerbo=norm.slice(Math.max(0,da-3),da).join(' ');
+    if(/\bnon\b|\bmai\b|\bniente\b/.test(primaDelVerbo)||/^no\b/.test(norm[0])) continue;
+    const titolo=_micTitolo(parole,da);
+    if(!titolo) continue;
+    const chiave=_micNorm(titolo);
+    if(visti[chiave]) continue;
+    visti[chiave]=1;
+    fuori.push({titolo:titolo,
+                quando:_micQuando(frase,oggiISO)||tuttoQuando,
+                ora:_micOra(frase)||tuttoOra,
+                prio:_micPrio(frase)});
+    if(fuori.length>=6) break;      /* una nota non fa nascere una lista infinita */
+  }
+  return fuori;
+}
+/*MICROFONO-LOCALE-FINE*/
+/*MICROFONO-EN-INIZIO*/
+/* ══ L'ESTRATTORE CHE LEGGE IL PACCHETTO (v218) ═════════════════════════════
+   Gli schemi non sono piu scritti qui: stanno in lingue/<lingua>.json. Qui c'e
+   solo il mestiere - trova il marcatore, prendi il verbo, taglia la coda
+   temporale - e vale per qualunque lingua che porti i suoi schemi.
+
+   Senza pacchetto non estrae niente. E la scelta giusta: leggere una lingua con
+   gli schemi di un'altra non da meno proposte, ne da di sbagliate. */
+function _micxNorm(t){
+  let s=String(t||'').toLowerCase();
+  try{ s=s.normalize('NFD').replace(/[̀-ͯ]/g,''); }catch(_){}
+  return s.replace(/[’‘]/g,"'").replace(/\bdon't\b/g,'dont').replace(/\s+/g,' ').trim();
+}
+function _micxPack(){ const p=PACCHETTO; return (p&&p.micro)?p.micro:null; }
+function _micxQuando(t,oggiISO){
+  const m=_micxPack(); if(!m) return '';
+  const s=_micxNorm(t), N=m.numeri||{};
+  if(/\bday after tomorrow\b/.test(s)) return _micPiu(oggiISO,2);
+  if(/\btomorrow\b/.test(s)) return _micPiu(oggiISO,1);
+  if(/\b(today|tonight|this morning|this afternoon|this evening|at lunch)\b/.test(s)) return oggiISO;
+  let x=s.match(/\bin\s+(\w+)\s+days?\b/);
+  if(x){ const n=N[x[1]]||parseInt(x[1],10); if(n>0&&n<400) return _micPiu(oggiISO,n); }
+  x=s.match(/\bin\s+(\w+)\s+weeks?\b/);
+  if(x){ const n=N[x[1]]||parseInt(x[1],10); if(n>0&&n<60) return _micPiu(oggiISO,n*7); }
+  x=s.match(/\bin\s+(\w+)\s+months?\b/);
+  if(x){ const n=N[x[1]]||parseInt(x[1],10); if(n>0&&n<40) return _micPiu(oggiISO,n*30); }
+  if(/\bnext week\b/.test(s)) return _micPiu(oggiISO,7);
+  const mesi=m.mesi||[], elenco=mesi.join('|');
+  if(elenco){
+    x=s.match(new RegExp('\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?('+elenco+')\\b'))
+    ||s.match(new RegExp('\\b('+elenco+')\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b'));
+    if(x){
+      let g,me;
+      if(/^\d/.test(x[1])){ g=+x[1]; me=mesi.indexOf(x[2]); } else { me=mesi.indexOf(x[1]); g=+x[2]; }
+      if(me>=0){
+        const oggi=new Date(oggiISO+'T12:00:00'), d=new Date(oggi.getFullYear(),me,g,12,0,0);
+        if((oggi-d)>31*86400000) d.setFullYear(oggi.getFullYear()+1);
+        return _micISO(d);
+      }
+    }
+  }
+  const giorni=m.giorni||{};
+  for(const g in giorni){
+    if(new RegExp('\\b'+g+'\\b').test(s)){
+      const oggi=new Date(oggiISO+'T12:00:00'); let delta=(giorni[g]-oggi.getDay()+7)%7;
+      if(delta===0) delta=7;
+      return _micPiu(oggiISO,delta);
+    }
+  }
+  return '';
+}
+function _micxOra(t){
+  const m=_micxPack(); if(!m) return '';
+  const s=_micxNorm(t), N=m.numeri||{};
+  let x=s.match(/\b(?:at|by|before)\s+(\d{1,2}):(\d{2})\s*(am|pm)?\b/);
+  if(x){ let h=+x[1]; if(x[3]==='pm'&&h<12) h+=12; if(x[3]==='am'&&h===12) h=0; return _mic2(h)+':'+x[2]; }
+  x=s.match(/\b(?:at|by|before)\s+(\d{1,2})\s*(am|pm)\b/);
+  if(x){ let h=+x[1]; if(x[2]==='pm'&&h<12) h+=12; if(x[2]==='am'&&h===12) h=0; return _mic2(h)+':00'; }
+  x=s.match(/\b(?:at|by|before)\s+(\d{1,2})\b/);
+  if(x){ let h=+x[1]; if(h<=12&&/\b(afternoon|evening|tonight|pm)\b/.test(s)) h+=12; if(h<24) return _mic2(h)+':00'; }
+  x=s.match(/\b(?:at|by|before)\s+([a-z]+)\b/);
+  if(x&&N[x[1]]!==undefined&&x[1]!=='a'&&x[1]!=='an'){
+    let h=N[x[1]]; if(h<=12&&/\b(afternoon|evening|tonight|pm)\b/.test(s)) h+=12;
+    if(h>=0&&h<24) return _mic2(h)+':00';
+  }
+  if(/\btonight\b/.test(s)) return '20:00';
+  if(/\bthis morning\b/.test(s)) return '09:00';
+  if(/\bat lunch\b/.test(s)) return '13:00';
+  if(/\bthis afternoon\b/.test(s)) return '15:00';
+  return '';
+}
+function _micxPrio(t){
+  const s=_micxNorm(t);
+  if(/\b(urgent|urgently|asap|right away|cant wait|cannot wait)\b/.test(s)) return 1;
+  if(/\b(important|matters|by tomorrow|as soon as possible|soon)\b/.test(s)) return 2;
+  return 3;
+}
+function _micxTitolo(parole,da,m){
+  const taglia=m.taglia?new RegExp(m.taglia,'i'):null;
+  let fine=parole.length;
+  if(taglia) for(let i=da;i<parole.length;i++){ if(taglia.test(_micxNorm(parole[i]))){ fine=i; break; } }
+  let out=parole.slice(da,fine).slice(0,12);
+  let t=out.join(' ').replace(/[,;:]+$/,'').trim();
+  const code=(m.code||[]).map(r=>new RegExp(r,'i'));
+  let cambia=true,giri=0;
+  while(cambia&&giri++<6){
+    cambia=false;
+    for(const re of code){
+      const n=t.replace(re,'');
+      if(n!==t&&n.trim().split(/\s+/).length>=2){ t=n.trim(); cambia=true; }
+    }
+  }
+  t=t.replace(/[,;:]+$/,'').trim();
+  if(t.length<2) return '';
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+function distillaLocalePack(testo,oggiISO){
+  const m=_micxPack(); if(!m) return [];
+  const verbi=new Set(m.verbi||[]), luogo=m.luogo?new RegExp(m.luogo):null;
+  const eVerbo=w=>verbi.has(w);
+  const fuori=[], visti={};
+  const tuttoQuando=_micxQuando(testo,oggiISO), tuttoOra=_micxOra(testo);
+  const frasi=String(testo||'').split(/(?<=[.;!?])\s+|\s+(?:and then|then|also|after that)\s+/i)
+    .map(x=>x.trim()).filter(Boolean);
+  for(const frase of frasi){
+    const parole=frase.split(/\s+/);
+    const norm=parole.map(w=>_micxNorm(w).replace(/[^a-z0-9']/g,''));
+    let da=-1;
+    for(let i=0;i<norm.length&&da<0;i++){
+      for(const mk of (m.marcatori||[])){
+        const pezzi=mk.split(' ');
+        if(norm.slice(i,i+pezzi.length).join(' ')===mk){
+          for(let j=i+pezzi.length;j<Math.min(i+pezzi.length+3,norm.length);j++){
+            if(norm[j]==='to') continue;
+            if(eVerbo(norm[j])||(norm[j]==='be'&&luogo&&luogo.test(norm[j+1]||''))){ da=j; break; }
+          }
+        }
+        if(da>=0) break;
+      }
+    }
+    if(da<0){ for(let i=0;i<norm.length-1;i++){ if(norm[i]==='to'&&eVerbo(norm[i+1])){ da=i+1; break; } } }
+    if(da<0){ for(let i=0;i<Math.min(2,norm.length);i++){ if(eVerbo(norm[i])){ da=i; break; } } }
+    if(da<0) continue;
+    const prima=norm.slice(Math.max(0,da-3),da).join(' ');
+    if(/\b(dont|not|never|no)\b/.test(prima)&&!/forget/.test(prima)) continue;
+    if(/\b(yesterday|last night|already)\b/.test(_micxNorm(frase))
+       &&!/\b(need to|have to|should|must|remind)\b/.test(_micxNorm(frase))) continue;
+    const titolo=_micxTitolo(parole,da,m);
+    if(!titolo) continue;
+    const k=_micxNorm(titolo);
+    if(visti[k]) continue;
+    visti[k]=1;
+    fuori.push({titolo:titolo,quando:_micxQuando(frase,oggiISO)||tuttoQuando,
+                ora:_micxOra(frase)||tuttoOra,prio:_micxPrio(frase)});
+    if(fuori.length>=6) break;
+  }
+  return fuori;
+}
+/*MICROFONO-EN-FINE*/
+
+/* ══ LO SMISTAMENTO (v217) ═══════════════════════════════════════════════════
+   Una porta sola, due motori dietro. Chi ha il telefono in italiano passa da
+   quello misurato sulle 85 note vere; chi ce l'ha in inglese passa dal secondo.
+   Una lingua che non abbiamo non prende il motore sbagliato: non prende niente,
+   e la nota resta nel diario come prima. Meglio tacere che estrarre una cosa da
+   fare leggendo il tedesco con le regole dell'italiano. */
+function distillaLocale(testo,oggiISO){
+  const l=(typeof linguaApp==='function')?linguaApp():'it';
+  if(l==='it') return distillaLocaleIT(testo,oggiISO);
+  return distillaLocalePack(testo,oggiISO);   /* e se il pacchetto non c'e, tace */
+}
+
+
 /* ══ IL PESO SENZA MODELLO (v206) ═══════════════════════════════════════════
    Il marchio del peso lo mette il modello, e lo mette bene: legge il testo e
    capisce. Ma senza chiave nessuna voce viene marcata MAI, e quindi tutta la
@@ -4162,7 +4729,7 @@ async function askClaude(transcript){
   const giorni=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
   const oggiStr=giorni[oggi.getDay()]+' '+todayKey();
   const sched=todaysScheduled().map(t=>({id:t.id,titolo:t.titolo}));
-  const sys='Sei il motore di distillazione di "Sentiero", diario vocale personale in italiano. OGGI è '+oggiStr+', ora locale '+oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+'.\n'+
+  const sys='Sei il motore di distillazione di "Sentiero", diario vocale personale in italiano. OGGI è '+oggiStr+', ora locale '+oggi.toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit'})+'.\n'+
 'Ricevi: (1) le quest esistenti in JSON, (2) le task già pianificate per oggi, (3) i rituali ricorrenti esistenti, (4) il trascritto vocale grezzo (può contenere errori di riconoscimento).\n'+
 'COMPITI:\n'+
 '1. Estrai OGNI attività distinta come quest separata. Ignora riempitivi, esitazioni, divagazioni.\n'+
@@ -4498,7 +5065,7 @@ function fruttoPacchetto(S,tk){
   const ieri=_fIeri(tk);
   const p={};
   try{ const d=new Date(ieri+'T12:00:00');
-    p.ieri=d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'}); }catch(_){ p.ieri=ieri; }
+    p.ieri=d.toLocaleDateString(locale(),{weekday:'long',day:'numeric',month:'long'}); }catch(_){ p.ieri=ieri; }
   p.chi_ti_legge=(S.settings&&S.settings.genere==='m')?'un uomo':(S.settings&&S.settings.genere==='f')?'una donna':'non lo sai: non usare accordi di genere';
   const fatteIds=Object.keys((S.checks&&S.checks[ieri])||{}).filter(k=>S.checks[ieri][k]===true);
   const nome=id=>{ const t=(S.scheduled||[]).find(x=>x&&x.id===id)||(S.quests||[]).find(x=>x&&x.id===id)||(S.questLog||[]).find(x=>x&&x.id===id); return t?_fTitolo(S,t):null; };
@@ -4701,7 +5268,7 @@ async function condividiFrutto(f){
     x.strokeStyle='rgba(232,188,106,.55)'; x.lineWidth=3; x.strokeRect(46,46,W-92,Hc-92);
     x.textAlign='left';
     const d=new Date(f.tk+'T12:00:00');
-    const quando=d.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+    const quando=d.toLocaleDateString(locale(),{weekday:'long',day:'numeric',month:'long'});
     x.font='600 30px -apple-system,sans-serif'; x.fillStyle='#E8A84C';
     x.fillText(('IL FRUTTO DI '+quando).toUpperCase(),96,150);
     let y=260;
@@ -5333,7 +5900,11 @@ async function observe(silent){
     }
     if(!result||!result.note||!String(result.note).trim()){ result=buildObserverLocal(digest); try{ result._locale=true; }catch(_){} } /* fallback: offline, IA non disponibile o nota vuota */
     try{ regCantiere('digest',{ms:Date.now()-t0Dig,msg:(result&&result._locale)?'locale':'ok'}); }catch(_){}
-    const safeNote=(result&&result.note&&String(result.note).trim())?result.note:'Pochi segnali per ora. Lascia una riga o spunta una cosa: al prossimo sguardo il pattern emerge.';
+    /* v213: anche la nota della sera del modello viene riparata prima di essere
+       scritta. Il ripiego resta l'ultima parola quando non resta niente. */
+    let _n=raffinaRiga((result&&result.note)||'');
+    if(_n&&rigaDaButtare(_n)){ try{ regCantiere('digest',{msg:'veto: '+rigaDaButtare(_n)}); }catch(_){} _n=''; }
+    const safeNote=_n||'Pochi segnali per ora. Lascia una riga o spunta una cosa: al prossimo sguardo il pattern emerge.';
     const entry={
       id:'o'+Date.now().toString(36),
       createdAt:new Date().toISOString(),
@@ -5359,7 +5930,7 @@ function maybeObserveAuto(){
     if(!haDati) return;                                                  /* troppo poco da osservare */
   }catch(_){}
 }
-function fmtObsDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
+function fmtObsDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString(locale(),{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } }
 function streamInto(el,text,opt){
   if(!el) return;
   opt=opt||{};
@@ -6835,6 +7406,50 @@ function sussurroLocale(pkg,titolo){
   return '';
 }
 
+
+/* ══ IL GIUDICE DAVANTI ANCHE AL MODELLO (v213) ══════════════════════════════
+   Fino alla v212 il livello gratuito aveva un controllo di qualita PIU SEVERO di
+   quello a pagamento. Il motore di casa passa da _ossGiudica prima di mostrare
+   una riga; il frutto del modello passa da fruttoVeto; ma il sussurro e la nota
+   della sera scritti dal modello andavano dritti sullo schermo, senza che
+   nessuno li leggesse.
+
+   Misurato sulle 138 righe vere che il modello ha scritto nei backup:
+     · il 59% ha un TRATTINO, che i suoi stessi prompt vietano
+     · il 67% e un FIATO UNICO: una riga lunga e mai un punto in mezzo
+     · solo l'8% e da buttare davvero
+
+   Quindi non si butta: si RIPARA. Il trattino diventa un punto - che e proprio
+   il ricambio che il prompt chiede - e la parola dopo torna minuscola. Sulle
+   righe vere: trattini dal 59% allo 0%, fiato unico dal 67% al 12%.
+
+   Si butta solo cio che non si puo aggiustare senza riscrivere: un'esclamazione,
+   un'emoji, una prescrizione, piu di un numero. Quelle sono violazioni del
+   contratto, non difetti di forma, e il silenzio e meglio.
+
+   NOTA ONESTA sulle misure: dopo la riparazione R14 e R11 salgono, ma non e un
+   peggioramento. Sono due regole che si applicano solo alle righe di piu frasi,
+   e prima quelle righe erano una frase sola: cambia la platea, non il testo. */
+function raffinaRiga(t){
+  let r=String(t||'').trim();
+  if(!r) return '';
+  r=r.replace(/\s+[—–]\s+/g,'. ').replace(/\s+-\s+/g,'. ');
+  r=r.replace(/\.\s*\./g,'.');
+  r=r.replace(/\.\s+([A-ZÀ-Ý])/g,(m,c)=>'. '+c.toLowerCase());
+  if(/^[A-ZÀ-Ý]/.test(r)) r=r.charAt(0).toLowerCase()+r.slice(1);
+  return r.replace(/\s{2,}/g,' ').trim();
+}
+function rigaDaButtare(t){
+  const r=String(t||'');
+  if(!r.trim()) return 'vuota';
+  if(r.indexOf('!')>=0) return 'esclamazione';
+  for(let i=0;i<r.length;i++){ if(r.charCodeAt(i)>0x2100) return 'emoji'; }
+  if(/\b(devi|dovresti|dovrai|prova a|cerca di|ricorda di)\b/i.test(r)) return 'prescrizione';
+  const senzaOre=r.replace(/\b\d{1,2}[:.]\d{2}\b/g,' ');
+  if((senzaOre.match(/\b\d+\b/g)||[]).length>1) return 'piu di un numero';
+  return null;
+}
+
 function observerLineFor(el){
   try{
     if(S.settings&&S.settings.obsLine===false) return;                 /* spento dall'utente */
@@ -6867,7 +7482,15 @@ function observerLineFor(el){
       const msLinea=Date.now()-t0Linea;
       if(token!==_lineToken){ return; }                                /* superata da una spunta piu recente: la brace ormai vola per lei */
       if(resL&&resL.riga){
-        const line=resL.riga;
+        /* v213: il giudice davanti anche al modello. Si ripara quello che si puo
+           riparare, e si butta solo cio che il contratto vieta davvero. */
+        const line=raffinaRiga(resL.riga);
+        const male=rigaDaButtare(line);
+        if(male){
+          try{ window._braceEsito(null); }catch(_){}
+          try{ regCantiere('silenzio',{task:title,msg:'veto: '+male,riga:String(resL.riga).slice(0,200)}); }catch(_){}
+          return;
+        }
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
         regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout,salti:resL.salti,stop:resL.stop,effort:resL.effort,pkg:pkgL});
@@ -8074,7 +8697,7 @@ function questWhen(q,tk,domani){
   const overdue=q.quando&&q.quando<tk&&!q.fatto;
   let when='';
   if(q.quando){
-    const lbl=q.quando===tk?'oggi':q.quando===domani?'domani':new Date(q.quando+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+    const lbl=q.quando===tk?'oggi':q.quando===domani?'domani':new Date(q.quando+'T12:00:00').toLocaleDateString(locale(),{weekday:'short',day:'numeric',month:'short'});
     /* v173 (Fase 5): via la parola «in ritardo». Ripetuta su righe consecutive costruiva un muro
        accusatorio, e le Tre Leggi vietano la pressione sul ritardo. Resta la data, spenta:
        la constatazione, non il rimprovero. Il conteggio sta una volta sola, in testa alla sezione. */
@@ -9217,7 +9840,7 @@ async function maybeChiudiCapitolo(){
   finally{ _capitoliBusy=false; }
 }
 function meseNome(mese,maiuscola){
-  try{ const n=new Date(mese+'-15T12:00:00').toLocaleDateString('it-IT',{month:'long'});
+  try{ const n=new Date(mese+'-15T12:00:00').toLocaleDateString(locale(),{month:'long'});
     return maiuscola?(n.charAt(0).toUpperCase()+n.slice(1)):n; }catch(_){ return mese; }
 }
 function renderCapitoli(){   /* la costellazione: cenere=spento, anello oro=parziale, vermiglio=pieno, scintilla=patto */
@@ -9370,9 +9993,9 @@ function renderDiary(){
     const born=Array.isArray(e.born)?e.born:[];
     const done=Array.isArray(e.done)?e.done:[];
     const giorno=d.getDate();
-    const mese=d.toLocaleDateString('it-IT',{month:'short'}).replace('.','');
-    const dow=d.toLocaleDateString('it-IT',{weekday:'long'});
-    const ora=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const mese=d.toLocaleDateString(locale(),{month:'short'}).replace('.','');
+    const dow=d.toLocaleDateString(locale(),{weekday:'long'});
+    const ora=d.toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit'});
     if(e.lascito){
       /* la voce dell'osservatrice: sta nel diario come tutte, ma si riconosce.
          Il bottone dona: e la meta del suo mestiere, «da custodire e magari
@@ -9465,6 +10088,7 @@ function renderSettings(){
      mancanza. Fino alla v206 l'app diceva a chi non aveva la chiave «IA spenta:
      manca la chiave», cioe gli diceva che gli mancava qualcosa mentre gli stava
      dando tutto quello che ha. */
+  try{ renderLingua(); }catch(_){}
   document.querySelector('#version-line').textContent=nomeLivello()+' '+APP_VERSION;
   document.querySelector('#apikey').value=S.apiKey;
   document.querySelector('#sw-sound').classList.toggle('on',S.settings.sound);
@@ -9526,7 +10150,7 @@ function renderSettings(){
       let quando;
       if(t.date){
         const d=new Date(t.date+'T12:00:00');
-        quando=d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+        quando=d.toLocaleDateString(locale(),{day:'numeric',month:'long',year:'numeric'});
       } else {
         quando=t.days.length===7?'ogni giorno':t.days.map(i=>DAYS_IT[i]).join(' ');
       }
@@ -9908,6 +10532,72 @@ document.querySelectorAll('#task-mode button').forEach(b=>{
    La data di nascita si mette QUI, e non si dimentica: e la terza volta che
    quel campo viene aggiunto a una strada nuova (v199 dalla voce, v203 dai
    rituali a mano, v205 da qui), e le prime due volte era stato dimenticato. */
+
+/* ══ IL FOGLIO DELLE PROPOSTE (v212) ════════════════════════════════════════
+   Quello che l'estrattore di casa tira fuori NON entra da solo nella lista: si
+   propone, e tu tocchi quello che vale. Un falso positivo costa un tocco; una
+   quest inventata che si installa da sola costa la fiducia - e la stessa scelta
+   fatta per la rete del peso nella v206.
+   E c'e un vantaggio che il modello non ha: vedi esattamente cosa ha capito. */
+let _propCand=[];
+function apriProposte(cand){
+  _propCand=(cand||[]).slice(0,6);
+  const el=document.getElementById('proposte'), lista=document.getElementById('proposte-lista');
+  if(!el||!lista||!_propCand.length) return false;
+  lista.innerHTML='';
+  _propCand.forEach((c,i)=>{
+    const r=document.createElement('div'); r.className='prop on'; r.dataset.i=String(i);
+    const k=document.createElement('div'); k.className='prop-chk';
+    const t=document.createElement('div'); t.className='prop-txt'; t.textContent=c.titolo;
+    if(c.quando||c.ora){
+      const q=document.createElement('span'); q.className='prop-quando';
+      q.textContent=[c.quando?_propGiorno(c.quando):'',c.ora||''].filter(Boolean).join(' · ');
+      t.appendChild(q);
+    }
+    r.appendChild(k); r.appendChild(t);
+    r.onclick=()=>{ r.classList.toggle('on'); };
+    lista.appendChild(r);
+  });
+  el.classList.remove('hidden');
+  try{ haptic(); }catch(_){}
+  return true;
+}
+function _propGiorno(iso){
+  try{
+    const tk=todayKey();
+    if(iso===tk) return 'oggi';
+    if(iso===localDayKey(new Date(Date.now()+86400000))) return 'domani';
+    const d=new Date(iso+'T12:00:00');
+    return d.toLocaleDateString(locale(),{weekday:'long',day:'numeric',month:'long'});
+  }catch(_){ return iso; }
+}
+function chiudiProposte(){ const el=document.getElementById('proposte'); if(el) el.classList.add('hidden'); _propCand=[]; }
+function tieniProposte(){
+  const lista=document.getElementById('proposte-lista'); if(!lista) return;
+  const scelte=[];
+  lista.querySelectorAll('.prop.on').forEach(r=>{ const c=_propCand[+r.dataset.i]; if(c) scelte.push(c); });
+  chiudiProposte();
+  if(!scelte.length) return;
+  if(!Array.isArray(S.quests)) S.quests=[];
+  const nati=[];
+  scelte.forEach(c=>{
+    const q={id:uid(),titolo:clampStr(c.titolo,LIMITS.TITLE),note:'',quando:c.quando||'',ora:c.ora||'',
+             prio:c.prio||3,fatto:false,nata:todayKey(),monte:''};
+    /* dalla stessa porta delle quest del modello: la validazione e una sola */
+    const prima=S.quests.length;
+    S.quests=sortQuests(sanitizeQuests([...S.quests,q]));
+    if(S.quests.length>prima) nati.push(q.id);
+  });
+  save();
+  try{ render(nati); }catch(_){}
+  try{ playEventSound('questCreated'); }catch(_){}
+  try{ haptic(); }catch(_){}
+  try{ toast(nati.length===1?'Una cosa tenuta':(nati.length+' cose tenute')); }catch(_){}
+}
+document.querySelector('#proposte-no').onclick=chiudiProposte;
+document.querySelector('#proposte-ok').onclick=tieniProposte;
+document.querySelector('#proposte').onclick=(e)=>{ if(e.target&&e.target.id==='proposte') chiudiProposte(); };
+
 function apriNascita(apri){
   const f=document.querySelector('#nascita-form'), b=document.querySelector('#nascita-apri');
   if(!f||!b) return;
@@ -9986,6 +10676,27 @@ function scheduleReminders(){
 /* ======================================================================
    BACKUP
    ====================================================================== */
+/* v215: la scelta della lingua. Cambia la dettatura, le date e l'attributo lang
+   della pagina; l'interfaccia resta in italiano finche non c'e la tabella delle
+   scritte, e la nota qui sotto lo dice invece di lasciarlo credere. */
+function renderLingua(){
+  const seg=document.querySelector('#seg-lingua'); if(!seg) return;
+  const scelta=(S.settings&&S.settings.lingua)||'';
+  seg.querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('on',(b.dataset.lingua||'')===scelta);
+    b.onclick=()=>{
+      S.settings.lingua=b.dataset.lingua||'';
+      save(); accendiLingua().catch(function(){});
+      try{ render(); }catch(_){}
+      try{ toast('Lingua: '+(LINGUE_NOTE[linguaApp()]||{}).nome); }catch(_){}
+    };
+  });
+  const n=document.querySelector('#lingua-note');
+  if(n) n.textContent=linguaApp()==='it'
+    ? 'Dettatura e date in italiano.'
+    : 'Dettatura e date in ' + ((LINGUE_NOTE[linguaApp()]||{}).nome||'') + '. Le scritte dell\u2019app sono ancora in italiano.';
+}
+
 document.querySelector('#btn-export').onclick=()=>{
   try{
     /* la diagnosi di cantiere viaggia nel backup: chi legge il file sa dispositivo, versione e forma dello stato.
@@ -10052,6 +10763,10 @@ try{ const _p=maybeChiudiCapitolo(); if(_p&&_p.catch) _p.catch(function(e){ try{
    quando lui aprira la porta e gia nel cassetto e non deve aspettare nessuno. */
 try{ const _pt=preparaDomandaTerra();
      if(_pt&&_pt.catch) _pt.catch(function(e){ try{ regCantiere('errore',{msg:'preparaDomandaTerra: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} }); }catch(_){}
+/* v218: accendiLingua e async, e un try/catch attorno alla chiamata non puo
+   prendere una promessa rotta - e la famiglia K del lint, che infatti l'ha
+   beccata appena scritta. Il catch va agganciato alla promessa. */
+accendiLingua().catch(function(){});
 try{ maybeOnboard(); }catch(e){ try{ regCantiere('errore',{msg:'onboard: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){} }
 /* v185: era «try{ apriSoglia(); }catch(_){}». Una funzione async NON lancia:
    restituisce una promessa, e se quella si rompe il try/catch non vede niente.
@@ -10139,7 +10854,7 @@ async function primeMicPermission(){
     }
   }catch(_){}
   try{
-    const probe=new SR(); probe.lang='it-IT';
+    const probe=new SR(); probe.lang=locale();
     probe.onerror=()=>{}; probe.onstart=()=>{ try{probe.stop()}catch(_){} };
     probe.start();
     setTimeout(()=>{ try{probe.stop()}catch(_){} },400);
