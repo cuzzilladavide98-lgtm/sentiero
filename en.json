@@ -267,5 +267,140 @@
    "\\s+(?:in\\s+the\\s+)?(?:morning|afternoon|evening)$",
    "\\s+(?:by|on|at|in|to|for|of|the|a|an|from|with)$"
   ]
+ },
+ "voci": {
+  "osservatrice": {
+   "attrito": [
+    "about {cosa} you had written «{parole}». those words are still there.",
+    "«{parole}», you wrote about {cosa}.",
+    "«{parole}», you had written. that was {cosa}."
+   ],
+   "silenzio": [
+    "{cosa} hasn’t come up in a while. it hasn’t gone, it’s quiet.",
+    "nobody mentions {cosa} any more.",
+    "no trace of {cosa}, not for a while now."
+   ],
+   "ricorrente": [
+    "{cosa} keeps coming back and never closes.",
+    "you’ve put {cosa} back on the list more than once. it always returns.",
+    "{cosa} was on the list, and it ended up there again."
+   ],
+   "ritorno": [
+    "{cosa} came back after {dopo} of silence.",
+    "after {dopo} still, {cosa} showed up again.",
+    "{cosa} had stopped appearing. now it’s here again."
+   ],
+   "giorno": [
+    "{ilgiorno} comes round, and never leaves anything behind.",
+    "every {cosa} the day goes by and nothing stays. it’s been like this for weeks.",
+    "there’s one day that always gives way, and it’s {ilgiorno}."
+   ],
+   "vecchia": [
+    "{cosa} has been waiting {durata}.",
+    "the oldest one still open is {cosa}. it’s been there {durata}.",
+    "{cosa} has been on the list {durata} and hasn’t moved."
+   ],
+   "scritto": [
+    "for {durata} you’ve left a line {quanto}.",
+    "these weeks you write {quanto}, and the lines stay.",
+    "the diary carries your voice {quanto}, for {durata} now."
+   ],
+   "ritmo": [
+    "for {durata} the days with something in them are {quanto}.",
+    "these weeks something moves {quanto}.",
+    "full days come {quanto}, for {durata} now."
+   ]
+  },
+  "domanda": {
+   "attrito": [
+    "about {cosa} you had written «{parole}». what makes it so heavy?",
+    "«{parole}», you said about {cosa}. is it still true this morning?"
+   ],
+   "silenzio": [
+    "{cosa} hasn’t come up in a while. do you still want it?",
+    "nobody mentions {cosa} any more. what changed?"
+   ],
+   "ricorrente": [
+    "{cosa} keeps coming back and never closes. what stops it?",
+    "you’ve put {cosa} back on the list more than once. is it the right thing, or just the one you remember?"
+   ],
+   "ritorno": [
+    "{cosa} came back after a gap. what was different that day?",
+    "you picked {cosa} up again. what made it possible?"
+   ],
+   "giorno": [
+    "{ilgiorno} never leaves anything behind. what happens on that day?",
+    "every {cosa} the day goes by and nothing stays. what is that day made of?"
+   ],
+   "vecchia": [
+    "{cosa} has been waiting a while. is it still yours?",
+    "{cosa} is on the list and doesn’t move. do you still want it, or do you let it go?"
+   ],
+   "aperta": [
+    "{cosa} has been waiting a while. does it still feel yours?",
+    "{cosa} is on the list. what holds it still?"
+   ]
+  },
+  "riga_peso": "i read it. i have nothing to tell you about how you’re doing, and you don’t need to do anything.",
+  "quantita": [
+   {
+    "q": 0.85,
+    "t": "almost every day"
+   },
+   {
+    "q": 0.6,
+    "t": "more days than not"
+   },
+   {
+    "q": 0.35,
+    "t": "every other day"
+   },
+   {
+    "q": 0.15,
+    "t": "now and then"
+   },
+   {
+    "q": 0,
+    "t": "rarely"
+   }
+  ],
+  "quantita_zero": "never",
+  "quantita_una": "just once",
+  "durate": [
+   {
+    "g": 1,
+    "t": "a day"
+   },
+   {
+    "g": 3,
+    "t": "a few days"
+   },
+   {
+    "g": 8,
+    "t": "a week"
+   },
+   {
+    "g": 20,
+    "t": "a couple of weeks"
+   },
+   {
+    "g": 45,
+    "t": "a month"
+   },
+   {
+    "g": 99999,
+    "t": "months"
+   }
+  ],
+  "giorni": [
+   "sunday",
+   "monday",
+   "tuesday",
+   "wednesday",
+   "thursday",
+   "friday",
+   "saturday"
+  ],
+  "ilgiorno": "{g}"
  }
 }

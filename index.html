@@ -2336,7 +2336,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.218 · 2026-08-10';
+const APP_VERSION='v60S.219 · 2026-08-10';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -5616,32 +5616,53 @@ function _pesaDiRecente(digest){
 /* ── i mattoni ─────────────────────────────────────────────────────────────
    I numeri non si scrivono mai: il contratto di casa ne ammette al massimo uno
    per riga, e questa voce non ne usa nessuno. Le quantita diventano parole. */
+/* ANCHE LE QUANTITA E LE DURATE SONO DATI (v219). Erano parole italiane dentro
+   il codice, e uscivano tali e quali dentro una frase inglese: «came back after
+   una settimana of silence». Adesso stanno in due tabelle, italiane qui e di
+   ogni altra lingua nel suo pacchetto. */
+const QUANTITA_IT=[{q:0.85,t:'quasi ogni giorno'},{q:0.6,t:'piu giorni si che no'},
+                   {q:0.35,t:'un giorno si e uno no'},{q:0.15,t:'ogni tanto'},{q:0,t:'di rado'}];
+const QUANTITA_ZERO_IT='mai', QUANTITA_UNA_IT='una volta sola';
+const DURATE_IT=[{g:1,t:'un giorno'},{g:3,t:'qualche giorno'},{g:8,t:'una settimana'},
+                 {g:20,t:'un paio di settimane'},{g:45,t:'un mese'},{g:99999,t:'mesi'}];
+function _ossTab(nome,casa){
+  const p=(typeof PACCHETTO!=='undefined')?PACCHETTO:null;
+  if(p&&p.voci&&p.voci[nome]) return p.voci[nome];
+  if(typeof linguaApp==='function'&&linguaApp()!=='it') return null;
+  return casa;
+}
 function _ossQuanto(n, tot){
-  if(!tot||n<=0) return 'mai';
+  const tab=_ossTab('quantita',QUANTITA_IT); if(!tab) return '';
+  const zero=_ossTab('quantita_zero',QUANTITA_ZERO_IT)||'';
+  const una=_ossTab('quantita_una',QUANTITA_UNA_IT)||'';
+  if(!tot||n<=0) return zero;
+  if(n===1) return una;
   const q=n/tot;
-  if(n===1) return 'una volta sola';
-  if(q>=0.85) return 'quasi ogni giorno';
-  if(q>=0.6)  return 'piu giorni si che no';
-  if(q>=0.35) return 'un giorno si e uno no';
-  if(q>=0.15) return 'ogni tanto';
-  return 'di rado';
+  for(let i=0;i<tab.length;i++){ if(q>=tab[i].q) return tab[i].t; }
+  return tab[tab.length-1].t;
 }
 /* la durata esce NUDA, senza preposizione: e chi costruisce la frase a mettere
    «da» o «dopo». Altrimenti si finisce con «tornata dopo da una settimana», che
    e il genere di errore che nessun giudice a soglie puo vedere. */
-function _ossDurata(g){
-  if(g<=1) return 'un giorno';
-  if(g<=3) return 'qualche giorno';
-  if(g<=8) return 'una settimana';
-  if(g<=20) return 'un paio di settimane';
-  if(g<=45) return 'un mese';
-  return 'mesi';
+function _ossDurata(n){
+  const tab=_ossTab('durate',DURATE_IT); if(!tab) return '';
+  for(let i=0;i<tab.length;i++){ if(n<=tab[i].g) return tab[i].t; }
+  return tab[tab.length-1].t;
 }
 const _OSS_DOW=['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
-function _ossDow(g){ try{ return _OSS_DOW[new Date(g+'T12:00:00').getDay()]; }catch(_){ return ''; } }
+function _ossDow(g){
+  const nomi=_ossTab('giorni',_OSS_DOW)||_OSS_DOW;
+  try{ return nomi[new Date(g+'T12:00:00').getDay()]; }catch(_){ return ''; }
+}
 /* domenica e femminile, gli altri sei no: «il domenica» era la prima riga che
-   usciva sul caso del giorno che cede. */
-function _ossIlGiorno(dw){ return (dw==='domenica'?'la ':'il ')+dw; }
+   usciva sul caso del giorno che cede. In inglese l'articolo non c'e, e il
+   pacchetto porta il proprio modello: «{g}» e basta. */
+function _ossIlGiorno(dw){
+  const mod=_ossTab('ilgiorno',null);
+  if(mod) return String(mod).split('{g}').join(dw);
+  if(typeof linguaApp==='function'&&linguaApp()!=='it') return dw;
+  return (dw==='domenica'?'la ':'il ')+dw;
+}
 function _ossGiorniFra(a,b){ try{ return Math.round((Date.parse(b+'T12:00:00')-Date.parse(a+'T12:00:00'))/86400000); }catch(_){ return 0; } }
 function _ossMinuscolo(t){ return String(t||'').trim().replace(/^./,c=>c.toLowerCase()); }
 
@@ -5740,58 +5761,76 @@ function _ossFatti(d){
    La firma vecchia era sempre la stessa: fatto, trattino, senso. Qui i trattini
    non ci sono e le costruzioni si alternano. Tutte in minuscolo, due frasi al
    massimo, e nessuna dice cosa fare: sono osservazioni, non consigli. */
-function _ossForme(f){
+/* ══ LE FORME SONO MODELLI (v219) ═══════════════════════════════════════════
+   Erano frasi scritte nel codice, e quindi italiane per sempre. Adesso sono
+   modelli con dei buchi - {cosa}, {parole}, {quanto}, {durata} - e i modelli
+   italiani stanno qui mentre quelli di ogni altra lingua stanno nel suo
+   pacchetto, accanto alle scritte e agli schemi del microfono.
+
+   L'italiano resta dentro per la stessa ragione di sempre: e la garanzia che
+   l'app parli al primo avvio senza chiedere niente a nessuno. E se un pacchetto
+   non porta le forme, quella voce tace invece di parlare italiano a uno che non
+   lo capisce. */
+const FORME_IT={
+  attrito:['di {cosa} avevi scritto «{parole}». quelle parole sono ancora li.',
+           '«{parole}», scrivevi di {cosa}.',
+           '«{parole}», avevi scritto. era {cosa}.'],
+  silenzio:['{cosa} non compare da un pezzo. non e sparita, tace.',
+            'di {cosa} non si parla piu da parecchio.',
+            'nessuna traccia di {cosa}, ormai da un pezzo.'],
+  ricorrente:['{cosa} torna a nascere e non si chiude mai.',
+              'hai rimesso in lista {cosa} piu di una volta. torna sempre li.',
+              '{cosa} era in lista, e ci e finita di nuovo.'],
+  ritorno:['{cosa} e tornata dopo {dopo} di silenzio.',
+           'dopo {dopo} ferma, {cosa} e ricomparsa.',
+           '{cosa} aveva smesso di comparire. ora c’e di nuovo.'],
+  giorno:['{ilgiorno} torna, e non lascia mai niente.',
+          'ogni {cosa} la giornata passa e non resta niente. torna cosi da settimane.',
+          'c’e un giorno che cede sempre, ed e {ilgiorno}.'],
+  vecchia:['{cosa} aspetta da {durata}.',
+           'la piu vecchia rimasta aperta e {cosa}. sta li da {durata}.',
+           '{cosa} e in lista da {durata} e non si muove.'],
+  scritto:['da {durata} hai lasciato una riga {quanto}.',
+           'in queste settimane scrivi {quanto}, e le righe restano.',
+           'il diario porta la tua voce {quanto}, ormai da {durata}.',
+           'da {durata} qui dentro resta qualcosa di scritto {quanto}.'],
+  ritmo:['da {durata} le giornate con qualcosa dentro sono {quanto}.',
+         'in queste settimane qualcosa si muove {quanto}.',
+         'i giorni pieni arrivano {quanto}, ormai da {durata}.',
+         'da {durata} il passo tiene {quanto}.']
+};
+function _ossRiempi(modelli,f){
   const c=_ossMinuscolo(f.cosa||'');
-  switch(f.t){
-    /* Ogni forma porta un aggancio a qualcosa piu vecchio di oggi: «avevi scritto»,
-       «scrivevi», «torna». E la regola che il giudice in laboratorio chiama R6 -
-       una riga che non chiude un filo piu vecchio di oggi e solo eco - e vale
-       anche qui, dove non c'e nessun modello a ricordarsene da solo. */
-    case 'attrito': return [
-      'di ' + c + ' avevi scritto «' + _ossMinuscolo(f.parole) + '». quelle parole sono ancora li.',
-      '«' + _ossMinuscolo(f.parole) + '», scrivevi di ' + c + '.',
-      '«' + _ossMinuscolo(f.parole) + '», avevi scritto. era ' + c + '.'];
-    /* qui NON si dice da quanto: il Motore segnala l'assenza contando le occasioni
-       mancate, non i giorni, e mettere «da due settimane» sarebbe una distanza
-       inventata. E la stessa regola che il giudice impone al modello (R7, R9):
-       le distanze si ricopiano dai dati o non si dicono. */
-    case 'silenzio': return [
-      c + ' non compare da un pezzo. non e sparita, tace.',
-      'di ' + c + ' non si parla piu da parecchio.',
-      'nessuna traccia di ' + c + ', ormai da un pezzo.'];
-    case 'ricorrente': return [
-      c + ' torna a nascere e non si chiude mai.',
-      'hai rimesso in lista ' + c + ' piu di una volta. torna sempre li.',
-      c + ' era in lista, e ci e finita di nuovo.'];
-    case 'ritorno': return [
-      c + ' e tornata dopo ' + _ossDurata(f.dopo) + ' di silenzio.',
-      'dopo ' + _ossDurata(f.dopo) + ' ferma, ' + c + ' e ricomparsa.',
-      c + ' aveva smesso di comparire. ora c’e di nuovo.'];
-    /* niente aggettivi che vanno accordati: «la domenica resta vuoto» era la prima
-       riga che usciva. Le forme girano su verbi, cosi il genere non le tocca. */
-    case 'giorno': return [
-      _ossIlGiorno(c) + ' torna, e non lascia mai niente.',
-      'ogni ' + c + ' la giornata passa e non resta niente. torna cosi da settimane.',
-      'c’e un giorno che cede sempre, ed e ' + _ossIlGiorno(c) + '.'];
-    case 'vecchia': return [
-      c + ' aspetta da ' + _ossDurata(f.giorni) + '.',
-      'la piu vecchia rimasta aperta e ' + c + '. sta li da ' + _ossDurata(f.giorni) + '.',
-      c + ' e in lista da ' + _ossDurata(f.giorni) + ' e non si muove.'];
-    /* i due ripieghi, quelli che escono quando non c'e materiale grosso. Anche
-       loro portano l'aggancio al passato, e sono quattro invece di tre: uscendo
-       spesso, con tre finivano per ripetersi dentro la stessa settimana. */
-    case 'scritto': return [
-      'da ' + _ossDurata(f.giorni) + ' hai lasciato una riga ' + f.quanto + '.',
-      'in queste settimane scrivi ' + f.quanto + ', e le righe restano.',
-      'il diario porta la tua voce ' + f.quanto + ', ormai da ' + _ossDurata(f.giorni) + '.',
-      'da ' + _ossDurata(f.giorni) + ' qui dentro resta qualcosa di scritto ' + f.quanto + '.'];
-    case 'ritmo': return [
-      'da ' + _ossDurata(f.giorni) + ' le giornate con qualcosa dentro sono ' + f.quanto + '.',
-      'in queste settimane qualcosa si muove ' + f.quanto + '.',
-      'i giorni pieni arrivano ' + f.quanto + ', ormai da ' + _ossDurata(f.giorni) + '.',
-      'da ' + _ossDurata(f.giorni) + ' il passo tiene ' + f.quanto + '.'];
-  }
-  return [];
+  const buchi={
+    '{cosa}':c,
+    '{parole}':_ossMinuscolo(f.parole||''),
+    '{quanto}':f.quanto||'',
+    '{durata}':_ossDurata(f.giorni||0),
+    '{dopo}':_ossDurata(f.dopo||0),
+    '{ilgiorno}':_ossIlGiorno(c)
+  };
+  return (modelli||[]).map(m=>{
+    let t=String(m);
+    for(const k in buchi) t=t.split(k).join(buchi[k]);
+    return t;
+  }).filter(function(t){
+    /* un buco rimasto vuol dire modello sbagliato: si scarta. Si cercano le
+       chiavi intere e non la graffa da sola, e non e un vezzo: l'estrattore dei
+       banchi conta le parentesi ANCHE dentro le stringhe, e una graffa spaiata
+       in un letterale gli impedisce di trovare la fine della funzione. Ci ho
+       perso mezz'ora. */
+    for(var k in buchi){ if(t.indexOf(k)>=0) return false; }
+    return true;
+  });
+}
+function _ossModelli(tipo){
+  const p=(typeof PACCHETTO!=='undefined')?PACCHETTO:null;
+  if(p&&p.voci&&p.voci.osservatrice&&p.voci.osservatrice[tipo]) return p.voci.osservatrice[tipo];
+  if(typeof linguaApp==='function'&&linguaApp()!=='it') return null;   /* niente pacchetto: si tace */
+  return FORME_IT[tipo]||null;
+}
+function _ossForme(f){
+  return _ossRiempi(_ossModelli(f&&f.t),f||{});
 }
 
 /* ── IL GIUDICE, IN CASA ───────────────────────────────────────────────────
@@ -9293,38 +9332,28 @@ function _terraVivaioLargo(mem){
 
    Le parole sono di Davide da rivedere: qui la macchina sceglie il materiale,
    non il tono. */
+const DOMANDE_IT={
+  attrito:['di {cosa} avevi scritto «{parole}». cosa la rende cosi pesante?',
+           '«{parole}», dicevi di {cosa}. e ancora vero stamattina?'],
+  silenzio:['{cosa} non compare da un pezzo. la vuoi ancora?',
+            'di {cosa} non si parla piu. cosa e cambiato?'],
+  ricorrente:['{cosa} torna a nascere e non si chiude. cosa la ferma?',
+              'hai rimesso in lista {cosa} piu di una volta. e la cosa giusta, o solo quella che ricordi?'],
+  ritorno:['{cosa} e tornata dopo un vuoto. cosa e stato diverso, quel giorno?',
+           'hai ripreso {cosa}. cosa te l’ha resa possibile?'],
+  giorno:['{ilgiorno} non lascia mai niente. cosa succede, {ilgiorno}?',
+          'ogni {cosa} la giornata passa e non resta niente. com’e fatto quel giorno?'],
+  vecchia:['{cosa} aspetta da un pezzo. e ancora tua?',
+           '{cosa} e in lista e non si muove. la vuoi ancora, o la lasci andare?'],
+  aperta:['{cosa} aspetta da un po’. la senti ancora tua?',
+          '{cosa} sta in lista. cosa la tiene ferma?']
+};
 function _terraFormeCasa(f){
-  const c=_ossMinuscolo(f.cosa||'');
-  switch(f.t){
-    case 'attrito': return [
-      'di '+c+' avevi scritto «'+_ossMinuscolo(f.parole)+'». cosa la rende cosi pesante?',
-      '«'+_ossMinuscolo(f.parole)+'», dicevi di '+c+'. e ancora vero stamattina?'];
-    case 'silenzio': return [
-      c+' non compare da un pezzo. la vuoi ancora?',
-      'di '+c+' non si parla piu. cosa e cambiato?'];
-    case 'ricorrente': return [
-      c+' torna a nascere e non si chiude. cosa la ferma?',
-      'hai rimesso in lista '+c+' piu di una volta. e la cosa giusta, o solo quella che ricordi?'];
-    case 'ritorno': return [
-      c+' e tornata dopo un vuoto. cosa e stato diverso, quel giorno?',
-      'hai ripreso '+c+'. cosa te l’ha resa possibile?'];
-    case 'giorno': return [
-      _ossIlGiorno(c)+' non lascia mai niente. cosa succede, '+_ossIlGiorno(c)+'?',
-      'ogni '+c+' la giornata passa e non resta niente. com’e fatto quel giorno?'];
-    case 'vecchia': return [
-      c+' aspetta da un pezzo. e ancora tua?',
-      c+' e in lista e non si muove. la vuoi ancora, o la lasci andare?'];
-    /* una cosa aperta, presa una alla volta. Non forma nessun pattern e per
-       l'osservatrice non e materiale; per una domanda lo e eccome, ed e il
-       materiale piu abbondante che esista in un archivio vero. */
-    /* attenzione al peso delle copule: «e li da un po. e ancora la cosa giusta?»
-       ha due «e» in dodici parole e il giudice la scartava sempre, in silenzio.
-       Le domande girano su verbi che fanno qualcosa: aspettare, sentire, tenere. */
-    case 'aperta': return [
-      c+' aspetta da un po’. la senti ancora tua?',
-      c+' sta in lista. cosa la tiene ferma?'];
-  }
-  return [];
+  const p=(typeof PACCHETTO!=='undefined')?PACCHETTO:null;
+  let mod=null;
+  if(p&&p.voci&&p.voci.domanda&&p.voci.domanda[f&&f.t]) mod=p.voci.domanda[f.t];
+  else if(typeof linguaApp!=='function'||linguaApp()==='it') mod=DOMANDE_IT[f&&f.t]||null;
+  return _ossRiempi(mod,f||{});
 }
 /* I fatti per la DOMANDA non sono esattamente quelli della sera: l'osservatrice
    cerca pattern, la porta puo anche chiedere di una cosa sola. Tenerli separati
