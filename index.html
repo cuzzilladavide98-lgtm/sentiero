@@ -2274,7 +2274,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.209 · 2026-08-10';
+const APP_VERSION='v60S.211 · 2026-08-10';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -3471,6 +3471,11 @@ function handleFlowAction(action,extra){
   if(action==='tasks'){ showPane('impostazioni'); setTimeout(()=>{ const t=document.querySelector('#new-task-txt'); if(t) t.focus(); },120); return; }
 
   if(action==='today'){ showPane('oggi'); setTimeout(()=>{ if(!focusTarget(extra)) scrollToSoft('#sec-today-quests'); },140); return; }
+  /* v211: la strada per scrivere una cosa a mano. Esisteva il pannello (v205) ma
+     non c'era nessun modo di arrivarci da un foglio vuoto: chi apriva l'app il
+     primo giorno leggeva «parla», e senza chiave parlare non fa nascere niente. */
+  if(action==='nuova'){ showPane('oggi'); setTimeout(()=>{ try{ scrollToSoft('#sec-today-quests'); }catch(_){}
+    try{ apriNascita(true); }catch(_){} },140); return; }
 }
 /* ── PROSSIMA MOSSA: non la prima in lista, ma l'UNICA che conta adesso ──
    Principio "vendimi questa penna": togli la scelta, crea l'urgenza, dai il perche'.
@@ -3545,7 +3550,7 @@ function renderFlow(){
   }
   if(r.total&&r.done===r.total){ el.innerHTML='<strong>Cerchio chiuso.</strong>Lascia che il resto resti leggero.'; return; }
   if(!S.apiKey&&S.diary.length===0&&S.quests.length===0){
-    el.innerHTML='<strong>Questo e Sentiero.</strong>Parla, o scrivi una cosa da fare.<button data-flow="speak">Parla ora</button> <button data-flow="settings">La versione Generativa</button>';
+    el.innerHTML='<strong>Questo e Sentiero.</strong>Parla, o scrivi una cosa da fare.<button data-flow="nuova">Scrivi una cosa</button> <button data-flow="speak">Parla ora</button>';
     return;
   }
   if(S.diary.length>=2&&!((S.observerNotes||[]).length)){
@@ -5024,6 +5029,7 @@ async function askObserver(digest){
    Quindi non distingue un lutto da una giornata storta: quello resta al modello,
    e senza chiave la protezione del peso arriva da un'altra parte. ══════════ */
 
+/*MOTORE-LOCALE-INIZIO*/
 /* ── QUANTO DURA L'ECO (v202) ──────────────────────────────────────────────
    Un giorno che pesa non finisce a mezzanotte, ma non puo nemmeno spegnere
    l'osservatrice per sempre: il lutto non e uno stato permanente dell'app. Tre
@@ -5039,6 +5045,7 @@ function _pesaDiRecente(digest){
   try{ limite=new Date(Date.parse(digest.oggi+'T12:00:00')-PESO_ECO_GIORNI*86400000).toISOString().slice(0,10); }catch(_){}
   return d.some(g=>g&&g.pesa&&(!limite||g.giorno>=limite));
 }
+
 /* ── i mattoni ─────────────────────────────────────────────────────────────
    I numeri non si scrivono mai: il contratto di casa ne ammette al massimo uno
    per riga, e questa voce non ne usa nessuno. Le quantita diventano parole. */
@@ -5245,11 +5252,23 @@ function _ossGiudica(riga, precedenti){
      basse sono le sue parole, ricopiate, e non e uno stile che possiamo scegliere.
      Senza questa esclusione la citazione dell'attrito - il materiale migliore che
      abbiamo, perche e vero e suo - veniva bocciata quasi sempre: basta un «non ho
-     voglia» dentro una riga corta per sforare. */
+     voglia» dentro una riga corta per sforare.
+
+     E si contano FRASE PER FRASE, con due metri diversi. Un rapporto su sei parole
+     non vuol dire niente: una sola copula fa 0,167 e sfora una soglia ricavata da
+     passi lunghi il quadruplo. Misurato sui maestri (9 agosto): la soglia unica a
+     0,133 boccia il 23% delle loro frasi corte contro il 12% di quelle lunghe -
+     puniva la brevita, che e proprio cio che vogliamo. Sotto le dodici parole i
+     maestri stanno a UNA copula per frase (p90); il tetto a una ne boccia il 6%,
+     che e in linea con l'altro metro. */
   const nostro=t.replace(/«[^»]*»/g,' ');
-  const paroleNostre=nostro.split(/\s+/).filter(Boolean);
-  const cop=(nostro.toLowerCase().match(_OSS_COP)||[]).length;
-  if(paroleNostre.length>=6&&cop/paroleNostre.length>OSS_SOGLIE.copule) return 'copule';
+  for(const fr of nostro.split(/(?<=[.?…])\s+/)){
+    const pf=fr.split(/\s+/).filter(Boolean);
+    if(pf.length<4) continue;
+    const c=(fr.toLowerCase().match(_OSS_COP)||[]).length;
+    if(pf.length<12){ if(c>1) return 'copule'; }
+    else if(c/pf.length>OSS_SOGLIE.copule) return 'copule';
+  }
   /* e non deve somigliare a quello che ha gia detto, in due modi diversi.
      LE PAROLE: se ripete lo stesso materiale. */
   const chiave=s=>new Set(String(s).toLowerCase().replace(/[^a-zà-ÿ\s]/g,' ').split(/\s+/).filter(w=>w.length>4));
@@ -5297,6 +5316,8 @@ function buildObserverLocal(digest){
   }
   return {summary:'niente da dire oggi',detectedPatterns:[],note:'',_scartate:scartate,_locale:true};
 }
+/*MOTORE-LOCALE-FINE*/
+
 
 
 let observing=false;
@@ -6755,10 +6776,83 @@ function _stanzaApri(){
 })();
 
 let _lineTimer=null,_lineToken=0;
+/* ══ IL SUSSURRO DI CASA (v210) ═════════════════════════════════════════════
+   La riga che nasce quando spunti una cosa. E il momento piu toccato dell'app,
+   e senza chiave non c'era: observerLineFor usciva subito, in silenzio.
+
+   Qui la regola non e «parla piu spesso che puoi», e il contrario. Il contratto
+   del sussurro dice che UNO SPECCHIO VALE SOLO SE CHIUDE UN FILO PIU VECCHIO DI
+   OGGI: senza un filo la riga e solo eco - ti dice che hai fatto la cosa che
+   sai di aver fatto. Il pacchetto lo costruisce gia il telefono da solo, senza
+   rete: dentro ci sono i fili veri. Se non ce n'e uno, si tace.
+
+   Quindi questo sussurro parla di rado, ed e giusto cosi. Su una spunta
+   qualunque non ha niente da dire, e dirlo lo stesso sarebbe rumore. */
+function _sussFilo(pkg){
+  if(!pkg) return null;
+  /* il ritorno: la cosa era mancata piu volte di fila, e oggi e passata */
+  if(pkg.ritorno) return {t:'ritorno'};
+  /* le sue parole esatte sull'attrito, e oggi l'ha fatta lo stesso */
+  if(pkg.attrito_nominato){
+    const f=String(pkg.attrito_nominato).split(': ').slice(1).join(': ').trim();
+    if(f) return {t:'attrito',parole:f};
+  }
+  /* la promessa di stamattina, se riguardava proprio questa */
+  const p=pkg.patto_di_stamattina;
+  if(p&&p.riguarda_questo_task) return {t:'patto'};
+  return null;
+}
+function _sussForme(f,titolo){
+  const c=_ossMinuscolo(titolo||'');
+  switch(f&&f.t){
+    case 'ritorno': return [
+      c+' era mancata piu volte di fila. oggi e passata.',
+      'oggi '+c+' torna al suo posto. era rimasta indietro a lungo.'];
+    case 'attrito': return [
+      'di questa avevi scritto «'+_ossMinuscolo(f.parole)+'». oggi e passata lo stesso.',
+      '«'+_ossMinuscolo(f.parole)+'», dicevi. e invece eccola.'];
+    case 'patto': return [
+      'era la promessa di stamattina. tenuta.',
+      'l’avevi messa davanti stamattina. adesso e chiusa.'];
+  }
+  return [];
+}
+function sussurroLocale(pkg,titolo){
+  try{
+    const f=_sussFilo(pkg);
+    if(!f) return '';                                  /* nessun filo: silenzio, ed e la regola */
+    const mem=(S.obsLines||[]).map(x=>x&&x.riga).filter(Boolean);
+    for(const r of _sussForme(f,titolo)){
+      if(!r) continue;
+      if(/\s[—–-]\s/.test(r)) continue;
+      if(/\d/.test(r)) continue;
+      const nostro=titolo?r.split(_ossMinuscolo(titolo)).join('quella'):r;
+      if(_ossGiudica(nostro,[])) continue;
+      if(mem.some(m=>m&&_ossScheletro(m)===_ossScheletro(r))) continue;
+      return r;
+    }
+  }catch(_){}
+  return '';
+}
+
 function observerLineFor(el){
   try{
     if(S.settings&&S.settings.obsLine===false) return;                 /* spento dall'utente */
-    if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;             /* serve la chiave; in silenzio se manca */
+    if(!generativa()){
+      /* v210: senza chiave la riga la scrive la casa, e solo se c'e un filo.
+         Niente attesa e niente brace: il pensiero non deve volare da nessuna
+         parte, e gia qui. */
+      const idL=el&&(el.dataset.tid||el.dataset.qid); if(!idL) return;
+      const titL=((el.querySelector('.ttl')||{}).textContent||'').trim(); if(!titL) return;
+      let rigaL='';
+      try{ rigaL=sussurroLocale(buildLinePackage(idL,titL),titL); }catch(_){ rigaL=''; }
+      if(!rigaL) return;
+      S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(titL,120),riga:rigaL}]).slice(-12);
+      save();
+      try{ regCantiere('sussurro',{task:titL,riga:rigaL,msg:'locale'}); }catch(_){}
+      try{ _whisper(rigaL); }catch(_){}
+      return;
+    }
     const id=el&&(el.dataset.tid||el.dataset.qid); if(!id) return;
     const title=((el.querySelector('.ttl')||{}).textContent||'').trim(); if(!title) return;
     let rct=null;   /* la fotografia del tocco: il debounce ridisegna le liste, il punto resta */
@@ -8146,7 +8240,16 @@ function renderTodayQuests(bornIds){
     }
   }catch(_){}
   if(_soloArretrate&&arretrate.length) list=arretrate;
-  if(!list.length){ setEmpty(el,'Nessuna quest per oggi. Una frase detta bene basta a far comparire il prossimo passo.','speak','Parla al cerchio'); return; }
+  if(!list.length){
+    /* v211 — LA BUGIA DEL PRIMO GIORNO.
+       Questa riga diceva «una frase detta bene basta a far comparire il prossimo
+       passo», e senza chiave e falso: parlare salva una nota nel diario e non fa
+       comparire niente. Chi riceve l'app in regalo legge quella riga, parla, non
+       vede succedere nulla e conclude che e rotta. Era il difetto peggiore del
+       livello base, e non stava nel motore: stava in una frase. */
+    if(generativa()) setEmpty(el,'Nessuna quest per oggi. Una frase detta bene basta a far comparire il prossimo passo.','speak','Parla al cerchio');
+    else setEmpty(el,'Niente per oggi. Scrivi qui sotto la prima cosa che vuoi fare: bastano tre parole.','nuova','Scrivine una');
+    return; }
   el.innerHTML='';
   list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>renderTodayQuests([]))));
 }
@@ -8156,7 +8259,10 @@ function renderQuests(bornIds){
   const tk=todayKey();
   const domani=localDayKey(new Date(Date.now()+86400000));
   const list=sortQuests(futureQuests(S,tk));
-  if(!list.length){ setEmpty(el,'Nessuna quest in programma. Il futuro resta pulito finche non gli dai una data.','speak','Detta una quest'); return; }
+  if(!list.length){
+    if(generativa()) setEmpty(el,'Nessuna quest in programma. Il futuro resta pulito finche non gli dai una data.','speak','Detta una quest');
+    else setEmpty(el,'Niente in programma. Il futuro resta pulito finche non gli dai una data.','nuova','Scrivine una');
+    return; }
   el.innerHTML='';
   list.forEach(q=>el.appendChild(buildQuestRow(q,tk,domani,bornIds,()=>{renderQuests([]);renderTodayQuests([]);})));
 }
@@ -9216,7 +9322,10 @@ function condividiLascito(testo){
 function renderDiary(){
   try{ renderCapitoli(); }catch(_){}
   const el=document.querySelector('#list-diario');
-  if(!S.diary.length){ setEmpty(el,'Il diario e vuoto. Non va riempito: va lasciato dietro ogni azione vera.','speak','Registra la prima nota'); return; }
+  if(!S.diary.length){
+    /* qui «parla» resta vero anche senza chiave: la nota si salva comunque, ed e
+       proprio quello che il diario fa. La stanza della sera e l'altra porta. */
+    setEmpty(el,'Il diario e vuoto. Non va riempito: va lasciato dietro ogni azione vera.','speak','Registra la prima nota'); return; }
   el.innerHTML='';
   /* v182 (Fase 9): il giorno si scriveva su OGNI voce. Con centosedici voci lo
      stesso «1 agosto» tornava sei volte di fila, e il diario sembrava un elenco
