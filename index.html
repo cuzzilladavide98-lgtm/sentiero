@@ -1465,9 +1465,11 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
       </section>
 
       <section>
-        <div class="sec-head">Intelligenza artificiale</div>
+        <div class="sec-head">La versione Generativa</div>
         <input type="password" id="apikey" placeholder="sk-ant-...">
-        <p class="note">Con la chiave, l'IA distilla le quest dal parlato con priorità, giorno e ora. Senza, il trascritto viene salvato così com'è.</p>
+        <p class="note"><strong>Senza chiave l'app si chiama Sentiero</strong> e funziona per intero: diario, cose da fare, rituali, anello, stanza della sera, Chiamata a terra, e la riga della sera scritta dal motore di casa sui tuoi giorni. Non serve nessun collegamento e non costa niente.</p>
+        <p class="note"><strong>Con la chiave diventa Sentiero &mdash; versione Generativa.</strong> Le quest nascono dal parlato con giorno e ora; al mattino c'è il frutto; la Chiamata a terra scrive la domanda sui tuoi ultimi giorni invece di pescarla da un vivaio; la riga della sera la scrive un modello. Paghi tu il consumo, direttamente ad Anthropic.</p>
+        <p class="note">Una differenza che è giusto tu sappia prima di scegliere: quando in una giornata scrivi qualcosa di pesante, la versione Generativa lo <em>capisce</em> e cambia registro; senza chiave l'app riconosce solo le frasi che non si possono fraintendere, e ne coglie circa la metà.</p>
         <div class="btn-row"><button class="act primary" id="btn-savekey">Salva chiave</button><button class="act" id="btn-testkey">Prova connessione</button></div>
         <p class="note" id="test-result"></p>
         <div class="switchrow" style="margin-top:6px"><span>Motore</span>
@@ -2272,7 +2274,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.205 · 2026-08-09';
+const APP_VERSION='v60S.208 · 2026-08-10';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -3543,7 +3545,7 @@ function renderFlow(){
   }
   if(r.total&&r.done===r.total){ el.innerHTML='<strong>Cerchio chiuso.</strong>Lascia che il resto resti leggero.'; return; }
   if(!S.apiKey&&S.diary.length===0&&S.quests.length===0){
-    el.innerHTML='<strong>Puoi partire anche senza chiave.</strong><button data-flow="speak">Parla ora</button> <button data-flow="settings">Aggiungi IA</button>';
+    el.innerHTML='<strong>Questo e Sentiero.</strong>Parla, o scrivi una cosa da fare.<button data-flow="speak">Parla ora</button> <button data-flow="settings">La versione Generativa</button>';
     return;
   }
   if(S.diary.length>=2&&!((S.observerNotes||[]).length)){
@@ -4022,9 +4024,12 @@ document.querySelector('#btn-save').onclick=async()=>{
         return;
       } else throw new Error('bad');
     }else{
-      addDiary(transcript,[],[]);
+      /* v206: senza chiave nessuno ha letto questo testo. La rete a maglie larghe
+         non fara nascere ne bloccare niente: serve solo perche stasera
+         l'osservatrice e domattina il frutto sappiano come parlare. */
+      addDiary(transcript,[],[],'','','',pesoLocale(transcript));
       save(); render();
-      toast('Nota salvata nel diario (IA spenta: manca la chiave)');
+      toast('Nota salvata nel diario');
       try{ semeRaccolto(); }catch(_){}
       resetCapture();
       foglioDopoVoce();
@@ -4032,7 +4037,7 @@ document.querySelector('#btn-save').onclick=async()=>{
       return;
     }
   }catch(err){
-    addDiary(transcript,[],[]); save(); render(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}
+    addDiary(transcript,[],[],'','','',pesoLocale(transcript)); save(); render(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}   /* v206: la rete e la stessa anche quando e la rete a cadere */
     const code=(err&&err.message)||'';
     let msg='IA non raggiungibile'+(code&&code!=='bad'?' ['+code.slice(0,90)+']':'')+': trascritto salvato comunque';
     if(code==='bad') msg='L\u2019IA ha risposto in un formato non leggibile: riprova. Trascritto salvato.';
@@ -4052,6 +4057,77 @@ document.querySelector('#btn-save').onclick=async()=>{
     renderFlow();
   }
 };
+/* ══ IL PESO SENZA MODELLO (v206) ═══════════════════════════════════════════
+   Il marchio del peso lo mette il modello, e lo mette bene: legge il testo e
+   capisce. Ma senza chiave nessuna voce viene marcata MAI, e quindi tutta la
+   protezione della v202 - l'osservatrice che cambia registro, il frutto che non
+   fa il bilancio delle mancanze - non arriva proprio a chi non paga. Cioe alle
+   persone per cui esiste la versione gratuita.
+
+   QUESTO NON E UN RICONOSCITORE. E una rete a maglie larghissime, e va giudicata
+   per quello che non fa, non per quello che fa:
+   · non blocca MAI la nascita di una quest. Senza chiave le quest le scrive la
+     persona a mano, e impedirle di scriverne una perche ha nominato un lutto
+     sarebbe paternalismo. L'unica conseguenza e che le due voci parlano piu
+     piano.
+   · quindi un falso positivo costa una frase piu sobria del solito. Niente.
+     Un falso negativo riporta le cose come stavano prima. E per questo che qui
+     le parole chiave sono accettabili, mentre sul lato con la chiave no: la
+     stessa tecnica, con conseguenze diverse, e una scelta diversa.
+   · le frasi sono quelle che non si possono fraintendere. «mi manca mio nonno
+     oggi, era il suo compleanno» NON deve scattare, ed e la riga su cui il banco
+     insiste di piu: e un ricordo dentro una giornata normale, e porta pure una
+     cosa da fare.
+
+   Misurata sul corpus di attrezzi/corpus-peso.md: nessun falso positivo sulle
+   dodici giornate storte, e ne prende meno della meta fra quelle gravi. E un
+   pavimento, non una soluzione: la versione con la chiave resta molto migliore,
+   e va detto a chi sceglie. */
+/* Le frasi si scrivono SENZA accenti, e il testo viene spogliato prima di
+   guardarlo. Sul telefono «e morta mia nonna» si scrive tutti i giorni senza
+   accento, e la prima versione di questa rete si lasciava sfuggire proprio il
+   caso da cui era nata tutta la storia. */
+const _PESO_LOCALE=[
+  /* il pensiero di non esserci */
+  /\bfarla finita\b/, /\bnon voglio piu vivere\b/, /\bnon voglio piu esserci\b/,
+  /\bse non ci fossi\b/, /\bsuicid/, /\bfarmi del male\b/, /\bfatt[oa] male apposta\b/,
+  /\bmi sono tagliat[oa]\b/, /\bsparire per sempre\b/,
+  /* la paura in casa */
+  /\bmi ha picchiat[oa]\b/, /\bmi picchia\b/, /\bmi ha minacciat[oa]\b/, /\bviolentat[oa]\b/,
+  /\bho paura di\s+(?:lui|lei|mio marito|mia moglie|mio padre|mia madre)\b/,
+  /* la malattia grave */
+  /\bterapia intensiva\b/, /\bin coma\b/, /\bmetastasi\b/, /\bchemioterapia\b/, /\bchemio\b/,
+  /\btumore\b/, /\bha ricevuto la diagnosi\b/, /\bdiagnosi di\b/,
+  /* la perdita, quando e nominata cosi e non si puo confondere */
+  /\bho perso\s+(?:il\s+|la\s+|mi[ao]\s+)?(?:bambin[oa]|figli[oa])\b/, /\bveglia funebre\b/, /\bfunerale\b/
+];
+/* La morte chiede DUE cose insieme: la parola, e una persona a cui riferirla.
+   Da sola «e morta» prende la batteria del telefono; da sola «mia nonna» prende
+   il suo compleanno. Servono tutte e due nella stessa riga. */
+const _PESO_MORTE=/\b(mort[oa]|venut[oa] a mancare|spirat[oa]|se n'e andat[oa] per sempre)\b/;
+const _PESO_CARO=/\b(nonn[ao]|madre|padre|mamma|papa|fratello|sorella|figli[oa]|marito|moglie|compagn[oa]|zi[ao]|nipote|amic[ao]|cane|gatt[oa])\b/;
+/* e prima di tutto si tolgono i modi di dire, o «sono morto di sonno» diventa un lutto */
+const _PESO_MODIDIRE=/\b(mort[oi]?|stanc[oa])\s+di\s+(fame|sonno|sete|freddo|caldo|paura|ridere|noia|stanchezza|lavoro)\b|\bmorend[oa]\s+di\s+\w+/g;
+function pesoLocale(testo){
+  let t=String(testo||'').toLowerCase();
+  if(!t) return false;
+  try{ t=t.normalize('NFD').replace(/[̀-ͯ]/g,''); }catch(_){}
+  t=t.replace(_PESO_MODIDIRE,' ');
+  for(const r of _PESO_LOCALE){ if(r.test(t)) return true; }
+  if(_PESO_MORTE.test(t)&&_PESO_CARO.test(t)) return true;
+  return false;
+}
+
+/* ══ I DUE LIVELLI (v207) ═════════════════════════════════════════════════
+   Un solo progetto, un solo file, due marce. Senza chiave e Sentiero e basta:
+   il diario, le cose da fare, i rituali, l'anello, la stanza della sera, la
+   Chiamata a terra e l'osservatrice che legge i tuoi giorni e ti dice una riga.
+   Con la chiave diventa Sentiero - versione Generativa, e le voci le scrive un
+   modello sui tuoi giorni invece che il motore di casa.
+   Il nome non e cosmetica: decide come l'app parla di se stessa a chi non paga. */
+function generativa(){ return !!(S.apiKey&&S.apiKey.startsWith('sk-ant-')); }
+function nomeLivello(){ return generativa()?'Sentiero \u2014 versione Generativa':'Sentiero'; }
+
 function addDiary(testo,born,done,raw,seme,dom,peso){
   const lst=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,20).map(x=>x.slice(0,200)):[];
   const v={data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(raw||'',LIMITS.RAW),born:lst(born),done:lst(done),pos:freshPos(),seme:clampStr(seme||'',40),dom:clampStr(dom||'',LIMITS.DOM)};
@@ -4493,11 +4569,91 @@ async function scriviFrutto(S,tk){
 }
 /* ── la carta (v163): si compone alla PRIMA apertura del giorno, si legge, e non torna.
    E si porta fuori: disegnata su canvas nello stile dell'app e consegnata al foglio di iOS. ── */
+/* ══ IL FRUTTO DI CASA (v208) ═══════════════════════════════════════════════
+   L'ultima cosa che al livello base mancava del tutto. «Al mattino c'e un frutto»
+   sta nella prima riga con cui Sentiero si descrive, e senza chiave non c'era:
+   la mattina era vuota, e restava vuota per sempre.
+
+   Stesso metodo dell'osservatrice locale, e stesso patto: si scrivono piu
+   costruzioni sui fatti di IERI, si giudicano, e si mostra solo quella che passa.
+   Qui pero il giudice esisteva gia ed e quello vero dell'app - fruttoVeto - lo
+   stesso che boccia le carte scritte dal modello. Le regole della casa valgono
+   uguali per tutti e due: niente parole interne, un numero al massimo, due frasi
+   almeno, mai dire a che ora hai fatto una cosa.
+
+   E se ieri pesava, il frutto TACE. Non cambia registro come l'osservatrice:
+   tace. Il suo mestiere e dire com'e andata ieri, e la mattina dopo un lutto non
+   c'e nessun modo garbato di farlo con un motore che conta le spunte. Nessuna
+   carta e meglio di una carta vuota, e qui vale doppio. */
+function _fLocaleFatti(S,tk){
+  const ieri=_fIeri(tk), F={ieri:ieri};
+  const nome=id=>{ const t=(S.scheduled||[]).find(x=>x&&x.id===id)||(S.quests||[]).find(x=>x&&x.id===id); return t?_fTitolo(S,t):null; };
+  F.fatte=Object.keys((S.checks&&S.checks[ieri])||{}).filter(k=>S.checks[ieri][k]===true).map(nome).filter(Boolean);
+  F.mancate=(S.scheduled||[]).filter(t=>t&&t.id&&_fPrevista(t,ieri)&&!_fFatta(S,t,ieri)).map(t=>_fTitolo(S,t));
+  F.scritto=(S.diary||[]).some(x=>x&&x.data===ieri&&x.testo);
+  F.pesava=(S.diary||[]).some(x=>x&&x.data===ieri&&x.peso===true);
+  /* il ritorno: una cosa ripresa ieri dopo che era mancata piu volte di fila.
+     E il solo fatto di ieri che parli del tempo, ed e quello che vale di piu. */
+  F.ritorni=[];
+  (S.scheduled||[]).forEach(t=>{
+    if(!t||!t.id||!Array.isArray(t.days)||!t.days.length) return;
+    if(!_fPrevista(t,ieri)||!_fFatta(S,t,ieri)) return;
+    const prima=_fGiorni(S).filter(d=>d<ieri&&_fPrevista(t,d));
+    let vuoto=0; for(let i=prima.length-1;i>=0;i--){ if(_fFatta(S,t,prima[i])) break; vuoto++; }
+    if(vuoto>=2) F.ritorni.push(_fTitolo(S,t));
+  });
+  return F;
+}
+function _fLocaleForme(F){
+  const q=F.fatte, m=F.mancate, r=F.ritorni;
+  const c=t=>String(t||'').trim().replace(/^./,x=>x.toLowerCase());
+  const forme=[];
+  if(r.length) forme.push(
+    c(r[0])+' e tornata ieri, dopo che era mancata piu volte. non e poco.',
+    'ieri hai ripreso '+c(r[0])+'. era ferma da un pezzo, e adesso no.');
+  if(q.length>=2) forme.push(
+    'ieri hai portato a casa '+c(q[0])+' e '+c(q[1])+'. il resto puo aspettare.',
+    'di ieri restano '+c(q[0])+' e '+c(q[1])+'. tieni questa forma.');
+  if(q.length===1) forme.push(
+    'ieri e passato '+c(q[0])+'. una cosa fatta e una cosa fatta.',
+    'di ieri resta '+c(q[0])+'. e abbastanza per oggi.');
+  if(q.length&&m.length) forme.push(
+    'ieri e andata '+c(q[0])+', e '+c(m[0])+' no. va bene cosi.');
+  if(!q.length&&F.scritto) forme.push(
+    'ieri non e passato niente, pero hai lasciato una riga. e gia una traccia.',
+    'ieri hai scritto, e non hai chiuso niente. il foglio conta quanto il resto.');   /* «spuntato» e lessico interno: lo vieta fruttoVeto */
+  if(!q.length&&!F.scritto&&m.length) forme.push(
+    'ieri e passato senza lasciare niente. capita, e oggi riparte da zero.');
+  return forme;
+}
+function fruttoLocale(S,tk){
+  const F=_fLocaleFatti(S,tk);
+  if(F.pesava) return null;                                  /* ieri pesava: si tace */
+  if(!F.fatte.length&&!F.mancate.length&&!F.scritto) return null;   /* ieri vuoto davvero */
+  for(const riga of _fLocaleForme(F)){
+    /* il giudice vero dell'app, lo stesso che legge le carte del modello */
+    if(fruttoVeto(S,riga)) continue;
+    if(/\s[—–-]\s/.test(riga)) continue;                     /* la firma numero uno */
+    return riga;
+  }
+  return null;
+}
+
 async function fruttoDiOggi(){
   const tk=todayKey();
   const gia=(S.frutti||[]).filter(f=>f&&f.tk===tk)[0];
   if(gia) return gia.silenzio?null:gia;
-  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return null;   /* senza chiave niente frutto: nessun surrogato */
+  if(!generativa()){
+    /* v208: senza chiave il frutto lo scrive la casa. Prima qui non c'era niente,
+       e la mattina restava vuota per sempre. */
+    const riga=fruttoLocale(S,tk);
+    if(!riga){ S.frutti=(S.frutti||[]).concat([{tk:tk,silenzio:true}]).slice(-40); save(); return null; }
+    const mossaL=frMossa(S,tk,new Date().getHours(),null);
+    const nuovoL={tk:tk,lettura:riga,albero:'',alberoId:'',mossa:mossaL?mossaL.testo:'',chiuso:false,visto:false,locale:true};
+    S.frutti=(S.frutti||[]).concat([nuovoL]).slice(-40); save();
+    try{ regCantiere('frutto',{msg:'locale'}); }catch(_){}
+    return nuovoL;
+  }
   const t0=Date.now();
   let esito=null;
   try{ esito=await scriviFrutto(S,tk); }catch(_){ esito=null; }
@@ -8219,7 +8375,14 @@ async function scrittoNelDiario(testo, dom){
       }
     }
   }catch(_){ fatto=false; }
-  if(!fatto){ try{ addDiary(testo,[],[],testo,'',dom); }catch(_){} }   /* senza chiave o con la rete rotta: lo scritto si salva comunque */
+  if(!fatto){
+    /* v206: il peso si calcola PRIMA, e per conto suo. Questo addDiary e l'ultima
+       rete che ha lo scritto della persona, e sta dentro un catch muto: se il
+       rilevatore inciampasse li dentro, il testo sparirebbe senza un errore e
+       senza un avviso. Un di piu che non deve mai costare un di meno. */
+    let _p=false; try{ _p=pesoLocale(testo); }catch(_){}
+    try{ addDiary(testo,[],[],testo,'',dom,_p); }catch(_){}
+  }
   return {fatto:fatto, nuove:nuove};
 }
 
@@ -8906,7 +9069,7 @@ async function distillaPeriodo(bottone){
   const testoPrima = bottone ? bottone.textContent : '';
   try{
     if(!S.apiKey || !S.apiKey.startsWith('sk-ant-')){
-      try{ toast('Serve la chiave, in Altro.'); }catch(_){}
+      try{ toast('La distillazione del periodo sta nella versione Generativa, in Altro.'); }catch(_){}
       return;
     }
     if(bottone){ bottone.disabled = true; bottone.textContent = 'sto rileggendo…'; }
@@ -9076,7 +9239,13 @@ function renderDiary(){
    ====================================================================== */
 let newDays=[0,1,2,3,4,5,6];
 function renderSettings(){
-  document.querySelector('#version-line').textContent='Sentiero '+APP_VERSION;
+  /* v207 — I DUE LIVELLI, CHIAMATI PER NOME.
+     Il livello base non si chiama «Sentiero Free» ne «Sentiero Lite»: si chiama
+     Sentiero. E l'altra ad essere una variante, non questa ad essere una
+     mancanza. Fino alla v206 l'app diceva a chi non aveva la chiave «IA spenta:
+     manca la chiave», cioe gli diceva che gli mancava qualcosa mentre gli stava
+     dando tutto quello che ha. */
+  document.querySelector('#version-line').textContent=nomeLivello()+' '+APP_VERSION;
   document.querySelector('#apikey').value=S.apiKey;
   document.querySelector('#sw-sound').classList.toggle('on',S.settings.sound);
   document.querySelector('#sw-music').classList.toggle('on',!!S.settings.music);
@@ -9181,7 +9350,7 @@ document.querySelectorAll('#seg-genere button').forEach(b=>{
     toast(b.dataset.genere==='f'?'Ti parlerà al femminile':'Ti parlerà al maschile'); };
 });
 document.querySelector('#sw-voice').onclick=()=>{ S.settings.voice=!S.settings.voice; save(); renderSettings(); if(S.settings.voice) say('Voce attiva'); };
-document.querySelector('#sw-obsline').onclick=()=>{ S.settings.obsLine=!(S.settings.obsLine!==false); save(); renderSettings(); if(S.settings.obsLine&&(!S.apiKey||!S.apiKey.startsWith('sk-ant-'))) toast('Aggiungi la chiave per farla parlare'); };
+document.querySelector('#sw-obsline').onclick=()=>{ S.settings.obsLine=!(S.settings.obsLine!==false); save(); renderSettings(); if(S.settings.obsLine&&(!S.apiKey||!S.apiKey.startsWith('sk-ant-'))) toast('La riga sulle spunte sta nella versione Generativa'); };
 document.querySelector('#sw-geo').onclick=()=>{
   if(!S.settings.geo){
     if(!('geolocation' in navigator)){ toast('Posizione non supportata qui'); return; }
