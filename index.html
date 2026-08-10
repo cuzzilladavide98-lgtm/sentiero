@@ -1132,6 +1132,22 @@ body.testa-raccolta #btn-pin{pointer-events:none}
 .sec-head .arretrate.on{border-color:var(--accent);color:var(--accent)}
 #sec-today-quests .sec-head{display:flex;align-items:center;gap:10px}
 
+/* ── LA NASCITA A MANO (v205) ────────────────────────────────────────────
+   Deve pesare quanto niente finche non serve: chiusa e una riga di testo in
+   punta, e non un bottone. I bersagli restano a 44, che e quello che chiedono
+   le HIG e che il controllo qualita verifica a ogni consegna. */
+#nascita{margin-top:6px}
+#nascita-apri{display:block;width:100%;min-height:44px;padding:12px 0;border:none;background:none;
+  color:var(--t3);font-size:15px;text-align:left;letter-spacing:.01em}
+#nascita-apri::before{content:'+';margin-right:9px;opacity:.75}
+#nascita-apri:active{opacity:.55}
+#nascita-form{padding-top:2px}
+#nascita-txt{font-size:17px}
+#nascita-piede{display:flex;align-items:center;gap:8px;margin-top:12px}
+#nascita-quando{flex:1 1 auto;min-height:44px;padding:10px 0;border:none;background:none;
+  color:var(--t3);font-size:14px;border-radius:0}
+#nascita-piede .act{min-height:44px;padding:12px 18px}
+
 /* ════════ FASE 6 (v174) — la densita delle righe ════════
    Un titolo lungo occupava quattro righe di serif grande: con undici impegni servivano quattro
    schermate. Ora il titolo si ferma a due righe e la nota a una, con i puntini; il tocco sulla
@@ -1353,6 +1369,22 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
       <section id="sec-today-quests">
         <div class="sec-head">Le cose di oggi</div>
         <div class="group" id="list-quest-today"></div>
+        <!-- v205: la nascita a mano. Fino alla v204 una quest poteva nascere solo
+             da una risposta del modello: cinque punti nel codice, tutti e cinque
+             dietro la chiave. Senza chiave Sentiero non era una versione ridotta,
+             era un diario con una lista di abitudini. Sta qui, in fondo alle cose
+             di oggi, e chiusa finche non la tocchi. -->
+        <div id="nascita">
+          <button id="nascita-apri">una cosa nuova</button>
+          <div id="nascita-form" class="hidden">
+            <input type="text" id="nascita-txt" placeholder="cosa vuoi fare?" maxlength="200">
+            <div id="nascita-piede">
+              <input type="date" id="nascita-quando">
+              <button class="act" id="nascita-no">lascia</button>
+              <button class="act primary" id="nascita-ok">tienila</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="sec-programma" class="collapsed">
@@ -2240,7 +2272,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.202 · 2026-08-09';
+const APP_VERSION='v60S.205 · 2026-08-09';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -4768,7 +4800,11 @@ function buildObserverDigest(){
     const n=Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0);
     return {giorno:day, passo:n===0?'vuoto':n===1?'un passo':n<4?'qualche passo':'molti passi'};
   });
-  const osservazioniPrecedenti=(S.observerNotes||[]).slice(-4).map(n=>n.note);
+  /* v204: erano quattro, ora sette. Servono a due cose - dire al modello di non
+     ripetersi, e far scartare al motore locale una riga che rifa una costruzione
+     gia usata. Quattro coprivano meno di una settimana, e il giudice trovava
+     costruzioni ripetute proprio nella finestra dei sette giorni che controlla. */
+  const osservazioniPrecedenti=(S.observerNotes||[]).slice(-7).map(n=>n.note);
   /* l'oro del Motore (acceso dalla v133): gli attriti con le parole esatte, le assenze lunghe, lo sguardo */
   const dalMotore={};
   try{
@@ -4808,10 +4844,38 @@ async function askObserver(digest){
 }
 
 /* logica locale base: gira offline, senza chiave. Rileva i pattern essenziali. */
-/* v202 — QUANTO DURA L'ECO. Un giorno che pesa non finisce a mezzanotte, ma non
-   puo nemmeno spegnere l'osservatrice per sempre: il lutto non e uno stato
-   permanente dell'app. Tre giorni e una scelta di sensibilita, non un calcolo: si
-   cambia qui e si vede l'effetto nei banchi. */
+/* ══ IL MOTORE LOCALE — l'osservatrice senza modello (v204) ═══════════════════
+   Sorgente leggibile. Da qui viene innestato in index.html: si modifica QUI e si
+   rilancia attrezzi/innesta_motore.py, altrimenti le due copie divergono.
+
+   PERCHE ESISTE. Senza chiave l'osservatrice cadeva su sei rami fissi con un
+   registro da coach - «scegli una spunta ridicola e proteggila» - e su chi non
+   paga era l'unica voce che l'app avesse. Questo motore non e un ripiego: e lo
+   stesso metodo dei prompt, senza il modello. Trova i fatti nei dati, li scrive
+   in piu costruzioni diverse, e poi LE GIUDICA con le stesse misure prese sui
+   maestri (attrezzi/maestri.py, 9 agosto 2026) tenendo solo quella che passa.
+   Il modello scrive e poi noi misuriamo; qui si misura prima di mostrare.
+
+   LE DUE FIRME DA BATTERE, misurate su Pavese, London e Pratchett:
+     TRATTINO   nove passi su dieci dei maestri non ne hanno nessuno; sei righe
+                su dieci di Sentiero ne avevano uno. Qui: zero, sempre.
+     COPULE     il p90 dei maestri e 0,133 ed e identico in tutti e cinque i
+                libri. Sentiero sforava nel 42% delle righe. Qui il giudice
+                scarta sopra 0,133.
+
+   COSA NON PUO FARE, e va detto: non legge il testo del diario. Vede intenzioni,
+   azioni, titoli, giorni e le parole d'attrito che il Motore ha gia estratto.
+   Quindi non distingue un lutto da una giornata storta: quello resta al modello,
+   e senza chiave la protezione del peso arriva da un'altra parte. ══════════ */
+
+/* ── QUANTO DURA L'ECO (v202) ──────────────────────────────────────────────
+   Un giorno che pesa non finisce a mezzanotte, ma non puo nemmeno spegnere
+   l'osservatrice per sempre: il lutto non e uno stato permanente dell'app. Tre
+   giorni e una scelta di sensibilita, non un calcolo: si cambia qui e si vede
+   l'effetto nei banchi.
+   Sta in questo file, e non in index.html, perche l'innesto possiede tutta la
+   regione fino a buildObserverLocal: tenerlo di la voleva dire vederselo portare
+   via al primo innesto, ed e successo. */
 const PESO_ECO_GIORNI=3;
 function _pesaDiRecente(digest){
   const d=digest&&digest.diario||[];
@@ -4819,52 +4883,265 @@ function _pesaDiRecente(digest){
   try{ limite=new Date(Date.parse(digest.oggi+'T12:00:00')-PESO_ECO_GIORNI*86400000).toISOString().slice(0,10); }catch(_){}
   return d.some(g=>g&&g.pesa&&(!limite||g.giorno>=limite));
 }
-function buildObserverLocal(digest){
-  const d=digest.diario||[];
-  /* v202 — LA LAMA DEPOSTA, ANCHE QUI.
-     Questa funzione gira quando la chiave manca o la rete e rotta, e non legge il
-     testo: conta intenzioni e spunte. Su una settimana in cui uno ha scritto di un
-     lutto e non ha spuntato niente, il ramo "ritmo interrotto" usciva a dire
-     «scegli una spunta ridicola e proteggila». Non era il modello che improvvisava:
-     era una stringa scritta qui sotto. Il ramo del peso viene prima di tutti gli
-     altri, e non fa diagnosi, non da leve, non chiede niente. */
-  if(_pesaDiRecente(digest)) return {summary:'giorni che pesano',detectedPatterns:['peso'],note:OSS_RIGA_PESO};
-  let born=0,done=0; const bornCount={},doneCount={};
-  d.forEach(e=>{
-    (e.intenzioni||[]).forEach(t=>{born++; bornCount[t]=(bornCount[t]||0)+1;});
-    (e.azioni||[]).forEach(t=>{done++; doneCount[t]=(doneCount[t]||0)+1;});
-  });
-  /* promessa ricorrente eseguita poco */
-  let recurring=null,maxGap=0;
-  Object.keys(bornCount).forEach(t=>{ const gap=bornCount[t]-(doneCount[t]||0); if(bornCount[t]>=2&&gap>maxGap){maxGap=gap;recurring=t;} });
-  const patterns=[]; let note='';
-  /* segnale di continuità dai completamenti reali (anche le spunte toccate) */
-  const comp=digest.passiGiornalieri||[];
-  const giorniAttivi=comp.filter(g=>g.passo!=='vuoto').length;
-  const giorniVuoti=comp.filter(g=>g.passo==='vuoto').length;
-  if(d.length<3&&comp.length<3) return {summary:'Pochi dati',detectedPatterns:['poche tracce'],note:'Il foglio e quasi vuoto. Non serve capirlo: serve sporcarlo. Una riga, una spunta, poi il pattern appare.'};
-  if(d.length<3&&giorniAttivi){
-    patterns.push('azioni senza diario');
-    return {summary:'giorni attivi, poche note',detectedPatterns:patterns,note:'Le spunte stanno parlando piu del diario. Non aggiungere teoria: dopo ogni azione lascia una riga, cosi il maestro vede il trucco.'};
-  }
-  if(recurring&&maxGap>=2){
-    patterns.push('promessa ricorrente non mantenuta');
-    note='Non e mancanza di volonta: "'+recurring+'" e troppo grande per partire. Riducila alla prima mossa visibile, oppure cancellala senza debito.';
-  } else if(comp.length>=5&&giorniVuoti>giorniAttivi){
-    patterns.push('ritmo interrotto');
-    note='Non ti serve un giorno eroico: ti serve un giorno che non si rompa. I vuoti stanno superando i pieni: scegli una spunta ridicola e proteggila.';
-  } else if(born>0&&done/born<0.5){
-    patterns.push('intenzione oltre l\'azione');
-    note='Le intenzioni corrono piu veloci delle azioni. Il bug non e sognare grande: e caricare la giornata come se fosse infinita. Taglia meta, chiudi il resto.';
-  } else if((born>0&&done/born>=0.8)||(giorniAttivi>=5&&giorniAttivi>giorniVuoti)){
-    patterns.push('struttura a basso attrito');
-    note='Qui l\'azione segue l\'intenzione con poco attrito. Non inseguire l\'umore: copia la struttura che ha gia funzionato.';
-  } else {
-    patterns.push('ritmo medio incostante');
-    note='Non manca la forza: manca una modalita per i giorni medi. Il cheat code e abbassare la soglia prima che la giornata chieda il conto.';
-  }
-  return {summary:'lo sguardo sugli ultimi giorni',detectedPatterns:patterns,note:note};
+/* ── i mattoni ─────────────────────────────────────────────────────────────
+   I numeri non si scrivono mai: il contratto di casa ne ammette al massimo uno
+   per riga, e questa voce non ne usa nessuno. Le quantita diventano parole. */
+function _ossQuanto(n, tot){
+  if(!tot||n<=0) return 'mai';
+  const q=n/tot;
+  if(n===1) return 'una volta sola';
+  if(q>=0.85) return 'quasi ogni giorno';
+  if(q>=0.6)  return 'piu giorni si che no';
+  if(q>=0.35) return 'un giorno si e uno no';
+  if(q>=0.15) return 'ogni tanto';
+  return 'di rado';
 }
+/* la durata esce NUDA, senza preposizione: e chi costruisce la frase a mettere
+   «da» o «dopo». Altrimenti si finisce con «tornata dopo da una settimana», che
+   e il genere di errore che nessun giudice a soglie puo vedere. */
+function _ossDurata(g){
+  if(g<=1) return 'un giorno';
+  if(g<=3) return 'qualche giorno';
+  if(g<=8) return 'una settimana';
+  if(g<=20) return 'un paio di settimane';
+  if(g<=45) return 'un mese';
+  return 'mesi';
+}
+const _OSS_DOW=['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
+function _ossDow(g){ try{ return _OSS_DOW[new Date(g+'T12:00:00').getDay()]; }catch(_){ return ''; } }
+/* domenica e femminile, gli altri sei no: «il domenica» era la prima riga che
+   usciva sul caso del giorno che cede. */
+function _ossIlGiorno(dw){ return (dw==='domenica'?'la ':'il ')+dw; }
+function _ossGiorniFra(a,b){ try{ return Math.round((Date.parse(b+'T12:00:00')-Date.parse(a+'T12:00:00'))/86400000); }catch(_){ return 0; } }
+function _ossMinuscolo(t){ return String(t||'').trim().replace(/^./,c=>c.toLowerCase()); }
+
+/* ── I FATTI ───────────────────────────────────────────────────────────────
+   Ogni fatto e una cosa vera e verificabile nei dati, col nome esatto della cosa.
+   Niente categorie astratte: non «la costanza», ma «camminare».
+   L'ordine dell'elenco e l'ordine di preferenza: le sue parole prima di tutto. */
+function _ossFatti(d){
+  const F=[], diario=(d.diario||[]), oggi=d.oggi||'';
+  const passi=(d.passiGiornalieri||[]), motore=(d.dalMotore||{});
+
+  /* 1 · le sue parole esatte sull'attrito. Sono oro perche non sono nostre:
+        le ha scritte lui, e il Motore le ha gia messe da parte. */
+  (motore.attriti_vivi||[]).slice(0,2).forEach(a=>{
+    if(a&&a.quest&&a.parole) F.push({t:'attrito',peso:10,cosa:a.quest,parole:String(a.parole).trim()});
+  });
+
+  /* 2 · quello che tace da molti giorni, col suo nome */
+  (motore.assenze_lunghe||[]).slice(0,2).forEach(x=>{
+    if(x) F.push({t:'silenzio',peso:8,cosa:x});
+  });
+
+  /* 3 · la promessa che torna: nata piu volte, mai fatta */
+  {
+    const nate={}, fatte={};
+    diario.forEach(g=>{ (g.intenzioni||[]).forEach(t=>nate[t]=(nate[t]||0)+1);
+                        (g.azioni||[]).forEach(t=>fatte[t]=(fatte[t]||0)+1); });
+    let peggio=null,gap=0;
+    Object.keys(nate).forEach(t=>{ const v=nate[t]-(fatte[t]||0);
+      if(nate[t]>=2&&v>gap){ gap=v; peggio=t; } });
+    if(peggio) F.push({t:'ricorrente',peso:9,cosa:peggio,volte:nate[peggio]});
+  }
+
+  /* 4 · il ritorno: una cosa ricomparsa dopo un silenzio. E il fatto piu bello
+        che i dati contengano, e nessuno lo raccontava. */
+  {
+    const perGiorno={}; diario.forEach(g=>{ perGiorno[g.giorno]=new Set(g.azioni||[]); });
+    const giorni=Object.keys(perGiorno).sort();
+    if(giorni.length>=3){
+      const ultimo=giorni[giorni.length-1];
+      (Array.from(perGiorno[ultimo]||[])).forEach(t=>{
+        let vuoti=0, visto=null;
+        for(let i=giorni.length-2;i>=0;i--){
+          if(perGiorno[giorni[i]].has(t)){ visto=giorni[i]; break; }
+          vuoti++;
+        }
+        if(visto&&vuoti>=3) F.push({t:'ritorno',peso:9,cosa:t,dopo:_ossGiorniFra(visto,ultimo)});
+      });
+    }
+  }
+
+  /* 5 · il giorno della settimana che cede sempre */
+  {
+    const perDow={}, vuotiDow={};
+    passi.forEach(p=>{ const dw=_ossDow(p.giorno); if(!dw) return;
+      perDow[dw]=(perDow[dw]||0)+1; if(p.passo==='vuoto') vuotiDow[dw]=(vuotiDow[dw]||0)+1; });
+    let quale=null;
+    Object.keys(perDow).forEach(dw=>{
+      if(perDow[dw]>=2&&(vuotiDow[dw]||0)===perDow[dw]) quale=dw;
+    });
+    if(quale) F.push({t:'giorno',peso:7,cosa:quale});
+  }
+
+  /* 6 · la piu vecchia rimasta aperta */
+  {
+    const ap=(d.questAperte||[]).filter(q=>q&&q.titolo);
+    if(ap.length&&diario.length){
+      const prima={};
+      diario.slice().reverse().forEach(g=>{ (g.intenzioni||[]).forEach(t=>{ if(!prima[t]) prima[t]=g.giorno; }); });
+      let vecchia=null,eta=0;
+      ap.forEach(q=>{ const n=prima[q.titolo]; if(!n) return;
+        const g=_ossGiorniFra(n,oggi); if(g>eta){ eta=g; vecchia=q.titolo; } });
+      if(vecchia&&eta>=7) F.push({t:'vecchia',peso:6,cosa:vecchia,giorni:eta});
+    }
+  }
+
+  /* 7 · lo scritto: quanto ha lasciato una riga, e non e una spunta */
+  {
+    const g=diario.length, tot=Math.max(passi.length,g);
+    if(g>=3) F.push({t:'scritto',peso:4,quanto:_ossQuanto(g,tot),giorni:tot});
+  }
+
+  /* 8 · il ritmo, che e il ripiego di sempre ma detto senza fare il maestro.
+        Porta con se l'ampiezza vera della finestra: e l'unico modo onesto di
+        agganciarlo al passato senza inventare una durata. */
+  {
+    const pieni=passi.filter(p=>p.passo!=='vuoto').length;
+    if(passi.length>=4) F.push({t:'ritmo',peso:2,quanto:_ossQuanto(pieni,passi.length),
+                                pieni:pieni,vuoti:passi.length-pieni,giorni:passi.length});
+  }
+  return F.sort((a,b)=>b.peso-a.peso);
+}
+
+/* ── LE FORME ──────────────────────────────────────────────────────────────
+   Piu costruzioni per ogni fatto, cosi la voce non ha una sola architettura.
+   La firma vecchia era sempre la stessa: fatto, trattino, senso. Qui i trattini
+   non ci sono e le costruzioni si alternano. Tutte in minuscolo, due frasi al
+   massimo, e nessuna dice cosa fare: sono osservazioni, non consigli. */
+function _ossForme(f){
+  const c=_ossMinuscolo(f.cosa||'');
+  switch(f.t){
+    /* Ogni forma porta un aggancio a qualcosa piu vecchio di oggi: «avevi scritto»,
+       «scrivevi», «torna». E la regola che il giudice in laboratorio chiama R6 -
+       una riga che non chiude un filo piu vecchio di oggi e solo eco - e vale
+       anche qui, dove non c'e nessun modello a ricordarsene da solo. */
+    case 'attrito': return [
+      'di ' + c + ' avevi scritto «' + _ossMinuscolo(f.parole) + '». quelle parole sono ancora li.',
+      '«' + _ossMinuscolo(f.parole) + '», scrivevi di ' + c + '.',
+      '«' + _ossMinuscolo(f.parole) + '», avevi scritto. era ' + c + '.'];
+    /* qui NON si dice da quanto: il Motore segnala l'assenza contando le occasioni
+       mancate, non i giorni, e mettere «da due settimane» sarebbe una distanza
+       inventata. E la stessa regola che il giudice impone al modello (R7, R9):
+       le distanze si ricopiano dai dati o non si dicono. */
+    case 'silenzio': return [
+      c + ' non compare da un pezzo. non e sparita, tace.',
+      'di ' + c + ' non si parla piu da parecchio.',
+      'nessuna traccia di ' + c + ', ormai da un pezzo.'];
+    case 'ricorrente': return [
+      c + ' torna a nascere e non si chiude mai.',
+      'hai rimesso in lista ' + c + ' piu di una volta. torna sempre li.',
+      c + ' era in lista, e ci e finita di nuovo.'];
+    case 'ritorno': return [
+      c + ' e tornata dopo ' + _ossDurata(f.dopo) + ' di silenzio.',
+      'dopo ' + _ossDurata(f.dopo) + ' ferma, ' + c + ' e ricomparsa.',
+      c + ' aveva smesso di comparire. ora c’e di nuovo.'];
+    /* niente aggettivi che vanno accordati: «la domenica resta vuoto» era la prima
+       riga che usciva. Le forme girano su verbi, cosi il genere non le tocca. */
+    case 'giorno': return [
+      _ossIlGiorno(c) + ' torna, e non lascia mai niente.',
+      'ogni ' + c + ' la giornata passa e non resta niente. torna cosi da settimane.',
+      'c’e un giorno che cede sempre, ed e ' + _ossIlGiorno(c) + '.'];
+    case 'vecchia': return [
+      c + ' aspetta da ' + _ossDurata(f.giorni) + '.',
+      'la piu vecchia rimasta aperta e ' + c + '. sta li da ' + _ossDurata(f.giorni) + '.',
+      c + ' e in lista da ' + _ossDurata(f.giorni) + ' e non si muove.'];
+    /* i due ripieghi, quelli che escono quando non c'e materiale grosso. Anche
+       loro portano l'aggancio al passato, e sono quattro invece di tre: uscendo
+       spesso, con tre finivano per ripetersi dentro la stessa settimana. */
+    case 'scritto': return [
+      'da ' + _ossDurata(f.giorni) + ' hai lasciato una riga ' + f.quanto + '.',
+      'in queste settimane scrivi ' + f.quanto + ', e le righe restano.',
+      'il diario porta la tua voce ' + f.quanto + ', ormai da ' + _ossDurata(f.giorni) + '.',
+      'da ' + _ossDurata(f.giorni) + ' qui dentro resta qualcosa di scritto ' + f.quanto + '.'];
+    case 'ritmo': return [
+      'da ' + _ossDurata(f.giorni) + ' le giornate con qualcosa dentro sono ' + f.quanto + '.',
+      'in queste settimane qualcosa si muove ' + f.quanto + '.',
+      'i giorni pieni arrivano ' + f.quanto + ', ormai da ' + _ossDurata(f.giorni) + '.',
+      'da ' + _ossDurata(f.giorni) + ' il passo tiene ' + f.quanto + '.'];
+  }
+  return [];
+}
+
+/* ── IL GIUDICE, IN CASA ───────────────────────────────────────────────────
+   Le stesse regole di laboratorio/giudice.py, quelle che si possono misurare
+   senza un modello. Le soglie vengono dai maestri e stanno scritte accanto.
+   Una riga che non passa non si mostra: si prova la costruzione dopo. */
+const OSS_SOGLIE={copule:0.133, frase:31, corta:7, lettere:280};
+const _OSS_COP=/\b(e|è|sono|sei|siamo|siete|era|erano|eri|essere|stato|stata|stati|state|ho|hai|ha|abbiamo|avete|hanno|avevo|avevi|aveva|avevano|avere|avuto)\b/g;
+const _OSS_PRESCRIVE=/\b(devi|dovresti|dovrai|prova a|cerca di|ricorda di|basta che|ti serve|scegli)\b/;
+function _ossGiudica(riga, precedenti){
+  const t=String(riga||'').trim();
+  if(!t) return 'vuota';
+  if(t.length>OSS_SOGLIE.lettere) return 'troppo lunga';
+  if(/\s[—–-]\s/.test(t)) return 'trattino';            /* la firma numero uno */
+  if(/[!]/.test(t)) return 'esclamazione';
+  if(/\d/.test(t)) return 'cifra';                                 /* le quantita si dicono in parole */
+  if(/^[A-Z]/.test(t)) return 'attacco maiuscolo';
+  if(_OSS_PRESCRIVE.test(t.toLowerCase())) return 'prescrive';
+  const fr=t.split(/(?<=[.?…])\s+/).filter(x=>x.trim());
+  const parole=t.split(/\s+/).filter(Boolean);
+  if(fr.some(f=>f.split(/\s+/).length>OSS_SOGLIE.frase)) return 'frase lunga';
+  if(parole.length>=14&&fr.length<2) return 'fiato unico';         /* il punto in mezzo */
+  if(fr.length>=2&&!fr.some(f=>f.split(/\s+/).length<=OSS_SOGLIE.corta)) return 'non respira';
+  /* Le copule si contano SOLO nella prosa nostra: quello che sta fra virgolette
+     basse sono le sue parole, ricopiate, e non e uno stile che possiamo scegliere.
+     Senza questa esclusione la citazione dell'attrito - il materiale migliore che
+     abbiamo, perche e vero e suo - veniva bocciata quasi sempre: basta un «non ho
+     voglia» dentro una riga corta per sforare. */
+  const nostro=t.replace(/«[^»]*»/g,' ');
+  const paroleNostre=nostro.split(/\s+/).filter(Boolean);
+  const cop=(nostro.toLowerCase().match(_OSS_COP)||[]).length;
+  if(paroleNostre.length>=6&&cop/paroleNostre.length>OSS_SOGLIE.copule) return 'copule';
+  /* e non deve somigliare a quello che ha gia detto, in due modi diversi.
+     LE PAROLE: se ripete lo stesso materiale. */
+  const chiave=s=>new Set(String(s).toLowerCase().replace(/[^a-zà-ÿ\s]/g,' ').split(/\s+/).filter(w=>w.length>4));
+  const mie=chiave(t);
+  for(const p of (precedenti||[])){
+    const sue=chiave(p); if(!sue.size||!mie.size) continue;
+    let uguali=0; mie.forEach(w=>{ if(sue.has(w)) uguali++; });
+    if(uguali/mie.size>=0.5) return 'gia detta';
+  }
+  /* LA COSTRUZIONE: se ripete la stessa architettura con parole diverse.
+     Questa mancava, e l'ha trovata il giudice in laboratorio (R2) puntato contro
+     le righe del motore: diciassette su quarantotto avevano lo scheletro di
+     un'altra. E il difetto storico di Sentiero, quello per cui settantasei righe
+     su cento erano fatto, trattino, senso: cambiavano le parole e non la forma. */
+  const mioSk=_ossScheletro(t);
+  if(mioSk&&(precedenti||[]).some(p=>_ossScheletro(p)===mioSk)) return 'stessa costruzione';
+  return null;
+}
+const _OSS_FUNZ=new Set(['il','lo','la','i','gli','le','un','uno','una','e','ed','o','ma','di','a','da','in','con','su','per','tra','fra','che','non','del','della','dei','delle','al','alla','ai','alle','dal','dalla','nel','nella','si','ci','ti','ne','piu','ancora','sono','era','erano','hai','ha','ho']);
+function _ossScheletro(riga){
+  const tok=String(riga||'').toLowerCase().replace(/«[^»]*»/g,' ').replace(/[^a-zà-ÿ\s]/g,' ').split(/\s+/).filter(Boolean);
+  return tok.filter(w=>!_OSS_FUNZ.has(w)).slice(0,3).join(' ');
+}
+
+/* ── L'OSSERVATRICE ────────────────────────────────────────────────────────
+   Prende i fatti in ordine di forza, prova le costruzioni, tiene la prima che
+   passa il giudice. Se non passa niente, tace invece di dire una frase qualunque:
+   nessuna riga e meglio di una riga vuota, come per il frutto. */
+function buildObserverLocal(digest){
+  if(_pesaDiRecente(digest)) return {summary:'giorni che pesano',detectedPatterns:['peso'],note:OSS_RIGA_PESO};
+
+  const precedenti=[].concat(digest.osservazioniPrecedenti||[],digest.sussurri_recenti||[]);
+  const fatti=_ossFatti(digest);
+  const scartate=[];
+  for(const f of fatti){
+    for(const riga of _ossForme(f)){
+      const male=_ossGiudica(riga,precedenti);
+      if(!male) return {summary:'lo sguardo sugli ultimi giorni',detectedPatterns:[f.t],note:riga,_locale:true};
+      scartate.push(f.t+': '+male);
+    }
+  }
+  if(!(digest.diario||[]).length&&!(digest.passiGiornalieri||[]).length){
+    return {summary:'poche tracce',detectedPatterns:['poche tracce'],
+            note:'il foglio e ancora quasi vuoto. una riga, una spunta, e qui comincia a esserci qualcosa.',_locale:true};
+  }
+  return {summary:'niente da dire oggi',detectedPatterns:[],note:'',_scartate:scartate,_locale:true};
+}
+
 
 let observing=false;
 async function observe(silent){
@@ -9230,6 +9507,49 @@ document.querySelectorAll('#task-mode button').forEach(b=>{
     document.querySelector('#task-data').classList.toggle('hidden',taskMode!=='data');
   };
 });
+/* ══ LA NASCITA A MANO (v205) ═══════════════════════════════════════════════
+   Una quest poteva nascere solo da una risposta del modello. Cinque punti nel
+   codice, tutti e cinque dietro la chiave: per i rituali il bottone «Aggiungi»
+   c'era da sempre, per le quest non c'era mai stato. Senza chiave il cuore
+   dell'app - parli, e le cose da fare prendono forma - semplicemente non c'era.
+
+   Serve anche a chi la chiave ce l'ha: la rete cade, il modello tace, e intanto
+   una cosa da fare la vuoi segnare lo stesso.
+
+   La data di nascita si mette QUI, e non si dimentica: e la terza volta che
+   quel campo viene aggiunto a una strada nuova (v199 dalla voce, v203 dai
+   rituali a mano, v205 da qui), e le prime due volte era stato dimenticato. */
+function apriNascita(apri){
+  const f=document.querySelector('#nascita-form'), b=document.querySelector('#nascita-apri');
+  if(!f||!b) return;
+  f.classList.toggle('hidden',!apri);
+  b.classList.toggle('hidden',apri);
+  if(apri){ const t=document.querySelector('#nascita-txt'); if(t){ t.value=''; setTimeout(()=>t.focus(),40); } }
+  else { const d=document.querySelector('#nascita-quando'); if(d) d.value=''; }
+}
+function nasciAMano(){
+  const t=document.querySelector('#nascita-txt'), d=document.querySelector('#nascita-quando');
+  const titolo=String((t&&t.value)||'').trim();
+  if(!titolo) return;
+  const q={id:uid(),titolo:clampStr(titolo,LIMITS.TITLE),note:'',
+           quando:String((d&&d.value)||''),ora:'',prio:3,fatto:false,
+           nata:todayKey(),monte:''};
+  /* dalla stessa porta da cui passano le quest del modello: se il titolo e
+     impossibile o la data e scritta male, e sanitizeQuests a dirlo, non io. */
+  const prima=(S.quests||[]).length;
+  S.quests=sortQuests(sanitizeQuests([...(S.quests||[]),q]));
+  if((S.quests||[]).length===prima){ toast('Non sono riuscito a tenerla'); return; }
+  save();
+  apriNascita(false);
+  try{ render([q.id]); }catch(_){}
+  try{ playEventSound('questCreated'); }catch(_){}
+  try{ haptic(); }catch(_){}
+}
+document.querySelector('#nascita-apri').onclick=()=>apriNascita(true);
+document.querySelector('#nascita-no').onclick=()=>apriNascita(false);
+document.querySelector('#nascita-ok').onclick=nasciAMano;
+document.querySelector('#nascita-txt').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); nasciAMano(); } });
+
 document.querySelector('#btn-addtask').onclick=()=>{
   const txt=document.querySelector('#new-task-txt').value.trim();
   if(!txt) return toast('Scrivi il testo della task');
@@ -9237,11 +9557,20 @@ document.querySelector('#btn-addtask').onclick=()=>{
   if(taskMode==='data'){
     const date=document.querySelector('#new-task-date').value||'';
     if(!date) return toast('Scegli una data');
-    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[],date,time}]);
+    /* v203: la data di nascita mancava proprio qui, ed e la strada piu battuta.
+       La v199 la mise ai rituali nati dalla voce (due punti, tutti e due dentro
+       una risposta del modello) e questo bottone resto fuori: e da qui che sono
+       nati tutti e quattordici i rituali nel backup dell'8 agosto, nessuno con
+       la data. Senza, _nascitaRituale prova a dedurla dal primo giorno spuntato
+       e per un rituale creato oggi non c'e niente da dedurre: il conto delle
+       mancate riparte dall'inizio del cammino. E' esattamente il guasto che la
+       v199 doveva chiudere, rimasto aperto sul lato che si usa di piu - e l'unico
+       che esiste per chi non ha la chiave, dove i rituali si fanno solo a mano. */
+    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[],date,time,nata:todayKey()}]);
     document.querySelector('#new-task-date').value='';
   } else {
     if(!newDays.length) return toast('Scegli almeno un giorno');
-    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[...newDays].sort((a,b)=>a-b),time}]);
+    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[...newDays].sort((a,b)=>a-b),time,nata:todayKey()}]);
   }
   document.querySelector('#new-task-txt').value=''; document.querySelector('#new-task-time').value='';
   save(); renderSettings(); renderTasks(); updateRing(); scheduleReminders(); toast('Task aggiunta');
