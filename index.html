@@ -2274,7 +2274,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.208 · 2026-08-10';
+const APP_VERSION='v60S.209 · 2026-08-10';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -8545,6 +8545,110 @@ function _terraVivaioLargo(mem){
   for(const t of tutte) if(!_terraGiaFatta(t,mem)) return t;
   return '';
 }
+/* ══ LA DOMANDA DI CASA (v209) ══════════════════════════════════════════════
+   Il vivaio ha diciotto frasi. Sono scritte bene, ma sono diciotto: dopo tre
+   settimane senza chiave la Chiamata a terra ricomincia da capo, e una domanda
+   che hai gia sentito non e piu una domanda - e un cartello.
+
+   La via d'uscita non era scriverne altre cento. Era smettere di pescare da un
+   serbatoio e cominciare a guardare i suoi giorni: il materiale non finisce mai,
+   perche cambia da solo. Sono gli stessi fatti che usa l'osservatrice la sera -
+   le sue parole d'attrito, quello che tace, la promessa che torna, il giorno che
+   cede - girati in domanda invece che in osservazione.
+
+   UNA DOMANDA NON E UN RIMPROVERO, ed e la riga sottile di tutto questo pezzo.
+   «cosa la ferma?» apre; «perche non l'hai ancora fatta?» accusa, e su
+   un'abitudine mancata la seconda viene molto piu facile della prima. Per questo
+   nessuna forma nomina una colpa, e piu d'una offre di lasciar andare: «e ancora
+   tua?», «la vuoi ancora?». Sono le Tre Leggi applicate a una domanda.
+
+   Le parole sono di Davide da rivedere: qui la macchina sceglie il materiale,
+   non il tono. */
+function _terraFormeCasa(f){
+  const c=_ossMinuscolo(f.cosa||'');
+  switch(f.t){
+    case 'attrito': return [
+      'di '+c+' avevi scritto «'+_ossMinuscolo(f.parole)+'». cosa la rende cosi pesante?',
+      '«'+_ossMinuscolo(f.parole)+'», dicevi di '+c+'. e ancora vero stamattina?'];
+    case 'silenzio': return [
+      c+' non compare da un pezzo. la vuoi ancora?',
+      'di '+c+' non si parla piu. cosa e cambiato?'];
+    case 'ricorrente': return [
+      c+' torna a nascere e non si chiude. cosa la ferma?',
+      'hai rimesso in lista '+c+' piu di una volta. e la cosa giusta, o solo quella che ricordi?'];
+    case 'ritorno': return [
+      c+' e tornata dopo un vuoto. cosa e stato diverso, quel giorno?',
+      'hai ripreso '+c+'. cosa te l’ha resa possibile?'];
+    case 'giorno': return [
+      _ossIlGiorno(c)+' non lascia mai niente. cosa succede, '+_ossIlGiorno(c)+'?',
+      'ogni '+c+' la giornata passa e non resta niente. com’e fatto quel giorno?'];
+    case 'vecchia': return [
+      c+' aspetta da un pezzo. e ancora tua?',
+      c+' e in lista e non si muove. la vuoi ancora, o la lasci andare?'];
+    /* una cosa aperta, presa una alla volta. Non forma nessun pattern e per
+       l'osservatrice non e materiale; per una domanda lo e eccome, ed e il
+       materiale piu abbondante che esista in un archivio vero. */
+    /* attenzione al peso delle copule: «e li da un po. e ancora la cosa giusta?»
+       ha due «e» in dodici parole e il giudice la scartava sempre, in silenzio.
+       Le domande girano su verbi che fanno qualcosa: aspettare, sentire, tenere. */
+    case 'aperta': return [
+      c+' aspetta da un po’. la senti ancora tua?',
+      c+' sta in lista. cosa la tiene ferma?'];
+  }
+  return [];
+}
+/* I fatti per la DOMANDA non sono esattamente quelli della sera: l'osservatrice
+   cerca pattern, la porta puo anche chiedere di una cosa sola. Tenerli separati
+   evita che la riga della sera cominci a elencare la lista delle cose aperte. */
+function _terraFattiCasa(d){
+  const F=_ossFatti(d).slice();
+  (d.questAperte||[]).forEach(q=>{ if(q&&q.titolo) F.push({t:'aperta',peso:5,cosa:q.titolo}); });
+  return F.sort((a,b)=>b.peso-a.peso);
+}
+function terraDomandaCasa(){
+  try{
+    const d=buildObserverDigest();
+    if(_pesaDiRecente(d)) return '';        /* nei giorni che pesano non si chiede niente */
+    const mem=(S.semi||[]).map(s=>s&&s.testo).concat((S.domChieste||[]).map(x=>x&&x.testo)).filter(Boolean);
+    /* l'ultima domanda fatta, per non tornare due volte di fila sulla stessa cosa:
+       tre mattine su «fare 1200 €» sono tre modi di dire la stessa frase. */
+    const ultima=_ossMinuscolo(String(mem[mem.length-1]||''));
+    for(const f of _terraFattiCasa(d)){
+      const suo=String(f.cosa||'');
+      if(suo&&ultima&&ultima.indexOf(_ossMinuscolo(suo))>=0) continue;
+      for(const q of _terraFormeCasa(f)){
+        if(!q) continue;
+        if(!/\?$/.test(q.trim())) continue;                 /* deve restare una domanda */
+        if(/\s[—–-]\s/.test(q)) continue;
+        /* le cifre si cercano SOLO nella prosa nostra. Una sua quest si chiama
+           «Fare 1200 €», e il divieto sui numeri - che esiste perche l'app non
+           faccia i conti in faccia a nessuno - gli stava censurando i titoli che
+           si e scritto da solo. Sul suo archivio vero questo bastava a far uscire
+           zero domande: il difetto si vedeva solo li, e non nei casi finti. */
+        /* la domanda si giudica con il suo titolo sostituito da un pronome: cosi
+           le misure cadono sulla NOSTRA prosa e non sulle sue parole. Vale per le
+           cifre e vale per tutto il resto - e la stessa scelta fatta per le
+           citazioni fra virgolette nel motore della sera. */
+        const nostro=suo?q.split(suo).join('quella').split(_ossMinuscolo(suo)).join('quella'):q;
+        if(/\d/.test(nostro)) continue;
+        if(/^[A-Z]/.test(q)) continue;
+        if(/\bdevi\b|\bdovresti\b|prova a |cerca di |perche non /i.test(q)) continue;   /* niente rimproveri */
+        /* LE MISURE sul testo col pronome, LA NOVITA sul testo vero. Tenerle
+           insieme sembrava piu pulito e invece rompeva tutto: col titolo
+           sostituito, due domande su cose diverse diventano identiche agli occhi
+           del giudice, e dalla seconda in poi venivano scartate tutte come «gia
+           detta». Sul suo archivio le domande erano crollate da sei a due, e il
+           motivo non si vedeva da nessuna parte se non provandolo li. */
+        if(_ossGiudica(nostro.replace(/\?/g,'.'),[])) continue;
+        if(mem.some(m=>m&&_ossScheletro(m)===_ossScheletro(q))) continue;
+        if(mem.some(m=>m&&String(m).trim()===q.trim())) continue;
+        return q;
+      }
+    }
+  }catch(_){}
+  return '';
+}
+
 function terraDomanda(){
   /* prima una domanda vera gia piantata e senza risposta; se non c'e, se ne chiede una nuova
      al vivaio locale (nessuna chiamata al modello: la porta non deve mai far aspettare) */
@@ -8552,6 +8656,13 @@ function terraDomanda(){
   if(aperti.length) return aperti[aperti.length-1];
   /* la domanda preparata dal motore: sta nel cassetto, esce senza far aspettare */
   if(S.domPronta&&S.domPronta.testo) return {id:'',testo:S.domPronta.testo,volante:true,motore:true};
+  /* v209: prima del vivaio, la domanda costruita sui suoi giorni. Il vivaio resta
+     sotto, per quando non c'e ancora materiale: i primi giorni, o una settimana
+     senza tracce. */
+  {
+    const q=terraDomandaCasa();
+    if(q) return {id:'',testo:q,volante:true,casa:true};
+  }
   try{
     const d=new Date(), tk=todayKey();
     const cand=seminaCandidate(S,{tk:tk,ora:d.getHours(),dow:dowOf(d),sealed:S.lastSealed===tk,vuoti:giorniVuoti(S,tk)})
