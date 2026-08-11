@@ -45,6 +45,10 @@ ol li{padding-left:4px;color:var(--t2)}
 ol li::before{display:none}
 .leggi{border-left:2px solid rgba(232,168,76,.45);padding:2px 0 2px 16px;margin:0 0 18px}
 .leggi p{color:var(--t1);font-family:var(--serif);font-size:19px;line-height:1.5;margin:0}
+.avviso{border:.5px solid rgba(232,168,76,.42);background:rgba(232,168,76,.07);
+  border-radius:16px;padding:16px 18px;margin:22px 0 26px}
+.avviso strong{display:block;margin-bottom:6px;color:var(--accent)}
+.avviso p{margin:0;color:var(--t1);font-size:16px;line-height:1.55}
 .via{display:block;text-align:center;min-height:56px;padding:17px 26px;margin:30px 0 10px;
   background:var(--accent);color:#1a1208;font-weight:700;font-size:17.5px;
   border-radius:16px;text-decoration:none;box-shadow:0 6px 22px rgba(232,168,76,.22)}
@@ -67,6 +71,19 @@ a{color:var(--accent)}
     <h1>Sentiero</h1>
     <p class="sotto">Un diario che tiene il filo.</p>
   </header>
+
+  <!-- v219: L'AVVISO CHE VALE PIU DI TUTTA LA PAGINA.
+       Chi tocca un link dentro Instagram, WhatsApp, LinkedIn o Facebook non
+       finisce in Safari: finisce nel browser interno dell'app. Li «Aggiungi a
+       Home» NON C'E, e la persona conclude che non funziona e chiude. E il modo
+       piu probabile in cui questa pagina viene aperta, ed era anche l'unico caso
+       che non gestiva. -->
+  <div id="dentro-app" class="avviso" hidden>
+    <strong>Stai leggendo dentro un'altra app.</strong>
+    <p>Da qui non si può installare Sentiero: manca la voce giusta nel menù.
+    Tocca i <strong>tre puntini</strong> (o il simbolo di condivisione) in alto
+    e scegli <strong id="apri-in">Apri in Safari</strong>. Poi torna qui.</p>
+  </div>
 
   <p>Parli, o scrivi. Sentiero tiene da parte le cose che hai detto di voler fare
   e non te le lascia sparire. La sera ti dice una riga su come stanno andando i
@@ -153,8 +170,52 @@ a{color:var(--accent)}
   <footer>
     Pensato da Davide Cuzzilla, usato da entrambi.<br>
     Condividilo se anche tu pensi che possa aiutare qualcun altro. Grazie
+    <br><br>
+    <a href="./privacy.html">I tuoi dati</a>
   </footer>
 
 </main>
+<script>
+/* L'UNICO SCRIPT DELLA PAGINA, e fa due cose sole: accorgersi di essere dentro
+   il browser di un'altra app, e mettere davanti le istruzioni del telefono che
+   hai in mano. Nessuna richiesta di rete, nessuna statistica, niente che esca da
+   qui: legge navigator.userAgent e accende una classe. Se lo script non parte,
+   la pagina resta esattamente come e, con tutte le istruzioni visibili. */
+(function(){
+  try{
+    var ua = navigator.userAgent || '';
+    var iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var android = /Android/i.test(ua);
+    /* i browser interni: si riconoscono dal nome nell'user agent, oppure - su
+       iOS - dal fatto che non sono Safari pur essendo WebKit */
+    var nome = /Instagram/i.test(ua) ? 'Instagram'
+             : /FBAN|FBAV|FB_IAB/i.test(ua) ? 'Facebook'
+             : /LinkedIn/i.test(ua) ? 'LinkedIn'
+             : /WhatsApp/i.test(ua) ? 'WhatsApp'
+             : /Line\/|MicroMessenger|Twitter|TikTok/i.test(ua) ? 'un\'altra app' : '';
+    var dentro = !!nome;
+    if (dentro) {
+      var box = document.getElementById('dentro-app');
+      if (box) {
+        box.hidden = false;
+        var b = document.getElementById('apri-in');
+        if (b) b.textContent = iOS ? 'Apri in Safari' : 'Apri in Chrome';
+      }
+    }
+    /* le istruzioni del telefono che hai in mano vanno per prime */
+    if (iOS || android) {
+      var vuoi = iOS ? 'iPhone e iPad' : 'Android';
+      var schede = document.querySelectorAll('.scheda');
+      for (var i = 0; i < schede.length; i++) {
+        var h = schede[i].querySelector('h3');
+        if (h && h.textContent.indexOf(vuoi) === 0) {
+          schede[i].parentNode.insertBefore(schede[i], schede[0]);
+          break;
+        }
+      }
+    }
+  }catch(_){}
+})();
+</script>
 </body>
 </html>
