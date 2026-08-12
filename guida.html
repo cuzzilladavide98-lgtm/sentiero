@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sentiero — Come si usa</title>
+<meta name="description" content="Come si usa Sentiero, un pezzo alla volta. Con i tasti veri e le parole che si leggono sullo schermo.">
+<meta name="theme-color" content="#070a09">
+<link rel="icon" href="./icon-192.png">
+<!-- Nessuna richiesta esterna. I tasti sono disegnati qui dentro, in SVG: chi
+     legge questa pagina non scarica niente da nessuno. -->
+<style>
+:root{
+  --bg:#070a09; --t1:#F5F2EA; --t2:rgba(245,242,234,.62); --t3:rgba(245,242,234,.46);
+  --accent:#E8A84C; --jade:#7FB8A4;
+  --serif:"New York","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);font-size:17px;
+  line-height:1.62;-webkit-font-smoothing:antialiased;padding:0 22px calc(70px + env(safe-area-inset-bottom))}
+main{max-width:34rem;margin:0 auto}
+header{padding:calc(48px + env(safe-area-inset-top)) 0 6px}
+h1{font-family:var(--serif);font-weight:400;font-size:36px;line-height:1.12}
+.sotto{color:var(--t2);font-size:17px;margin-top:9px}
+h2{font-family:var(--serif);font-weight:400;font-size:25px;margin:46px 0 6px;letter-spacing:.01em}
+h2 .n{color:var(--accent);font-size:15px;letter-spacing:.14em;display:block;margin-bottom:7px;font-family:var(--sans)}
+h3{font-size:16px;font-weight:600;margin:26px 0 8px}
+p{margin:0 0 14px}
+p.calmo{color:var(--t2)}
+strong{font-weight:600}
+em{font-style:italic}
+ul{list-style:none;margin:0 0 14px}
+li{position:relative;padding-left:20px;margin-bottom:9px;color:var(--t2)}
+li::before{content:'';position:absolute;left:2px;top:.72em;width:6px;height:6px;border-radius:50%;background:var(--t3)}
+.indice{border:.5px solid rgba(245,242,234,.13);border-radius:16px;padding:16px 18px;margin:26px 0 8px}
+.indice a{display:block;padding:7px 0;color:var(--t1);text-decoration:none;font-size:16px;border-bottom:.5px solid rgba(245,242,234,.07)}
+.indice a:last-child{border:none}
+.indice a span{color:var(--accent);font-size:13px;letter-spacing:.1em;margin-right:10px}
+.schermo{display:flex;align-items:center;gap:14px;background:rgba(245,242,234,.045);
+  border:.5px solid rgba(245,242,234,.12);border-radius:16px;padding:14px 16px;margin:0 0 16px}
+.schermo .dis{flex:none}
+.schermo .dice{font-size:15px;line-height:1.5;color:var(--t2)}
+.schermo .dice b{color:var(--t1);font-weight:600;display:block;margin-bottom:2px}
+.tasto{display:inline-block;background:rgba(245,242,234,.1);border:.5px solid rgba(245,242,234,.2);
+  border-radius:8px;padding:1px 8px;font-size:15px;color:var(--t1);white-space:nowrap}
+.leggi{border-left:2px solid rgba(232,168,76,.45);padding:2px 0 2px 16px;margin:0 0 20px}
+.leggi p{color:var(--t1);font-family:var(--serif);font-size:18.5px;line-height:1.5;margin:0}
+.avviso{border:.5px solid rgba(232,168,76,.4);background:rgba(232,168,76,.07);
+  border-radius:16px;padding:15px 17px;margin:20px 0}
+.avviso strong{display:block;color:var(--accent);margin-bottom:5px}
+.avviso p{margin:0;font-size:16px;line-height:1.55}
+footer{margin:56px 0 0;padding-top:22px;border-top:.5px solid rgba(245,242,234,.10);
+  color:var(--t3);font-size:14px;text-align:center}
+a{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <h1>Come si usa</h1>
+    <p class="sotto">Un pezzo alla volta, con i tasti veri.</p>
+  </header>
+
+  <div class="leggi">
+    <p>Se hai due minuti, leggi solo il primo capitolo: è l’unica cosa che serve
+    davvero sapere. Il resto è qui per quando ti servirà.</p>
+  </div>
+
+  <nav class="indice">
+    <a href="#uno"><span>1</span>Il cerchio: parlare</a>
+    <a href="#due"><span>2</span>Le cose che vuoi fare</a>
+    <a href="#tre"><span>3</span>La sera e il mattino</a>
+    <a href="#quattro"><span>4</span>Le cose che si ripetono</a>
+    <a href="#cinque"><span>5</span>Le giornate storte</a>
+    <a href="#sei"><span>6</span>Portare via tutto</a>
+    <a href="#sette"><span>7</span>Se hai una chiave: la Generativa</a>
+    <a href="#otto"><span>8</span>Se qualcosa non torna</a>
+  </nav>
+
+  <!-- ═══ 1 ═══ -->
+  <h2 id="uno"><span class="n">CAPITOLO 1</span>Il cerchio: parlare</h2>
+
+  <div class="schermo">
+    <svg class="dis" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(245,242,234,.22)" stroke-width="2"/>
+      <circle cx="26" cy="26" r="21" fill="none" stroke="#E8A84C" stroke-width="2"
+              stroke-dasharray="132" stroke-dashoffset="95" transform="rotate(-90 26 26)" stroke-linecap="round"/>
+      <path d="M26 19v9M22 24.5a4 4 0 0 0 8 0" stroke="rgba(245,242,234,.8)" stroke-width="1.8"
+            fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="dice"><b>Il cerchio grande, in mezzo</b>È il microfono. È la cosa che si usa più di tutte.</div>
+  </div>
+
+  <p><strong>Tienilo premuto e parla.</strong> Non toccarlo e basta: tieni il dito
+  giù mentre parli, e alza il dito quando hai finito. Quello che hai detto diventa
+  la voce di oggi.</p>
+
+  <p class="calmo">Non devi parlare bene, e non devi sapere cosa dire. «Oggi è
+  andata storta e non ho voglia di niente» è una voce di diario perfetta.</p>
+
+  <h3>Se preferisci scrivere</h3>
+  <p class="calmo">Puoi. Sotto il cerchio c’è un posto dove si scrive, e vale
+  esattamente come parlare. Su alcuni telefoni la dettatura non c’è proprio, e
+  l’app te lo dice da sola: <em>«Dettatura non disponibile: scrivi qui sotto»</em>.</p>
+
+  <div class="avviso">
+    <strong>La prima volta ti chiede il microfono</strong>
+    <p>Devi rispondere <strong>Consenti</strong>, altrimenti la voce non funziona.
+    Se hai risposto no per sbaglio: Impostazioni del telefono › Safari ›
+    Microfono. Oppure scrivi, che va bene uguale.</p>
+  </div>
+
+  <!-- ═══ 2 ═══ -->
+  <h2 id="due"><span class="n">CAPITOLO 2</span>Le cose che vuoi fare</h2>
+
+  <p>Se mentre parli dici che vuoi fare qualcosa — «devo chiamare il
+  commercialista», «voglio ricominciare a camminare» — <strong>Sentiero se lo
+  segna da solo</strong> e lo mette nella lista di oggi. Non devi scriverlo due
+  volte.</p>
+
+  <div class="schermo">
+    <svg class="dis" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <rect x="6" y="12" width="40" height="28" rx="7" fill="none" stroke="rgba(245,242,234,.2)" stroke-width="1.5"/>
+      <circle cx="15" cy="21" r="3.4" fill="none" stroke="#7FB8A4" stroke-width="1.6"/>
+      <line x1="23" y1="21" x2="39" y2="21" stroke="rgba(245,242,234,.5)" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="15" cy="31" r="3.4" fill="none" stroke="rgba(245,242,234,.3)" stroke-width="1.6"/>
+      <line x1="23" y1="31" x2="34" y2="31" stroke="rgba(245,242,234,.3)" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <div class="dice"><b>«Le cose di oggi»</b>La lista sotto il cerchio. Tocca il pallino a sinistra quando ne hai fatta una.</div>
+  </div>
+
+  <p class="calmo"><strong>Restano finché non le fai.</strong> Se passa una
+  settimana non succede niente: nessun rosso, nessun rimprovero, nessun
+  «hai saltato 6 giorni». È voluto.</p>
+
+  <h3>Aggiungerne una a mano</h3>
+  <p>In fondo alle cose di oggi c’è <span class="tasto">una cosa nuova</span>.
+  Toccalo, scrivi cosa vuoi fare, e tocca <span class="tasto">tienila</span>. Se
+  ci metti anche una data, comparirà quel giorno.</p>
+
+  <h3>Toglierne una</h3>
+  <p class="calmo">Tieni premuto sulla riga: si aprono i tasti per aggiornarla,
+  rimandarla, lasciarla andare o eliminarla.</p>
+
+  <!-- ═══ 3 ═══ -->
+  <h2 id="tre"><span class="n">CAPITOLO 3</span>La sera e il mattino</h2>
+
+  <p><strong>La sera</strong> Sentiero ti scrive una riga su come stanno andando i
+  tuoi giorni. Non è un riassunto e non è un voto: è una cosa notata, come la
+  direbbe qualcuno che ti guarda da un po’.</p>
+
+  <p><strong>Al mattino</strong> ce n’è un’altra, su ieri.</p>
+
+  <p class="calmo">Non si possono chiedere e non c’è un tasto per farle arrivare:
+  vengono quando è il momento, e certi giorni non vengono. Anche questo è voluto —
+  una cosa che parla sempre smette di dire qualcosa.</p>
+
+  <h3>La stanza della sera</h3>
+  <p class="calmo">C’è un posto dove si scrive più a lungo, quando la giornata
+  chiede più di una frase. Ci si arriva dalla sera, e non ti insegue: se non entri,
+  non succede niente.</p>
+
+  <h3>La Chiamata a terra</h3>
+  <p class="calmo">Ogni tanto arriva una domanda sola, costruita sui tuoi ultimi
+  giorni. Si può rispondere o si può chiudere.</p>
+
+  <!-- ═══ 4 ═══ -->
+  <h2 id="quattro"><span class="n">CAPITOLO 4</span>Le cose che si ripetono</h2>
+
+  <p>Sono le cose che provi a fare tutti i giorni, o certi giorni: camminare,
+  prendere una medicina, chiamare qualcuno. Compaiono ogni volta da sole.</p>
+
+  <p><strong>La prima te la chiede l’app appena la apri</strong>, la prima volta.
+  Puoi anche saltare: si può aggiungere dopo, e si può non averne nessuna.</p>
+
+  <h3>Aggiungerne, toglierne</h3>
+  <ul>
+    <li>Apri <span class="tasto">Altro</span> (le impostazioni).</li>
+    <li>Scendi fino a <strong>«Le cose che si ripetono»</strong>.</li>
+    <li>Scrivi nel campo in basso, scegli i giorni, e aggiungi.</li>
+    <li>Per toglierne una, tocca la <span class="tasto">×</span> alla sua destra.</li>
+  </ul>
+
+  <p class="calmo">Non si possono modificare: si toglie e si rimette. Sono poche
+  parole, ed è più veloce che sembra.</p>
+
+  <!-- ═══ 5 ═══ -->
+  <h2 id="cinque"><span class="n">CAPITOLO 5</span>Le giornate storte</h2>
+
+  <div class="leggi">
+    <p>Se una giornata è pesante, scrivilo. Sentiero fa un passo indietro: non
+    ricava cose da fare da una giornata così, e non ti dice come stai andando.</p>
+  </div>
+
+  <p class="calmo">È la cosa a cui è stato dedicato più lavoro di tutte, e si vede
+  solo quando serve. Detto chiaro: <strong>Sentiero non è un terapeuta e non ci
+  prova.</strong> Se stai attraversando qualcosa di grosso, un’app non basta:
+  parlane con qualcuno.</p>
+
+  <!-- ═══ 6 ═══ -->
+  <h2 id="sei"><span class="n">CAPITOLO 6</span>Portare via tutto</h2>
+
+  <p>Quello che scrivi sta solo sul tuo telefono. Nessun server, nessun account,
+  nessuna copia da nessun’altra parte. Il che vuol dire una cosa importante:
+  <strong>l’unica copia che esisterà mai è quella che ti fai tu.</strong></p>
+
+  <ul>
+    <li>Apri <span class="tasto">Altro</span>, scendi fino a <strong>«Dati»</strong>.</li>
+    <li>Salva il file. Mettilo dove vuoi: è tuo e si legge anche senza l’app.</li>
+    <li>Sul telefono nuovo, dalla stessa sezione, lo ricarichi.</li>
+  </ul>
+
+  <div class="avviso">
+    <strong>Su iPhone c’è una cosa da sapere</strong>
+    <p>Se apri Sentiero da Safari senza averlo messo in Home, dopo circa una
+    settimana che non lo apri <strong>l’iPhone cancella quello che hai
+    scritto</strong>. È una regola di Apple. Messo in Home non succede. Se in
+    cima all’app vedi la riga arancione che te lo dice, non è un consiglio: è un
+    avviso.</p>
+  </div>
+
+  <!-- ═══ 7 ═══ -->
+  <h2 id="sette"><span class="n">CAPITOLO 7</span>Se hai una chiave: la Generativa</h2>
+
+  <p><strong>Prima di tutto: non ti serve.</strong> Senza chiave l’app si chiama
+  Sentiero e funziona per intero — tutto quello che hai letto fin qui è la
+  versione senza chiave. Non c’è niente da comprare e non c’è una versione
+  «completa» dietro un pagamento.</p>
+
+  <p>Detto questo: se incolli nelle impostazioni una chiave di
+  <strong>Anthropic</strong>, presa da te con un tuo account, l’app diventa
+  <em>Sentiero — versione Generativa</em> e prende un passo automatico.</p>
+
+  <h3>Cosa cambia davvero</h3>
+  <ul>
+    <li>Le cose da fare nascono dal parlato <strong>con il giorno e l’ora</strong>:
+    «giovedì alle tre dal meccanico» diventa una cosa che compare giovedì alle tre.
+    Senza chiave l’app coglie la cosa, ma l’orario spesso no.</li>
+    <li>La riga della sera <strong>la scrive un modello</strong> invece del motore
+    di casa: cambia il modo, non l’argomento.</li>
+    <li>La domanda della Chiamata a terra è scritta sui tuoi ultimi giorni invece
+    che scelta fra quelle pronte.</li>
+    <li>Quando scrivi qualcosa di pesante, la Generativa <strong>lo capisce</strong>
+    e cambia registro. Senza chiave l’app riconosce solo le frasi che non si
+    possono fraintendere, e ne coglie circa la metà.</li>
+    <li>Una cosa la sa fare solo lei: la <strong>distillazione del periodo</strong>,
+    una pagina sola che tiene insieme un mese e ne tira un senso.</li>
+  </ul>
+
+  <h3>Quanto costa</h3>
+  <p class="calmo">Il consumo lo paghi tu, direttamente ad Anthropic, con il tuo
+  account. Non passa da noi: la chiave resta sul tuo telefono e nessun altro la
+  vede. Si toglie quando vuoi, e l’app torna a essere Sentiero senza perdere
+  niente di quello che hai scritto.</p>
+
+  <h3>Come si mette</h3>
+  <ul>
+    <li>Apri <span class="tasto">Altro</span>, scendi a <strong>«La versione Generativa»</strong>.</li>
+    <li>Incolla la chiave nel campo (comincia per <em>sk-ant-</em>).</li>
+    <li>Tocca <span class="tasto">Salva chiave</span>, poi <span class="tasto">Prova connessione</span>.</li>
+  </ul>
+
+  <p class="calmo">Se non sai cos’è una chiave di Anthropic, ti serve un account su
+  <a href="https://console.anthropic.com" rel="noopener">console.anthropic.com</a>.
+  Ed è del tutto legittimo decidere che non ti interessa.</p>
+
+  <!-- ═══ 8 ═══ -->
+  <h2 id="otto"><span class="n">CAPITOLO 8</span>Se qualcosa non torna</h2>
+
+  <h3>Il microfono non parte</h3>
+  <p class="calmo">Quasi sempre è il permesso: Impostazioni del telefono › Safari ›
+  Microfono. Se non c’è verso, scrivi invece di parlare — l’app funziona uguale.</p>
+
+  <h3>«Dove sono» non manda niente</h3>
+  <p class="calmo">La prima volta deve trovare dove sei, e te lo dice: <em>«Trovato.
+  Tocca di nuovo dove sono per mandarlo»</em>. Tocca una seconda volta e si apre la
+  condivisione del telefono.</p>
+
+  <h3>Non trovo le impostazioni</h3>
+  <p class="calmo">Sono sotto <span class="tasto">Altro</span>. Lì dentro c’è
+  tutto: come si usa, i suoni, la lingua, i tuoi dati e il salvataggio.</p>
+
+  <h3>Ho perso quello che avevo scritto</h3>
+  <p class="calmo">Se lo aprivi da Safari senza averlo messo in Home, è la regola
+  dei sette giorni del capitolo 6. Non si recupera, ma da lì in avanti si evita:
+  mettilo in Home e salva ogni tanto il file.</p>
+
+  <h3>Non capisce quello che dico</h3>
+  <p class="calmo">Senza chiave l’app ragiona con delle regole e non capisce tutto.
+  Se una frase esce storta, si può aggiustare: scrivilo a chi te l’ha passata.</p>
+
+  <footer>
+    <a href="./inizia.html">Torna all’inizio</a> &nbsp;·&nbsp;
+    <a href="./privacy.html">I tuoi dati</a><br><br>
+    Pensato da Davide Cuzzilla, usato da entrambi.
+  </footer>
+
+</main>
+</body>
+</html>

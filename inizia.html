@@ -53,6 +53,15 @@ ol li::before{display:none}
   background:var(--accent);color:#1a1208;font-weight:700;font-size:17.5px;
   border-radius:16px;text-decoration:none;box-shadow:0 6px 22px rgba(232,168,76,.22)}
 .via:active{transform:scale(.985)}
+.via.secondaria{background:none;color:var(--accent);border:.5px solid rgba(232,168,76,.45);
+  box-shadow:none;font-weight:600;margin-top:26px}
+.primo{margin:0 0 18px}
+.primo-riga{display:flex;gap:14px;align-items:flex-start;padding:14px 0;
+  border-bottom:.5px solid rgba(245,242,234,.08)}
+.primo-riga:last-child{border-bottom:none}
+.primo-riga>div{font-size:16px;line-height:1.55;color:var(--t2)}
+.primo-riga strong{color:var(--t1)}
+.primo-dis{flex:none;margin-top:2px}
 .indirizzo{text-align:center;color:var(--t3);font-size:14px;word-break:break-all;margin-bottom:6px}
 .scheda{border:.5px solid rgba(245,242,234,.13);border-radius:16px;padding:18px 18px 6px;margin:0 0 14px}
 .scheda h3{font-size:15px;font-weight:600;color:var(--t1);margin:0 0 10px;letter-spacing:.01em}
@@ -143,6 +152,56 @@ a{color:var(--accent)}
     </ol>
   </div>
 
+  <!-- v224 — QUELLO CHE MANCAVA, E CHE HA FATTO FERMARE UNA PERSONA VERA.
+       La pagina spiegava cos'e Sentiero e come si installa, e finiva li. Uno
+       sconosciuto arrivava davanti all'app aperta senza sapere cosa toccare: e
+       successo alla madre di Davide, su un iPhone SE, e senza lui accanto si
+       sarebbe fermata li. Adesso la pagina dice anche la cosa piu semplice, che
+       era l'unica che mancava. -->
+  <h2>Appena si apre</h2>
+
+  <div class="primo">
+    <div class="primo-riga">
+      <svg class="primo-dis" width="46" height="46" viewBox="0 0 52 52" aria-hidden="true">
+        <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(245,242,234,.22)" stroke-width="2"/>
+        <circle cx="26" cy="26" r="21" fill="none" stroke="#E8A84C" stroke-width="2"
+                stroke-dasharray="132" stroke-dashoffset="95" transform="rotate(-90 26 26)" stroke-linecap="round"/>
+        <path d="M26 19v9M22 24.5a4 4 0 0 0 8 0" stroke="rgba(245,242,234,.8)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div><strong>Tieni premuto il cerchio e parla.</strong><br>
+      Non toccarlo e basta: tieni giù il dito mentre parli, e alzalo quando hai
+      finito. Se preferisci scrivere, sotto c'è dove.</div>
+    </div>
+    <div class="primo-riga">
+      <svg class="primo-dis" width="46" height="46" viewBox="0 0 52 52" aria-hidden="true">
+        <rect x="6" y="12" width="40" height="28" rx="7" fill="none" stroke="rgba(245,242,234,.2)" stroke-width="1.5"/>
+        <circle cx="15" cy="21" r="3.4" fill="none" stroke="#7FB8A4" stroke-width="1.6"/>
+        <line x1="23" y1="21" x2="39" y2="21" stroke="rgba(245,242,234,.5)" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="15" cy="31" r="3.4" fill="none" stroke="rgba(245,242,234,.3)" stroke-width="1.6"/>
+        <line x1="23" y1="31" x2="34" y2="31" stroke="rgba(245,242,234,.3)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div><strong>Le cose che dici di voler fare restano lì sotto.</strong><br>
+      Non devi segnartele: ci pensa lui. Quando ne fai una, tocca il pallino.</div>
+    </div>
+    <div class="primo-riga">
+      <svg class="primo-dis" width="46" height="46" viewBox="0 0 52 52" aria-hidden="true">
+        <circle cx="26" cy="26" r="20" fill="none" stroke="rgba(245,242,234,.2)" stroke-width="1.5"/>
+        <path d="M26 6a20 20 0 0 1 0 40z" fill="rgba(232,168,76,.5)"/>
+      </svg>
+      <div><strong>La sera trovi una riga sui tuoi giorni.</strong><br>
+      Al mattino un'altra, su ieri. Non c'è un tasto per farle arrivare: vengono
+      quando è il momento.</div>
+    </div>
+  </div>
+
+  <p class="calmo">La prima volta l'app ti chiede il permesso per il microfono
+  &mdash; rispondi <strong>Consenti</strong> &mdash; e poi ti prende per mano con
+  quattro passaggi, indicandoti i tasti uno per uno. Si può saltare.</p>
+
+  <a class="via secondaria" href="./guida.html">Come si usa, per intero</a>
+  <p class="calmo" style="text-align:center;font-size:15px">Otto capitoli brevi.
+  Puoi mandarlo a chi ti chiede aiuto, invece di spiegarlo tu.</p>
+
   <h2>Se hai una chiave</h2>
   <p class="calmo">C'è una seconda marcia, e si chiama <em>Sentiero &mdash; versione
   Generativa</em>. Con una chiave di Anthropic incollata nelle impostazioni, le
@@ -171,6 +230,7 @@ a{color:var(--accent)}
     Pensato da Davide Cuzzilla, usato da entrambi.<br>
     Condividilo se anche tu pensi che possa aiutare qualcun altro. Grazie
     <br><br>
+    <a href="./guida.html">Come si usa</a> &nbsp;·&nbsp;
     <a href="./privacy.html">I tuoi dati</a>
   </footer>
 

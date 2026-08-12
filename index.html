@@ -557,6 +557,42 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 .ob-go:active{opacity:.5;transform:scale(.96)}
 .ob-note{font-size:14px;color:var(--t3);line-height:1.5;margin-top:24px;min-height:18px}
 
+/* v224 — la domanda del primo giorno */
+.ob-rito{width:100%;margin-top:26px;padding-top:24px;border-top:.5px solid rgba(245,242,234,.12);text-align:left}
+.ob-rito.hidden{display:none}
+.ob-rito-dom{font-family:var(--serif);font-size:19px;line-height:1.45;color:var(--t1);margin-bottom:14px;text-align:center}
+#ob-rito-txt{width:100%;min-height:48px;background:rgba(245,242,234,.06);border:.5px solid rgba(245,242,234,.16);
+  border-radius:12px;padding:13px 14px;color:var(--t1);font-size:16px;font-family:inherit;outline:none}
+#ob-rito-txt::placeholder{color:rgba(245,242,234,.34)}
+#ob-rito-txt:focus{border-color:rgba(232,168,76,.5)}
+.ob-rito-nota{font-size:13.5px;line-height:1.5;color:var(--t3);margin-top:12px;text-align:center}
+.ob-rito-piede{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px}
+.ob-salta{border:none;background:none;color:var(--t3);font-size:15px;font-family:inherit;padding:12px 18px}
+.ob-piccolo-btn{font-size:16px;padding:12px 22px}
+
+/* ════════ v224 — LA MANO GUIDATA ════════
+   Il buco non e un ritaglio vero: e un rettangolo con un'ombra enorme tutt'intorno.
+   Cosi lo schermo sotto resta visibile e toccabile dov'e acceso, e scuro dove non
+   serve - e non servono ne canvas ne maschere SVG, che su iOS costano e a volte
+   sfarfallano. */
+#tour{position:fixed;inset:0;z-index:120}
+#tour.hidden{display:none}
+#tour-buco{position:absolute;border-radius:18px;pointer-events:none;
+  box-shadow:0 0 0 9999px rgba(4,6,5,.86), 0 0 0 2px rgba(232,168,76,.55) inset;
+  transition:top .32s cubic-bezier(.22,1,.36,1),left .32s cubic-bezier(.22,1,.36,1),
+             width .32s cubic-bezier(.22,1,.36,1),height .32s cubic-bezier(.22,1,.36,1)}
+#tour-box{position:absolute;left:16px;right:16px;background:rgba(18,22,20,.97);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:.5px solid rgba(245,242,234,.14);border-radius:18px;padding:18px 18px 10px;
+  box-shadow:0 18px 50px rgba(0,0,0,.5)}
+#tour-txt{font-family:var(--serif);font-size:17.5px;line-height:1.55;color:var(--t1);margin:0}
+#tour-piede{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+#tour-piede button{border:none;background:none;font-family:inherit;padding:12px 4px}
+#tour-salta{color:var(--t3);font-size:15px}
+#tour-avanti{color:var(--accent);font-size:16.5px;font-weight:600}
+#tour-conta{color:var(--t3);font-size:13px;letter-spacing:.06em}
+@media (prefers-reduced-motion:reduce){#tour-buco{transition:none}}
+
 /* ════════ apertura ════════ */
 
 
@@ -1383,6 +1419,42 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
     <p class="ob-sub ob-piccolo">Niente account, niente da pagare. Resta tutto sul tuo telefono.</p>
     <button class="ob-go" id="ob-go">Inizia</button>
     <p class="ob-note" id="ob-note"></p>
+
+    <!-- v224 — LA DOMANDA DEL PRIMO GIORNO.
+         Prima qui non c'era niente e la lista partiva con due abitudini di
+         Davide. Adesso parte vuota, e vuota resta se la persona salta: chi
+         salta non viene piu disturbato. Una domanda sola, e la piu facile a cui
+         rispondere - non «cosa vuoi cambiare della tua vita», che e' una
+         domanda da terapeuta, ma «c'e' qualcosa che gia' provi a fare». -->
+    <div class="ob-rito hidden" id="ob-rito">
+      <p class="ob-rito-dom">C’è qualcosa che provi a fare ogni giorno?</p>
+      <input type="text" id="ob-rito-txt" maxlength="80" enterkeyhint="done" placeholder="camminare mezz’ora">
+      <p class="ob-rito-nota">Resterà nella lista di oggi, e potrai toglierla quando vuoi. Se non ti viene in mente niente, salta: non serve.</p>
+      <div class="ob-rito-piede">
+        <button class="ob-salta" id="ob-rito-salta">Salto</button>
+        <button class="ob-go ob-piccolo-btn" id="ob-rito-ok">Aggiungi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- v224 — LA MANO GUIDATA.
+     Quattro passi, ognuno acceso su un pezzo VERO dello schermo: il buco si
+     misura sull'elemento con getBoundingClientRect, quindi non puo' finire fuori
+     posto quando l'app cambia. Si salta a ogni passo, e saltata una volta non
+     torna mai piu.
+     Perche esiste: sua madre, davanti alla prima schermata, non ha capito cosa
+     doveva toccare. Una riga di testo spiega a chi legge; un dito indica a
+     chiunque. -->
+<div id="tour" class="hidden" role="dialog" aria-modal="true">
+  <div id="tour-buco"></div>
+  <div id="tour-box">
+    <p id="tour-txt"></p>
+    <div id="tour-piede">
+      <button id="tour-salta">Salta</button>
+      <span id="tour-conta"></span>
+      <button id="tour-avanti">Avanti</button>
+    </div>
   </div>
 </div>
 <div id="app">
@@ -1550,6 +1622,8 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
         <p class="note">La sera trovi una riga su come stanno andando i tuoi giorni. Al mattino ce n'è un'altra, su ieri. Non le puoi chiedere: arrivano quando è il momento.</p>
         <p class="note">Se una giornata è pesante, scrivilo pure. L'app fa un passo indietro: non ne ricava cose da fare e non ti dice come stai andando.</p>
         <p class="note">Qui sotto, in fondo, c'è «Dati»: da lì porti via tutto in un file tuo. Fallo ogni tanto — è l'unica copia che esisterà mai.</p>
+        <div class="btn-row"><button class="act" id="btn-guida">La guida, per intero</button></div>
+        <p class="note">Otto capitoli, con i tasti spiegati uno per uno. Compresa la parte sulla versione Generativa, se un giorno ti interessa.</p>
       </section>
 
       <section>
@@ -1586,7 +1660,7 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
       <section>
         <div class="sec-head">Le cose che si ripetono</div>
         <div class="group" id="list-sched"></div>
-        <input type="text" id="new-task-txt" placeholder="Es. 80 g proteine">
+        <input type="text" id="new-task-txt" placeholder="es. camminare mezz’ora">
         <div class="seg" id="task-mode" style="margin-top:14px">
           <button data-mode="ric" class="on">Ricorrente</button><button data-mode="data">Data precisa</button>
         </div>
@@ -2397,7 +2471,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.223 · 2026-08-10';
+const APP_VERSION='v60S.224 · 2026-08-11';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -2576,10 +2650,17 @@ const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Maestria','Pi
 const todayKey=()=>localDayKey(new Date());
 const defaultState={
   apiKey:'',quests:[],diary:[],
-  scheduled:[
-    {id:'s1',titolo:'80 g proteine',days:[0,1,2,3,4,5,6],time:'',date:''},
-    {id:'s2',titolo:'Sveglia alle 7',days:[0,1,2,3,4],time:'07:00',date:''}
-  ],
+  /* v224 — QUI DENTRO C'ERANO LE ABITUDINI DI DAVIDE.
+     «80 g proteine» tutti i giorni e «Sveglia alle 7» dal lunedi al venerdi:
+     due voci vere, sue, scritte nello stato di partenza. Chiunque installasse
+     Sentiero se le trovava addosso il primo giorno, senza sapere da dove
+     venissero ne come toglierle - la × sta nelle impostazioni, in fondo a una
+     sezione che al primo giorno non si sa che esiste.
+     L'ha scoperto sua madre, provando l'app: senza qualcuno accanto non avrebbe
+     capito. E provaChiunque era verde, perche cercava il NOME di Davide, non la
+     sua VITA: un banco puo difendere solo la cosa a cui e stato puntato.
+     Adesso si parte vuoti, e la prima domanda la fa l'app. */
+  scheduled:[],
   checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],frutti:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
 };
@@ -3700,19 +3781,53 @@ function capturePos(){
 }
 function freshPos(){ return (lastPos&&Date.now()-lastPos.ts<30*60*1000)?{lat:lastPos.lat,lon:lastPos.lon}:null; }
 function mapsUrl(p){ return 'https://maps.google.com/?q='+p.lat+','+p.lon; }
+/* v224 \u2014 \u00abDOVE SONO\u00bb, RIPARATO.
+   Non funzionava, e non per la posizione: per il tempo.
+   Il tasto chiedeva la posizione e chiamava la condivisione DENTRO la risposta,
+   secondi dopo. iOS pretende che il foglio di condivisione parta nell'istante
+   del tocco - passata quella frazione di secondo l'autorizzazione e' scaduta e
+   rifiuta. E il rifiuto finiva in un catch vuoto con scritto \u00abcondivisione
+   annullata: nessun errore\u00bb, quindi non appariva nemmeno un messaggio: il tasto
+   sembrava semplicemente morto.
+   Sul telefono di Davide funzionava perche il permesso era gia dato e la
+   posizione gia in memoria; su un telefono nuovo, mai.
+
+   Adesso: se la posizione c'e gia (capturePos la tiene fresca mezz'ora) si
+   condivide SUBITO, dentro il tocco. Se non c'e, si chiede - e si dice alla
+   persona di toccare di nuovo, invece di far finta di niente. */
 document.querySelector('#btn-pin').onclick=()=>{
-  if(!('geolocation' in navigator)){ toast('Posizione non supportata qui'); return; }
-  toast('Rilevo la posizione\u2026');
-  navigator.geolocation.getCurrentPosition(async p=>{
-    const pos={lat:Math.round(p.coords.latitude*1e5)/1e5,lon:Math.round(p.coords.longitude*1e5)/1e5};
-    lastPos={...pos,ts:Date.now()};
+  if(!('geolocation' in navigator)){ toast('La posizione non \u00e8 disponibile su questo telefono'); return; }
+
+  const manda=(pos)=>{
     const url=mapsUrl(pos);
+    if(navigator.share){
+      /* dentro il gesto: niente await prima di qui */
+      navigator.share({title:T('La mia posizione'),url:url})
+        .catch(e=>{ if(e&&e.name==='AbortError') return;      /* l'ha chiusa lei: non e un errore */
+                    copiaPos(url); });
+    } else copiaPos(url);
+  };
+  const copiaPos=(url)=>{
     try{
-      if(navigator.share){ await navigator.share({title:'La mia posizione',url:url}); }
-      else { await navigator.clipboard.writeText(url); toast('Link posizione copiato'); }
-    }catch(_){/* condivisione annullata: nessun errore */}
-  },()=>{ toast('Permesso posizione negato: abilitalo nelle impostazioni iOS di Sentiero'); },
-  {enableHighAccuracy:true,timeout:10000,maximumAge:0});
+      navigator.clipboard.writeText(url)
+        .then(()=>toast('Link della posizione copiato: incollalo dove vuoi'))
+        .catch(()=>toast('Non riesco a copiare il link qui'));
+    }catch(_){ toast('Non riesco a copiare il link qui'); }
+  };
+
+  const fresca=freshPos();
+  if(fresca){ manda(fresca); return; }
+
+  toast('Cerco dove sei\u2026');
+  navigator.geolocation.getCurrentPosition(p=>{
+    lastPos={lat:Math.round(p.coords.latitude*1e5)/1e5,lon:Math.round(p.coords.longitude*1e5)/1e5,ts:Date.now()};
+    /* NON si condivide da qui: il tocco e' scaduto e iOS rifiuterebbe in
+       silenzio. Si dice alla persona che adesso si puo. */
+    toast('Trovato. Tocca di nuovo \u00abdove sono\u00bb per mandarlo');
+  },err=>{
+    if(err&&err.code===1) toast('Permesso negato: Impostazioni \u203a Safari \u203a Posizione');
+    else toast('Non riesco a trovare dove sei: riprova fra un momento');
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
 };
 
 /* ======================================================================
@@ -10506,6 +10621,11 @@ document.querySelector('#sw-notif').onclick=async()=>{
    quello che conta. */
 { const b=document.querySelector('#btn-privacy');
   if(b) b.onclick=()=>{ try{ window.open('./privacy.html','_blank','noopener'); }catch(_){ location.href='./privacy.html'; } }; }
+/* v224: la guida per intero sta accanto all'app, come l'informativa. Viaggia
+   nella cache del service worker, quindi si apre anche senza rete: una guida che
+   si apre solo online e' inutile proprio il giorno che serve. */
+{ const b=document.querySelector('#btn-guida');
+  if(b) b.onclick=()=>{ try{ window.open('./guida.html','_blank','noopener'); }catch(_){ location.href='./guida.html'; } }; }
 document.querySelector('#btn-savekey').onclick=()=>{ S.apiKey=document.querySelector('#apikey').value.trim(); save(); toast(S.apiKey?'Chiave salvata':'Chiave rimossa'); };
 document.querySelector('#btn-testkey').onclick=async()=>{
   const out=document.querySelector('#test-result');
@@ -10910,14 +11030,117 @@ function maybeOnboard(){
     ? 'Prima però mettilo in Home: Condividi → «Aggiungi alla schermata Home». Se lo lasci nel browser, dopo qualche giorno l’iPhone cancella quello che hai scritto.'
     : 'Suggerimento: aggiungilo alla schermata Home. Si apre più in fretta e funziona anche senza rete.';
   ob.classList.remove('hidden');
+
+  /* v224: «Inizia» non chiude piu la schermata, apre la domanda. Chiudere e
+     lasciare uno sconosciuto davanti a un'app vuota era esattamente il punto in
+     cui la madre di Davide si e fermata. */
+  const chiudi=()=>{
+    ob.style.transition='opacity .4s ease'; ob.style.opacity='0';
+    setTimeout(()=>{ ob.classList.add('hidden'); try{ avviaMano(); }catch(_){} },400);
+  };
   document.querySelector('#ob-go').onclick=async()=>{
     try{ localStorage.setItem('sentiero-onboarded','1'); }catch(_){}
     /* chiede il microfono una volta, nel momento giusto, con un gesto utente reale */
     await primeMicPermission();
     try{ if(S.settings.music) syncAdaptiveMusic(true); }catch(_){}  /* dopo il microfono, sblocca e avvia la musica */
-    ob.style.transition='opacity .4s ease'; ob.style.opacity='0';
-    setTimeout(()=>ob.classList.add('hidden'),400);
+    const rito=document.querySelector('#ob-rito');
+    const go=document.querySelector('#ob-go'), nota=document.querySelector('#ob-note');
+    if(!rito){ chiudi(); return; }
+    if(go) go.style.display='none';
+    if(nota) nota.style.display='none';
+    rito.classList.remove('hidden');
+    try{ document.querySelector('#ob-rito-txt').focus(); }catch(_){}
   };
+  const salva=()=>{
+    const inp=document.querySelector('#ob-rito-txt');
+    const v=String((inp&&inp.value)||'').trim();
+    if(v){
+      /* ogni giorno, senza orario: la forma piu innocua che esista. Un orario
+         vorrebbe dire una notifica, e una notifica il primo giorno e' una fretta
+         che quest'app non mette. */
+      S.scheduled=[{id:'r'+Date.now().toString(36),titolo:clampStr(v,80),
+                    days:[0,1,2,3,4,5,6],time:'',date:'',nata:todayKey()}];
+      save();
+      try{ renderTasks(); renderSettings(); updateRing(); }catch(_){}
+    }
+    chiudi();
+  };
+  const b1=document.querySelector('#ob-rito-ok'), b2=document.querySelector('#ob-rito-salta');
+  if(b1) b1.onclick=salva;
+  if(b2) b2.onclick=chiudi;
+  const inp=document.querySelector('#ob-rito-txt');
+  if(inp) inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); salva(); } };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LA MANO GUIDATA (v224)
+
+   Quattro passi. Ognuno accende un pezzo VERO dello schermo, misurato con
+   getBoundingClientRect: se domani il cerchio si sposta, il buco lo segue da
+   solo. Se un elemento non c'e, il passo si salta invece di accendere il vuoto.
+
+   Nasce da una prova sul campo: la madre di Davide, iPhone SE, davanti alla
+   prima schermata non ha capito cosa toccare. Il testo spiega a chi legge; il
+   dito indica a chiunque.
+
+   Si salta a ogni passo, e saltata una volta non torna mai piu.
+   ══════════════════════════════════════════════════════════════════════════ */
+const MANO_LS='sentiero-mano';
+const MANO_PASSI=[
+  {sel:'#mic',        txt:'Tieni premuto qui e di’ quello che ti passa per la testa. Quando lasci, resta scritto.'},
+  {sel:'#sec-today-quests', txt:'Le cose che dici di voler fare finiscono qui sotto da sole. Nessuno te le cancella se passa una settimana.'},
+  {sel:'#nascita-apri', txt:'Se preferisci scriverle a mano invece che dirle, si aggiungono da qui.'},
+  {sel:'#open-altro', txt:'E qui dentro c’è tutto il resto: come si usa, i tuoi dati, e da dove porti via tutto quando vuoi.'}
+];
+let _manoI=0;
+function manoFinita(){
+  try{ return localStorage.getItem(MANO_LS)==='1'; }catch(_){ return true; }
+}
+function chiudiMano(){
+  try{ localStorage.setItem(MANO_LS,'1'); }catch(_){}
+  const t=document.querySelector('#tour'); if(t) t.classList.add('hidden');
+}
+function disegnaMano(){
+  const t=document.querySelector('#tour'); if(!t) return;
+  /* salta i passi il cui bersaglio non c'e o non si vede: meglio un passo in
+     meno che un buco acceso sul nulla */
+  while(_manoI<MANO_PASSI.length){
+    const el=document.querySelector(MANO_PASSI[_manoI].sel);
+    const r=el?el.getBoundingClientRect():null;
+    if(r&&r.width>4&&r.height>4) break;
+    _manoI++;
+  }
+  if(_manoI>=MANO_PASSI.length){ chiudiMano(); return; }
+  const passo=MANO_PASSI[_manoI];
+  const el=document.querySelector(passo.sel), r=el.getBoundingClientRect();
+  const pad=8;
+  const buco=document.querySelector('#tour-buco');
+  buco.style.top=Math.max(0,r.top-pad)+'px';
+  buco.style.left=Math.max(0,r.left-pad)+'px';
+  buco.style.width=Math.min(window.innerWidth,r.width+pad*2)+'px';
+  buco.style.height=(r.height+pad*2)+'px';
+  document.querySelector('#tour-txt').textContent=T(passo.txt);
+  document.querySelector('#tour-conta').textContent=(_manoI+1)+' / '+MANO_PASSI.length;
+  document.querySelector('#tour-avanti').textContent=T(_manoI===MANO_PASSI.length-1?'Ho capito':'Avanti');
+  /* la scheda va dove c'e posto: sotto il buco, o sopra se sotto non ci sta.
+     Sull'iPhone SE lo schermo e 667 punti e questa scelta non e teorica. */
+  const box=document.querySelector('#tour-box');
+  box.style.top='0px';
+  const h=box.getBoundingClientRect().height||160;
+  const sotto=r.bottom+pad+12, sopra=r.top-pad-12-h;
+  box.style.top=(sotto+h<window.innerHeight-12?sotto:Math.max(12,sopra))+'px';
+}
+function avviaMano(){
+  if(manoFinita()) return;
+  const t=document.querySelector('#tour'); if(!t) return;
+  _manoI=0;
+  t.classList.remove('hidden');
+  const av=document.querySelector('#tour-avanti'), sa=document.querySelector('#tour-salta');
+  if(av) av.onclick=()=>{ _manoI++; if(_manoI>=MANO_PASSI.length) chiudiMano(); else disegnaMano(); };
+  if(sa) sa.onclick=chiudiMano;
+  window.addEventListener('resize',()=>{ if(!t.classList.contains('hidden')) disegnaMano(); });
+  /* un istante di respiro: l'app ha appena finito di disegnarsi */
+  setTimeout(disegnaMano,260);
 }
 /* "scalda" il permesso microfono: avvio+stop immediato così iOS chiede ORA, non a metà dettatura */
 async function primeMicPermission(){
