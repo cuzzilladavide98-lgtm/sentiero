@@ -1135,42 +1135,42 @@ body[data-pane="quest"] #notte-luce,body[data-pane="quest"] .notte-scia{display:
 }
 
 /* ── la stanza del giardino (v140): l'easter egg del cammino ── */
-#stanza{position:fixed;inset:0;z-index:220;background:#070a09;touch-action:none}
-#stanza canvas{position:absolute;inset:0;width:100%;height:100%}
-#stanza-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:14px;z-index:2;width:38px;height:38px;border-radius:50%;border:1px solid #3a463e;background:rgba(16,21,18,.7);color:#e8dcc0;font-size:20px;line-height:1}
-#stanza-velo{position:absolute;left:0;right:0;bottom:0;padding:26px 22px calc(28px + env(safe-area-inset-bottom));opacity:0;transition:opacity .6s;pointer-events:none;background:linear-gradient(180deg,rgba(7,10,9,0) 0%,rgba(7,10,9,.85) 45%);color:#f5eedc}
-#stanza.svelato #stanza-velo{opacity:1}
-#stanza-velo .r{margin-top:10px}
-#stanza-velo .l{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#8a927f}
-#stanza-velo .n{font-size:25px;font-weight:800;font-style:italic;color:#e8bc6a}
-#stanza-velo .n small{font-size:13px;color:#8a927f;font-weight:600;font-style:normal}
-#stanza-velo .firma{margin-top:14px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8a927f;text-align:center}
-#stanza-velo .frase{font-size:15.5px;line-height:1.55;color:#f5eedc;margin-top:10px}
-#stanza-velo .frase b{color:#e8bc6a;font-style:italic;font-size:1.15em}
-#stanza-giorno{position:absolute;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:3;background:rgba(13,18,15,.94);border:1px solid rgba(232,188,106,.4);border-radius:14px;padding:14px 16px;opacity:0;transform:translateY(18px);transition:opacity .35s,transform .35s;pointer-events:none}
-#stanza-giorno.on{opacity:1;transform:none;pointer-events:auto}   /* v161: la regola base la spegne al tocco e la .on non la riaccendeva: dalla v143 la card si vedeva, si toccava e non rispondeva. Ogni bottone che ci e passato dentro - posa la pietra, e compiuto, lascia andare, e cambiato, e il dettaglio dei giorni nel giardino - non ha mai funzionato. */
-#stanza-giorno .g-testa{color:#e8bc6a;font-weight:700;font-size:14.5px;letter-spacing:.02em}
-#stanza-giorno .g-fatti{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
-#stanza-giorno .g-fatti span{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.3);border-radius:12px;padding:3px 10px;font-size:12.5px;color:#f5eedc}
-#stanza-giorno .g-voce{margin-top:9px;color:#9fc4e8;font-size:13px;font-style:italic;line-height:1.45}
-#stanza-giorno .g-voce.muto{color:#8a927f}
-#stanza-giorno .g-cresta{margin-top:8px;color:#8a927f;font-size:12px;line-height:1.5}
-#stanza-giorno .g-cresta i{font-style:normal;color:#b9ae95}
-#stanza-giorno .g-fatti .pv{border-color:rgba(159,196,232,.45);color:#9fc4e8}
-#stanza-giorno .g-azioni{margin-top:11px;display:flex;flex-wrap:wrap;gap:7px}
-#stanza-giorno .g-azioni button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.4);border-radius:12px;padding:6px 12px;font-size:12.5px;color:#e8dcc0}
-#stanza-rito{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;background:rgba(7,10,9,.72);backdrop-filter:blur(3px)}
-#stanza-rito.on{display:flex}
-#stanza-rito .r-box{width:min(88vw,380px);background:rgba(13,18,15,.96);border:1px solid rgba(232,188,106,.45);border-radius:16px;padding:18px 18px 14px}
-#stanza-rito .r-t{color:#e8bc6a;font-weight:800;font-style:italic;font-size:19px;text-align:center;margin-bottom:6px}
-#stanza-rito .r-l{color:#8a927f;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin:10px 0 5px}
-#stanza-rito textarea{width:100%;box-sizing:border-box;background:#0d1210;color:#f5eedc;border:1px solid #2a332e;border-radius:10px;padding:9px;font-size:14.5px;font-family:inherit;resize:none}
-#stanza-rito .r-b{display:flex;gap:8px;margin-top:14px}
-#stanza-rito .r-b button{flex:1;padding:10px;border-radius:12px;font-size:14px;border:1px solid rgba(232,188,106,.5);background:rgba(232,188,106,.12);color:#e8dcc0}
-#stanza-rito .r-b #r-no{flex:.6;border-color:#2a332e;background:transparent;color:#8a927f}
+#giardino{position:fixed;inset:0;z-index:220;background:#070a09;touch-action:none}
+#giardino canvas{position:absolute;inset:0;width:100%;height:100%}
+#giardino-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:14px;z-index:2;width:38px;height:38px;border-radius:50%;border:1px solid #3a463e;background:rgba(16,21,18,.7);color:#e8dcc0;font-size:20px;line-height:1}
+#giardino-velo{position:absolute;left:0;right:0;bottom:0;padding:26px 22px calc(28px + env(safe-area-inset-bottom));opacity:0;transition:opacity .6s;pointer-events:none;background:linear-gradient(180deg,rgba(7,10,9,0) 0%,rgba(7,10,9,.85) 45%);color:#f5eedc}
+#giardino.svelato #giardino-velo{opacity:1}
+#giardino-velo .r{margin-top:10px}
+#giardino-velo .l{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#8a927f}
+#giardino-velo .n{font-size:25px;font-weight:800;font-style:italic;color:#e8bc6a}
+#giardino-velo .n small{font-size:13px;color:#8a927f;font-weight:600;font-style:normal}
+#giardino-velo .firma{margin-top:14px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#8a927f;text-align:center}
+#giardino-velo .frase{font-size:15.5px;line-height:1.55;color:#f5eedc;margin-top:10px}
+#giardino-velo .frase b{color:#e8bc6a;font-style:italic;font-size:1.15em}
+#giardino-giorno{position:absolute;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:3;background:rgba(13,18,15,.94);border:1px solid rgba(232,188,106,.4);border-radius:14px;padding:14px 16px;opacity:0;transform:translateY(18px);transition:opacity .35s,transform .35s;pointer-events:none}
+#giardino-giorno.on{opacity:1;transform:none;pointer-events:auto}   /* v161: la regola base la spegne al tocco e la .on non la riaccendeva: dalla v143 la card si vedeva, si toccava e non rispondeva. Ogni bottone che ci e passato dentro - posa la pietra, e compiuto, lascia andare, e cambiato, e il dettaglio dei giorni nel giardino - non ha mai funzionato. */
+#giardino-giorno .g-testa{color:#e8bc6a;font-weight:700;font-size:14.5px;letter-spacing:.02em}
+#giardino-giorno .g-fatti{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+#giardino-giorno .g-fatti span{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.3);border-radius:12px;padding:3px 10px;font-size:12.5px;color:#f5eedc}
+#giardino-giorno .g-voce{margin-top:9px;color:#9fc4e8;font-size:13px;font-style:italic;line-height:1.45}
+#giardino-giorno .g-voce.muto{color:#8a927f}
+#giardino-giorno .g-cresta{margin-top:8px;color:#8a927f;font-size:12px;line-height:1.5}
+#giardino-giorno .g-cresta i{font-style:normal;color:#b9ae95}
+#giardino-giorno .g-fatti .pv{border-color:rgba(159,196,232,.45);color:#9fc4e8}
+#giardino-giorno .g-azioni{margin-top:11px;display:flex;flex-wrap:wrap;gap:7px}
+#giardino-giorno .g-azioni button{background:rgba(232,188,106,.1);border:1px solid rgba(232,188,106,.4);border-radius:12px;padding:6px 12px;font-size:12.5px;color:#e8dcc0}
+#giardino-rito{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;background:rgba(7,10,9,.72);backdrop-filter:blur(3px)}
+#giardino-rito.on{display:flex}
+#giardino-rito .r-box{width:min(88vw,380px);background:rgba(13,18,15,.96);border:1px solid rgba(232,188,106,.45);border-radius:16px;padding:18px 18px 14px}
+#giardino-rito .r-t{color:#e8bc6a;font-weight:800;font-style:italic;font-size:19px;text-align:center;margin-bottom:6px}
+#giardino-rito .r-l{color:#8a927f;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;margin:10px 0 5px}
+#giardino-rito textarea{width:100%;box-sizing:border-box;background:#0d1210;color:#f5eedc;border:1px solid #2a332e;border-radius:10px;padding:9px;font-size:14.5px;font-family:inherit;resize:none}
+#giardino-rito .r-b{display:flex;gap:8px;margin-top:14px}
+#giardino-rito .r-b button{flex:1;padding:10px;border-radius:12px;font-size:14px;border:1px solid rgba(232,188,106,.5);background:rgba(232,188,106,.12);color:#e8dcc0}
+#giardino-rito .r-b #r-no{flex:.6;border-color:#2a332e;background:transparent;color:#8a927f}
 /* v144: il tocco lungo non deve svegliare la selezione testo di iOS (il menu Copia sopra il giardino) */
 body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
-#stanza, #stanza *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#giardino, #giardino *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
 /* ════════ IL FRUTTO DI IERI (v163) — al livello piu alto del foglio, MAI dentro una media query ════════ */
 
@@ -1596,8 +1596,8 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
               <button data-anim="auto">Di sistema</button><button data-anim="sempre">Sempre</button>
             </div>
           </div>
-          <div class="switchrow"><span>La voce che legge ad alta voce</span><button class="sw" id="sw-voice"></button></div>
-          <div class="switchrow"><span>La voce che commenta<small style="display:block;opacity:.6;font-size:11px">una riga vera quando chiudi una cosa (serve la chiave)</small></span><button class="sw" id="sw-obsline"></button></div>
+          <div class="switchrow"><span>La voce che legge ad alta voce<small style="display:block;opacity:.6;font-size:11px">la voce del telefono dice una parola quando spunti qualcosa. Spenta: a molti dà fastidio</small></span><button class="sw" id="sw-voice"></button></div>
+          <div class="switchrow"><span>La voce che commenta<small style="display:block;opacity:.6;font-size:11px">una riga quando chiudi una cosa. Con la chiave la scrive un modello; senza, il motore di casa</small></span><button class="sw" id="sw-obsline"></button></div>
           <div class="switchrow"><span>Come ti parla<small style="display:block;opacity:.6;font-size:11px">gli accordi delle sue righe: finché non scegli, li evita</small></span>
             <div class="seg" id="seg-genere">
               <button data-genere="m">Maschile</button><button data-genere="f">Femminile</button>
@@ -2204,7 +2204,7 @@ function sanitizeState(raw,def){
     lastDayInit:(typeof raw.lastDayInit==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastDayInit))?raw.lastDayInit:'',
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
-      voice:!(raw.settings&&raw.settings.voice===false),
+      voice:!!(raw.settings&&raw.settings.voice===true),
       obsLine:!(raw.settings&&raw.settings.obsLine===false),
       notif:!!(raw.settings&&raw.settings.notif===true),
       geo:!!(raw.settings&&raw.settings.geo===true),
@@ -2495,7 +2495,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.226 · 2026-08-12';
+const APP_VERSION='v60S.227 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -2686,7 +2686,7 @@ const defaultState={
      Adesso si parte vuoti, e la prima domanda la fa l'app. */
   scheduled:[],
   checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],frutti:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
-  settings:{sound:true,voice:true,notif:false,uiTheme:'classico'}
+  settings:{sound:true,voice:false,notif:false,uiTheme:'classico'}
 };
 let S=load();
 function safeGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
@@ -7238,21 +7238,21 @@ function _stanzaApri(){
   if(_stanzaViva) return;
   try{ const sel=window.getSelection&&window.getSelection(); if(sel&&sel.removeAllRanges) sel.removeAllRanges(); }catch(_){}   /* v144: nessuna selezione residua sotto la stanza */
   const dati=_stanzaDati(); const GG=dati.days;
-  const el=document.createElement('div'); el.id='stanza';
+  const el=document.createElement('div'); el.id='giardino';
   const num=function(v){ return String(v).replace('.',','); };
   const IW=['zero','una','due','tre','quattro','cinque','sei','sette','otto','nove','dieci'];
   const mR=dati.ricrescite.media, mRp=mR>0&&mR<=10?(mR<=1.5?'subito, alla prima occasione':'di solito entro '+(IW[Math.round(mR)]||Math.round(mR))+' occasioni'):'';
   el.innerHTML='<canvas></canvas>'
-   +'<button id="stanza-x" aria-label="chiudi">&times;</button>'
-   +'<div id="stanza-velo">'
+   +'<button id="giardino-x" aria-label="chiudi">&times;</button>'
+   +'<div id="giardino-velo">'
    +'<div class="frase">in queste quattro settimane hai compiuto <b>'+dati.fioriture.fatte+'</b> dei <b>'+dati.fioriture.previste+'</b> passi che ti eri promesso'+(dati.fioriture.patti?', e tenuto <b>'+(IW[dati.fioriture.patti]||dati.fioriture.patti)+'</b> patti del mattino':'')+'.</div>'
    +'<div class="frase">hai dato voce al diario <b>'+dati.lucciole.giorni+'</b> notti su ventotto — <b>'+dati.lucciole.voci+'</b> voci: le lucciole del giardino.</div>'
    +'<div class="frase">dopo le cadute sei tornato <b>'+dati.ricrescite.n+'</b> volte'+(mRp?', '+mRp:'')+'. nessun contatore di serie sa vederlo: il giardino sì.</div>'
    +'<div class="firma">tocca una pianta: il suo giorno ricorda \u00b7 quando passa una stella cadente, toccala</div>'
    +'</div>'
-   +'<div id="stanza-giorno"></div>'+'<div id="stanza-rito"></div>';
+   +'<div id="giardino-giorno"></div>'+'<div id="giardino-rito"></div>';
   document.body.appendChild(el);
-  el.querySelector('#stanza-x').addEventListener('click',_stanzaChiudi);
+  el.querySelector('#giardino-x').addEventListener('click',_stanzaChiudi);
   el.addEventListener('touchmove',function(e){ e.preventDefault(); },{passive:false});
   const cv=el.querySelector('canvas'); const ctx2=cv.getContext('2d');
   const DPR=Math.min(2,devicePixelRatio||1);
@@ -7278,7 +7278,7 @@ function _stanzaApri(){
       h:g.p==null?7:10+g.p*Math.min(H2*0.055,46),fase:rr(0,9),nasce:500+i*80};
   });
   function giornoParla(i){
-    scelto=i; const g=GG[i]; const box=el.querySelector('#stanza-giorno');
+    scelto=i; const g=GG[i]; const box=el.querySelector('#giardino-giorno');
     const forma=g.p==null?'nessun passo previsto':g.p>=0.99?'giornata piena':g.p>=0.5?'giornata quasi piena':g.p>0?'qualche passo':'giornata vuota';
     let hh='<div class="g-testa">'+_stanzaNomeGiorno(g.k)+' — '+forma+(g.quiete?' · quiete voluta':'')+(g.patto?' · patto tenuto':'')+'</div>';
     const fatti=g.fattiT.concat(g.questT);
@@ -7287,10 +7287,10 @@ function _stanzaApri(){
     if(!fatti.length&&!g.voce) hh+='<div class="g-voce muto">questo giorno non ha lasciato tracce scritte — ma il fiume l\\u2019ha attraversato comunque</div>';
     box.innerHTML=hh; box.classList.add('on'); el.classList.remove('svelato');
   }
-  function ritoChiudi(){ const r=el.querySelector('#stanza-rito'); r.classList.remove('on'); r.innerHTML=''; }
+  function ritoChiudi(){ const r=el.querySelector('#giardino-rito'); r.classList.remove('on'); r.innerHTML=''; }
   function ritoApri(){
     if(S.desiderio){ cardDesiderio(); return; }
-    const r=el.querySelector('#stanza-rito');
+    const r=el.querySelector('#giardino-rito');
 
     /* v226 — LA PORTA CHE SI APRIVA SUL VUOTO.
        esprimiDesiderio() chiama il modello e non ha nessun motore di casa: e
@@ -7337,7 +7337,7 @@ function _stanzaApri(){
   }
   function cardDesiderio(){
     if(!S.desiderio){ ritoApri(); return; }
-    const d=S.desiderio, box=el.querySelector('#stanza-giorno');
+    const d=S.desiderio, box=el.querySelector('#giardino-giorno');
     const viva=_pietraViva(); const n=(d.pietre||[]).length;
     let hh='<div class="g-testa">quello che vuoi \u2014 da '+_stanzaNomeGiorno(d.nata)+'</div>'
      +'<div class="g-voce">\u00ab'+String(d.testo).replace(/</g,'&lt;')+'\u00bb</div>';
@@ -7397,7 +7397,7 @@ function _stanzaApri(){
     });
   }
   el.addEventListener('pointerdown',function(e){
-    if(e.target&&(e.target.id==='stanza-x'||e.target.closest&&e.target.closest('#stanza-giorno,#stanza-rito,#stanza-rito *'))) return;
+    if(e.target&&(e.target.id==='giardino-x'||e.target.closest&&e.target.closest('#giardino-giorno,#giardino-rito,#giardino-rito *'))) return;
     const px=e.clientX, py=e.clientY;
     if(meteora&&meteora.px!=null&&Math.hypot(px-meteora.px,py-meteora.py)<48){ ritoApri(); return; }
     /* v159: il cerchio del cairn apre sempre. Prima, senza desiderio, l'unica porta era la stella
@@ -7410,7 +7410,7 @@ function _stanzaApri(){
       const d1=Math.hypot(px-pl.bx,py-pl.by), d2=Math.hypot(px-tx,py-ty);
       const d=Math.min(d1,d2); if(d<bd){ bd=d; best=i; } }
     if(best>=0&&bd<=30){ giornoParla(best); return; }
-    const box=el.querySelector('#stanza-giorno');
+    const box=el.querySelector('#giardino-giorno');
     if(box.classList.contains('on')){ box.classList.remove('on'); scelto=-1; return; }
     el.classList.toggle('svelato');
   });
@@ -7532,7 +7532,7 @@ function _stanzaApri(){
   let hT=null,hx=0,hy=0;
   function bersaglioLibero(e){
     const el=e.target; if(!el||!el.closest) return el===document.body;
-    if(el.closest('#stanza')) return false;
+    if(el.closest('#giardino,#stanza')) return false;
     return !el.closest('button,input,textarea,select,a,label,.entry,.chk,.ttl,[data-tid],[data-qid],#mic,#foglio,#app .row,dialog,#obs-whisper');
   }
   window.addEventListener('pointerdown',function(e){

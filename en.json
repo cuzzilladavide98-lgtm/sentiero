@@ -134,7 +134,9 @@
   "la cosa grande che vuoi": "the big thing you want",
   "Questa ha bisogno della chiave. Serve qualcuno che sappia prendere una montagna e ricavarne il primo passo, quello piccolo abbastanza da farlo oggi — e senza chiave l’app non lo sa fare abbastanza bene da meritarsi la tua risposta.": "This one needs the key. It takes someone who can take a mountain and draw out the first step from it, small enough to do today — and without a key the app can't do that well enough to deserve your answer.",
   "Tutto il resto di Sentiero funziona senza.": "Everything else in Sentiero works without it.",
-  "ho capito": "got it"
+  "ho capito": "got it",
+  "una riga quando chiudi una cosa. Con la chiave la scrive un modello; senza, il motore di casa": "a line when you close something. With a key a model writes it; without, the home engine does",
+  "la voce del telefono dice una parola quando spunti qualcosa. Spenta: a molti dà fastidio": "your phone's voice says a word when you tick something off. Off by default: many find it jarring"
  },
  "micro": {
   "marcatori": [
