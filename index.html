@@ -2495,7 +2495,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.227 · 2026-08-12';
+const APP_VERSION='v60S.228 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -11172,7 +11172,14 @@ function disegnaMano(){
   }
   if(_manoI>=MANO_PASSI.length){ chiudiMano(); return; }
   const passo=MANO_PASSI[_manoI];
-  const el=document.querySelector(passo.sel), r=el.getBoundingClientRect();
+  const el=document.querySelector(passo.sel);
+  /* se il pezzo da indicare e fuori dallo schermo, prima si porta a tiro:
+     accendere un buco su qualcosa che non si vede non indica niente. */
+  try{
+    const r0=el.getBoundingClientRect();
+    if(r0.top<0||r0.bottom>window.innerHeight) el.scrollIntoView({block:'center',behavior:'auto'});
+  }catch(_){}
+  const r=el.getBoundingClientRect();
   const pad=8;
   const buco=document.querySelector('#tour-buco');
   buco.style.top=Math.max(0,r.top-pad)+'px';
@@ -11182,22 +11189,56 @@ function disegnaMano(){
   document.querySelector('#tour-txt').textContent=T(passo.txt);
   document.querySelector('#tour-conta').textContent=(_manoI+1)+' / '+MANO_PASSI.length;
   document.querySelector('#tour-avanti').textContent=T(_manoI===MANO_PASSI.length-1?'Ho capito':'Avanti');
-  /* la scheda va dove c'e posto: sotto il buco, o sopra se sotto non ci sta.
-     Sull'iPhone SE lo schermo e 667 punti e questa scelta non e teorica. */
+  /* v228 — LA SCHEDA NON PUO USCIRE DALLO SCHERMO. MAI.
+
+     Al secondo passo, su una finestra alta, l'app si bloccava del tutto: il velo
+     copre tutto e la scheda con «Avanti» finiva SOTTO il bordo dello schermo.
+     Niente tasto avanti, niente tasto salta, niente scorrimento - l'unica via
+     d'uscita era chiudere l'app. Su un telefono lungo poteva capitare uguale.
+
+     La causa: si sceglieva fra «sotto il buco» e «sopra il buco» e si teneva il
+     risultato com'era. Se il bersaglio stava in fondo, tutte e due le posizioni
+     cadevano fuori.
+
+     Adesso: si sceglie, e POI si costringe dentro lo schermo. Una scheda che si
+     puo toccare e la condizione perche la mano guidata non diventi una gabbia. */
   const box=document.querySelector('#tour-box');
   box.style.top='0px';
-  const h=box.getBoundingClientRect().height||160;
+  /* offsetHeight, non getBoundingClientRect: il primo da sempre l'altezza vera
+     dell'elemento, il secondo puo tornare zero se qualcosa nella catena non e
+     ancora impaginato - e con zero si finiva a usare un valore di ripiego piu
+     piccolo del vero, mettendo la scheda dove non ci stava. */
+  const h=Math.max(box.offsetHeight||0, box.getBoundingClientRect().height||0, 160);
+  const H=window.innerHeight;
   const sotto=r.bottom+pad+12, sopra=r.top-pad-12-h;
-  box.style.top=(sotto+h<window.innerHeight-12?sotto:Math.max(12,sopra))+'px';
+  let y=(sotto+h<H-12)?sotto:sopra;
+  if(!(y>=0)) y=12;
+  y=Math.max(12, Math.min(y, H-h-12));     /* dentro lo schermo, sempre */
+  box.style.top=y+'px';
 }
 function avviaMano(){
   if(manoFinita()) return;
   const t=document.querySelector('#tour'); if(!t) return;
   _manoI=0;
   t.classList.remove('hidden');
+  const avanti=()=>{ _manoI++; if(_manoI>=MANO_PASSI.length) chiudiMano(); else disegnaMano(); };
   const av=document.querySelector('#tour-avanti'), sa=document.querySelector('#tour-salta');
-  if(av) av.onclick=()=>{ _manoI++; if(_manoI>=MANO_PASSI.length) chiudiMano(); else disegnaMano(); };
+  if(av) av.onclick=avanti;
   if(sa) sa.onclick=chiudiMano;
+
+  /* v228 — DUE VIE D'USCITA IN PIU, e non sono un vezzo.
+     Il velo copre tutto lo schermo: finche e acceso, l'app non risponde a
+     nient'altro. Se per qualsiasi ragione il tasto «Avanti» non si potesse
+     toccare, la persona resterebbe chiusa dentro senza capire perche - ed e
+     successo davvero, alla v227, al secondo passo.
+     Quindi: un tocco in un punto qualunque del velo va avanti, e il tasto Esc
+     chiude. Una schermata che copre tutto deve avere piu di una porta. */
+  t.onclick=e=>{ if(e.target===t) avanti(); };
+  document.addEventListener('keydown',e=>{
+    if(t.classList.contains('hidden')) return;
+    if(e.key==='Escape') chiudiMano();
+    else if(e.key==='Enter'||e.key===' ') avanti();
+  });
   window.addEventListener('resize',()=>{ if(!t.classList.contains('hidden')) disegnaMano(); });
   /* un istante di respiro: l'app ha appena finito di disegnarsi */
   setTimeout(disegnaMano,260);
