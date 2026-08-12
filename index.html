@@ -1086,15 +1086,39 @@ body[data-pane="quest"] #notte-luce,body[data-pane="quest"] .notte-scia{display:
 #stanza.hidden{display:none}
 #stanza-grana{position:absolute;inset:0;pointer-events:none;opacity:.055;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
-#stanza-carta{position:absolute;inset:0;display:flex;flex-direction:column;
+/* v225 — SCRIVERE ALLA CIECA. Il difetto peggiore che l'app abbia avuto per chi
+   la usa davvero, e non dava nessun segno di se.
+
+   La carta era alta come TUTTO lo schermo (inset:0) e, quando usciva la tastiera,
+   veniva spinta in su di tutta l'altezza della tastiera. Su un iPhone SE:
+   667 punti di schermo, 291 di tastiera. Il testo cominciava 212 punti SOPRA il
+   bordo dello schermo - sei righe e mezza scritte senza vederle. Si vedeva solo
+   quello che si scriveva dalla settima riga in poi, e non si poteva rileggere
+   quello che era gia stato scritto: niente visione d'insieme, niente correzioni
+   prima di salvare. Le note della notte ne portano il segno.
+
+   La correzione: la carta non si sposta piu, si ACCORCIA. Il bordo di sotto si
+   ferma dove comincia la tastiera, e il campo di scrittura diventa esattamente
+   lo spazio che resta visibile - quindi tutto quello che si scrive e dentro lo
+   schermo, e il testo lungo scorre da solo dentro il campo, come in qualunque
+   posto dove si scrive. */
+#stanza-carta{position:absolute;left:0;right:0;top:0;bottom:var(--kb);
+  display:flex;flex-direction:column;
   padding:calc(var(--safe-top) + 26px) 24px calc(var(--safe-bot) + 18px);
-  transform:translateY(calc(var(--kb) * -1));
-  transition:transform .26s cubic-bezier(.32,.72,0,1)}
+  transition:bottom .26s cubic-bezier(.32,.72,0,1)}
+/* quando la tastiera e fuori, sotto non serve piu il margine di sicurezza:
+   quello spazio se lo prende gia la tastiera. */
+#stanza.tastiera #stanza-carta{padding-bottom:14px}
 #stanza-testa{font-size:11px;letter-spacing:.30em;text-transform:uppercase;
   color:#8A8172;margin-bottom:22px;flex:none}
-#stanza-txt{flex:1;width:100%;background:none;border:none;outline:none;padding:0;
+/* v225: min-height:0 e la riga che permette a un campo dentro un flex di
+   ACCORCIARSI davvero. Senza, il campo tiene l'altezza del suo contenuto, la
+   carta si allunga oltre lo schermo e si torna a scrivere alla cieca - solo
+   qualche riga piu tardi. E la meta della correzione che si dimentica sempre. */
+#stanza-txt{flex:1 1 auto;min-height:0;width:100%;background:none;border:none;outline:none;padding:0;
   font-family:var(--serif);font-size:19px;line-height:1.78;color:#E9E2D2;
-  resize:none;box-sizing:border-box;caret-color:var(--notte)}
+  resize:none;box-sizing:border-box;caret-color:var(--notte);
+  overflow-y:auto;-webkit-overflow-scrolling:touch}
 #stanza-txt::placeholder{color:#8A8172}   /* 4,9:1 sulla carta: sotto non si legge */
 #stanza-piede{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;flex:none}
 #stanza-piede button{background:none;border:.5px solid rgba(233,226,210,.22);
@@ -2471,7 +2495,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.224 · 2026-08-11';
+const APP_VERSION='v60S.226 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -7267,6 +7291,31 @@ function _stanzaApri(){
   function ritoApri(){
     if(S.desiderio){ cardDesiderio(); return; }
     const r=el.querySelector('#stanza-rito');
+
+    /* v226 — LA PORTA CHE SI APRIVA SUL VUOTO.
+       esprimiDesiderio() chiama il modello e non ha nessun motore di casa: e
+       l'unica cosa in tutta l'app rimasta cosi. Senza chiave la persona scriveva
+       il desiderio piu grande che ha, scriveva cosa l'ha fermata finora, toccava
+       «Comincia» - e il tasto rispondeva «non ha funzionato - riprova».
+       Le si chiedeva la cosa piu difficile da dire, per poi non ascoltarla.
+       Un rifiuto detto prima e meno peggio di un fallimento dopo: adesso la
+       porta dice cos'e, e non fa scrivere niente a vuoto. */
+    if(typeof generativa==='function' && !generativa()){
+      r.innerHTML='<div class="r-box">'
+       +'<div class="r-t">'+T('la cosa grande che vuoi')+'</div>'
+       +'<div class="r-l" style="margin-top:10px;line-height:1.6">'
+       +T('Questa ha bisogno della chiave. Serve qualcuno che sappia prendere una montagna e ricavarne il primo passo, quello piccolo abbastanza da farlo oggi — e senza chiave l’app non lo sa fare abbastanza bene da meritarsi la tua risposta.')
+       +'</div>'
+       +'<div class="r-l" style="margin-top:12px;line-height:1.6">'
+       +T('Tutto il resto di Sentiero funziona senza.')
+       +'</div>'
+       +'<div class="r-b"><button id="r-no">'+T('ho capito')+'</button></div>'
+       +'</div>';
+      r.classList.add('on');
+      r.querySelector('#r-no').addEventListener('click',ritoChiudi);
+      return;
+    }
+
     r.innerHTML='<div class="r-box">'
      +'<div class="r-t">la cosa grande che vuoi</div>'
      +'<div class="r-l">scrivila con parole tue</div>'
@@ -9811,6 +9860,17 @@ function chiudiTerra(){
     const tastiera=()=>{
       const h=Math.max(0, innerHeight - vv.height - vv.offsetTop);
       document.documentElement.style.setProperty('--kb', h+'px');
+      /* v225: la carta si accorcia invece di spostarsi in su. La classe serve
+         solo a togliere il margine di sicurezza in basso quando la tastiera c'e:
+         quello spazio lo occupa gia lei. */
+      try{ document.getElementById('stanza').classList.toggle('tastiera', h>40); }catch(_){}
+      /* e il campo segue il cursore: con la carta piu bassa, la riga che si sta
+         scrivendo puo finire sotto il bordo del campo. Il browser lo fa da solo
+         quando il campo ha il fuoco, ma non sempre dopo un cambio di altezza. */
+      try{
+        const t=document.getElementById('stanza-txt');
+        if(t && document.activeElement===t) t.scrollTop=t.scrollHeight;
+      }catch(_){}
     };
     vv.addEventListener('resize',tastiera); vv.addEventListener('scroll',tastiera);
   }

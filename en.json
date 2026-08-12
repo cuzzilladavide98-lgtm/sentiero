@@ -130,7 +130,11 @@
   "Non riesco a trovare dove sei: riprova fra un momento": "I can't find where you are: try again in a moment",
   "Link della posizione copiato: incollalo dove vuoi": "Location link copied: paste it wherever you like",
   "Non riesco a copiare il link qui": "I can't copy the link here",
-  "es. camminare mezz’ora": "e.g. walk for half an hour"
+  "es. camminare mezz’ora": "e.g. walk for half an hour",
+  "la cosa grande che vuoi": "the big thing you want",
+  "Questa ha bisogno della chiave. Serve qualcuno che sappia prendere una montagna e ricavarne il primo passo, quello piccolo abbastanza da farlo oggi — e senza chiave l’app non lo sa fare abbastanza bene da meritarsi la tua risposta.": "This one needs the key. It takes someone who can take a mountain and draw out the first step from it, small enough to do today — and without a key the app can't do that well enough to deserve your answer.",
+  "Tutto il resto di Sentiero funziona senza.": "Everything else in Sentiero works without it.",
+  "ho capito": "got it"
  },
  "micro": {
   "marcatori": [
