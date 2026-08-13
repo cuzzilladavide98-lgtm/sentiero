@@ -1,4 +1,4 @@
-const CACHE = 'sentiero-v60s238';
+const CACHE = 'sentiero-v60s239';
 /* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
    blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
    sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui

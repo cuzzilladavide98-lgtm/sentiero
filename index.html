@@ -1051,9 +1051,22 @@ body.theme-carta.ink-giardino #giardino{background:#EDE9DE}
    disco pieno col suo anello. Stessa funzione, altro alfabeto. */
 /* e sulla carta la riga della promessa si distingue anche dalla pagina, non
    solo dal pallino: un velo caldo dietro e l'asta d'oro piena. */
-body.theme-carta .item.passo{background:rgba(122,86,18,.055);border-radius:10px}
-body.theme-carta .item.passo::before{left:-6px;width:4px;background:var(--accent);border-radius:4px}
+/* v239 — LA PROMESSA, SU CARTA, NON SI APPENDE: SI CHIUDE DENTRO UN BORDO.
+   L'asta d'oro era pensata per il buio, dove una luce accanto a una riga si
+   legge come un accento. Sulla carta la stessa asta e un'appendice che
+   galleggia fuori dal riquadro, e infatti sembrava incollata li per sbaglio.
+   Un foglio ha un altro modo di dire «questa riga conta»: la si CHIUDE. Un
+   filo d'oro tutto attorno, un velo caldo dentro, e il pallino pieno. Niente
+   che sporga, niente che penda. */
+body.theme-carta .item.passo{
+  background:rgba(122,86,18,.07);
+  border:1px solid rgba(122,86,18,.42);
+  border-radius:12px;
+  padding:14px 14px 14px 12px;
+  margin:2px 0}
+body.theme-carta .item.passo::before{display:none}
 body.theme-carta .item.passo .txt .ttl{color:#241A08}
+body.theme-carta .item.passo .prio{width:8px;height:8px;box-shadow:none}
 body.theme-carta .item.passo .prio,
 body.theme-carta .patto-luce{
   background:#7A5612;box-shadow:0 0 0 1.5px rgba(122,86,18,.35)}
@@ -2936,7 +2949,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.238 · 2026-08-12';
+const APP_VERSION='v60S.239 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -8475,18 +8488,19 @@ function applyTheme(){ try{
     P.push({x:C+R*Math.cos(a)*0.98,y:C+R*Math.sin(a)*0.98,
       vx:Math.cos(a)*v,vy:Math.sin(a)*v-0.3,vita:1,dec:0.013+Math.random()*0.012,
       s:6+Math.random()*9,rosso:false,grav:0.045,wav:0}); }
-  /* v236 — LA POLVERE HA UN GRANO SOLO.
-     Nella prima versione la forza della luce faceva crescere il RAGGIO del
-     punto: ne uscivano punti grossi e punti piccoli, cioe non una polvere ma
-     una macchia sfocata. Nella stampa e il contrario, ed e per questo che
-     funziona da cinquecento anni: il grano e sempre lo stesso, cambia QUANTI
-     ce ne sono. Dove c'e piu luce cadono piu granelli, non granelli piu grossi.
-     Cosi la luce diventa densita davvero, e da lontano si legge come un tono.
-     I granelli non ballano: la loro posizione dentro la cella e fissa, decisa
-     dalle coordinate. Una polvere che si rimescola a ogni fotogramma sfarfalla
-     e stanca gli occhi; questa si posa. */
-  const GRANO=1.05;                       /* il raggio, uguale per tutti */
-  const ORD=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];   /* la soglia ordinata, come un retino */
+  /* v239 — IL FUOCO E FATTO DELLE STESSE MOLECOLE DEL CIELO.
+     La polvere a granelli era un secondo alfabeto dentro lo stesso cielo: le
+     stelle erano molecole - nucleo e guscio - e il fuoco un pulviscolo fitto,
+     che da vicino sembrava sporco. Due grammatiche nella stessa immagine non
+     fanno due cose, ne fanno una sbagliata.
+     Adesso il fuoco e fatto delle stesse molecole: si legge il campo su una
+     griglia PIU LARGA, e ogni cella accesa diventa UNA molecola - nucleo pieno
+     e guscio - grande secondo tre misure sole. Poche e distinte, non tante e
+     impastate. La luce si legge nel numero di molecole e nel loro calibro, non
+     in una nebbia.
+     Il calibro e a scatti apposta: tre misure si riconoscono, venti sfumature
+     tornano a essere una macchia. */
+  const KM=9;                              /* la griglia delle molecole, larga */
   function stampaPolvere(){
     const w=POL.width, hh=POL.height;
     if(!w||!hh) return;
@@ -8495,30 +8509,35 @@ function applyTheme(){ try{
     rctx.setTransform(DPR,0,0,DPR,0,0);
     rctx.clearRect(0,0,VW,VH);
     rctx.globalCompositeOperation='source-over';
-    for(let y=0;y<hh;y++){
-      for(let x=0;x<w;x++){
-        const k=(y*w+x)*4, a=d[k+3];
-        if(a<10) continue;
-        const r=d[k],g=d[k+1],b2=d[k+2];
-        const forza=Math.min(1,(a/255)*((r+g+b2)/765)*2.4);
-        if(forza<0.04) continue;
-        /* quanti granelli in questa cella: da zero a quattro, piu la soglia
-           ordinata che decide il mezzo granello. Senza il retino le zone deboli
-           sparirebbero tutte insieme, a scalini. */
-        const soglia=(ORD[((y&3)<<2)|(x&3)]+0.5)/16;
-        let n=Math.floor(forza*4);
-        if(forza*4-n>soglia) n++;
-        if(n<=0) continue;
-        const mx=Math.max(r,g,b2)||1, sc=88;
-        rctx.fillStyle='rgb('+Math.round(r/mx*sc)+','+Math.round(g/mx*sc)+','+Math.round(b2/mx*sc)+')';
-        rctx.globalAlpha=0.30+forza*0.45;
-        for(let q=0;q<n;q++){
-          const s=(x*73856093)^(y*19349663)^(q*83492791);
-          const jx=((s>>>3)%1000)/1000, jy=((s>>>13)%1000)/1000;
-          rctx.beginPath();
-          rctx.arc((x+jx)*KP,(y+jy)*KP,GRANO,0,6.2832);
-          rctx.fill();
+    const passo=Math.max(1,Math.round(KM/KP));
+    for(let y=0;y<hh;y+=passo){
+      for(let x=0;x<w;x+=passo){
+        /* la forza della cella e la media del quadratino: cosi una molecola
+           rappresenta davvero la zona, e non il pixel piu fortunato */
+        let sa=0,sr=0,sg=0,sb=0,n=0;
+        for(let yy=y;yy<Math.min(hh,y+passo);yy++){
+          for(let xx=x;xx<Math.min(w,x+passo);xx++){
+            const k=(yy*w+xx)*4;
+            sa+=d[k+3]; sr+=d[k]; sg+=d[k+1]; sb+=d[k+2]; n++;
+          }
         }
+        if(!n) continue;
+        const a=sa/n; if(a<14) continue;
+        const r=sr/n,g=sg/n,b2=sb/n;
+        const forza=Math.min(1,(a/255)*((r+g+b2)/765)*2.6);
+        if(forza<0.10) continue;
+        const cal=forza>0.62?2:(forza>0.30?1:0);      /* tre calibri, non venti */
+        const nucleo=[1.15,1.8,2.6][cal];
+        const mx=Math.max(r,g,b2)||1, sc=92;
+        const col=Math.round(r/mx*sc)+','+Math.round(g/mx*sc)+','+Math.round(b2/mx*sc);
+        const s=(x*73856093)^(y*19349663);
+        const jx=((s>>>3)%1000)/1000, jy=((s>>>13)%1000)/1000;
+        const px=(x+jx*passo)*KP, py=(y+jy*passo)*KP;
+        rctx.fillStyle='rgba('+col+','+(0.42+forza*0.45).toFixed(2)+')';
+        rctx.beginPath(); rctx.arc(px,py,nucleo,0,6.2832); rctx.fill();
+        rctx.strokeStyle='rgba('+col+','+(0.16+forza*0.22).toFixed(2)+')';
+        rctx.lineWidth=0.7;
+        rctx.beginPath(); rctx.arc(px,py,nucleo+2.2+cal*0.9,0,6.2832); rctx.stroke();
       }
     }
     rctx.globalAlpha=1;
