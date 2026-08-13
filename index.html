@@ -1039,7 +1039,8 @@ body.theme-carta.ink-mondo #cielo{opacity:1}
 body.theme-carta.ink-mondo #mic-label{color:#2B2822}
 body.theme-carta.ink-mondo #day-line{color:#4A463E}
 body.theme-carta.ink-giardino #giardino{background:#EDE9DE}
-body.theme-carta.ink-giardino #giardino canvas{filter:invert(1) hue-rotate(180deg) saturate(1.2) contrast(1.04)}
+/* niente filtro: il giardino adesso disegna coi suoi colori d'inchiostro,
+   dichiarati dentro il suo stesso motore. */
 
 /* ══════ SULLA CARTA NIENTE BRILLA: UNA LUCE DIVENTA UN SEGNO ══════
    Restavano diciannove regole col colore scritto a mano che il tema non
@@ -2476,7 +2477,22 @@ function sanitizeCapitoli(arr){   /* i capitoli: un mese rilegato non si riscriv
     if(!c||typeof c!=='object') continue;
     const mese=(typeof c.mese==='string'&&/^\d{4}-\d{2}$/.test(c.mese))?c.mese:null;
     if(!mese||visti.has(mese)) continue; visti.add(mese);
-    const riga=clampStr(c.riga,300).trim(); if(!riga) continue;
+    /* v238 — IL CAPITOLO TAGLIATO A META PAROLA.
+       Era clampStr(...,300): il capitolo di luglio finiva con «la fiamma dur».
+       E peggio di un taglio brutto: sanitizeCapitoli gira a OGNI avvio e
+       RISCRIVE, quindi la coda non era nascosta - era persa per sempre al primo
+       caricamento dopo la scrittura. E' il difetto numero uno di casa applicato
+       a un testo intero invece che a un campo.
+       Adesso il tetto e largo, e se proprio si deve tagliare si taglia
+       all'ultimo confine di frase, o almeno di parola: un capitolo puo essere
+       corto, non puo finire a meta di «durare». I capitoli gia rilegati sono
+       persi: questo salva i prossimi. */
+    let riga=clampStr(c.riga,1200).trim();
+    if(riga.length>1180){
+      const p=Math.max(riga.lastIndexOf('. '),riga.lastIndexOf('? '),riga.lastIndexOf('! '));
+      riga=(p>600?riga.slice(0,p+1):riga.slice(0,riga.lastIndexOf(' '))).trim();
+    }
+    if(!riga) continue;
     const pietre=Array.isArray(c.pietre)?c.pietre.slice(0,31).map(pt=>({
       g:(pt&&Number.isInteger(pt.g)&&pt.g>=1&&pt.g<=31)?pt.g:0,
       p:(pt&&typeof pt.p==='number'&&pt.p>=0&&pt.p<=1)?pt.p:0,
@@ -2920,7 +2936,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.237 · 2026-08-12';
+const APP_VERSION='v60S.238 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -7762,7 +7778,20 @@ function _stanzaApri(){
   const DPR=Math.min(2,devicePixelRatio||1);
   let W=innerWidth,H2=innerHeight;
   cv.width=W*DPR; cv.height=H2*DPR; ctx2.setTransform(DPR,0,0,DPR,0,0);
-  const ORO='232,188,106',AMBRA2='196,124,38',CIELO2='159,196,232',CORE2='255,244,214';
+  /* v238 — IL GIARDINO A INCHIOSTRO, SENZA FILTRI.
+     Era l'ultimo mondo rimasto a invert(), e si vedeva: una macchia bruna e i
+     colori ribaltati. Ma il giardino disegna con QUATTRO colori dichiarati qui
+     sopra: non serve ribaltare l'immagine, bastano altri quattro colori.
+     Cosi le piante restano linee - che e quello che sono - e diventano tratti
+     d'inchiostro su carta, come una tavola botanica. Il cuore chiaro delle luci
+     (CORE2) sulla carta diventa il punto PIU SCURO: e il rovescio esatto, perche
+     su carta il centro di un segno e dove l'inchiostro si deposita di piu. */
+  const _inkG=(function(){ try{ const c=document.body.classList;
+    return c.contains('theme-carta')&&c.contains('ink-giardino'); }catch(_){ return false; } })();
+  const ORO   = _inkG?'122,86,18'  :'232,188,106';
+  const AMBRA2= _inkG?'150,80,20'  :'196,124,38';
+  const CIELO2= _inkG?'22,80,150'  :'159,196,232';
+  const CORE2 = _inkG?'46,38,24'   :'255,244,214';
   const rr=function(a,b){ return a+Math.random()*(b-a); };
   function corso(t){ return {x:W*(0.22+0.56*t)+Math.sin(t*Math.PI*2.2)*W*0.16, y:H2*0.06+t*H2*0.78}; }
   function tang(t){ const a=corso(Math.max(0,t-0.01)), b=corso(Math.min(1,t+0.01));
@@ -7923,7 +7952,7 @@ function _stanzaApri(){
   function eBack(x){ const c=1.7; return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2); }
   function quadro(now){
     const T=RIDOTTO?99999:(now-T0);
-    ctx2.fillStyle='#070a09'; ctx2.fillRect(0,0,W,H2);
+    ctx2.fillStyle=_inkG?'#F2EFE6':'#070a09'; ctx2.fillRect(0,0,W,H2);   /* il fondo: notte o carta */
     for(let i=0;i<stelle.length;i++){ const s=stelle[i];
       ctx2.fillStyle='rgba('+CORE2+','+(0.25+0.3*Math.abs(Math.sin(now/1000/s.f)))+')';
       ctx2.beginPath(); ctx2.arc(s.x*W,s.y*H2,s.r,0,7); ctx2.fill(); }
@@ -8000,7 +8029,7 @@ function _stanzaApri(){
       let resto=Math.min(n,21), fila=0, yF=CAIRN.y;
       while(resto>0){ const inFila=Math.min(6-fila,resto);
         for(let j=0;j<inFila;j++){ const xs=CAIRN.x+(j-(inFila-1)/2)*9;
-          ctx2.fillStyle='#2c2820'; ctx2.strokeStyle='rgba('+ORO+',0.45)'; ctx2.lineWidth=0.8;
+          ctx2.fillStyle=_inkG?'#E6E1D4':'#2c2820'; ctx2.strokeStyle='rgba('+ORO+',0.45)';   /* i sassi */ ctx2.lineWidth=0.8;
           ctx2.beginPath(); ctx2.ellipse(xs,yF,4.6,3,0,0,7); ctx2.fill(); ctx2.stroke(); }
         resto-=inFila; fila++; yF-=5.4; if(fila>5) break; }
       if(n>21){ ctx2.fillStyle='rgba('+CORE2+',0.8)'; ctx2.font='9px sans-serif'; ctx2.textAlign='center';
