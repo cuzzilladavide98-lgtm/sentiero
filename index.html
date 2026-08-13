@@ -731,6 +731,12 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
 
 /* contrasto: pin posizione e meta diario più leggibili sul nero */
 #btn-pin{color:rgba(245,242,234,.7) !important}
+/* v235: quell'!important rende il chiaro irraggiungibile da qualsiasi tema, e
+   sulla carta «dove sono» restava sbiadito. Si risponde con la stessa forza,
+   che e brutto ma onesto: la regola sopra andrebbe scopata al tema, e quello
+   e un giro di pulizia a parte. */
+body.theme-carta #btn-pin{color:#3F3B34 !important}
+body.theme-carta #btn-pin svg.share{stroke:#3F3B34;opacity:.8}
 .ed-meta{color:rgba(245,242,234,.5) !important}
 .ed-meta .posa{color:var(--jade) !important}
 .sec-head{color:var(--t3)}   /* era .45 = 4,1:1 */
@@ -1019,7 +1025,9 @@ body.theme-carta.ink-mondo{--bg:#F4F1E8}
 /* niente filtro sul cielo: adesso si disegna a molecole, non si ribalta.
    Il filtro resta sul fuoco e sul giardino, dove e ancora il prototipo. */
 body.theme-carta.ink-mondo #cielo{opacity:1}
-body.theme-carta.ink-mondo #enso-fx{filter:invert(1) hue-rotate(180deg) saturate(1.25) contrast(1.02)}
+/* niente filtro sul fuoco: adesso e polvere disegnata, non luce ribaltata.
+   Era l'ultimo pezzo a filtro, e si vedeva: lasciava una macchia bruna sotto
+   il giardino e la grammatica della stella, che e roba da OLED. */
 body.theme-carta.ink-mondo #mic-label{color:#2B2822}
 body.theme-carta.ink-mondo #day-line{color:#4A463E}
 body.theme-carta.ink-giardino #giardino{background:#EDE9DE}
@@ -1056,6 +1064,23 @@ body.theme-carta #letture,body.theme-carta #lascito,body.theme-carta #rivelazion
 body.theme-carta #foglio-grip::before{
   background:linear-gradient(90deg,rgba(122,86,18,.30),rgba(23,21,18,.20))}
 body.theme-carta #app::after{background:none}
+
+/* v235 — IL ROMBO DELL'ESSENZIALE.
+   Il suo colore stava scritto a mano dentro il JS: acceso #e0a33a, spento un
+   grigio chiarissimo a .22 di opacita. Sul tema LCD quel grigio non e una cosa
+   discreta, e una macchia - e il rombo non e un ornamento, e un TASTO. Un tasto
+   che non si vede non e discreto, e rotto.
+   Portato nel CSS, cosi i temi possono raggiungerlo: da spento e un rombo
+   VUOTO, disegnato col contorno; da acceso e pieno. La differenza fra le due
+   cose si legge anche di sbieco al sole, che e come si guarda un telefono. */
+.essbtn{margin-left:auto;background:none;border:none;font-size:21px;padding:8px 10px;
+  cursor:pointer;line-height:1;color:var(--t3)}
+.essbtn.on{color:#e0a33a}
+/* --t3 e' il grigio che l'app ha gia tarato per essere discreto E leggibile:
+   4,6:1 sul foglio scuro, 6,3:1 sulla carta. Il colore scritto a mano di prima
+   ne faceva 2,3 - e nessuno se n'era accorto perche stava nel JS, dove nessuno
+   strumento guarda. Portarlo qui non e stato solo ordine: e stato scoprirlo. */
+body.theme-carta .essbtn.on{color:var(--accent)}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -2858,7 +2883,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.234 · 2026-08-12';
+const APP_VERSION='v60S.235 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -8299,7 +8324,23 @@ function applyTheme(){ try{
    altrimenti sull'ultima ancora nota. Scala k=rectWidth/200. rAF 60fps. */
 (function(){
   const cv=document.getElementById('enso-fx'); if(!cv) return;
-  const ctx=cv.getContext('2d');
+  /* ══ IL FUOCO A POLVERE (v235) ══════════════════════════════════════════
+     Sul tema LCD il fuoco non si inverte piu. Invertire lasciava una macchia
+     bruna sotto il giardino - un buco bruciato - e soprattutto lasciava intatta
+     la GRAMMATICA dell'OLED: una stella che brilla. Su carta niente brilla.
+     Il fuoco si dipinge piccolo su una lastra fuori schermo, si legge quanta
+     luce c'e in ogni cella, e al suo posto si stampano PUNTI D'INCHIOSTRO:
+     dove c'era piu luce ci sono piu punti e piu grossi. La luce diventa
+     densita, che e come la stampa ha sempre reso la luce.
+     Il colore non si perde: ogni punto prende la tinta della cella da cui
+     nasce, quindi l'oro resta oro e il viola resta viola - solo, scuri.
+     La lastra e un quinto per lato, cioe un venticinquesimo dei pixel: si
+     rilegge tutta a ogni fotogramma senza che si senta. */
+  const rctx=cv.getContext('2d');
+  let ctx=rctx;
+  const POL=document.createElement('canvas'), pctx=POL.getContext('2d',{willReadFrequently:true});
+  const KP=5;
+  function inchiostro(){ try{ return document.body.classList.contains('ink-mondo'); }catch(_){ return false; } }
   const DPR=Math.min(2,window.devicePixelRatio||1);
   let VW=1,VH=1;
   function dimensiona(){ VW=Math.max(1,window.innerWidth); VH=Math.max(1,window.innerHeight);
@@ -8356,9 +8397,45 @@ function applyTheme(){ try{
     P.push({x:C+R*Math.cos(a)*0.98,y:C+R*Math.sin(a)*0.98,
       vx:Math.cos(a)*v,vy:Math.sin(a)*v-0.3,vita:1,dec:0.013+Math.random()*0.012,
       s:6+Math.random()*9,rosso:false,grav:0.045,wav:0}); }
+  function stampaPolvere(){
+    const w=POL.width, hh=POL.height;
+    if(!w||!hh) return;
+    let d;
+    try{ d=pctx.getImageData(0,0,w,hh).data; }catch(_){ return; }
+    rctx.setTransform(DPR,0,0,DPR,0,0);
+    rctx.clearRect(0,0,VW,VH);
+    rctx.globalCompositeOperation='source-over';
+    for(let y=0;y<hh;y++){
+      for(let x=0;x<w;x++){
+        const k=(y*w+x)*4, a=d[k+3];
+        if(a<10) continue;
+        const r=d[k],g=d[k+1],b2=d[k+2];
+        const forza=Math.min(1,(a/255)*((r+g+b2)/765)*2.2);
+        if(forza<0.05) continue;
+        /* la tinta della cella, portata dal lato scuro: l'oro resta oro */
+        const mx=Math.max(r,g,b2)||1, sc=90;
+        const ir=Math.round(r/mx*sc), ig=Math.round(g/mx*sc), ib=Math.round(b2/mx*sc);
+        /* lo scarto e fisso per cella: la polvere non balla, si posa */
+        const jx=((x*37+y*17)%11)/11, jy=((x*13+y*29)%7)/7;
+        const px=(x+jx)*KP, py=(y+jy)*KP;
+        rctx.globalAlpha=Math.min(0.9,0.18+forza*0.8);
+        rctx.fillStyle='rgb('+ir+','+ig+','+ib+')';
+        rctx.beginPath(); rctx.arc(px,py,0.5+forza*2.1,0,6.2832); rctx.fill();
+      }
+    }
+    rctx.globalAlpha=1;
+  }
   function frame(ts){
     requestAnimationFrame(frame);
     if(document.hidden){ last=ts; return; }
+    if(inchiostro()){
+      const w=Math.max(1,Math.round(VW/KP)), hh=Math.max(1,Math.round(VH/KP));
+      if(POL.width!==w||POL.height!==hh){ POL.width=w; POL.height=hh; }
+      ctx=pctx; frameInterno(ts); ctx=rctx; stampaPolvere(); return;
+    }
+    ctx=rctx; frameInterno(ts);
+  }
+  function frameInterno(ts){
     const dt=Math.min(3,(ts-last)/16.7||1); last=ts;
     const mic=document.getElementById('mic');
     if(mic){ const rb=mic.getBoundingClientRect();
@@ -8373,7 +8450,7 @@ function applyTheme(){ try{
     const T=(sealed?1:(window._ensoTarget||0));
     p+=(T-p)*(1-Math.exp(-0.055*dt));
     if(Math.abs(T-p)<0.0012) p=T;
-    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.setTransform(ctx===pctx?(1/KP):DPR,0,0,ctx===pctx?(1/KP):DPR,0,0);
     ctx.clearRect(0,0,VW,VH);
     ctx.translate(FCX,FCY); ctx.scale(FK,FK); ctx.translate(-C,-C);
     ctx.globalCompositeOperation='lighter';
@@ -9358,7 +9435,7 @@ function buildTaskRow(t,checks){
   div.innerHTML='<span class="prio prio-0"></span>'+
     '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
     '<span class="txt"><span class="ttl">'+inizialeQuest(String(t.titolo||'').charAt(0).toUpperCase()+String(t.titolo||'').slice(1),t.id)+'</span>'+(t.time?'<span class="meta">'+t.time+'</span>':'')+'</span>'+
-    '<button class="essbtn" aria-label="Essenziale" title="Essenziale: chiude il Cerchio del giorno" style="margin-left:auto;background:none;border:none;font-size:21px;padding:8px 10px;cursor:pointer;line-height:1;color:'+(isEss?'#e0a33a':'rgba(200,210,205,.22)')+'">&#9670;</button>';
+    '<button class="essbtn'+(isEss?' on':'')+'" aria-label="Essenziale" title="Essenziale: chiude il Cerchio del giorno">&#9670;</button>';
   div.querySelector('.essbtn').onclick=(e)=>{
     e.stopPropagation();
     S.essentials=S.essentials||[];
