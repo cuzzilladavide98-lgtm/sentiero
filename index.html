@@ -793,7 +793,6 @@ body.theme-carta{
 }
 body.theme-carta #app,body.theme-carta .sheet,body.theme-carta #proposte{
   -webkit-backdrop-filter:none;backdrop-filter:none}
-body.theme-carta .item.done .ttl{color:#6E6860}
 /* il fondo si ridichiara apposta: senza, il controllo qualita pesa il testo
    chiaro sulla carta invece che sull'oro, e segnala 2,1:1 su un bottone che
    in realta ne fa 6,1. Dirlo esplicitamente costa una riga e toglie un falso
@@ -808,8 +807,6 @@ body.theme-carta #obs-whisper{
   box-shadow:0 6px 20px rgba(23,21,18,.16)}
 body.theme-carta #obs-whisper .verd-b{
   background:rgba(23,21,18,.05);border:1px solid rgba(29,74,62,.35)}
-body.theme-carta .entry p{color:#1B1915}
-body.theme-carta #capitoli .cap-riga{color:#232019}
 body.theme-carta #ob-rito-txt::placeholder,body.theme-carta ::placeholder{color:#6B655B}
 
 /* le gemelle dei fili chiari, generate dal CSS vero e non copiate a mano:
@@ -886,6 +883,66 @@ body.theme-carta #giardino-rito textarea{background:#FAF8F2;color:#171512}
 /* niente bagliori: su carta nessuna luce si accende, si disegna un segno */
 body.theme-carta #app::before,body.theme-carta body::before{background:none}
 body.theme-carta .mic-glyph{stroke:#171512}
+/* le gemelle dei COLORI DI TESTO scritti a mano. Nel primo giro le avevo
+   escluse apposta, dando per scontato che i testi prendessero il colore
+   dalle variabili: non e vero, una trentina li ha scritti a mano - fra
+   questi «.item .ttl», il titolo di OGNI cosa da fare - e quelli non
+   seguono nessun tema. Sul telefono i titoli non si leggevano proprio.
+   Il criterio non e «chiaro o scuro» ma «sulla carta arriva a 4,5:1 o no»:
+   i mezzi toni come #8a927f sembrano scuri e fanno 2,9:1. */
+body.theme-carta .d-mese{color:rgb(102,100,97)}
+body.theme-carta .entry p{color:rgb(102,100,97)}
+body.theme-carta #capitoli .cap-riga{color:rgb(102,100,97)}
+body.theme-carta .entry.seme .seme-q{color:rgb(75,104,93)}
+body.theme-carta .entry.seme .ed-meta{color:rgb(85,104,96)}
+body.theme-carta #ob-rito-txt::placeholder{color:rgb(102,100,97)}
+body.theme-carta .patto-eyebrow{color:rgb(119,94,58)}
+body.theme-carta .item .ttl{color:rgb(102,100,97)}
+body.theme-carta .azz-head{color:rgb(150,80,51)}
+body.theme-carta .azz-r{color:rgb(117,95,83)}
+body.theme-carta .azz-r:active{color:rgb(150,80,51)}
+body.theme-carta .sfida-r{color:rgb(112,98,75)}
+body.theme-carta .patto-no{color:rgb(95,102,98)}
+body.theme-carta .item.passo .txt .ttl{color:rgb(102,98,92)}
+/* il velo del giardino non e un fondo piatto: e una sfumatura che va dal
+   trasparente al quasi nero. Sulla carta la sfumatura si ribalta, se no
+   l'inchiostro scuro finisce su una fascia scura e non si legge - era il
+   caso peggiore rimasto, 2,3:1. */
+body.theme-carta #giardino-velo{color:rgb(102,99,91);
+  background:linear-gradient(180deg,rgba(242,239,230,0) 0%,rgba(242,239,230,.94) 45%)}
+body.theme-carta #giardino-velo .l{color:rgb(96,102,88)}
+body.theme-carta #giardino-velo .n{color:rgb(119,97,54)}
+body.theme-carta #giardino-velo .n small{color:rgb(96,102,88)}
+body.theme-carta #giardino-velo .firma{color:rgb(96,102,88)}
+body.theme-carta #giardino-velo .frase{color:rgb(102,99,91)}
+body.theme-carta #giardino-velo .frase b{color:rgb(119,97,54)}
+body.theme-carta #giardino-giorno .g-testa{color:rgb(119,97,54)}
+body.theme-carta #giardino-giorno .g-fatti span{color:rgb(102,99,91)}
+body.theme-carta #giardino-giorno .g-voce{color:rgb(82,101,119)}
+body.theme-carta #giardino-giorno .g-voce.muto{color:rgb(96,102,88)}
+body.theme-carta #giardino-giorno .g-cresta{color:rgb(96,102,88)}
+body.theme-carta #giardino-giorno .g-cresta i{color:rgb(104,98,84)}
+body.theme-carta #giardino-giorno .g-fatti .pv{color:rgb(82,101,119)}
+body.theme-carta #giardino-giorno .g-azioni button{color:rgb(104,99,86)}
+body.theme-carta #giardino-rito .r-t{color:rgb(119,97,54)}
+body.theme-carta #giardino-rito .r-l{color:rgb(96,102,88)}
+body.theme-carta #giardino-rito textarea{color:rgb(102,99,91)}
+body.theme-carta #giardino-rito .r-b button{color:rgb(104,99,86)}
+body.theme-carta #giardino-rito .r-b #r-no{color:rgb(96,102,88)}
+body.theme-carta #frutto-soglia .sg-testa{color:rgb(127,92,41)}
+body.theme-carta #frutto-soglia .sg-mossa{color:rgb(127,92,41)}
+body.theme-carta #frutto-soglia .sg-piede button{color:rgb(104,99,86)}
+body.theme-carta .item.done .ttl{color:rgb(102,100,97)}
+/* CHI VIVE SUL CIELO RESTA CHIARO.
+   Il cielo non diventa giorno, quindi il body, il toast, il pulsante del mondo
+   e la stanza della sera tengono l'inchiostro chiaro anche sulla Carta. Senza
+   questo il tema li rendeva invisibili al contrario: testo scuro su fondo
+   scuro. Sono le due meta dello stesso errore. */
+body.theme-carta{color:#F5F2EA}
+body.theme-carta .toast{color:#F5F2EA}
+/* niente color qui: il fondo di #btn-altro-mondo sulla carta l'ho gia reso
+   chiaro, quindi eredita var(--t2) del tema, che e scuro. Gliel'avevo messo
+   chiaro per abitudine, ed era un colore chiaro su un fondo chiaro. */
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -1516,6 +1573,29 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
 </style>
 </head>
 <body>
+<script>
+/* v231 - IL TEMA SI METTE PRIMA DI TUTTO IL RESTO.
+   Prima l'aspetto scelto veniva rimesso da applyTheme(), che pero si raggiunge
+   solo passando per renderSettings(), cioe in fondo al giro di disegno di tutta
+   l'app. Due guai, tutti e due silenziosi:
+   1) a ogni apertura c'era un lampo del tema sbagliato - su un LCD, chi ha
+      scelto la Carta si prendeva in faccia mezzo secondo di schermo scuro;
+   2) renderSettings gira dentro un try/catch che ingoia gli errori: se si fosse
+      rotta una riga qualsiasi prima del punto in cui chiama applyTheme, il tema
+      non sarebbe stato messo, senza errori e senza spiegazioni.
+   Qui si legge la memoria e si veste il body subito, prima che venga dipinto
+   qualcosa. E' l'unico pezzo di codice che tocca localStorage fuori dal giro
+   normale, ed e apposta. */
+(function(){ try{
+  var raw = localStorage.getItem('sentiero-v1'); if(!raw) return;
+  var t = (JSON.parse(raw).settings||{}).uiTheme;
+  /* i nomi si scrivono per intero e non si compongono con un '+': il lint dei
+     muri cerca le classi che il codice mette e che nessuna regola veste, e
+     una classe costruita a pezzi la vede come '.theme-', che non esiste. */
+  if(t === 'carta') document.body.classList.add('theme-carta');
+  else if(t === 'inchiostro') document.body.classList.add('theme-inchiostro');
+}catch(_){} })();
+</script>
 <div id="soglia" aria-hidden="true"><canvas id="soglia-cv" width="300" height="650"></canvas><div id="soglia-saluto"></div></div>
 <div id="bg"></div>
 <div id="watermark"></div>
@@ -2627,7 +2707,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.231 · 2026-08-12';
+const APP_VERSION='v60S.232 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
