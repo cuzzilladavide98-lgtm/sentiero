@@ -2920,7 +2920,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.236 · 2026-08-12';
+const APP_VERSION='v60S.237 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -8339,11 +8339,19 @@ function ink(itemEl){
 }
 function applyTheme(){ try{
   document.body.classList.toggle('theme-carta',S.settings.uiTheme==='carta');
-  document.body.classList.toggle('ink-mondo',!!S.settings.inkMondo);
+  /* v237 — LE PROVE D'INCHIOSTRO VIVONO SOLO DENTRO L'LCD.
+     Erano legate solo all'interruttore, senza guardare il tema. Il CSS era
+     scopato a .theme-carta e quindi sembrava a posto, ma il JAVASCRIPT no:
+     il cielo e il fuoco chiedono «c'e la classe ink-mondo?» e basta. Con
+     l'interruttore acceso e l'aspetto su OLED, il fuoco si stampava a polvere
+     dentro il tema scuro - cioe la cosa che non doveva succedere mai.
+     La classe non si mette se l'aspetto non e Carta. Punto. */
+  const _lcd=S.settings.uiTheme==='carta';
+  document.body.classList.toggle('ink-mondo',_lcd&&!!S.settings.inkMondo);
   /* il cielo si ridipinge da solo ogni cinque minuti. Cambiando aspetto
      resterebbe quello di prima fino allo scadere: si chiede subito. */
   try{ if(typeof window._ridipingiCielo==='function') window._ridipingiCielo(); }catch(_){}
-  document.body.classList.toggle('ink-giardino',!!S.settings.inkGiardino);
+  document.body.classList.toggle('ink-giardino',_lcd&&!!S.settings.inkGiardino);
   try{
     const carta=S.settings.uiTheme==='carta';
     const mt=document.querySelector('meta[name="theme-color"]');
@@ -8377,7 +8385,11 @@ function applyTheme(){ try{
   let ctx=rctx;
   const POL=document.createElement('canvas'), pctx=POL.getContext('2d',{willReadFrequently:true});
   const KP=5;
-  function inchiostro(){ try{ return document.body.classList.contains('ink-mondo'); }catch(_){ return false; } }
+  /* due lucchetti e non uno: la classe DEVE esserci e l'aspetto DEVE essere
+     Carta. Se un giorno la classe si mette per sbaglio, il fuoco dell'OLED
+     non se ne accorge nemmeno. */
+  function inchiostro(){ try{ const c=document.body.classList;
+    return c.contains('ink-mondo')&&c.contains('theme-carta'); }catch(_){ return false; } }
   const DPR=Math.min(2,window.devicePixelRatio||1);
   let VW=1,VH=1;
   function dimensiona(){ VW=Math.max(1,window.innerWidth); VH=Math.max(1,window.innerHeight);
@@ -8660,7 +8672,7 @@ function applyTheme(){ try{
        magnitudini sono quelle vere, gia nei dati: cambia solo l'alfabeto con
        cui si scrivono. La Via Lattea diventa pulviscolo - punti fini, che e
        come la stampa ha sempre reso una nebbia. */
-    if(document.body.classList.contains('ink-mondo')){
+    if(document.body.classList.contains('ink-mondo')&&document.body.classList.contains('theme-carta')){
       const D2=(Date.now()/86400000)-10957.5;
       let lst2=(18.697374558+24.06570982441908*D2+LON/15)%24; if(lst2<0)lst2+=24;
       const la2=LAT*RAD;
