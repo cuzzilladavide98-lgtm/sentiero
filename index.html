@@ -2858,7 +2858,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.233 · 2026-08-12';
+const APP_VERSION='v60S.234 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -5286,6 +5286,38 @@ const _PESO_LOCALE=[
   /* la paura in casa */
   /\bmi ha picchiat[oa]\b/, /\bmi picchia\b/, /\bmi ha minacciat[oa]\b/, /\bviolentat[oa]\b/,
   /\bho paura di\s+(?:lui|lei|mio marito|mia moglie|mio padre|mia madre)\b/,
+  /* v233 — LE CINQUE FAMIGLIE CHE IL CORPUS DICEVA MANCANTI.
+     Misurando la Base contro attrezzi/corpus-peso.md e uscito 50% preso e ZERO
+     falsi positivi: prudente, quindi con spazio per stringere. Le cinque frasi
+     che non vedeva non erano una famiglia sola ma cinque, e sono queste.
+     Ogni riga qui e stata aggiunta e poi rimisurata: la regola e che i falsi
+     positivi devono restare zero. Una che ne facesse nascere uno andrebbe
+     tolta, non addolcita - un diario che si allarma quando uno sbuffa e
+     inutilizzabile in una settimana, e quel guasto non si vede. */
+  /* la notte in ospedale */
+  /\bpronto soccorso\b/, /\bal? pronto soccorso\b/, /\bricoverat[oa]\b/, /\bin ospedale (?:con|per)\b/,
+  /\bambulanza\b/, /\bnon ho (?:ancora )?smesso di tremare\b/,
+  /\bsiamo (?:ancora )?in ospedale\b/, /\bd'?urgenza\b/, /\bin ospedale\b.{0,40}\bnon ho (?:chiuso occhio|dormito)\b/,
+  /* la paura dentro casa, quando non e detta con un verbo di violenza */
+  /\btorna a casa ubriac[oa]\b/, /\bquando beve\b.{0,40}\b(mi chiudo|scappo|aspetto)\b/,
+  /\bmi chiudo in camera\b/, /\baspetto che si addormenti\b/,
+  /\bho paura di (?:tornare a casa|rientrare)\b/, /\bquando (?:lui|lei) ha bevuto\b/,
+  /* la fine di una storia lunga, detta come fine e non come litigio */
+  /\bse n'?e andat[oa]\b.{0,30}\b(dopo|anni)\b/, /\be finita\b.{0,40}\bdopo\b.{0,20}\banni\b/,
+  /\bla casa era vuota\b/, /\bmi ha lasciat[oa]\b.{0,30}\banni\b/,
+  /\bci siamo lasciati\b/, /\bl'?armadio era (?:mezzo )?vuoto\b/,
+  /* il lavoro perso, che non e «odio il lavoro» */
+  /\bmi hanno licenziat[oa]\b/, /\bho perso il lavoro\b/, /\bnon so come si paga\b/,
+  /\bmi hanno mandat[oa] via dal lavoro\b/, /\bmi hanno messo in mezzo a una strada\b/,
+  /\bnon riesco a pagare (?:l'affitto|il mutuo|le bollette)\b/,
+  /* il corpo che non si alza: giorni, non una mattina */
+  /\b(?:sono )?(?:tre|quattro|cinque|sei|sette|dieci|\d+) giorni che non (?:esco|mi alzo|mangio|dormo)\b/,
+  /\bnon riesco ad alzarmi\b/,
+  /* «non e pigrizia» da sola NON basta, e la prova e arrivata dai dati veri:
+     scattava su una riga dell'osservatrice - «Non e pigrizia: e che stavi
+     progettando un testimone» - che di pesante non ha niente. Nel corpus il
+     peso stava nella seconda meta della frase, non in quella. Una regola che
+     prende una frase comune e un falso positivo che aspetta il suo giorno. */
   /* la malattia grave */
   /\bterapia intensiva\b/, /\bin coma\b/, /\bmetastasi\b/, /\bchemioterapia\b/, /\bchemio\b/,
   /\btumore\b/, /\bha ricevuto la diagnosi\b/, /\bdiagnosi di\b/,
