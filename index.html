@@ -2090,6 +2090,12 @@ body.theme-carta .item{overflow:visible}
           <div class="switchrow prova-ink"><span>Giardino a inchiostro<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">prova: le piante diventate tratti su carta</small></span>
             <button type="button" class="sw" id="sw-inkgiardino" aria-label="Giardino a inchiostro"></button>
           </div>
+          <!-- v241: le parole qui le legge chi non sa niente di modelli. Niente
+               «inferenza», niente «quantizzato», niente sigle: cosa fa, quanto
+               scarica, cosa serve, e dove finiscono le sue parole. -->
+          <div class="switchrow"><span>Una voce dentro il telefono<small style="display:block;color:var(--t3);font-size:12px;line-height:1.4;margin-top:3px">scrive lei le righe della sera, senza chiave e senza pagare niente. La prima volta scarica un file grosso, quasi un giga: fallo col wi&#8209;fi e a telefono carico. Dopo funziona anche senza rete, e quello che scrivi non esce da qui.<b id="sw-scrive-stato" style="display:block;font-weight:400;color:var(--t2);margin-top:4px"></b></small></span>
+            <button type="button" class="sw" id="sw-scrive" aria-label="Una voce dentro il telefono"></button>
+          </div>
           <div class="switchrow"><span>Intelligenza locale<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">un modello che gira dentro il telefono, 23 MB scaricati una volta sola. Non scrive: capisce quando una giornata pesa, anche detta con parole nuove. Non esce niente da qui</small></span>
             <button type="button" class="sw" id="sw-ia" aria-label="Intelligenza locale"></button>
           </div>
@@ -2741,7 +2747,8 @@ function sanitizeState(raw,def){
    gia morta una volta. */
       uiTheme:(raw.settings&&raw.settings.uiTheme==='carta')?'carta':'classico',
       anim:(raw.settings&&raw.settings.anim==='sempre')?'sempre':'auto',
-      iaLocale:!!(raw.settings&&raw.settings.iaLocale),   /* il modello che gira nel telefono */
+      iaLocale:!!(raw.settings&&raw.settings.iaLocale),   /* il modello che capisce */
+      iaScrive:!!(raw.settings&&raw.settings.iaScrive),   /* il modello che scrive */
       inkMondo:!!(raw.settings&&raw.settings.inkMondo),      /* prova: cielo e microfono a inchiostro */
       inkGiardino:!!(raw.settings&&raw.settings.inkGiardino),/* prova: giardino a inchiostro */
       genere:(raw.settings&&['m','f'].includes(raw.settings.genere))?raw.settings.genere:''   /* v150: vuoto = non detto, e l'amico evita il genere */
@@ -3024,7 +3031,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.240 · 2026-08-12';
+const APP_VERSION='v60S.241 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -4680,6 +4687,15 @@ function foglioDopoVoce(){
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
   b.onclick=()=>{ S.settings.uiTheme=(b.dataset.uitheme==='carta')?'carta':'classico'; save(); applyTheme(); renderSettings(); };
 });
+document.querySelector('#sw-scrive').onclick=()=>{
+  S.settings.iaScrive=!S.settings.iaScrive; save(); renderSettings();
+  if(S.settings.iaScrive){
+    toast('Scarico la voce: e grossa, tienilo aperto');
+    scriveAccendi().then(function(ok){
+      toast(ok?'La voce e pronta, e resta nel telefono':'Non e partita: restano le righe di casa');
+    }).catch(function(){ toast('Non e partita: restano le righe di casa'); });
+  } else { toast('Spenta: tornano le righe di casa'); }
+};
 document.querySelector('#sw-ia').onclick=()=>{
   S.settings.iaLocale=!S.settings.iaLocale; save(); renderSettings();
   if(S.settings.iaLocale){
@@ -8399,6 +8415,100 @@ function rigaDaButtare(t){
   return null;
 }
 
+/* ══════ IL MODELLO CHE SCRIVE, DENTRO IL TELEFONO (v241) ═══════════════════
+   Misurata, la riga della sera di casa sa dire SEI forme. Il modello, su
+   ottantuno sere vere, ne ha scritte SESSANTANOVE senza ripeterne una. Quel
+   divario non si colma con altre regole: si colma con qualcuno che scrive.
+
+   Qui c'e un modello che scrive e gira DENTRO il telefono. Llama 3.2 da un
+   miliardo di parametri, quantizzato: si scarica una volta - e grosso, quasi un
+   giga - e poi resta, e funziona in aereo. Non serve nessuna chiave e non costa
+   niente a nessuno.
+
+   TRE COSE, e sono quelle che lo rendono accettabile:
+
+   1. IL GIUDICE RESTA. Un modello da un miliardo di parametri dice qualche
+      sciocchezza: e piccolo. La riga che scrive passa dallo STESSO giudice che
+      controlla quella del modello grosso - niente cifre, niente streak, niente
+      frasi da allenatore, niente lodi a vuoto. Se non passa, si tiene quella di
+      casa. Il modello puo aggiungere varieta, non puo abbassare l'asticella.
+   2. NON FA ASPETTARE NESSUNO. La riga di casa nasce subito e si vede subito.
+      Quella del modello semmai la sostituisce dopo, quando e pronta. Se il
+      telefono ci mette troppo, resta quella di casa e nessuno se ne accorge.
+   3. NON GIRA MENTRE SCRIVI. Stesso guardiano dell'altro modello: se c'e testo
+      non salvato nella stanza della sera, non si calcola niente.
+
+   E se non c'e WebGPU, se il telefono non ce la fa, se il download non finisce:
+   Sentiero resta intero, con le sue sei forme. Questa e una marcia in piu. */
+const SCRIVE_CDN='https://esm.run/@mlc-ai/web-llm';
+const SCRIVE_MODELLO='Llama-3.2-1B-Instruct-q4f16_1-MLC';
+let _scrStato='spento', _scrMotore=null, _scrAvanzamento=0;
+
+function scriveDisponibile(){ return _scrStato==='pronto'; }
+/* niente scriveAvanzamento(): l'avanzamento si scrive direttamente nella riga
+   delle impostazioni mentre scarica. Una funzione che nessuno chiama e una cosa
+   fatta che non si vede, e il lint ha ragione a dirlo. */
+
+async function scriveAccendi(){
+  if(_scrStato==='carico'||_scrStato==='pronto') return _scrStato==='pronto';
+  if(!('gpu' in navigator)){
+    _scrStato='fallito';
+    try{ regCantiere('ia',{msg:'niente WebGPU: il modello che scrive non parte qui'}); }catch(_){}
+    return false;
+  }
+  _scrStato='carico';
+  try{
+    const M=await import(SCRIVE_CDN);
+    _scrMotore=await M.CreateMLCEngine(SCRIVE_MODELLO,{
+      initProgressCallback:function(p){
+        _scrAvanzamento=Math.round((p&&p.progress||0)*100);
+        try{ const s=document.getElementById('sw-scrive-stato');
+          if(s) s.textContent=_scrAvanzamento<100?('scarico… '+_scrAvanzamento+'%'):'quasi pronto…'; }catch(_){}
+      }
+    });
+    _scrStato='pronto';
+    try{ const s=document.getElementById('sw-scrive-stato'); if(s) s.textContent='pronto, e resta nel telefono'; }catch(_){}
+    try{ regCantiere('ia',{msg:'modello che scrive pronto'}); }catch(_){}
+    return true;
+  }catch(e){
+    _scrStato='fallito';
+    try{ const s=document.getElementById('sw-scrive-stato');
+      if(s) s.textContent='non e partito: restano le righe di casa'; }catch(_){}
+    try{ regCantiere('ia',{msg:'modello che scrive non parte: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){}
+    return false;
+  }
+}
+
+/* le stesse regole di voce che valgono per il modello grosso, dette corte:
+   un modello piccolo non regge un contratto lungo, e ogni riga in piu e una
+   riga che puo fraintendere. */
+const SCRIVE_SYS='Sei la voce di Sentiero: un amico con la memoria lunga.\n'+
+'Scrivi UNA riga sola, massimo venti parole, in italiano, tutta in minuscolo.\n'+
+'Parli a chi ha appena fatto una cosa che si era proposto. Dici cio che hai notato, non cio che deve fare.\n'+
+'VIETATO: numeri e cifre, complimenti, punti esclamativi, consigli, imperativi, la parola giorni di fila.\n'+
+'Se non hai niente di vero da dire, scrivi solo: niente.';
+
+async function scriveRiga(pkg,titolo){
+  if(!scriveDisponibile()||!_iaMomentoBuono()) return '';
+  try{
+    const fatti=JSON.stringify(pkg||{}).slice(0,700);
+    const r=await _scrMotore.chat.completions.create({
+      messages:[{role:'system',content:SCRIVE_SYS},
+                {role:'user',content:'la cosa appena fatta: '+String(titolo||'').slice(0,80)+
+                  '\nquello che so di lei: '+fatti+'\nscrivi la riga.'}],
+      temperature:0.8,max_tokens:60
+    });
+    let riga=((r&&r.choices&&r.choices[0]&&r.choices[0].message&&r.choices[0].message.content)||'').trim();
+    riga=riga.replace(/^["«“]|["»”]$/g,'').split('\n')[0].trim();
+    if(!riga||/^niente\.?$/i.test(riga)) return '';
+    if(riga.length>170) return '';
+    /* IL GIUDICE: lo stesso che vale per il modello grosso. Se la riga non passa,
+       non si discute e non si riprova: si tiene quella di casa. */
+    try{ if(_ossGiudica(riga,[])) return ''; }catch(_){ return ''; }
+    return riga.charAt(0).toLowerCase()+riga.slice(1);
+  }catch(_){ return ''; }
+}
+
 function observerLineFor(el){
   try{
     if(S.settings&&S.settings.obsLine===false) return;                 /* spento dall'utente */
@@ -8415,6 +8525,24 @@ function observerLineFor(el){
       save();
       try{ regCantiere('sussurro',{task:titL,riga:rigaL,msg:'locale'}); }catch(_){}
       try{ _whisper(rigaL); }catch(_){}
+      /* e se in casa c'e il modello che scrive, gli si chiede la sua versione.
+         La riga di casa e gia in scena: questa semmai la sostituisce, e solo se
+         passa il giudice. Nessuno ha aspettato niente. */
+      if(scriveDisponibile()){
+        try{
+          const pkgL=buildLinePackage(idL,titL);
+          scriveRiga(pkgL,titL).then(function(r2){
+            try{
+              if(!r2) return;
+              const ult=(S.obsLines||[])[ (S.obsLines||[]).length-1 ];
+              if(!ult||ult.riga!==rigaL) return;          /* nel frattempo e cambiato: si lascia stare */
+              ult.riga=r2; save();
+              regCantiere('sussurro',{task:titL,riga:r2,msg:'modello locale'});
+              _whisper(r2);
+            }catch(_){}
+          }).catch(function(){});
+        }catch(_){}
+      }
       return;
     }
     const id=el&&(el.dataset.tid||el.dataset.qid); if(!id) return;
@@ -11212,6 +11340,7 @@ function renderSettings(){
     if(bn&&!bn.textContent){ const n=bancoPacchetti().length; bn.textContent=n?(n+' pacchetti conservati, pronti da rigiocare.'):'Nessun pacchetto conservato ancora.'; } }catch(_){}
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
   document.querySelector('#sw-geo').classList.toggle('on',S.settings.geo);
+  document.querySelector('#sw-scrive').classList.toggle('on',!!S.settings.iaScrive);
   document.querySelector('#sw-ia').classList.toggle('on',!!S.settings.iaLocale);
   document.querySelector('#sw-inkmondo').classList.toggle('on',!!S.settings.inkMondo);
   document.querySelector('#sw-inkgiardino').classList.toggle('on',!!S.settings.inkGiardino);
@@ -11901,7 +12030,12 @@ try{ maybeObserveAuto(); }catch(_){}
    prende il suo fallimento, e l'errore finirebbe fuori da tutto. */
 try{ if(S.settings.iaLocale) setTimeout(function(){
   try{ iaAccendi().catch(function(){}); }catch(_){}
-},2500); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
+},2500); }catch(_){}
+/* la voce che scrive e grossa: si riaccende piu tardi ancora, e mai prima che
+   l'app sia in piedi e usabile. */
+try{ if(S.settings.iaScrive) setTimeout(function(){
+  try{ scriveAccendi().catch(function(){}); }catch(_){}
+},6000); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
 try{ const _p=maybeChiudiCapitolo(); if(_p&&_p.catch) _p.catch(function(e){ try{ regCantiere('errore',{msg:'maybeChiudiCapitolo: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){} }); }catch(_){}
 /* v193 — la schermata di benvenuto viene chiamata.
    Era li, finita: il markup, nove regole di CSS, l'enso che si disegna, il testo,
