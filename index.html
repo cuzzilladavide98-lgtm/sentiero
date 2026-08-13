@@ -505,6 +505,11 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
    striscia fissa in cima coprirebbe l'anello e cambierebbe l'app a tutti per
    avvisare alcuni. Occupa una riga sola, si legge, e non chiede di essere chiusa
    perche l'unico modo di chiuderla e fare la cosa che salva il diario. */
+#riavvia{display:flex;align-items:center;gap:10px;
+  margin:8px 14px 0;padding:9px 12px;border-radius:12px;
+  background:rgba(127,184,164,.10);border:.5px solid rgba(127,184,164,.36);
+  font-size:13.5px;line-height:1.42;color:var(--t1)}
+#riavvia.hidden{display:none}
 #metti-in-home{display:flex;align-items:center;gap:10px;
   margin:8px 14px 0;padding:9px 12px;border-radius:12px;
   background:rgba(232,168,76,.09);border:.5px solid rgba(232,168,76,.34);
@@ -786,8 +791,17 @@ body.theme-carta{
   --t3:#5C574E;              /*  6,3:1 - era .48 di bianco, cioe 4,6:1 sul nero */
   --accent:#7A5612;          /*  5,9:1 - l'oro scurito quanto basta */
   --jade:#1D4A3E;            /*  8,9:1 */
-  --ember:#8C3F1E;
-  --ceralacca:#8E2A1C;
+  --ember:#B33A16;           /*  5,6:1 - l'arancio resta arancio */
+  --ceralacca:#CC2614;       /*  4,8:1 - il rosso del sigillo, vivo */
+  /* I QUATTRO COLORI RESTANO, E RESTANO COLORI.
+     Un E Ink tutto nero sarebbe piu facile e sarebbe un'altra app: qui la
+     promessa e oro, l'osservatrice e giada, la terra e blu e la sera e viola,
+     e quelle non sono decorazioni, dicono chi sta parlando. Su carta non si
+     spengono: si scuriscono quel tanto che basta a leggersi, tenendo la tinta.
+     Ogni valore e il PIU LUMINOSO che arriva a 4,7:1 sulla carta - cioe il
+     colore piu vivo che si legge, non il piu sicuro. Cercato, non scelto. */
+  --terra:hsl(212 80% 44%);  /*  4,7:1 - il blu della Chiamata a terra */
+  --notte:hsl(276 72% 54%);  /*  4,7:1 - il bagliore viola della sera */
   --foglio-bg:rgba(244,241,232,.955);
   --foglio-bg-opaco:rgba(244,241,232,.99);
 }
@@ -943,6 +957,31 @@ body.theme-carta .toast{color:#F5F2EA}
 /* niente color qui: il fondo di #btn-altro-mondo sulla carta l'ho gia reso
    chiaro, quindi eredita var(--t2) del tema, che e scuro. Gliel'avevo messo
    chiaro per abitudine, ed era un colore chiaro su un fondo chiaro. */
+
+.prova-ink{display:none}
+body.theme-carta .prova-ink{display:flex}
+/* ══════ PROVE D'INCHIOSTRO — i mondi a canvas ribaltati (v232) ══════
+   Il cielo, il fuoco del microfono e il giardino sono tre simulazioni che
+   dipingono LUCE SU TRASPARENTE: sprite chiari, somme, aloni. Una cosa cosi
+   non si converte a inchiostro riscrivendo la fisica - si converte
+   ribaltandola. invert() prende ogni pixel dipinto e lo porta dall'altra
+   parte, lasciando stare il trasparente: la luce diventa deposito.
+   PERCHE hue-rotate(180deg): invertire un colore ne ribalta anche la tinta di
+   mezzo giro. Rimettendola a posto subito dopo, la luce diventa deposito ma
+   il colore resta il suo: il bagliore viola della sera resta viola, e diventa
+   inchiostro viola. Senza quella riga il mondo diventava grigio, che e' la
+   scorciatoia comoda e la cosa sbagliata.
+   E' un prototipo, e si vede che lo e: serve a decidere guardando invece che
+   immaginando. Se la direzione tiene, le stelle si ridisegnano a mano come
+   un atlante inciso, e il fuoco a punteggiatura vera.
+   Nulla di tutto questo tocca i temi esistenti: vive solo sotto .ink-*. */
+body.theme-carta.ink-mondo{--bg:#EDE9DE}
+body.theme-carta.ink-mondo #cielo{filter:invert(1) hue-rotate(180deg) saturate(1.15) contrast(1.05);opacity:.9}
+body.theme-carta.ink-mondo #enso-fx{filter:invert(1) hue-rotate(180deg) saturate(1.25) contrast(1.02)}
+body.theme-carta.ink-mondo #mic-label{color:#2B2822}
+body.theme-carta.ink-mondo #day-line{color:#4A463E}
+body.theme-carta.ink-giardino #giardino{background:#EDE9DE}
+body.theme-carta.ink-giardino #giardino canvas{filter:invert(1) hue-rotate(180deg) saturate(1.2) contrast(1.04)}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -1709,6 +1748,17 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
        SOLO SU iPHONE, e non per timidezza: su Android e sul computer quella regola
        non c'e, e un avviso che dice una cosa non vera dove non e vera insegna alle
        persone a non leggere gli avvisi. -->
+  <!-- v232 — LA RIGA DEL RIAVVIO.
+       Quando esce una versione nuova, il service worker se la prende subito
+       (skipWaiting + clients.claim), ma la pagina gia aperta continua a far
+       girare il codice VECCHIO con la cache NUOVA dietro. E' il momento in cui
+       un'app puo comportarsi in modo strano senza che nessuno capisca perche.
+       Non si ricarica da soli: se una persona sta scrivendo nella stanza della
+       sera, un ricaricamento le porta via quello che ha scritto. Si dice, e
+       decide lei quando. -->
+  <div id="riavvia" class="hidden" role="status">
+    <span>C'è una versione nuova. Chiudi e riapri Sentiero: è più sicuro.</span>
+  </div>
   <div id="metti-in-home" class="hidden" role="status">
     <span>Mettilo in Home: da qui l'iPhone può cancellare quello che scrivi.</span>
     <button type="button" id="mih-come">Come</button>
@@ -1802,6 +1852,17 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
             <div class="seg" id="seg-uitheme">
               <button data-uitheme="classico">Attuale</button><button data-uitheme="inchiostro">Inchiostro</button><button data-uitheme="carta">Carta</button>
             </div>
+          </div>
+          <!-- v232 — LE PROVE D'INCHIOSTRO.
+               Si vedono solo quando l'aspetto e Carta, perche altrove non
+               vogliono dire niente: sono due modi di dipingere il cielo, il
+               fuoco del microfono e il giardino a inchiostro invece che a luce.
+               Sono prove: servono a Davide per decidere guardandole sul telefono. -->
+          <div class="switchrow prova-ink"><span>Cielo e microfono a inchiostro<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">prova: la luce diventa deposito, come una lastra incisa</small></span>
+            <button type="button" class="sw" id="sw-inkmondo" aria-label="Cielo e microfono a inchiostro"></button>
+          </div>
+          <div class="switchrow prova-ink"><span>Giardino a inchiostro<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">prova: le piante diventate tratti su carta</small></span>
+            <button type="button" class="sw" id="sw-inkgiardino" aria-label="Giardino a inchiostro"></button>
           </div>
           <div class="switchrow"><span>Animazioni</span>
             <div class="seg" id="seg-anim">
@@ -2427,6 +2488,8 @@ function sanitizeState(raw,def){
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade',
       uiTheme:(raw.settings&&['inchiostro','carta'].includes(raw.settings.uiTheme))?raw.settings.uiTheme:'classico',
       anim:(raw.settings&&raw.settings.anim==='sempre')?'sempre':'auto',
+      inkMondo:!!(raw.settings&&raw.settings.inkMondo),      /* prova: cielo e microfono a inchiostro */
+      inkGiardino:!!(raw.settings&&raw.settings.inkGiardino),/* prova: giardino a inchiostro */
       genere:(raw.settings&&['m','f'].includes(raw.settings.genere))?raw.settings.genere:''   /* v150: vuoto = non detto, e l'amico evita il genere */
     }
   };
@@ -4363,6 +4426,8 @@ function foglioDopoVoce(){
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
   b.onclick=()=>{ S.settings.uiTheme=['inchiostro','carta'].includes(b.dataset.uitheme)?b.dataset.uitheme:'classico'; save(); applyTheme(); renderSettings(); };
 });
+document.querySelector('#sw-inkmondo').onclick=()=>{ S.settings.inkMondo=!S.settings.inkMondo; save(); applyTheme(); renderSettings(); };
+document.querySelector('#sw-inkgiardino').onclick=()=>{ S.settings.inkGiardino=!S.settings.inkGiardino; save(); applyTheme(); renderSettings(); };
 document.querySelectorAll('#seg-anim button').forEach(b=>{
   b.onclick=()=>{ S.settings.anim=(b.dataset.anim==='sempre')?'sempre':'auto'; save(); applyTheme(); renderSettings(); };
 });
@@ -8048,6 +8113,8 @@ function ink(itemEl){
 function applyTheme(){ try{
   document.body.classList.toggle('theme-inchiostro',S.settings.uiTheme==='inchiostro');
   document.body.classList.toggle('theme-carta',S.settings.uiTheme==='carta');
+  document.body.classList.toggle('ink-mondo',!!S.settings.inkMondo);
+  document.body.classList.toggle('ink-giardino',!!S.settings.inkGiardino);
   document.body.classList.toggle('anima-sempre',S.settings.anim==='sempre');
 }catch(_){} }
 /* ══════ ENSO VIVO v3 — IL MONDO (F1 Foglio) ══════
@@ -10521,6 +10588,8 @@ function renderSettings(){
     if(bn&&!bn.textContent){ const n=bancoPacchetti().length; bn.textContent=n?(n+' pacchetti conservati, pronti da rigiocare.'):'Nessun pacchetto conservato ancora.'; } }catch(_){}
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
   document.querySelector('#sw-geo').classList.toggle('on',S.settings.geo);
+  document.querySelector('#sw-inkmondo').classList.toggle('on',!!S.settings.inkMondo);
+  document.querySelector('#sw-inkgiardino').classList.toggle('on',!!S.settings.inkGiardino);
   document.querySelectorAll('#seg-theme button').forEach(b=>b.classList.toggle('on',b.dataset.theme===S.settings.theme));
   document.querySelectorAll('#seg-uitheme button').forEach(b=>b.classList.toggle('on',b.dataset.uitheme===(S.settings.uiTheme||'classico')));
   document.querySelectorAll('#seg-anim button').forEach(b=>b.classList.toggle('on',b.dataset.anim===(S.settings.anim||'auto')));
@@ -11176,7 +11245,26 @@ document.querySelector('#import-file').onchange=e=>{
 /* ======================================================================
    AVVIO
    ====================================================================== */
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').then(scheduleReminders).catch(()=>{}); }
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    try{ scheduleReminders(); }catch(_){}
+    /* due strade, perche i telefoni non si comportano tutti uguale:
+       - updatefound: e arrivato un lavoratore nuovo e sta per prendere servizio
+       - controllerchange: il cambio e gia avvenuto sotto i piedi della pagina
+       In tutti e due i casi si DICE e basta. Ricaricare da soli qui vorrebbe
+       dire buttare via quello che una persona sta scrivendo. */
+    function avvisa(){ try{ const r=document.getElementById('riavvia'); if(r) r.classList.remove('hidden'); }catch(_){} }
+    try{
+      reg.addEventListener('updatefound',function(){
+        const nuovo=reg.installing; if(!nuovo) return;
+        nuovo.addEventListener('statechange',function(){
+          if(nuovo.state==='installed' && navigator.serviceWorker.controller) avvisa();
+        });
+      });
+    }catch(_){}
+    try{ navigator.serviceWorker.addEventListener('controllerchange',avvisa); }catch(_){}
+  }).catch(()=>{});
+}
 try{ initHaptic(); }catch(_){}
 try{ initDay(); }catch(_){}
 try{ render(); }catch(_){}
