@@ -561,8 +561,38 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 @keyframes fw{0%{opacity:0;transform:scale(.8) translateY(16px)}18%{opacity:1;transform:scale(1.04)}30%{transform:scale(1)}72%{opacity:1}100%{opacity:0;transform:translateY(-60px)}}
 
 /* ════════ onboarding: nero, enso, una frase ════════ */
+/* v232 — LA GABBIA IN VERTICALE.
+   La madre di Davide, su un iPhone SE, non e riuscita ad andare avanti il primo
+   giorno. Il motivo non era un tasto mancante: era che #onboard e' fisso a
+   tutto schermo, CENTRA il contenuto e NON PUO SCORRERE. Quando il contenuto e
+   piu alto della finestra, un contenitore centrato lo fa uscire da tutte e due
+   le parti: meta sopra e meta sotto, e il tasto che sta in fondo non lo
+   raggiunge nessuno. Su un SE dentro Safari l'altezza utile e circa 553 punti,
+   non 667: le due barre si prendono il resto.
+   Due banchi difendevano questa schermata ed erano verdi tutti e due, perche
+   controllavano che i TASTI CI FOSSERO e che niente fosse piu LARGO dello
+   schermo. Nessuno guardava l'altezza.
+   La forma giusta e sempre la stessa: si scorre, e il figlio ha margine
+   automatico. Cosi resta centrato quando c'e posto, e diventa una pagina che
+   scorre quando non ce n'e. Non e una cosa dell'SE: e una cosa di chiunque
+   abbia lo schermo pieno, il testo grande o la tastiera aperta. */
 #onboard{position:fixed;inset:0;z-index:110;background:var(--bg);
-  display:flex;align-items:center;justify-content:center;padding:40px}
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:40px 26px calc(40px + env(safe-area-inset-bottom,0px))}
+/* il margine automatico centra finche c'e posto, e smette di centrare quando
+   non ce n'e piu: e' quello che tiene insieme le due cose. */
+#onboard .ob-inner{margin:auto 0}
+/* schermo corto - SE, Safari aperto, testo ingrandito: si stringe tutto quello
+   che e aria, prima di chiedere alla persona di scorrere. */
+@media (max-height:700px){
+  #onboard{padding:22px 22px calc(30px + env(safe-area-inset-bottom,0px))}
+  #onboard .ob-title{font-size:27px;margin-bottom:10px}
+  #onboard .ob-sub{font-size:15.5px;line-height:1.5;margin-bottom:20px}
+  #onboard .ob-rito{margin-top:16px;padding-top:15px}
+  #onboard .ob-rito-dom{font-size:17px;margin-bottom:10px}
+  #onboard .ob-rito-nota{font-size:12.5px;margin-top:8px}
+}
 .ob-inner{max-width:320px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;background:none;border:none;box-shadow:none}
 .ob-enso{width:88px;height:88px;margin-bottom:30px}
 .ob-stroke{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;animation:ob-traccia 1.2s cubic-bezier(.4,0,.2,1) .1s forwards}
@@ -982,6 +1012,38 @@ body.theme-carta.ink-mondo #mic-label{color:#2B2822}
 body.theme-carta.ink-mondo #day-line{color:#4A463E}
 body.theme-carta.ink-giardino #giardino{background:#EDE9DE}
 body.theme-carta.ink-giardino #giardino canvas{filter:invert(1) hue-rotate(180deg) saturate(1.2) contrast(1.04)}
+
+/* ══════ SULLA CARTA NIENTE BRILLA: UNA LUCE DIVENTA UN SEGNO ══════
+   Restavano diciannove regole col colore scritto a mano che il tema non
+   toccava. Le piu gravi hanno il CUORE BIANCO - sono aloni, cioe luce - e su
+   carta un alone bianco su bianco non esiste. Fra queste c'era la luce della
+   promessa del mattino: il segno che dice «questa e quella di oggi».
+   Qui ognuna smette di essere un bagliore e diventa un segno disegnato: un
+   disco pieno col suo anello. Stessa funzione, altro alfabeto. */
+body.theme-carta .item.passo .prio,
+body.theme-carta .patto-luce{
+  background:#7A5612;box-shadow:0 0 0 1.5px rgba(122,86,18,.35)}
+body.theme-carta .item.passo.audace .prio{
+  background:#B33A16;box-shadow:0 0 0 1.5px rgba(179,58,22,.35)}
+/* i due nuclei della Chiamata a terra e della sera: il bianco al centro
+   diventa il colore stesso, pieno. Il blu resta blu, il viola resta viola. */
+body.theme-carta #terra-luce .nucleo::before{background:var(--terra)}
+body.theme-carta #notte-luce .nucleo::before{background:var(--notte)}
+body.theme-carta .riv-fx .rs{background:#7A5612}
+/* i due fiori che seguono il dito: sono petali di luce con il centro bianco.
+   Su carta diventano due gocce d'inchiostro del loro colore - il blu della
+   terra, il viola della sera - con il bordo che sfuma invece del centro. */
+body.theme-carta #notte-fiore{background:radial-gradient(circle,hsl(var(--notte-h) 62% 40%) 0%,hsl(var(--notte-h) 62% 40%) 45%,transparent 74%)}
+body.theme-carta #terra-fiore{background:radial-gradient(circle,hsl(var(--terra-h) 70% 34%) 0%,hsl(var(--terra-h) 70% 34%) 40%,transparent 72%)}
+/* i fili che sparivano */
+body.theme-carta input[type=text],body.theme-carta input[type=password],
+body.theme-carta input[type=number],body.theme-carta textarea{
+  border-bottom:.5px solid rgba(23,21,18,.28)}
+body.theme-carta #letture,body.theme-carta #lascito,body.theme-carta #rivelazione{
+  box-shadow:inset 0 1px 0 rgba(23,21,18,.07),0 2px 6px rgba(23,21,18,.10)}
+body.theme-carta #foglio-grip::before{
+  background:linear-gradient(90deg,rgba(122,86,18,.30),rgba(23,21,18,.20))}
+body.theme-carta #app::after{background:none}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -1108,7 +1170,10 @@ body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
 }
 /* ══════ LA SOGLIA — l'alba adattiva: la luce sale col colore dell'ora ══════
    cerimonia piena solo alla prima apertura del giorno · tap salta sempre */
+/* anche l'alba: dentro ci sono una tela e un saluto. Regola uguale per tutti,
+   se no la prossima volta la gabbia rispunta dove nessuno guarda. */
 #soglia{position:fixed;inset:0;z-index:200;background:transparent;display:flex;align-items:center;justify-content:center;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   transition:opacity .45s ease}
 #soglia.via{opacity:0;pointer-events:none}
 #soglia canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -1403,13 +1468,16 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
 /* ════════ IL FRUTTO DI IERI (v163) — al livello piu alto del foglio, MAI dentro una media query ════════ */
 
 /* ════════ LA SOGLIA (v167) — la finestra fra il tocco e l'app non e piu vuota ════════ */
-#frutto-soglia{position:fixed;inset:0;z-index:205;   /* v196: era 120, sotto il 200 dell alba: alla prima apertura l alba lo copriva e il frutto si vedeva solo alla seconda */
-  background:#070A09;display:flex;align-items:center;justify-content:center;padding:28px 26px calc(28px + env(safe-area-inset-bottom));opacity:1;transition:opacity .6s ease}
+/* stessa gabbia, stessa cura: qui dentro ci sono una lettura e due tasti. */
+#frutto-soglia{position:fixed;inset:0;z-index:205;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;   /* v196: era 120, sotto il 200 dell alba: alla prima apertura l alba lo copriva e il frutto si vedeva solo alla seconda */
+  background:#070A09;display:flex;align-items:flex-start;justify-content:center;padding:28px 26px calc(28px + env(safe-area-inset-bottom));opacity:1;transition:opacity .6s ease}
 #frutto-soglia.hidden{display:none}
 #frutto-soglia.via{opacity:0;pointer-events:none}
 #frutto-corpo{max-width:520px;width:100%;opacity:0;transition:opacity .9s ease}
 #frutto-corpo.on{opacity:1}
 #frutto-soglia .sg-testa{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#E8A84C;margin-bottom:22px}
+#frutto-soglia #frutto-corpo{margin:auto 0;width:100%}
 #frutto-soglia .sg-lettura{font-family:var(--serif);font-size:23px;line-height:1.52;color:var(--t1);margin:0 0 18px}
 #frutto-soglia .sg-mossa{font-size:14.5px;line-height:1.5;color:#E8A84C;margin:0}
 #frutto-soglia .sg-piede{display:flex;gap:9px;margin-top:30px}
@@ -1632,7 +1700,6 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
      muri cerca le classi che il codice mette e che nessuna regola veste, e
      una classe costruita a pezzi la vede come '.theme-', che non esiste. */
   if(t === 'carta') document.body.classList.add('theme-carta');
-  else if(t === 'inchiostro') document.body.classList.add('theme-inchiostro');
 }catch(_){} })();
 </script>
 <div id="soglia" aria-hidden="true"><canvas id="soglia-cv" width="300" height="650"></canvas><div id="soglia-saluto"></div></div>
@@ -1850,7 +1917,7 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
           </div>
           <div class="switchrow"><span>Aspetto</span>
             <div class="seg" id="seg-uitheme">
-              <button data-uitheme="classico">Attuale</button><button data-uitheme="inchiostro">Inchiostro</button><button data-uitheme="carta">Carta</button>
+              <button data-uitheme="classico">OLED</button><button data-uitheme="carta">LCD</button>
             </div>
           </div>
           <!-- v232 — LE PROVE D'INCHIOSTRO.
@@ -2486,7 +2553,16 @@ function sanitizeState(raw,def){
       music:false,   /* AUDIO SPENTO */
       aiModel:(raw.settings&&['max','balanced','fast'].includes(raw.settings.aiModel))?raw.settings.aiModel:'balanced',
       theme:(raw.settings&&raw.settings.theme==='zen')?'zen':'arcade',
-      uiTheme:(raw.settings&&['inchiostro','carta'].includes(raw.settings.uiTheme))?raw.settings.uiTheme:'classico',
+      /* v232 - DUE ASPETTI, NON TRE, E SI CHIAMANO COME I PANNELLI.
+   «Attuale» e «Carta» non dicevano niente a nessuno; OLED e LCD dicono la
+   cosa vera: il primo e' fatto per uno schermo che spegne il nero, il
+   secondo per uno che lo illumina da dietro. Inchiostro era un terzo tema
+   rimasto dal mockup e il suo tasto non c'e piu: chi ci era dentro viene
+   riportato a OLED, perche un tema senza tasto per uscirne e' una gabbia
+   come le altre. Le sue regole CSS restano nel file, spente: si tolgono in
+   un giro dedicato, che togliere CSS a mano e' il modo in cui questa app e
+   gia morta una volta. */
+      uiTheme:(raw.settings&&raw.settings.uiTheme==='carta')?'carta':'classico',
       anim:(raw.settings&&raw.settings.anim==='sempre')?'sempre':'auto',
       inkMondo:!!(raw.settings&&raw.settings.inkMondo),      /* prova: cielo e microfono a inchiostro */
       inkGiardino:!!(raw.settings&&raw.settings.inkGiardino),/* prova: giardino a inchiostro */
@@ -4424,7 +4500,7 @@ function foglioDopoVoce(){
   })();
 })();
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
-  b.onclick=()=>{ S.settings.uiTheme=['inchiostro','carta'].includes(b.dataset.uitheme)?b.dataset.uitheme:'classico'; save(); applyTheme(); renderSettings(); };
+  b.onclick=()=>{ S.settings.uiTheme=(b.dataset.uitheme==='carta')?'carta':'classico'; save(); applyTheme(); renderSettings(); };
 });
 document.querySelector('#sw-inkmondo').onclick=()=>{ S.settings.inkMondo=!S.settings.inkMondo; save(); applyTheme(); renderSettings(); };
 document.querySelector('#sw-inkgiardino').onclick=()=>{ S.settings.inkGiardino=!S.settings.inkGiardino; save(); applyTheme(); renderSettings(); };
@@ -8111,7 +8187,6 @@ function ink(itemEl){
   setTimeout(()=>d.remove(),600);
 }
 function applyTheme(){ try{
-  document.body.classList.toggle('theme-inchiostro',S.settings.uiTheme==='inchiostro');
   document.body.classList.toggle('theme-carta',S.settings.uiTheme==='carta');
   document.body.classList.toggle('ink-mondo',!!S.settings.inkMondo);
   document.body.classList.toggle('ink-giardino',!!S.settings.inkGiardino);
