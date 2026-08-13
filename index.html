@@ -1112,6 +1112,77 @@ body.theme-carta .essbtn{color:var(--t3)}
    ne faceva 2,3 - e nessuno se n'era accorto perche stava nel JS, dove nessuno
    strumento guarda. Portarlo qui non e stato solo ordine: e stato scoprirlo. */
 body.theme-carta .essbtn.on{color:var(--accent)}
+
+/* ══════ v239 — LE TRENTAQUATTRO SUPERFICI CHE RESTAVANO AL BUIO ══════
+   Cercandole con lo strumento invece che a occhio ne sono uscite trentaquattro:
+   fondi, bordi e ombre pensati per il nero e mai vestiti per la carta. Non e una
+   lista di ritocchi, sono quattro famiglie, e ognuna ha la stessa causa.
+
+   1 · GLI ALONI DEL MICROFONO. Il pezzo che si guarda piu spesso, ed era fatto
+   di aloni: cerchi di luce che sulla carta diventano una foschia lattiginosa.
+   Su carta un anello si DISEGNA - un filo, non un bagliore. */
+body.theme-carta #mic::before{background:none;border:1px solid rgba(122,86,18,.22)}
+body.theme-carta #mic.rec::before{background:none;border:1.5px solid rgba(122,86,18,.42)}
+body.theme-carta #mic.rec::after{border-color:rgba(122,86,18,.55)}
+body.theme-carta #mic.sealed::before{background:none;border:1.5px solid rgba(122,86,18,.5)}
+body.theme-carta #mic.sealed:not(.rec)::after{border-color:rgba(122,86,18,.6)}
+
+/* 2 · L'INTERRUTTORE. Il pomello era bianco con l'ombra nera sotto: bianco su
+   carta e invisibile, e l'ombra nera e un difetto di un altro mondo. Qui il
+   pomello e carta piena con il suo contorno, e la pista spenta e un incavo
+   chiaro invece di un velo chiaro su nero. */
+body.theme-carta .sw{background:rgba(23,21,18,.13)}
+body.theme-carta .sw::after{background:#FBF9F4;box-shadow:0 1px 2px rgba(23,21,18,.28);border:.5px solid rgba(23,21,18,.22)}
+
+/* 3 · IL VELO DELLA MANO GUIDATA. Era un nero all'86% attorno al buco: sulla
+   carta e un lutto. Diventa un velo di carta, e il buco resta segnato in oro. */
+body.theme-carta #tour-buco{box-shadow:0 0 0 9999px rgba(240,236,226,.90), 0 0 0 2px rgba(122,86,18,.6) inset}
+body.theme-carta #tour-box{background:rgba(250,248,243,.98);-webkit-backdrop-filter:none;backdrop-filter:none;
+  border:.5px solid rgba(23,21,18,.22);box-shadow:0 6px 22px rgba(23,21,18,.14)}
+
+/* 4 · I FILI D'ORO A BASSA OPACITA. Sul nero un oro al 22% e un accenno che si
+   vede; sulla carta e quasi niente, perche il fondo e gia chiaro e l'oro pure.
+   Stessa intenzione, altra quantita: l'oro del tema, piu deciso. */
+body.theme-carta #distilla{background:rgba(122,86,18,.06);border:.5px solid rgba(122,86,18,.38)}
+body.theme-carta .obs-tag{border-color:rgba(122,86,18,.5)}
+body.theme-carta .cura-btn{border-color:rgba(122,86,18,.5)}
+body.theme-carta #metti-in-home{background:rgba(122,86,18,.08);border-color:rgba(122,86,18,.42)}
+body.theme-carta #metti-in-home button{background:rgba(122,86,18,.14)}
+body.theme-carta #prio-row .act.primary{background:rgba(122,86,18,.14)}
+body.theme-carta .lett-row.on .lett-chk{background:rgba(122,86,18,.16)}
+body.theme-carta .entry.lascito .lasc-dona{border-color:rgba(122,86,18,.5)}
+body.theme-carta .d-num::after{background:var(--accent)}
+
+/* 5 · I DETTAGLI DELLE QUEST. La data e la nota sotto il titolo stavano al terzo
+   livello di grigio, che sul nero e discrezione e sulla carta e sparizione.
+   Salgono di un gradino: restano sotto il titolo, ma si leggono. */
+body.theme-carta .item .meta{color:#4A463E}
+body.theme-carta .item .meta+.meta{color:#332F29}
+body.theme-carta .item .cal{color:#5C574E}
+
+/* v239 — I MENU CHE TOCCAVANO IL BORDO.
+   «.switchrow» distribuisce agli estremi un'etichetta e un gruppo di scelte.
+   Quando l'etichetta e lunga - «Come ti parla», con la sua spiegazione sotto -
+   il gruppo viene spinto contro il bordo destro e l'ultima voce ci finisce
+   addosso: «Femminile», «Carta». Non e tagliata davvero, ma sembra tagliata, ed
+   e la stessa cosa per chi guarda.
+   Si dice all'etichetta che puo stringersi e al gruppo che non deve: nulla
+   cambia quando c'e posto, e quando non ce n'e a cedere e' il testo lungo, non
+   il tasto.
+   NOTA: lo stesso difetto c'e anche sull'OLED, identico, perche la larghezza e
+   la stessa. Li non l'ho toccato: e una riga sola, quando lo dici. */
+body.theme-carta .switchrow{gap:14px}
+body.theme-carta .switchrow>span:first-child{min-width:0;flex:1 1 auto}
+body.theme-carta .switchrow .seg{flex:0 0 auto}
+body.theme-carta .switchrow .sw{flex:0 0 auto}
+
+/* v239 — IL SUSSURRO SULLA CARTA, nella stessa lingua di tutto il resto:
+   chiuso in un bordo, senza sfocature e senza ombre morbide. Prima aveva
+   ancora l'ombra lunga del tema scuro, che su un foglio non vuol dire niente:
+   su carta un foglietto appoggiato fa un'ombra corta, o non la fa. */
+body.theme-carta #obs-whisper{box-shadow:0 2px 8px rgba(23,21,18,.12);border-width:1px}
+body.theme-carta #obs-whisper .verd-tit{opacity:1;color:#5C574E}
+body.theme-carta #obs-whisper .verd-ok{opacity:1;color:#3F3B34}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -2019,6 +2090,9 @@ body.theme-carta .item{overflow:visible}
           <div class="switchrow prova-ink"><span>Giardino a inchiostro<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">prova: le piante diventate tratti su carta</small></span>
             <button type="button" class="sw" id="sw-inkgiardino" aria-label="Giardino a inchiostro"></button>
           </div>
+          <div class="switchrow"><span>Intelligenza locale<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">un modello che gira dentro il telefono, 23 MB scaricati una volta sola. Non scrive: capisce quando una giornata pesa, anche detta con parole nuove. Non esce niente da qui</small></span>
+            <button type="button" class="sw" id="sw-ia" aria-label="Intelligenza locale"></button>
+          </div>
           <div class="switchrow"><span>Animazioni</span>
             <div class="seg" id="seg-anim">
               <button data-anim="auto">Di sistema</button><button data-anim="sempre">Sempre</button>
@@ -2667,6 +2741,7 @@ function sanitizeState(raw,def){
    gia morta una volta. */
       uiTheme:(raw.settings&&raw.settings.uiTheme==='carta')?'carta':'classico',
       anim:(raw.settings&&raw.settings.anim==='sempre')?'sempre':'auto',
+      iaLocale:!!(raw.settings&&raw.settings.iaLocale),   /* il modello che gira nel telefono */
       inkMondo:!!(raw.settings&&raw.settings.inkMondo),      /* prova: cielo e microfono a inchiostro */
       inkGiardino:!!(raw.settings&&raw.settings.inkGiardino),/* prova: giardino a inchiostro */
       genere:(raw.settings&&['m','f'].includes(raw.settings.genere))?raw.settings.genere:''   /* v150: vuoto = non detto, e l'amico evita il genere */
@@ -2949,7 +3024,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.239 · 2026-08-12';
+const APP_VERSION='v60S.240 · 2026-08-12';
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -4605,6 +4680,14 @@ function foglioDopoVoce(){
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
   b.onclick=()=>{ S.settings.uiTheme=(b.dataset.uitheme==='carta')?'carta':'classico'; save(); applyTheme(); renderSettings(); };
 });
+document.querySelector('#sw-ia').onclick=()=>{
+  S.settings.iaLocale=!S.settings.iaLocale; save(); renderSettings();
+  if(S.settings.iaLocale){
+    toast('Scarico il modello, una volta sola\u2026');
+    iaAccendi().then(function(ok){ toast(ok?'Intelligenza locale pronta':'Non e partita: restano le regole di casa'); })
+      .catch(function(){ toast('Non e partita: restano le regole di casa'); });
+  } else { toast('Spenta: restano le regole di casa'); }
+};
 document.querySelector('#sw-inkmondo').onclick=()=>{ S.settings.inkMondo=!S.settings.inkMondo; save(); applyTheme(); renderSettings(); };
 document.querySelector('#sw-inkgiardino').onclick=()=>{ S.settings.inkGiardino=!S.settings.inkGiardino; save(); applyTheme(); renderSettings(); };
 document.querySelectorAll('#seg-anim button').forEach(b=>{
@@ -4892,7 +4975,7 @@ document.querySelector('#btn-save').onclick=async()=>{
          non fara nascere ne bloccare niente: serve solo perche stasera
          l'osservatrice e domattina il frutto sappiano come parlare. */
       addDiary(transcript,[],[],'','','',pesoLocale(transcript));
-      save(); render();
+      save(); render(); iaRipensaUltima();
       /* v212: la nota e salva, e adesso l'estrattore di casa guarda cosa c'era
          dentro. Quello che trova si PROPONE: non entra da solo nella lista. */
       let _prop=[];
@@ -4907,7 +4990,7 @@ document.querySelector('#btn-save').onclick=async()=>{
       return;
     }
   }catch(err){
-    addDiary(transcript,[],[],'','','',pesoLocale(transcript)); save(); render(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}   /* v206: la rete e la stessa anche quando e la rete a cadere */
+    addDiary(transcript,[],[],'','','',pesoLocale(transcript)); save(); render(); iaRipensaUltima(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}   /* v206: la rete e la stessa anche quando e la rete a cadere */
     const code=(err&&err.message)||'';
     let msg='IA non raggiungibile'+(code&&code!=='bad'?' ['+code.slice(0,90)+']':'')+': trascritto salvato comunque';
     if(code==='bad') msg='L\u2019IA ha risposto in un formato non leggibile: riprova. Trascritto salvato.';
@@ -5422,6 +5505,123 @@ const _PESO_MORTE=/\b(mort[oa]|venut[oa] a mancare|spirat[oa]|se n'e andat[oa] p
 const _PESO_CARO=/\b(nonn[ao]|madre|padre|mamma|papa|fratello|sorella|figli[oa]|marito|moglie|compagn[oa]|zi[ao]|nipote|amic[ao]|cane|gatt[oa])\b/;
 /* e prima di tutto si tolgono i modi di dire, o «sono morto di sonno» diventa un lutto */
 const _PESO_MODIDIRE=/\b(mort[oi]?|stanc[oa])\s+di\s+(fame|sonno|sete|freddo|caldo|paura|ridere|noia|stanchezza|lavoro)\b|\bmorend[oa]\s+di\s+\w+/g;
+/* ══════ L'INTELLIGENZA LOCALE (v240) ═══════════════════════════════════════
+   Le regole del peso, misurate su frasi mai viste, si fermano al 56% dei
+   dolori. Ogni giro di regole prende le formulazioni previste e perde le altre:
+   e il tetto delle regole, non un difetto da correggere con altre regole.
+
+   Qui sotto c'e la seconda opinione: un modello che NON SCRIVE, misura solo
+   quanto due frasi si somigliano di significato. Ventitre megabyte, ospitati
+   sulle stesse pagine dell'app - quindi nessun dominio nuovo, e l'informativa
+   non cambia di una riga. Gira nel telefono, non esce niente.
+
+   COME LAVORA, e l'ordine conta:
+   1. le regole parlano per prime. Se dicono «pesa», e pesa: sono precise,
+      zero falsi allarmi su ventuno giornate storte mai viste.
+   2. solo se le regole tacciono, si chiede al modello. Cosi il modello puo
+      solo AGGIUNGERE dolori riconosciuti, mai toglierne.
+   3. se il modello non c'e, non e stato scaricato, o il telefono non ce la fa,
+      restano le regole. Sentiero senza chiave ha sempre funzionato per intero
+      e continua a farlo: questa e una marcia in piu, non un pezzo che manca.
+
+   IL GUARDIANO. Non si calcola mai mentre c'e testo non salvato nella stanza
+   della sera. Se iOS chiude la scheda per memoria, un diario che perde quello
+   che stavi scrivendo ha rotto l'unica promessa che fa. */
+const IA_BASE='./ia/';                    /* stessa origine dell'app: nessun dominio nuovo */
+let _iaStato='spento';                    /* spento · carico · pronto · fallito */
+let _iaEst=null, _iaSim=null, _iaVettori=null;
+
+/* le frasi di riferimento: sono le stesse del corpus di casa, quelle etichettate
+   a mano. Il modello non impara niente - confronta e basta. */
+const IA_DOLORE=[
+  'oggi e morta mia nonna, non ho combinato niente',
+  'mio padre ha ricevuto la diagnosi stamattina',
+  'ho passato la notte al pronto soccorso, non ho smesso di tremare',
+  'quando torna a casa ubriaco mi chiudo in camera',
+  'e finita, se n\'e andata dopo undici anni',
+  'mi hanno licenziato e non so come si paga l\'affitto',
+  'sono tre giorni che non esco dal letto, non riesco ad alzarmi',
+  'ho perso il bambino',
+  'mi sono fatto male apposta, non lo dico a nessuno',
+  'non ce la faccio piu, sarebbe piu semplice se non ci fossi'
+];
+const IA_NORMALE=[
+  'giornata di merda, non ho voglia di niente',
+  'sono stanco morto, la palestra la sposto a domani',
+  'ho litigato di brutto con mia sorella, mi ha fatto imbestialire',
+  'odio questo lavoro, avrei voluto mandare tutti a quel paese',
+  'ansia a mille per il colloquio di domani, non ho dormito',
+  'mi sento indietro su tutto, non concludo mai niente',
+  'sono di umore nero da stamattina e non so perche',
+  'che palle la fisioterapia, non cambia niente',
+  'mi sono svegliato triste, passera',
+  'sto morendo di fame e ho due ore di riunioni'
+];
+
+function iaDisponibile(){ return _iaStato==='pronto'; }
+
+/* il guardiano: c'e roba non salvata sotto le dita? allora non si tocca niente */
+function _iaMomentoBuono(){
+  try{
+    const t=document.getElementById('stanza-txt');
+    if(t&&t.value&&t.value.trim()&&document.getElementById('stanza')&&
+       !document.getElementById('stanza').classList.contains('hidden')) return false;
+  }catch(_){}
+  return true;
+}
+
+async function iaAccendi(){
+  if(_iaStato==='carico'||_iaStato==='pronto') return _iaStato==='pronto';
+  _iaStato='carico';
+  try{
+    const M=await import(IA_BASE+'transformers.js');
+    const est=await M.pipeline('feature-extraction',IA_BASE+'modello',{dtype:'q8',local_files_only:true});
+    const vet=async t=>Array.from((await est(t,{pooling:'mean',normalize:true})).data);
+    _iaVettori={dolore:await Promise.all(IA_DOLORE.map(vet)),normale:await Promise.all(IA_NORMALE.map(vet))};
+    _iaEst=vet; _iaSim=M.cos_sim; _iaStato='pronto';
+    try{ regCantiere('ia',{msg:'intelligenza locale pronta'}); }catch(_){}
+    return true;
+  }catch(e){
+    _iaStato='fallito';
+    try{ regCantiere('ia',{msg:'intelligenza locale non parte: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){}
+    return false;
+  }
+}
+
+/* la seconda opinione. Torna true solo se il dolore somiglia PIU al dolore che
+   al normale, e con uno stacco: senza stacco si sceglie il silenzio, che e la
+   scelta che l'app fa sempre quando non e sicura. */
+async function pesoIA(testo){
+  if(!iaDisponibile()||!_iaMomentoBuono()) return false;
+  try{
+    const v=await _iaEst(String(testo||'').slice(0,600));
+    const max=a=>Math.max.apply(null,a.map(x=>_iaSim(v,x)));
+    const d=max(_iaVettori.dolore), n=max(_iaVettori.normale);
+    return (d-n)>0.06 && d>0.42;
+  }catch(_){ return false; }
+}
+
+/* IL RIPENSAMENTO. La voce entra SUBITO nel diario col verdetto delle regole:
+   il testo della persona non aspetta nessun modello, mai. Solo dopo, se le
+   regole avevano taciuto, si chiede la seconda opinione e semmai si aggiunge il
+   marchio. In quest'ordine il modello non puo far tardare niente e non puo far
+   sparire niente: puo solo accorgersi di qualcosa in piu. */
+function iaRipensaUltima(){
+  try{
+    if(!iaDisponibile()) return;
+    const v=S.diary&&S.diary[0];
+    if(!v||v.peso===true) return;
+    const testo=v.raw||v.testo; if(!testo) return;
+    pesoIA(testo).then(function(p){
+      try{
+        if(!p) return;
+        if(S.diary&&S.diary[0]===v&&v.peso!==true){ v.peso=true; save();
+          regCantiere('ia',{msg:'peso riconosciuto dal modello dove le regole tacevano'}); }
+      }catch(_){}
+    }).catch(function(){});
+  }catch(_){}
+}
+
 function pesoLocale(testo){
   let t=String(testo||'').toLowerCase();
   if(!t) return false;
@@ -10017,6 +10217,7 @@ async function scrittoNelDiario(testo, dom){
        senza un avviso. Un di piu che non deve mai costare un di meno. */
     let _p=false; try{ _p=pesoLocale(testo); }catch(_){}
     try{ addDiary(testo,[],[],testo,'',dom,_p); }catch(_){}
+    try{ iaRipensaUltima(); }catch(_){}
   }
   return {fatto:fatto, nuove:nuove};
 }
@@ -11011,6 +11212,7 @@ function renderSettings(){
     if(bn&&!bn.textContent){ const n=bancoPacchetti().length; bn.textContent=n?(n+' pacchetti conservati, pronti da rigiocare.'):'Nessun pacchetto conservato ancora.'; } }catch(_){}
   document.querySelector('#sw-notif').classList.toggle('on',S.settings.notif);
   document.querySelector('#sw-geo').classList.toggle('on',S.settings.geo);
+  document.querySelector('#sw-ia').classList.toggle('on',!!S.settings.iaLocale);
   document.querySelector('#sw-inkmondo').classList.toggle('on',!!S.settings.inkMondo);
   document.querySelector('#sw-inkgiardino').classList.toggle('on',!!S.settings.inkGiardino);
   document.querySelectorAll('#seg-theme button').forEach(b=>b.classList.toggle('on',b.dataset.theme===S.settings.theme));
@@ -11692,7 +11894,14 @@ try{ initHaptic(); }catch(_){}
 try{ initDay(); }catch(_){}
 try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
-try{ maybeObserveAuto(); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
+try{ maybeObserveAuto(); }catch(_){}
+/* l'intelligenza locale si riaccende da sola se era accesa, ma DOPO: non deve
+   far aspettare l'apertura dell'app nemmeno di un istante. */
+/* il .catch va sulla PROMESSA: un try/catch attorno a una chiamata async non
+   prende il suo fallimento, e l'errore finirebbe fuori da tutto. */
+try{ if(S.settings.iaLocale) setTimeout(function(){
+  try{ iaAccendi().catch(function(){}); }catch(_){}
+},2500); }catch(_){}   /* la Mente Osservatrice si accende da sola, una volta al giorno */
 try{ const _p=maybeChiudiCapitolo(); if(_p&&_p.catch) _p.catch(function(e){ try{ regCantiere('errore',{msg:'maybeChiudiCapitolo: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){} }); }catch(_){}
 /* v193 — la schermata di benvenuto viene chiamata.
    Era li, finita: il markup, nove regole di CSS, l'enso che si disegna, il testo,
