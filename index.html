@@ -1345,6 +1345,34 @@ body.theme-carta #mic.fermo::after{border-color:rgba(122,86,18,.72)}
 #btn-fermo.hidden{display:none}
 #btn-fermo:active{transform:translateX(-50%) scale(.96)}
 body.theme-carta #btn-fermo{background:rgba(247,245,239,.96);border-color:rgba(122,86,18,.45)}
+
+/* v258 — mentre il dito scorre a sinistra il cerchio lo SEGUE, e quando la
+   soglia e passata si vede che sta per essere buttata.
+   Niente transition sul cerchio: lo sposta il dito, quadro per quadro, come in
+   ogni gesto che si rispetti - e la regola scritta qui sopra, che la pittura del
+   microfono la guida il rAF, resta intatta.
+   Il segno e sull'involucro, non sul cerchio: #mic::before e gia l'alone, e un
+   pezzo che serve a due cose non serve piu a nessuna. */
+#mic.butta{filter:grayscale(.65)}
+/* il rosso del sigillo, sul nero, sta a 3,6:1 - troppo poco per una riga che
+   avverte. Qui serve il rosso piu luminoso che resta rosso: 4,7:1. */
+#mic-label.butta{color:#DC4338}
+body.theme-carta #mic-label.butta{color:var(--ceralacca)}   /* sulla carta il sigillo arriva a 4,8:1 da solo */
+#mic-wrap.butta::after{content:'';position:absolute;left:50%;top:50%;
+  width:326px;height:326px;margin:-163px 0 0 -163px;border-radius:50%;
+  border:1px dashed rgba(204,38,20,.8);pointer-events:none;z-index:0}
+
+/* v258 — NELLE IMPOSTAZIONI LA × SI VEDE.
+   La v176 nascose la × dietro lo scorrimento del dito, e fece bene: nel mondo
+   una riga si spunta cento volte e si cancella una, e le due cose non possono
+   pesare uguale. Ma quella regola era scritta su «.item .del», cioe su TUTTE le
+   righe - e nelle impostazioni, dove lo scorrimento non e mai stato attaccato,
+   la × e rimasta larga zero pixel per sei versioni: invisibile e non toccabile.
+   Qui dentro ci si viene apposta per togliere una cosa: la × si vede. */
+.item.imp .del{width:44px;opacity:1;transform:none;padding:0}
+.item.imp .txt{cursor:pointer}
+.item.in-modifica{box-shadow:inset 2px 0 0 var(--accent);padding-left:10px}
+.item.in-modifica .meta{color:var(--accent)}
 /* v251 — GLI A CAPO SI DEVONO VEDERE.
    Le pause diventano a capo nel testo, ma un a capo dentro l'HTML non si vede:
    il browser lo tratta come uno spazio. Senza questa riga la cosa funzionerebbe
@@ -2397,7 +2425,7 @@ body.theme-carta .item{overflow:visible}
           <input type="date" id="new-task-date">
         </div>
         <input type="time" id="new-task-time">
-        <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi</button></div>
+        <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi</button><button class="act hidden" id="btn-annulla-mod">Lascia stare</button></div>
       </section>
 
       <section>
@@ -3231,7 +3259,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.257 · 2026-08-14';
+const APP_VERSION='v60S.258 · 2026-08-14';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3248,6 +3276,11 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Nelle impostazioni le cose ricorrenti si possono finalmente togliere: la \u00d7 si vede. E toccandone una la puoi cambiare, senza perdere da quando la stai facendo.',
+   'Tenendo premuto l\u00ed non si apre pi\u00f9 il giardino per sbaglio: il giardino si apre dal mondo, tenendo premuto il cielo.',
+   'E mentre parli, se cambi idea: scorri il dito a sinistra e la registrazione la butto via. Se ci ripensi ancora, c\u2019\u00e8 Rimettila.'
+ ]},
  {righe:[
    'Mentre parli compare un tasto: toccalo e il microfono resta aperto anche se togli il dito. Per chiudere, tocca il cerchio.',
    'Prima si doveva far scorrere il dito verso l\u2019alto, e su molti telefoni il gesto non arrivava mai in fondo.'
@@ -5248,6 +5281,15 @@ function stopRec(){
    la stessa misura del dito - cosi un tremolio non ferma niente; e il ritorno
    e' possibile, riabbassando il dito prima di staccare si torna come prima. */
 let _holdActive=false,_pressT0=0,_fermo=false,_holdY0=0,_holdSu=0;
+/* v258 — SCORRI DI LATO PER BUTTARE.
+   Il quarto gesto: quello che permette di RIPENSARCI mentre si sta ancora
+   parlando. Senza, l'unico modo di disdire una registrazione e finirla e poi
+   cercare il bottone - cioe rileggere per intero una cosa che non si voleva.
+   Il gesto e verso sinistra perche verso l'alto c'e gia il fermo: due direzioni
+   diverse per due intenzioni opposte, e non si sbagliano.
+   Niente e mai buttato davvero: il toast tiene «Rimettila» per cinque secondi. */
+let _holdX0=0,_buttaVia=0,_butta=false,_buttatoTxt='';
+const BUTTA_SOGLIA=96;   /* piu della soglia del fermo: buttare deve costare piu che fermare */
 let _pausaDa=0;   /* v251: quando e cominciato il silenzio, per gli a capo */
 
 function _mostraFermo(on){
@@ -5272,6 +5314,8 @@ function _startHold(e){
   if(_holdActive) return;
   _holdActive=true; _pressT0=Date.now();
   _holdY0=(e&&typeof e.clientY==='number')?e.clientY:0;
+  _holdX0=(e&&typeof e.clientX==='number')?e.clientX:0;
+  _buttaVia=0; _butta=false;
   if(!recording) startRec();   /* avviato dentro il gesto: l'audio di iOS si attiva */
   try{ window.foglioVai&&window.foglioVai('picco'); }catch(_){}   /* il foglio si fa da parte: la voce e nel mondo */
 }
@@ -5297,21 +5341,79 @@ function _muoviHold(e){
   if(!_holdActive||!recording) return;
   if(!_holdY0||typeof e.clientY!=='number') return;
   const su=_holdY0-e.clientY;
+  const via=_holdX0?(_holdX0-e.clientX):0;               /* quanto e andato a sinistra */
+  if(via>_buttaVia) _buttaVia=via;
+  /* di lato o in su: comanda la direzione piu netta, cosi le due intenzioni
+     non si accavallano mai */
+  if(via>28&&via>su){
+    if(_fermo){ _fermo=false; _mostraFermo(false); }
+    _mostraButta(via);
+    return;
+  }
+  if(_butta) _mostraButta(0);                            /* il dito e tornato indietro */
   if(su>_holdSu) _holdSu=su;              /* quanto e salito, al massimo */
   if(su>44&&!_fermo){ _fermo=true; _mostraFermo(true); try{ haptic(); }catch(_){} }
   else if(su<18&&_fermo){ _fermo=false; _mostraFermo(false); }   /* si torna indietro */
+}
+/* il segno mentre il dito scorre: il cerchio si allontana e sbiadisce, e la
+   riga dice cosa sta per succedere. Un gesto senza segno e una trappola. */
+function _mostraButta(via){
+  const armato=via>=BUTTA_SOGLIA;
+  if(armato&&!_butta){ try{ haptic(); }catch(_){} }
+  _butta=armato;
+  try{
+    micBtn.classList.toggle('butta',armato);
+    micLabel.classList.toggle('butta',armato);
+    const wrap=document.getElementById('mic-wrap');
+    if(wrap) wrap.classList.toggle('butta',armato);
+    const q=Math.min(1,via/BUTTA_SOGLIA);
+    micBtn.style.transform=via?('translateX('+(-Math.min(via,BUTTA_SOGLIA)*0.34)+'px)'):'';
+    micBtn.style.opacity=via?String(1-q*0.5):'';
+    if(via>28) micLabel.textContent=armato?'Lascia: la butto via':'Scorri a sinistra per buttare';
+    else if(!via&&!_fermo) micLabel.textContent='';
+  }catch(_){}
+}
+/* si butta davvero: il motore si chiude senza consegnare niente, e il testo
+   resta da parte il tempo di un ripensamento. */
+function buttaRegistrazione(){
+  const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim();
+  _mostraButta(0); _butta=false; _buttaVia=0;
+  recording=false;
+  try{ _fermo=false; _mostraFermo(false); _tastoFermo(false); }catch(_){}
+  try{ riprendiLavori(); }catch(_){}
+  if(rec){ rec.onend=null; try{ rec.stop(); }catch(_){} }   /* niente commit: quello che si e detto non arriva */
+  micBtn.classList.remove('rec','arming');
+  try{ window._cieloVoce&&window._cieloVoce('quiete'); }catch(_){}
+  try{ sMicOff(); releaseWake(); }catch(_){}
+  try{ if(S.settings.music){ MUSIC.recDuck(false); ORCH.duck(false); ATHEME.duck(false); } }catch(_){}
+  _buttatoTxt=txt;
+  resetCapture();
+  try{ haptic(); }catch(_){}
+  if(txt) toastAnnulla('Buttata','Rimettila',function(){
+    live.textContent=_buttatoTxt; live.classList.add('show'); live.scrollTop=0;
+    committedText=_buttatoTxt; sessionFinal=''; interimText='';
+    document.querySelector('#confirm-row').classList.remove('hidden');
+    micLabel.textContent='Rileggi e raccogli';
+    try{ renderFlow(); }catch(_){}
+  });
+  else toast('Niente da buttare');
 }
 
 function _endHold(e){
   if(!_holdActive) return;
   _holdActive=false;
   const held=Date.now()-_pressT0;
+  /* prima di tutto: se il dito e finito abbastanza di lato, si butta. Vale
+     anche se e il sistema ad annullare il tocco - su iPhone lo scorrimento
+     orizzontale e proprio quello che iOS interpreta come «indietro». */
+  if(_butta&&recording){ buttaRegistrazione(); _holdSu=0; _buttaVia=0; return; }
+  if(_buttaVia>40){ _mostraButta(0); _buttaVia=0; }   /* si e mosso di lato ma non abbastanza: non e un fermo */
   /* col fermo alzato, staccare il dito non chiude niente: e' tutto il punto */
   if(_fermo){ _holdSu=0; return; }
   /* il caso iPhone: il sistema ha annullato il tocco mentre il dito saliva.
      Non e un ripensamento, e il sistema che si e messo in mezzo: si ferma. */
   const annullato=e&&e.type==='pointercancel';
-  if(annullato&&recording&&_holdSu>16){
+  if(annullato&&recording&&_holdSu>16&&_holdSu>_buttaVia){
     _fermo=true; _mostraFermo(true); _holdSu=0;
     try{ haptic(); }catch(_){}
     return;
@@ -8925,13 +9027,22 @@ function _stanzaApri(){
 }
 (function(){
   let hT=null,hx=0,hy=0;
-  function bersaglioLibero(e){
+  /* v258 — IL GIARDINO SI APRE SOLO DAL MONDO.
+     Prima questa funzione elencava i posti da cui NON si doveva aprire, e la
+     lista non poteva che essere incompleta: dentro le impostazioni, tenendo
+     premuta una riga per cancellarla, si spalancava il giardino. Una lista di
+     eccezioni difende solo i casi che qualcuno si e ricordato di scrivere.
+     Adesso e il contrario: si apre da un posto solo, il mondo - cioe fuori dal
+     foglio, dove ci sono il cielo e il cerchio. Dentro il foglio non si apre
+     mai, qualunque cosa ci mettiamo domani. */
+  function nelMondo(e){
     const el=e.target; if(!el||!el.closest) return el===document.body;
-    if(el.closest('#giardino,#stanza')) return false;
-    return !el.closest('button,input,textarea,select,a,label,.entry,.chk,.ttl,[data-tid],[data-qid],#mic,#foglio,#app .row,dialog,#obs-whisper');
+    if(document.body.getAttribute('data-pane')==='impostazioni') return false;
+    if(el.closest('#app,#giardino,#stanza,dialog,#onboard,#soglia,#frutto-soglia,#tour,#obs-whisper')) return false;
+    return !el.closest('button,input,textarea,select,a,label,.chk,#mic');
   }
   window.addEventListener('pointerdown',function(e){
-    if(_stanzaViva||!bersaglioLibero(e)) return;
+    if(_stanzaViva||!nelMondo(e)) return;
     try{ document.body.classList.add('no-sel'); }catch(_){}   /* v144: si spegne la selezione PRIMA che iOS decida */
     hx=e.clientX; hy=e.clientY; clearTimeout(hT);
     hT=setTimeout(function(){ hT=null; try{ _stanzaApri(); }catch(_){} },700);
@@ -12130,7 +12241,9 @@ function renderDiary(){
    IMPOSTAZIONI
    ====================================================================== */
 let newDays=[0,1,2,3,4,5,6];
+let _ricMod=null;   /* v258: quale cosa ricorrente si sta cambiando */
 function renderSettings(){
+  try{ if(_ricMod&&!(S.scheduled||[]).some(x=>x&&x.id===_ricMod)) _ricMod=null; }catch(_){}
   /* v253 — non si ricostruisce un pannello che nessuno sta guardando.
      renderSettings rifa la lingua, i segmenti, gli interruttori, i rituali e i
      suoni: otto cicli. Girava a ogni spunta, anche col pannello chiuso. */
@@ -12183,7 +12296,7 @@ function renderSettings(){
   else{
     sfxEl.innerHTML='';
     SFX.forEach((s,i)=>{
-      const div=document.createElement('div'); div.className='item';
+      const div=document.createElement('div'); div.className='item imp';
       div.innerHTML='<span class="txt">Livello '+(i+1)+(i===SFX.length-1?' + sigillo':'')+'<span class="meta">'+escapeHtml(s.name)+'</span></span><button class="del">×</button>';
       div.querySelector('.txt').onclick=()=>playSFX(i); /* tocca per riascoltare */
       div.querySelector('.del').onclick=()=>{ SFX.splice(i,1); saveSFX(); renderSettings(); };
@@ -12201,12 +12314,23 @@ function renderSettings(){
     b.onclick=()=>{ newDays=newDays.includes(i)?newDays.filter(x=>x!==i):[...newDays,i]; renderSettings(); };
     dd.appendChild(b);
   });
+  { /* v258: il bottone dice se aggiunge o se salva una modifica, e mentre si
+       modifica compare il modo di tirarsi indietro. */
+    const ba=document.querySelector('#btn-addtask');
+    if(ba) ba.textContent=_ricMod?'Salva le modifiche':'Aggiungi';
+    const an=document.querySelector('#btn-annulla-mod');
+    if(an) an.classList.toggle('hidden',!_ricMod); }
   const el=document.querySelector('#list-sched');
   if(!S.scheduled.length){ el.innerHTML='<p class="empty">Niente di ricorrente ancora: aggiungi qui sotto.</p>'; }
   else{
     el.innerHTML='';
     S.scheduled.forEach(t=>{
-      const div=document.createElement('div'); div.className='item';
+      const div=document.createElement('div');
+      /* v258: «imp» dice che questa riga sta nelle impostazioni, dove la × deve
+         VEDERSI. Nel mondo si scopre scorrendo, e li ha senso: la riga si spunta
+         cento volte e si cancella una. Qui e il posto in cui si viene apposta
+         per togliere una cosa, e nasconderla e stato un errore di sei versioni. */
+      div.className='item imp'+(_ricMod===t.id?' in-modifica':'');
       let quando;
       if(t.date){
         const d=new Date(t.date+'T12:00:00');
@@ -12214,8 +12338,15 @@ function renderSettings(){
       } else {
         quando=t.days.length===7?'ogni giorno':t.days.map(i=>DAYS_IT[i]).join(' ');
       }
-      div.innerHTML='<span class="txt">'+escapeHtml(t.titolo)+'<span class="meta">'+quando+(t.time?' · '+t.time:'')+'</span></span><button class="del">&#215;</button>';
-      div.querySelector('.del').onclick=()=>{ S.scheduled=S.scheduled.filter(x=>x!==t); save(); renderSettings(); renderTasks(); updateRing(); };
+      div.innerHTML='<span class="txt">'+escapeHtml(t.titolo)+'<span class="meta">'+quando+(t.time?' · '+t.time:'')+(_ricMod===t.id?' · la stai cambiando':'')+'</span></span><button class="del" aria-label="Elimina">&#215;</button>';
+      div.querySelector('.txt').onclick=()=>{ if(_ricMod===t.id) fineModifica(); else modificaRicorrente(t.id); };
+      div.querySelector('.del').onclick=()=>{
+        const prima=[...S.scheduled];
+        if(_ricMod===t.id) _ricMod=null;
+        S.scheduled=S.scheduled.filter(x=>x!==t); save(); renderSettings(); renderTasks(); updateRing();
+        /* cancellare e distruttivo: si annulla, come ovunque in questa app */
+        toastAnnulla('Eliminata','Rimettila',()=>{ S.scheduled=sanitizeScheduled(prima); save(); renderSettings(); renderTasks(); updateRing(); });
+      };
       el.appendChild(div);
     });
   }
@@ -12580,14 +12711,41 @@ document.querySelector('#btn-testkey').onclick=async()=>{
   }
 };
 let taskMode='ric'; /* 'ric' = ricorrente, 'data' = data precisa */
-document.querySelectorAll('#task-mode button').forEach(b=>{
-  b.onclick=()=>{
-    taskMode=b.dataset.mode;
-    document.querySelectorAll('#task-mode button').forEach(x=>x.classList.toggle('on',x===b));
-    document.querySelector('#task-ric').classList.toggle('hidden',taskMode!=='ric');
-    document.querySelector('#task-data').classList.toggle('hidden',taskMode!=='data');
-  };
-});
+function vaiModoTask(m){
+  taskMode=(m==='data')?'data':'ric';
+  document.querySelectorAll('#task-mode button').forEach(x=>x.classList.toggle('on',x.dataset.mode===taskMode));
+  document.querySelector('#task-ric').classList.toggle('hidden',taskMode!=='ric');
+  document.querySelector('#task-data').classList.toggle('hidden',taskMode!=='data');
+}
+document.querySelectorAll('#task-mode button').forEach(b=>{ b.onclick=()=>vaiModoTask(b.dataset.mode); });
+
+/* ══ v258 — LE COSE RICORRENTI SI POSSONO CAMBIARE ═════════════════════════
+   Fino a ieri una cosa ricorrente, una volta scritta, era per sempre: si poteva
+   solo cancellare e riscrivere daccapo - e riscrivendola si perdeva la sua data
+   di nascita, cioe il conto di quante volte e stata mancata dall'inizio.
+   Toccare la riga la riporta qui sotto per cambiarla. Id e nascita restano
+   quelli: e la stessa cosa, detta meglio, non una cosa nuova.
+   (la variabile e dichiarata sopra, accanto a renderSettings: qui sarebbe piu
+   in basso di chi la legge, e una let letta prima della sua riga esplode) */
+function modificaRicorrente(id){
+  const t=(S.scheduled||[]).find(x=>x&&x.id===id); if(!t) return;
+  _ricMod=id;
+  document.querySelector('#new-task-txt').value=t.titolo||'';
+  document.querySelector('#new-task-time').value=t.time||'';
+  if(t.date){ vaiModoTask('data'); document.querySelector('#new-task-date').value=t.date; newDays=[]; }
+  else { vaiModoTask('ric'); newDays=[...(t.days||[])]; }
+  renderSettings();
+  try{ haptic(); }catch(_){}
+  try{ document.querySelector('#new-task-txt').scrollIntoView({block:'center',behavior:'smooth'}); }catch(_){}
+}
+function fineModifica(){
+  _ricMod=null; newDays=[];
+  document.querySelector('#new-task-txt').value='';
+  document.querySelector('#new-task-time').value='';
+  document.querySelector('#new-task-date').value='';
+  vaiModoTask('ric');
+  renderSettings();
+}
 /* ══ LA NASCITA A MANO (v205) ═══════════════════════════════════════════════
    Una quest poteva nascere solo da una risposta del modello. Cinque punti nel
    codice, tutti e cinque dietro la chiave: per i rituali il bottone «Aggiungi»
@@ -12697,6 +12855,7 @@ document.querySelector('#nascita-no').onclick=()=>apriNascita(false);
 document.querySelector('#nascita-ok').onclick=nasciAMano;
 document.querySelector('#nascita-txt').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); nasciAMano(); } });
 
+{ const an=document.querySelector('#btn-annulla-mod'); if(an) an.onclick=()=>fineModifica(); }
 document.querySelector('#btn-addtask').onclick=()=>{
   const txt=document.querySelector('#new-task-txt').value.trim();
   if(!txt) return toast('Scrivi il testo della task');
@@ -12713,14 +12872,19 @@ document.querySelector('#btn-addtask').onclick=()=>{
        mancate riparte dall'inizio del cammino. E' esattamente il guasto che la
        v199 doveva chiudere, rimasto aperto sul lato che si usa di piu - e l'unico
        che esiste per chi non ha la chiave, dove i rituali si fanno solo a mano. */
-    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[],date,time,nata:todayKey()}]);
+    if(_ricMod){ S.scheduled=sanitizeScheduled(S.scheduled.map(x=>x&&x.id===_ricMod?Object.assign({},x,{titolo:txt,days:[],date,time}):x)); }
+    else S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[],date,time,nata:todayKey()}]);
     document.querySelector('#new-task-date').value='';
   } else {
     if(!newDays.length) return toast('Scegli almeno un giorno');
-    S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[...newDays].sort((a,b)=>a-b),time,nata:todayKey()}]);
+    const gg=[...newDays].sort((a,b)=>a-b);
+    if(_ricMod){ S.scheduled=sanitizeScheduled(S.scheduled.map(x=>x&&x.id===_ricMod?Object.assign({},x,{titolo:txt,days:gg,date:'',time}):x)); }
+    else S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:gg,time,nata:todayKey()}]);
   }
+  const eraMod=_ricMod; _ricMod=null; newDays=eraMod?[]:newDays;
   document.querySelector('#new-task-txt').value=''; document.querySelector('#new-task-time').value='';
-  save(); renderSettings(); renderTasks(); updateRing(); scheduleReminders(); toast('Task aggiunta');
+  save(); renderSettings(); renderTasks(); updateRing(); scheduleReminders();
+  toast(eraMod?'Cambiata':'Task aggiunta');
 };
 
 /* ======================================================================
