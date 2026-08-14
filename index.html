@@ -1220,73 +1220,110 @@ body.theme-carta #obs-whisper{
 body.theme-carta .item.done .ini{color:#6E6860 !important}
 body.theme-carta .item.passo .ini{color:var(--accent) !important}
 
-/* ══════ v246 — IL SATELLITE VIOLA, PIU MAESTOSO ══════════════════════════
-   E' il gioiello della sera: compare alle 19 e apre la stanza. Era un nucleo di
-   tredici pixel con due aloni. Maestoso non vuol dire piu grande e non vuol dire
-   piu acceso - vuol dire che ha PROFONDITA e un suo tempo. Quattro cose:
+/* ══════ v247 — IL SATELLITE VIOLA: DUE FORZE CHE COLLIDONO ════════════════
+   Davide ci tiene, e ha detto perche: e il vero diario - la luce che apre la
+   stanza della sera, dove si scrive a lungo - e insieme un easter egg. Il
+   riferimento e l'Hollow Purple: un viola che non e un colore ma il RISULTATO
+   di due forze opposte che si incontrano, blu e rosso.
+   Quell'idea qui non si importa: c'era gia. Sentiero ha il suo blu, --terra,
+   quello della Chiamata a terra; e il suo rosso, la ceralacca del sigillo. Il
+   viola della sera sta esattamente fra i due. Quindi il satellite si costruisce
+   cosi: un nucleo compresso, e attorno DUE anelli che girano in senso opposto,
+   uno freddo e uno caldo. Il viola non e dipinto: e quello che si vede quando
+   quei due si sovrappongono.
 
-   · una corona in piu, larga e tenuta bassissima, che da la sensazione dello
-     spazio attorno: e la differenza fra una lampadina e un corpo celeste;
-   · due respiri con periodi DIVERSI e primi fra loro, 7 e 11 secondi. Battendo
-     insieme tornerebbero un lampeggio; battendo sfasati non si ripetono mai,
-     e l'occhio non trova il ciclo;
-   · un anello sottilissimo staccato dal nucleo, il suo orbitale: e il dettaglio
-     che lo fa leggere come un satellite e non come un puntino;
-   · il nucleo cresce appena, da tredici a quindici, e il bianco al centro si
-     stringe: cosi la luce sembra venire da DENTRO invece che essere appiccicata
-     sopra. Il colore non cambia di un grado: e il tuo viola. */
-#notte-luce{width:74px;height:74px;margin:-37px 0 0 -37px}
+   Le quattro regole che tengono la cosa dal diventare un fuoco d'artificio:
+   · il nucleo e PICCOLO e quasi bianco. L'energia compressa si legge cosi - un
+     punto che sembra troppo luminoso per la sua misura - non allargandolo;
+   · il corpo ha un BORDO. Un alone che sfuma nel nulla e una lampadina; una
+     sfera si vede dove finisce, e li ha un filo piu chiaro, la sua compressione;
+   · i tempi sono numeri primi fra loro - 7, 11, 17 secondi - e i due anelli
+     girano in senso OPPOSTO. Niente di tutto questo torna mai uguale, e per
+     questo non diventa un lampeggio;
+   · il colore non e nuovo. Blu, rosso e viola sono i tre che l'app ha gia. */
+#notte-luce{width:96px;height:96px;margin:-48px 0 0 -48px}
+
+/* il nucleo: compresso, con un bordo vero e la sua camicia di compressione */
 #notte-luce .nucleo::before{
-  width:15px;height:15px;
-  background:radial-gradient(circle,#ffffff 0%,hsl(var(--notte-h) 100% 92%) 14%,
-    var(--notte) 40%,hsla(var(--notte-h) var(--notte-s) 52% / .62) 64%,transparent 82%);
-  box-shadow:0 0 16px 6px hsla(var(--notte-h) var(--notte-s) 62% / .40),
-             0 0 40px 16px hsla(var(--notte-h) var(--notte-s) 58% / .20),
-             0 0 96px 40px hsla(var(--notte-h) var(--notte-s) 56% / .085);
+  width:16px;height:16px;
+  background:radial-gradient(circle,
+    #ffffff 0%, hsl(var(--notte-h) 100% 94%) 9%,
+    hsl(var(--notte-h) 96% 78%) 22%,
+    var(--notte) 46%,
+    hsla(var(--notte-h) var(--notte-s) 46% / .92) 66%,
+    hsla(var(--notte-h) var(--notte-s) 40% / .55) 74%,
+    transparent 78%);
+  box-shadow:
+    0 0 0 1px hsla(var(--notte-h) 100% 86% / .55),
+    0 0 18px 6px hsla(var(--notte-h) var(--notte-s) 62% / .42),
+    0 0 46px 18px hsla(var(--notte-h) var(--notte-s) 58% / .20),
+    0 0 110px 46px hsla(var(--notte-h) var(--notte-s) 56% / .09);
   animation:notte-respiro 7s ease-in-out infinite}
+
 /* la corona: il volume dello spazio attorno. Non si vede, si sente. */
 #notte-luce .nucleo::after{
-  content:'';position:absolute;left:50%;top:50%;width:70px;height:70px;
-  margin:-35px 0 0 -35px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 64% / .13) 0%,
-    hsla(var(--notte-h) var(--notte-s) 60% / .05) 42%,transparent 72%);
+  content:'';position:absolute;left:50%;top:50%;width:88px;height:88px;
+  margin:-44px 0 0 -44px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 64% / .14) 0%,
+    hsla(var(--notte-h) var(--notte-s) 60% / .05) 40%,transparent 70%);
   animation:notte-corona 11s ease-in-out infinite}
-/* l'orbitale: un filo staccato dal corpo. E' questo che lo fa satellite. */
+
+/* LE DUE FORZE. Il freddo gira in un senso, il caldo nell'altro: dove si
+   incrociano nasce il viola. Sono tenuti bassi - l'effetto e la loro somma,
+   non la loro presenza. */
+#notte-luce::before{
+  content:'';position:absolute;left:50%;top:50%;width:40px;height:40px;
+  margin:-20px 0 0 -20px;border-radius:50%;pointer-events:none;
+  border:.5px solid transparent;
+  border-top-color:hsla(var(--terra-h) 85% 68% / .40);
+  border-right-color:hsla(var(--terra-h) 85% 72% / .22);
+  animation:notte-freddo 17s linear infinite}
 #notte-luce::after{
-  content:'';position:absolute;left:50%;top:50%;width:34px;height:34px;
-  margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;
-  border:.5px solid hsla(var(--notte-h) var(--notte-s) 70% / .28);
-  animation:notte-orbita 11s ease-in-out infinite}
-@keyframes notte-respiro{0%,100%{transform:scale(var(--luce-k,1))}50%{transform:scale(calc(var(--luce-k,1) * 1.075))}}
-@keyframes notte-corona{0%,100%{opacity:.68;transform:scale(1)}50%{opacity:1;transform:scale(1.09)}}
-@keyframes notte-orbita{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.85;transform:scale(1.06)}}
+  content:'';position:absolute;left:50%;top:50%;width:52px;height:52px;
+  margin:-26px 0 0 -26px;border-radius:50%;pointer-events:none;
+  border:.5px solid transparent;
+  border-bottom-color:hsla(8 78% 62% / .30);
+  border-left-color:hsla(8 78% 66% / .16);
+  animation:notte-caldo 11s linear infinite reverse}
+
+@keyframes notte-respiro{0%,100%{transform:scale(var(--luce-k,1))}50%{transform:scale(calc(var(--luce-k,1) * 1.08))}}
+@keyframes notte-corona{0%,100%{opacity:.66;transform:scale(1)}50%{opacity:1;transform:scale(1.10)}}
+@keyframes notte-freddo{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.07)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes notte-caldo{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(.94)}100%{transform:rotate(360deg) scale(1)}}
+
 /* chi ha chiesto quiete al telefono non riceve niente di tutto questo */
 @media (prefers-reduced-motion:reduce){
   body:not(.anima-sempre) #notte-luce .nucleo::before,
   body:not(.anima-sempre) #notte-luce .nucleo::after,
+  body:not(.anima-sempre) #notte-luce::before,
   body:not(.anima-sempre) #notte-luce::after{animation:none}
 }
 /* la scia si allunga con lui: una coda corta su un corpo grande sembra un errore */
 .notte-scia::before{
-  background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 76% / .88) 0%,
-    hsla(var(--notte-h) var(--notte-s) 70% / .30) 48%,transparent 74%)}
+  background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 78% / .90) 0%,
+    hsla(var(--notte-h) var(--notte-s) 70% / .32) 46%,transparent 74%)}
 
-/* ── e sulla carta, dove niente brilla, maestoso si scrive in un altro modo:
-   un disco pieno del suo viola, e DUE anelli concentrici attorno. Su un foglio
-   l'importanza si dice con la geometria, non con la luce - come il bollo di una
-   ceralacca, che non emette niente e si vede da lontano. ── */
+/* ── SULLA CARTA le due forze restano due, ma diventano inchiostro: due archi
+   concentrici, uno blu e uno rosso, attorno al disco viola. Su un foglio
+   l'importanza si dice con la geometria - come un bollo di ceralacca, che non
+   emette niente e si vede da lontano. ── */
 body.theme-carta #notte-luce .nucleo::before{
   background:var(--notte);
-  box-shadow:0 0 0 1.5px hsla(var(--notte-h) 62% 40% / .30),
-             0 0 0 5px hsla(var(--notte-h) 62% 40% / .14)}
+  box-shadow:0 0 0 1.5px hsla(var(--notte-h) 62% 40% / .34),
+             0 0 0 6px hsla(var(--notte-h) 62% 40% / .13)}
 body.theme-carta #notte-luce .nucleo::after{
   background:none;
-  border:.5px solid hsla(var(--notte-h) 62% 42% / .26);
-  width:46px;height:46px;margin:-23px 0 0 -23px}
+  border:.5px solid hsla(var(--notte-h) 62% 42% / .24);
+  width:56px;height:56px;margin:-28px 0 0 -28px}
+body.theme-carta #notte-luce::before{
+  border-top-color:hsla(var(--terra-h) 80% 40% / .52);
+  border-right-color:hsla(var(--terra-h) 80% 40% / .26)}
 body.theme-carta #notte-luce::after{
-  border-color:hsla(var(--notte-h) 62% 42% / .42)}
+  border-bottom-color:hsla(8 76% 42% / .46);
+  border-left-color:hsla(8 76% 42% / .22)}
 body.theme-carta .notte-scia::before{
-  background:radial-gradient(circle,hsla(var(--notte-h) 62% 44% / .62) 0%,transparent 70%)}
+  background:radial-gradient(circle,hsla(var(--notte-h) 62% 44% / .64) 0%,transparent 70%)}
+
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -3148,7 +3185,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.246 · 2026-08-12';
+const APP_VERSION='v60S.247 · 2026-08-12';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3165,6 +3202,9 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'La luce viola della sera adesso e fatta di due forze che si incontrano: un anello freddo e uno caldo che girano in senso opposto, e il viola e quello che si vede dove si sovrappongono.'
+ ]},
  {righe:[
    'La luce viola della sera e piu grande e piu profonda: ha una corona attorno e un anello suo, e respira con due tempi diversi che non tornano mai uguali.'
  ]},
