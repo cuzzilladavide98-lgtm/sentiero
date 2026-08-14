@@ -3053,7 +3053,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.243 · 2026-08-12';
+const APP_VERSION='v60S.244 · 2026-08-12';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3065,6 +3065,10 @@ const APP_VERSION='v60S.243 · 2026-08-12';
    correzioni» insegna a non leggerla. */
 const NOVITA=[
  {da:'v60S.243',righe:[
+   'Sentiero capisce qualche frase in piu di quelle che dici a voce: prima alcune sparivano senza lasciare traccia.',
+   'Le righe della sera arrivano anche quando prima restava zitto.'
+ ]},
+ {da:'v60S.244',righe:[
    'Sull\u2019aspetto chiaro adesso si vede il giro del giorno: un tratto che cresce attorno al microfono e, quando il cerchio si chiude, si chiude anche lui.',
    'La voce dentro il telefono parla anche quando Sentiero, da solo, non trovava le parole \u2014 prima aspettava che le trovasse lui, e cos\u00ec non parlava mai.',
    'Questo foglietto, prima, non compariva a nessuno.'
@@ -5131,11 +5135,15 @@ function _micNorm(t){
 /* La radice puo essere corta: «dare», «fare», «dire» hanno una lettera sola prima
    della desinenza, e chiedendone tre si perdevano «Fare 1200 €» e «dare
    un'occhiata». Serve solo che la parola intera arrivi a quattro lettere. */
-const _MIC_INF=/^[a-z']+(?:are|arsi|ere|ersi|ire|irsi|arla|arlo|arli|arle|erla|erlo|irla|irlo)$/;
+const _MIC_INF=/^[a-z']+(?:are|arsi|ere|ersi|ire|irsi|urre|arre|orre|ursi|orsi|arla|arlo|arli|arle|erla|erlo|irla|irlo)$/  /* v244: mancavano -urre, -arre, -orre. «Introdurre le istruzioni» non
+     produceva niente pur cominciando con un infinito, e con lei condurre,
+     produrre, tradurre, ridurre, porre, comporre, proporre, esporre, trarre.
+     Non e un caso raro: e una coniugazione intera. */;
 /* «fare» stava qui dentro come verbo servile, e si mangiava «Fare 1200 € prima di
    domenica»: e uno dei verbi piu concreti che ci siano. Restano fuori solo quelli
    che da soli non sono mai una cosa da fare. */
 const _MIC_NONVERBI=new Set(['essere','avere','stare','potere','volere','dovere','sapere',
+  'torre','corre','occorre','scorre','ricorre','soccorre','carre','birre',   /* i falsi amici di -orre e -arre */
   'mare','sere','pere','vere','opere','genere','carattere','padre','madre','ere','aria','storie',
   'care','cara','ore','rare','pure','dure','mere','chiare','sere','vere','oltre','altre','nostre','vostre']);
 /* parole che finiscono in -o e non sono verbi alla prima persona: senza questo
@@ -5349,6 +5357,18 @@ function distillaLocaleIT(testo,oggiISO){
        usciva la proposta «Provare a fumare erba», cioe il contrario esatto di
        quello che aveva detto. Una nota che nega non e una cosa da fare: si lascia
        stare. Meglio perdere una proposta che ribaltarne il senso. */
+    /* LA NEGAZIONE, e non e un dettaglio: su «no non provare a fumare erba»
+       usciva la proposta «Provare a fumare erba», cioe il contrario esatto di
+       quello che aveva detto. Una nota che nega non e una cosa da fare: si lascia
+       stare. Meglio perdere una proposta che ribaltarne il senso.
+
+       v244 — CI HO PROVATO A CAMBIARLA, E L'HO RIMESSA COM'ERA.
+       Tenendo la negazione dentro il titolo si recuperavano due note su
+       novantaquattro - «domani non fumo erba» diventava «Non fumo erba». Ma
+       questa non e una regola tecnica: e una decisione di Davide, scritta qui
+       sopra e difesa da provaMicrofono. Il banco mi ha fermato, ed e servito.
+       Se un giorno si vuole cambiare, si cambia la decisione E il banco insieme,
+       non il codice di nascosto. Il prezzo e noto: due note su novantaquattro. */
     const primaDelVerbo=norm.slice(Math.max(0,da-3),da).join(' ');
     if(/\bnon\b|\bmai\b|\bniente\b/.test(primaDelVerbo)||/^no\b/.test(norm[0])) continue;
     const titolo=_micTitolo(parole,da);
@@ -5701,13 +5721,31 @@ async function iaAccendi(){
 /* la seconda opinione. Torna true solo se il dolore somiglia PIU al dolore che
    al normale, e con uno stacco: senza stacco si sceglie il silenzio, che e la
    scelta che l'app fa sempre quando non e sicura. */
+/* v244 — LE SOGLIE SONO NUMERI CHE NON HO MISURATO, E SI DEVE SAPERE.
+   «differenza maggiore di 0,06» e «somiglianza maggiore di 0,42» li ho scelti a
+   naso: sembrano prudenti, ma non li ho provati su nessun dato vero, perche il
+   modello gira nel telefono e non qui. Un classificatore con soglie inventate,
+   su un percorso che riguarda le giornate pesanti, e' esattamente il genere di
+   cosa che questo progetto non si permette.
+   Finche non sono tarate, ogni decisione lascia il suo numero nel registro: le
+   due somiglianze, la differenza, e cosa ha deciso. Dopo qualche giorno d'uso
+   quei numeri sono un campione vero, e le soglie si scelgono guardandolo invece
+   che immaginandolo. Il registro resta nel telefono come tutto il resto. */
+const PESO_IA_STACCO=0.06;      /* da tarare sui numeri veri */
+const PESO_IA_MINIMO=0.42;      /* da tarare sui numeri veri */
+
 async function pesoIA(testo){
   if(!iaDisponibile()||!_iaMomentoBuono()) return false;
   try{
     const v=await _iaEst(String(testo||'').slice(0,600));
     const max=a=>Math.max.apply(null,a.map(x=>_iaSim(v,x)));
     const d=max(_iaVettori.dolore), n=max(_iaVettori.normale);
-    return (d-n)>0.06 && d>0.42;
+    const esito=(d-n)>PESO_IA_STACCO && d>PESO_IA_MINIMO;
+    /* la traccia per tarare: numeri, non testo. Del contenuto non si registra
+       nulla - servono le misure, non le parole di nessuno. */
+    try{ regCantiere('ia-peso',{dolore:+d.toFixed(3),normale:+n.toFixed(3),
+      stacco:+(d-n).toFixed(3),esito:esito?1:0,car:String(testo||'').length}); }catch(_){}
+    return esito;
   }catch(_){ return false; }
 }
 
