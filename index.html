@@ -1324,6 +1324,18 @@ body.theme-carta #notte-luce::after{
 body.theme-carta .notte-scia::before{
   background:radial-gradient(circle,hsla(var(--notte-h) 62% 44% / .64) 0%,transparent 70%)}
 
+
+/* v250 — IL SEGNO DEL FERMO. Deve dire due cose in un colpo d'occhio: che il
+   microfono e aperto, e che ci si esce toccando. Un anello continuo attorno al
+   cerchio - non un lampeggio, che sarebbe ansia - e un filo che respira piano.
+   Su carta lo stesso segno si disegna in inchiostro, perche li niente brilla. */
+#mic.fermo::after{
+  content:'';position:absolute;inset:-6%;border-radius:50%;pointer-events:none;z-index:1;
+  border:2px solid rgba(232,168,76,.62);
+  animation:fermo-respiro 3.4s ease-in-out infinite}
+@keyframes fermo-respiro{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.035)}}
+body:not(.anima-sempre) #mic.fermo::after{animation:none;opacity:.8}
+body.theme-carta #mic.fermo::after{border-color:rgba(122,86,18,.72)}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -3185,7 +3197,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.249 · 2026-08-12';
+const APP_VERSION='v60S.250 · 2026-08-12';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3202,6 +3214,9 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Per parlare a lungo non serve piu tenere il dito premuto: alzalo senza staccarlo e il microfono resta aperto. Tocchi per chiudere.'
+ ]},
  {righe:[
    'Registrare e piu stabile: mentre parli il telefono smette di ridisegnare, e girarlo non interrompe piu quello che stai dicendo.',
    'La voce della sera non usa piu parole nostre che sullo schermo non compaiono da nessuna parte.'
@@ -5036,6 +5051,7 @@ function startRec(){
 }
 function stopRec(){
   recording=false;
+  try{ _fermo=false; _mostraFermo(false); }catch(_){}   /* il fermo non sopravvive alla chiusura */
   /* v249: appena il microfono si chiude, i lavori rimandati si fanno - uno
      alla volta, cosi il picco non si sposta soltanto piu in la. */
   try{ riprendiLavori(); }catch(_){}
@@ -5065,18 +5081,53 @@ function stopRec(){
 /* ── PRESS-TO-REC (stile WhatsApp): tieni premuto il cerchio per dettare, rilascia per fermare.
      Niente preventDefault né pointer-capture (su iOS bloccavano l'audio del microfono / lanciavano
      un pointercancel immediato). Il rilascio si ascolta su window: non lo perdiamo mai. ── */
-let _holdActive=false,_pressT0=0;
-function _startHold(){
+/* ══════ IL FERMO (v250) ═══════════════════════════════════════════════════
+   Tenere premuto va bene per il pensiero corto. Per il diario della sera no:
+   dettare a lungo col dito incollato allo schermo e' scomodo, e ogni cosa che
+   succede al telefono - una rotazione, una notifica - diventa un rischio.
+   Le guide sul parlato lungo dicono la stessa cosa: la pressione continua serve
+   ai messaggi brevi, il fermo serve a chi parla.
+   Il gesto e quello che tutti conoscono e nessuno deve imparare: si alza il dito
+   SENZA staccarlo, e il microfono resta aperto. Da li si parla a mani libere e
+   si chiude toccando.
+   Due cose per non sbagliare gesto: la soglia e alta - quarantaquattro punti,
+   la stessa misura del dito - cosi un tremolio non ferma niente; e il ritorno
+   e' possibile, riabbassando il dito prima di staccare si torna come prima. */
+let _holdActive=false,_pressT0=0,_fermo=false,_holdY0=0;
+
+function _mostraFermo(on){
+  try{
+    micBtn.classList.toggle('fermo',!!on);
+    micLabel.textContent=on?'Microfono aperto \u00b7 tocca per chiudere':'';
+  }catch(_){}
+}
+
+function _startHold(e){
   if(!SR){ const txt=live.textContent.trim(); if(txt) document.querySelector('#confirm-row').classList.remove('hidden'); return; }
+  /* se il microfono e gia fermo, questo tocco lo CHIUDE: e l'unico modo di
+     uscirne, e deve essere il piu ovvio possibile. */
+  if(_fermo){ _fermo=false; _mostraFermo(false); if(recording) stopRec(); return; }
   if(_holdActive) return;
   _holdActive=true; _pressT0=Date.now();
+  _holdY0=(e&&typeof e.clientY==='number')?e.clientY:0;
   if(!recording) startRec();   /* avviato dentro il gesto: l'audio di iOS si attiva */
   try{ window.foglioVai&&window.foglioVai('picco'); }catch(_){}   /* il foglio si fa da parte: la voce e nel mondo */
 }
+
+function _muoviHold(e){
+  if(!_holdActive||!recording) return;
+  if(!_holdY0||typeof e.clientY!=='number') return;
+  const su=_holdY0-e.clientY;
+  if(su>44&&!_fermo){ _fermo=true; _mostraFermo(true); try{ haptic(); }catch(_){} }
+  else if(su<18&&_fermo){ _fermo=false; _mostraFermo(false); }   /* si torna indietro */
+}
+
 function _endHold(){
   if(!_holdActive) return;
   _holdActive=false;
   const held=Date.now()-_pressT0;
+  /* col fermo alzato, staccare il dito non chiude niente: e' tutto il punto */
+  if(_fermo) return;
   if(recording) stopRec();
   if(held<350){   /* pressione troppo breve: suggerimento; DUE tocchi brevi ravvicinati = esporta l'enso */
     const nowT=Date.now();
@@ -5085,6 +5136,7 @@ function _endHold(){
   }
 }
 micBtn.addEventListener('pointerdown',_startHold);
+window.addEventListener('pointermove',_muoviHold,{passive:true});
 window.addEventListener('pointerup',_endHold);
 window.addEventListener('pointercancel',_endHold);
 document.querySelector('#btn-discard').onclick=()=>{ resetCapture(); try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(_){} };
