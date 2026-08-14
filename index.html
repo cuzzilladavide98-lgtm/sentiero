@@ -509,6 +509,15 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
    striscia fissa in cima coprirebbe l'anello e cambierebbe l'app a tutti per
    avvisare alcuni. Occupa una riga sola, si legge, e non chiede di essere chiusa
    perche l'unico modo di chiuderla e fare la cosa che salva il diario. */
+#novita{margin:10px 14px 0;padding:14px 16px;border-radius:14px;
+  background:rgba(232,168,76,.07);border:.5px solid rgba(232,168,76,.30)}
+#novita.hidden{display:none}
+#novita .nov-testa{font-family:var(--serif);font-size:17px;color:var(--t1);margin-bottom:9px}
+#novita ul{margin:0;padding:0 0 0 18px}
+#novita li{font-size:14.5px;line-height:1.5;color:var(--t2);margin:0 0 6px}
+#novita button{margin-top:6px;min-height:44px;padding:0 16px;border:none;background:none;
+  color:var(--accent);font:500 15px/1 inherit}
+body.theme-carta #novita{background:rgba(122,86,18,.07);border-color:rgba(122,86,18,.40)}
 #riavvia{display:flex;align-items:center;gap:10px;
   margin:8px 14px 0;padding:9px 12px;border-radius:12px;
   background:rgba(127,184,164,.10);border:.5px solid rgba(127,184,164,.36);
@@ -1982,6 +1991,16 @@ body.theme-carta .item{overflow:visible}
        Non si ricarica da soli: se una persona sta scrivendo nella stanza della
        sera, un ricaricamento le porta via quello che ha scritto. Si dice, e
        decide lei quando. -->
+  <!-- v242 — COSA E CAMBIATO.
+       Un'app che si aggiorna da sola e un'app che cambia sotto le mani senza
+       dire niente. Qui, dopo un aggiornamento, compare una volta sola cosa e
+       cambiato - in italiano, senza numeri di versione e senza parole da
+       programmatori - e sparisce appena la persona dice che ha letto. -->
+  <div id="novita" class="hidden">
+    <div class="nov-testa">Cosa è cambiato</div>
+    <ul id="nov-righe"></ul>
+    <button type="button" id="nov-ok">Ho letto</button>
+  </div>
   <div id="riavvia" class="hidden" role="status">
     <span>C'è una versione nuova. Chiudi e riapri Sentiero: è più sicuro.</span>
   </div>
@@ -2093,10 +2112,10 @@ body.theme-carta .item{overflow:visible}
           <!-- v241: le parole qui le legge chi non sa niente di modelli. Niente
                «inferenza», niente «quantizzato», niente sigle: cosa fa, quanto
                scarica, cosa serve, e dove finiscono le sue parole. -->
-          <div class="switchrow"><span>Una voce dentro il telefono<small style="display:block;color:var(--t3);font-size:12px;line-height:1.4;margin-top:3px">scrive lei le righe della sera, senza chiave e senza pagare niente. La prima volta scarica un file grosso, quasi un giga: fallo col wi&#8209;fi e a telefono carico. Dopo funziona anche senza rete, e quello che scrivi non esce da qui.<b id="sw-scrive-stato" style="display:block;font-weight:400;color:var(--t2);margin-top:4px"></b></small></span>
+          <div class="switchrow"><span>Una voce dentro il telefono<small style="display:block;color:var(--t3);font-size:12px;line-height:1.4;margin-top:3px">scrive lei le righe della sera, senza chiave e senza pagare niente. La prima volta scarica un file di circa quattrocento mega: fallo col wi&#8209;fi e a telefono carico. Dopo funziona anche senza rete, e quello che scrivi non esce da qui.<b id="sw-scrive-stato" style="display:block;font-weight:400;color:var(--t2);margin-top:4px"></b></small></span>
             <button type="button" class="sw" id="sw-scrive" aria-label="Una voce dentro il telefono"></button>
           </div>
-          <div class="switchrow"><span>Intelligenza locale<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">un modello che gira dentro il telefono, 23 MB scaricati una volta sola. Non scrive: capisce quando una giornata pesa, anche detta con parole nuove. Non esce niente da qui</small></span>
+          <div class="switchrow"><span>Intelligenza locale<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">un modello che gira dentro il telefono, 23 MB scaricati una volta sola. Non scrive: capisce quando una giornata pesa, anche detta con parole nuove. Non esce niente da qui<b id="sw-ia-stato" style="display:block;font-weight:400;color:var(--t2);margin-top:4px"></b></small></span>
             <button type="button" class="sw" id="sw-ia" aria-label="Intelligenza locale"></button>
           </div>
           <div class="switchrow"><span>Animazioni</span>
@@ -2725,6 +2744,9 @@ function sanitizeState(raw,def){
       Object.keys(p).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort().slice(-90).forEach(k=>{
         const v=p[k]|0; if(v===1||v===2) out[k]=v; }); return out; })(raw.patti),
     lastDayInit:(typeof raw.lastDayInit==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(raw.lastDayInit))?raw.lastDayInit:'',
+    /* v242: senza questa riga sanitizeState butta vistoVersione a ogni avvio, e
+       il foglietto di cosa e cambiato ricomparirebbe per sempre. */
+    vistoVersione:(typeof raw.vistoVersione==='string')?raw.vistoVersione.slice(0,40):'',
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
       voice:!!(raw.settings&&raw.settings.voice===true),
@@ -3031,7 +3053,45 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.241 · 2026-08-12';
+const APP_VERSION='v60S.242 · 2026-08-12';
+
+
+/* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
+   Si scrive QUI, a ogni versione, e si scrive per chi usa l'app - non per chi
+   la fa. Niente numeri di versione, niente nomi di funzioni, niente «ottimizzato»
+   o «migliorato»: cosa vedra di diverso, detto come lo direbbe un amico.
+   Chi aggiunge una versione aggiunge una voce in cima. Se non c'e niente che
+   una persona possa notare, non si scrive niente: una lista che dice «piccole
+   correzioni» insegna a non leggerla. */
+const NOVITA=[
+ {da:'v60S.240',righe:[
+   'Puoi far scrivere le righe della sera a una voce che vive dentro il telefono: gratis, senza chiave, e funziona anche senza rete.',
+   'C\u2019e anche una seconda intelligenza, piu piccola, che capisce quando una giornata pesa davvero \u2014 cosi in un giorno storto l\u2019app non ti mette in lista quello che hai scritto per sfogarti.',
+   'Quando arriva una versione nuova te lo dice, e ti mostra questo foglietto.'
+ ]},
+ {da:'v60S.232',righe:[
+   'Un secondo aspetto, pensato per gli schermi LCD: fondo chiaro, testi piu leggibili al sole, e i colori restano quelli.',
+   'Sui telefoni con lo schermo corto il foglio parte piu in alto: si vede una riga in piu.',
+   'Il primo giorno adesso si puo scorrere: prima, se il testo non ci stava, il tasto per andare avanti restava irraggiungibile.'
+ ]}
+];
+
+function mostraNovita(){
+  try{
+    const el=document.getElementById('novita'); if(!el) return;
+    const visto=S.vistoVersione||'';
+    if(visto===APP_VERSION) return;
+    /* al primo giorno di chi non sa niente non si racconta cosa e cambiato:
+       per lui non e cambiato niente, e' tutto nuovo. */
+    const ob=document.getElementById('onboard');
+    if(ob&&!ob.classList.contains('hidden')) return;
+    if(!visto){ S.vistoVersione=APP_VERSION; save(); return; }   /* prima volta: si tace */
+    const blocco=NOVITA[0]; if(!blocco) return;
+    const ul=document.getElementById('nov-righe'); if(!ul) return;
+    ul.innerHTML=blocco.righe.map(r=>'<li>'+escapeHtml(r)+'</li>').join('');
+    el.classList.remove('hidden');
+  }catch(_){}
+}
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
    Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
@@ -4687,6 +4747,10 @@ function foglioDopoVoce(){
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
   b.onclick=()=>{ S.settings.uiTheme=(b.dataset.uitheme==='carta')?'carta':'classico'; save(); applyTheme(); renderSettings(); };
 });
+document.querySelector('#nov-ok').onclick=()=>{
+  try{ document.getElementById('novita').classList.add('hidden'); }catch(_){}
+  S.vistoVersione=APP_VERSION; save();
+};
 document.querySelector('#sw-scrive').onclick=()=>{
   S.settings.iaScrive=!S.settings.iaScrive; save(); renderSettings();
   if(S.settings.iaScrive){
@@ -5543,7 +5607,13 @@ const _PESO_MODIDIRE=/\b(mort[oi]?|stanc[oa])\s+di\s+(fame|sonno|sete|freddo|cal
    IL GUARDIANO. Non si calcola mai mentre c'e testo non salvato nella stanza
    della sera. Se iOS chiude la scheda per memoria, un diario che perde quello
    che stavi scrivendo ha rotto l'unica promessa che fa. */
-const IA_BASE='./ia/';                    /* stessa origine dell'app: nessun dominio nuovo */
+/* v242 — SI SCARICA DA SOLA, come l'altra. Prima puntava a './ia/', una
+   cartella che avrei dovuto far creare a mano: non esisteva, e falliva
+   sempre. Adesso prende il programma da esm.run e il modello da
+   huggingface.co, gli stessi due indirizzi gia scritti nell'informativa. */
+const IA_CDN='https://esm.run/@huggingface/transformers@3.5.1';
+const IA_MODELLO='Xenova/all-MiniLM-L6-v2';
+let _iaErrore='';
 let _iaStato='spento';                    /* spento · carico · pronto · fallito */
 let _iaEst=null, _iaSim=null, _iaVettori=null;
 
@@ -5589,17 +5659,25 @@ function _iaMomentoBuono(){
 async function iaAccendi(){
   if(_iaStato==='carico'||_iaStato==='pronto') return _iaStato==='pronto';
   _iaStato='carico';
+  try{ const s=document.getElementById('sw-ia-stato'); if(s) s.textContent='scarico\u2026'; }catch(_){}
   try{
-    const M=await import(IA_BASE+'transformers.js');
-    const est=await M.pipeline('feature-extraction',IA_BASE+'modello',{dtype:'q8',local_files_only:true});
+    const M=await import(IA_CDN);
+    const est=await M.pipeline('feature-extraction',IA_MODELLO,{dtype:'q8'});
     const vet=async t=>Array.from((await est(t,{pooling:'mean',normalize:true})).data);
     _iaVettori={dolore:await Promise.all(IA_DOLORE.map(vet)),normale:await Promise.all(IA_NORMALE.map(vet))};
     _iaEst=vet; _iaSim=M.cos_sim; _iaStato='pronto';
+    try{ const s=document.getElementById('sw-ia-stato'); if(s) s.textContent='pronta, e resta nel telefono'; }catch(_){}
     try{ regCantiere('ia',{msg:'intelligenza locale pronta'}); }catch(_){}
     return true;
   }catch(e){
     _iaStato='fallito';
-    try{ regCantiere('ia',{msg:'intelligenza locale non parte: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){}
+    /* v242 — L'ERRORE SI DEVE POTER LEGGERE.
+       La prima volta e fallita e nessuno sapeva perche: un guasto muto costa
+       un giro intero di tentativi a caso. Adesso il motivo compare sotto
+       l'interruttore, e chi lo legge puo dirlo a chi ripara. */
+    _iaErrore=String((e&&e.message)||e).slice(0,160);
+    try{ const s=document.getElementById('sw-ia-stato'); if(s) s.textContent='non parte: '+_iaErrore; }catch(_){}
+    try{ regCantiere('ia',{msg:'intelligenza locale non parte: '+_iaErrore}); }catch(_){}
     return false;
   }
 }
@@ -8441,8 +8519,24 @@ function rigaDaButtare(t){
    E se non c'e WebGPU, se il telefono non ce la fa, se il download non finisce:
    Sentiero resta intero, con le sue sei forme. Questa e una marcia in piu. */
 const SCRIVE_CDN='https://esm.run/@mlc-ai/web-llm';
-const SCRIVE_MODELLO='Llama-3.2-1B-Instruct-q4f16_1-MLC';
-let _scrStato='spento', _scrMotore=null, _scrAvanzamento=0;
+/* v242 — PIU PICCOLO, E FUORI DALLA PAGINA.
+   Il primo tentativo caricava Llama 3.2 da un miliardo di parametri DENTRO la
+   pagina: sull'iPhone SE il risultato e stato una schermata nera, cioe iOS che
+   chiude la scheda perche ha finito la memoria. Due correzioni, e sono
+   indipendenti:
+   1. un modello molto piu piccolo. Qwen 2.5 da mezzo miliardo, quantizzato: un
+      terzo dello spazio e un terzo della memoria. Per scrivere UNA riga di venti
+      parole non serve di piu - non ci stiamo facendo scrivere un romanzo.
+   2. non gira piu nella pagina ma in un LAVORATORE separato, creato al volo
+      senza file da aggiungere. Se il telefono lo uccide, muore lui: l'app resta
+      in piedi e lo dice, invece di diventare uno schermo nero.
+   Il lavoratore si scrive qui e si accende da una stringa: cosi Sentiero resta
+   un file solo, che e la regola della casa. */
+const SCRIVE_MODELLO='Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
+const SCRIVE_OPERAIO="import * as w from '"+'https://esm.run/@mlc-ai/web-llm'+"';\n"+
+  "const h=new w.WebWorkerMLCEngineHandler();\n"+
+  "self.onmessage=e=>{ h.onmessage(e); };";
+let _scrStato='spento', _scrMotore=null, _scrAvanzamento=0, _scrErrore='';
 
 function scriveDisponibile(){ return _scrStato==='pronto'; }
 /* niente scriveAvanzamento(): l'avanzamento si scrive direttamente nella riga
@@ -8459,11 +8553,20 @@ async function scriveAccendi(){
   _scrStato='carico';
   try{
     const M=await import(SCRIVE_CDN);
-    _scrMotore=await M.CreateMLCEngine(SCRIVE_MODELLO,{
+    const url=URL.createObjectURL(new Blob([SCRIVE_OPERAIO],{type:'text/javascript'}));
+    const operaio=new Worker(url,{type:'module'});
+    /* se il lavoratore muore - memoria finita - non trascina giu la pagina:
+       lo si sente morire e si torna alle righe di casa. */
+    operaio.onerror=function(){ _scrStato='fallito';
+      _scrErrore='il telefono non ce l\'ha fatta a tenerla in memoria';
+      try{ const s=document.getElementById('sw-scrive-stato');
+        if(s) s.textContent='non e partita: '+_scrErrore; }catch(_){}
+    };
+    _scrMotore=await M.CreateWebWorkerMLCEngine(operaio,SCRIVE_MODELLO,{
       initProgressCallback:function(p){
         _scrAvanzamento=Math.round((p&&p.progress||0)*100);
         try{ const s=document.getElementById('sw-scrive-stato');
-          if(s) s.textContent=_scrAvanzamento<100?('scarico… '+_scrAvanzamento+'%'):'quasi pronto…'; }catch(_){}
+          if(s) s.textContent=_scrAvanzamento<100?('scarico… '+_scrAvanzamento+'% \u2014 tieni Sentiero aperto'):'ci siamo quasi…'; }catch(_){}
       }
     });
     _scrStato='pronto';
@@ -8472,9 +8575,10 @@ async function scriveAccendi(){
     return true;
   }catch(e){
     _scrStato='fallito';
+    _scrErrore=String((e&&e.message)||e).slice(0,180);
     try{ const s=document.getElementById('sw-scrive-stato');
-      if(s) s.textContent='non e partito: restano le righe di casa'; }catch(_){}
-    try{ regCantiere('ia',{msg:'modello che scrive non parte: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){}
+      if(s) s.textContent='non e partito: '+_scrErrore; }catch(_){}
+    try{ regCantiere('ia',{msg:'modello che scrive non parte: '+_scrErrore}); }catch(_){}
     return false;
   }
 }
@@ -12024,6 +12128,7 @@ try{ initDay(); }catch(_){}
 try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}
+try{ mostraNovita(); }catch(_){}
 /* l'intelligenza locale si riaccende da sola se era accesa, ma DOPO: non deve
    far aspettare l'apertura dell'app nemmeno di un istante. */
 /* il .catch va sulla PROMESSA: un try/catch attorno a una chiamata async non
