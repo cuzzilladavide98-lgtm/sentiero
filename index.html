@@ -1335,6 +1335,16 @@ body.theme-carta .notte-scia::before{
 body:not(.anima-sempre) #mic.fermo::after{animation:none;opacity:.8}
 body.theme-carta #mic.fermo::after{border-color:rgba(122,86,18,.72)}
 
+
+/* v257 — il tasto del fermo: si vede, si tocca, e dice cosa fa. Sta sopra il
+   cerchio, dove il dito arriva naturalmente salendo. */
+#btn-fermo{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 14px);
+  min-height:44px;padding:0 18px;border-radius:999px;white-space:nowrap;
+  border:.5px solid rgba(232,168,76,.42);background:rgba(7,10,9,.86);
+  color:var(--accent);font:500 15px/1 inherit;z-index:3}
+#btn-fermo.hidden{display:none}
+#btn-fermo:active{transform:translateX(-50%) scale(.96)}
+body.theme-carta #btn-fermo{background:rgba(247,245,239,.96);border-color:rgba(122,86,18,.45)}
 /* v251 — GLI A CAPO SI DEVONO VEDERE.
    Le pause diventano a capo nel testo, ma un a capo dentro l'HTML non si vede:
    il browser lo tratta come uno spazio. Senza questa riga la cosa funzionerebbe
@@ -2040,6 +2050,10 @@ body.theme-carta .item{overflow:visible}
 <canvas id="cielo" aria-hidden="true"></canvas>
 <canvas id="enso-fx" aria-hidden="true"></canvas>
       <div id="mic-wrap">
+    <!-- v257 — IL TASTO DEL FERMO.
+         Il gesto del dito che sale, su iPhone, il sistema puo annullarlo. Un
+         tocco no. E soprattutto: un gesto che nessuno vede non esiste. -->
+    <button type="button" id="btn-fermo" class="hidden" aria-label="Lascia il microfono aperto">resta aperto</button>
         <div class="mist" id="mist-a"></div>
         <div class="mist" id="mist-b"></div>
         <button id="mic" aria-label="Avvia o ferma la dettatura">
@@ -3217,7 +3231,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.256 · 2026-08-12';
+const APP_VERSION='v60S.257 · 2026-08-14';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3234,6 +3248,10 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Mentre parli compare un tasto: toccalo e il microfono resta aperto anche se togli il dito. Per chiudere, tocca il cerchio.',
+   'Prima si doveva far scorrere il dito verso l\u2019alto, e su molti telefoni il gesto non arrivava mai in fondo.'
+ ]},
  {righe:[
    'Sull\u2019aspetto chiaro il mondo attorno al microfono e diventato un filo solo, che si allunga col giorno e chiude il cerchio quando il giorno si chiude.',
    'Non tremola piu: quello che hai gia percorso sta fermo, si muove solo la punta.'
@@ -5176,7 +5194,8 @@ function startRec(){
     }
   };
   recording=true;
-    _staRegistrando=true;   /* v249: da qui i ridimensionamenti aspettano */
+    _staRegistrando=true;
+    try{ _tastoFermo(true); }catch(_){}   /* v249: da qui i ridimensionamenti aspettano */
     /* stato 'in avvio': enso pulsa neutro, l'utente NON è invitato a parlare finché onstart non scatta */
   micBtn.classList.add('arming');
   micLabel.textContent='Preparazione del microfono…';
@@ -5186,7 +5205,7 @@ function startRec(){
 }
 function stopRec(){
   recording=false;
-  try{ _fermo=false; _mostraFermo(false); }catch(_){}   /* il fermo non sopravvive alla chiusura */
+  try{ _fermo=false; _mostraFermo(false); _tastoFermo(false); }catch(_){}   /* il fermo non sopravvive alla chiusura */
   /* v249: appena il microfono si chiude, i lavori rimandati si fanno - uno
      alla volta, cosi il picco non si sposta soltanto piu in la. */
   try{ riprendiLavori(); }catch(_){}
@@ -5228,14 +5247,21 @@ function stopRec(){
    Due cose per non sbagliare gesto: la soglia e alta - quarantaquattro punti,
    la stessa misura del dito - cosi un tremolio non ferma niente; e il ritorno
    e' possibile, riabbassando il dito prima di staccare si torna come prima. */
-let _holdActive=false,_pressT0=0,_fermo=false,_holdY0=0;
+let _holdActive=false,_pressT0=0,_fermo=false,_holdY0=0,_holdSu=0;
 let _pausaDa=0;   /* v251: quando e cominciato il silenzio, per gli a capo */
 
 function _mostraFermo(on){
   try{
     micBtn.classList.toggle('fermo',!!on);
-    micLabel.textContent=on?'Microfono aperto \u00b7 tocca per chiudere':'';
+    micLabel.textContent=on?'Microfono aperto \u00b7 tocca il cerchio per chiudere':'';
+    const bf=document.getElementById('btn-fermo');
+    if(bf) bf.classList.toggle('hidden',!!on||!recording);   /* preso il fermo, il tasto non serve piu */
   }catch(_){}
+}
+/* il tasto compare appena si comincia a parlare, e sparisce quando si chiude */
+function _tastoFermo(on){
+  try{ const bf=document.getElementById('btn-fermo');
+    if(bf) bf.classList.toggle('hidden',!on); }catch(_){}
 }
 
 function _startHold(e){
@@ -5250,20 +5276,47 @@ function _startHold(e){
   try{ window.foglioVai&&window.foglioVai('picco'); }catch(_){}   /* il foglio si fa da parte: la voce e nel mondo */
 }
 
+/* ══════ v257 — PERCHE IL FERMO NON SCATTAVA MAI SU iPHONE ═════════════════
+   Il gesto era scritto e non si poteva raggiungere. Alzando il dito, iOS decide
+   che stai scorrendo la pagina e manda un pointercancel - e qui non si puo
+   impedirlo, perche in questo file c'e scritto da tempo che preventDefault e la
+   cattura del puntatore, su iOS, BLOCCANO L'AUDIO del microfono. Quel
+   pointercancel arrivava prima dei quarantaquattro punti e chiudeva tutto.
+   Un gesto che il sistema puo annullare non e un gesto: e una speranza.
+
+   Tre modi di arrivare al fermo, e almeno uno regge sempre:
+   1. il dito che sale, come prima - dove funziona;
+   2. il pointercancel che arriva mentre il dito STAVA salendo non chiude piu:
+      ferma. E' il caso di iOS, e adesso invece di perdere la registrazione la
+      salva - il dito si era gia mosso verso l'alto, l'intenzione c'era;
+   3. e soprattutto: appena si comincia a parlare compare un TASTO. Toccarlo
+      ferma il microfono. Un tocco non lo annulla nessun sistema operativo, e
+      soprattutto si VEDE - il gesto migliore del mondo non serve a niente se
+      nessuno sa che esiste. */
 function _muoviHold(e){
   if(!_holdActive||!recording) return;
   if(!_holdY0||typeof e.clientY!=='number') return;
   const su=_holdY0-e.clientY;
+  if(su>_holdSu) _holdSu=su;              /* quanto e salito, al massimo */
   if(su>44&&!_fermo){ _fermo=true; _mostraFermo(true); try{ haptic(); }catch(_){} }
   else if(su<18&&_fermo){ _fermo=false; _mostraFermo(false); }   /* si torna indietro */
 }
 
-function _endHold(){
+function _endHold(e){
   if(!_holdActive) return;
   _holdActive=false;
   const held=Date.now()-_pressT0;
   /* col fermo alzato, staccare il dito non chiude niente: e' tutto il punto */
-  if(_fermo) return;
+  if(_fermo){ _holdSu=0; return; }
+  /* il caso iPhone: il sistema ha annullato il tocco mentre il dito saliva.
+     Non e un ripensamento, e il sistema che si e messo in mezzo: si ferma. */
+  const annullato=e&&e.type==='pointercancel';
+  if(annullato&&recording&&_holdSu>16){
+    _fermo=true; _mostraFermo(true); _holdSu=0;
+    try{ haptic(); }catch(_){}
+    return;
+  }
+  _holdSu=0;
   if(recording) stopRec();
   if(held<350){   /* pressione troppo breve: suggerimento; DUE tocchi brevi ravvicinati = esporta l'enso */
     const nowT=Date.now();
@@ -5271,6 +5324,18 @@ function _endHold(){
     else { window._ensoTapT=nowT; micLabel.textContent='Tieni premuto il cerchio per parlare'; }
   }
 }
+/* v257: il tasto ferma il microfono con un tocco - l'unico modo che nessun
+   sistema operativo puo annullare. */
+try{
+  const bf=document.getElementById('btn-fermo');
+  if(bf) bf.onclick=function(e){
+    e.stopPropagation();
+    if(!recording) return;
+    _fermo=true; _holdActive=false; _holdSu=0;
+    _mostraFermo(true);
+    try{ haptic(); }catch(_){}
+  };
+}catch(_){}
 micBtn.addEventListener('pointerdown',_startHold);
 window.addEventListener('pointermove',_muoviHold,{passive:true});
 window.addEventListener('pointerup',_endHold);
