@@ -289,9 +289,7 @@ header,main{position:relative;z-index:1}
   box-shadow:inset 0 1px 0 rgba(245,242,234,.07),0 2px 8px rgba(0,0,0,.25);border-color:rgba(245,242,234,.08)}
 /* il mini anello del giorno respira appena quando il cerchio avanza */
 /* Inchiostro: la stessa luce, temperatura giada-ambra piu profonda */
-body.theme-inchiostro::before{
-  background:radial-gradient(120% 85% at 50% -12%,rgba(217,164,65,.13),transparent 58%),
-             radial-gradient(150% 100% at 50% 118%,rgba(159,216,196,.10),transparent 64%)}
+
 /* ══════ CANTIERE SPARKING — S2: GIRO VIVO ══════ */
 .item:active{transform:scale(.982);transition:transform .08s ease}
 .item{transition:transform .18s ease}
@@ -1346,35 +1344,35 @@ body.theme-carta #mic.fermo::after{border-color:rgba(122,86,18,.72)}
 #live{white-space:pre-wrap}
 .entry p{white-space:pre-wrap}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
-body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
-body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
-body.theme-inchiostro #dateline{font-size:clamp(31px,9.5vw,38px);font-weight:400;line-height:1.05;letter-spacing:.01em;color:var(--t1)}
-body.theme-inchiostro .sec-head{font-size:15.5px;color:var(--t2);letter-spacing:.05em;font-weight:400}
-body.theme-inchiostro .ed-num{font-size:24px;font-weight:400}
+
+
+
+
+
 /* ensō doppio: esterno giada (tutto), interno ambra (essenziali ◆) con bagliore */
-body.theme-inchiostro #mic.rec::before{background:radial-gradient(circle,rgba(217,164,65,.16),transparent 66%)}
-body.theme-inchiostro #mic.rec::after{border-color:rgba(217,164,65,.4)}
+
+
 /* barra del giorno: mini doppio anello + eco */
-body.theme-inchiostro #day-line{letter-spacing:.04em}
+
 /* card del flusso come nel mockup */
-body.theme-inchiostro .flow{background:#18211E;border:.5px solid rgba(245,242,234,.08);border-radius:16px;padding:14px 16px;color:var(--t2);text-align:left;max-width:100%}
-body.theme-inchiostro .flow:empty{display:none;padding:0;border:none}
-body.theme-inchiostro .flow strong{color:var(--t1);font-weight:600}
-body.theme-inchiostro .flow button{color:var(--jade)}
-body.theme-inchiostro #btn-distill{background:var(--jade);color:#0B0F0E;border-radius:999px;padding:9px 18px;font-weight:600;border:none}
+
+
+
+
+
 /* sussurro: ciano del mockup anche sulla bolla */
-body.theme-inchiostro #obs-whisper{color:#9BD9E4 !important;border-color:rgba(127,212,224,.25) !important;font-style:italic}
-body.theme-inchiostro .obs-tag{border-color:rgba(217,164,65,.4)}
-body.theme-inchiostro #prio-row .act.primary{background:rgba(217,164,65,.16)}
-body.theme-inchiostro .btn-row .act.distilla-cta{box-shadow:0 6px 22px rgba(217,164,65,.30)}
+
+
+
+
 /* ── geometria del mockup: densita, misure, nav ── */
-body.theme-inchiostro main{padding-left:20px;padding-right:20px}
-body.theme-inchiostro section{margin-top:20px}
-body.theme-inchiostro .sec-head{font-size:15.5px;text-transform:none;margin:0 0 9px}
-body.theme-inchiostro .item{gap:12px;padding:12px 0}
-body.theme-inchiostro .item .chk{width:34px;height:34px}
-body.theme-inchiostro .entry{padding:16px 0}
-body.theme-inchiostro #mic-wrap{padding:34px 0 24px}
+
+
+
+
+
+
+
 /* ══════ FRAME-LAVORO 1: LA CERIMONIA DEL SIGILLO ══════
    ~66 frame dal tocco: 0-1100ms il tratto corre a chiudersi · 1100 la firma si imprime
    · 1120-1600 tre schizzi vermigli · 950-2000 l'onda d'inchiostro · (pieno) 900-2400 l'inchino */
@@ -1998,6 +1996,16 @@ body.theme-carta .item{overflow:visible}
   body:not(.anima-sempre) #terra-carta,body:not(.anima-sempre) #terra-dom .w,
   body:not(.anima-sempre) #terra-fiore{animation:none!important;transition:none!important}
 }
+
+/* v252 — LE REGOLE DEL TEMA INCHIOSTRO SONO STATE TOLTE.
+   Erano venticinque, per 2.279 byte, e vestivano un tema che dalla v232 non
+   si puo piu scegliere: il suo tasto non c'e, e chi ci era dentro viene
+   riportato a OLED all'avvio. Codice che nessuno puo raggiungere non e
+   innocuo: e peso che si legge a ogni apertura e una trappola per chi
+   domani cerchera di capire perche esiste.
+   Tolte contando le graffe UNA PER UNA e verificando che il conto tornasse,
+   non con una ricerca a occhio: e' esattamente il modo in cui questa app e
+   morta per quattro versioni. */
 </style>
 </head>
 <body>
@@ -3206,7 +3214,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.251 · 2026-08-12';
+const APP_VERSION='v60S.252 · 2026-08-12';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3223,6 +3231,10 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'L\u2019app e piu leggera e piu stabile: quando spunti qualcosa o cambi un\u2019impostazione scrive molto meno, e quello che scrivi non aspetta.',
+   'Capisce anche le frasi in cui la cosa da fare e detta come un nome: «segna il rispondere alla mail».'
+ ]},
  {righe:[
    'Quando parli a lungo e ti fermi a pensare, il diario va a capo dove ti sei fermato: rileggendolo ritrovi il tuo ritmo invece di un blocco unico.'
  ]},
@@ -3498,22 +3510,97 @@ function load(){
     const bak=safeGet(LS+'-bak');
     if(bak!=null){ try{ raw=JSON.parse(bak); fromBak=true; }catch(_){ raw=null; } }
   }
+  /* v252: il registro adesso vive per conto suo. Chi aggiorna da una versione
+     vecchia ce l'ha ancora dentro lo stato: lo si prende di li quella volta, e
+     da allora in poi sta nella sua chiave. Nessuno perde niente. */
+  try{
+    const rt=safeGet(LS_REG);
+    if(rt!=null){ const ra=JSON.parse(rt); if(Array.isArray(ra)) (raw||(raw={})).registro=ra; }
+  }catch(_){}
   const st=sanitizeState(raw||{},defaultState);
   if(txt!=null&&raw!=null&&!fromBak){ try{ localStorage.setItem(LS+'-bak',txt); }catch(_){} }   /* avvio pulito: backup = ultimo stato buono */
   if(fromBak) setTimeout(()=>{ try{ toast('Dati ripristinati da un backup recente'); }catch(_){} },900);
   else if(txt!=null&&raw===null) setTimeout(()=>{ try{ toast('Salvataggio illeggibile: ripartito pulito, copia di emergenza conservata'); }catch(_){} },900);
   return st;
 }
-function save(){
-  try{ localStorage.setItem(LS,JSON.stringify(S)); }
+/* ══════════════════════════════════════════════════════════════════════════
+   IL SALVATAGGIO (v252) — misurato prima di toccarlo.
+
+   Lo stato di Davide, serializzato, pesa 204.000 byte. save() lo riscriveva
+   TUTTO, e nel file ci sono novantasette punti che lo chiamano: spuntare una
+   cosa, cambiare un'impostazione, ogni riga che nasce. Ogni chiamata e una
+   serializzazione sincrona di duecentomila caratteri piu una scrittura su disco,
+   sul filo principale, cioe mentre il dito e sullo schermo e il microfono e
+   aperto. Non e un difetto che si vede: e un'app che «va a scatti».
+
+   Due correzioni, e la prima vale piu della seconda.
+
+   1 · IL REGISTRO SE NE VA PER CONTO SUO. Il registro del cantiere - la
+   diagnostica, quella che serve a chi ripara - e il 39% di quel peso: 81.000
+   byte su 204.000. Non e roba di chi usa l'app, e non ha nessun motivo di
+   essere riscritto insieme al diario ogni volta che si spunta qualcosa. Adesso
+   vive in una chiave sua e si posa con calma. Il diario, da solo, pesa il 40%
+   in meno: ogni salvataggio costa quasi la meta.
+
+   2 · CENTO SALVATAGGI DI FILA DIVENTANO UNO. Chi chiama save() dice «questo va
+   salvato», non «scrivi adesso sul disco». Si segna che c'e da salvare e si
+   scrive una volta sola, poco dopo. Chi chiama non cambia di una riga.
+
+   E LA COSA CHE NON SI PUO SBAGLIARE: niente di tutto questo puo costare un
+   dato. Prima di sparire - schermo spento, app messa via, scheda chiusa - si
+   scrive SUBITO e in modo sincrono. E i momenti che contano davvero - una voce
+   che entra nel diario - chiamano salvaSubito() e non aspettano nessuno. */
+const LS_REG='sentiero-registro-v1';
+let _daSalvare=false,_salvaT=null;
+
+function _scriviStato(){
+  /* il registro non entra qui: ha la sua chiave e il suo tempo */
+  const reg=S.registro; let ok=false;
+  try{ S.registro=undefined; localStorage.setItem(LS,JSON.stringify(S)); ok=true; }
   catch(_){
-    if(pruneForSpace(S)){
-      try{ localStorage.setItem(LS,JSON.stringify(S)); toast('Spazio recuperato: vecchi trascritti alleggeriti'); return; }catch(__){}
-    }
-    toast('Memoria piena o navigazione privata: dati non salvati');
+    try{
+      if(pruneForSpace(S)){ localStorage.setItem(LS,JSON.stringify(S)); ok=true;
+        toast('Spazio recuperato: vecchi trascritti alleggeriti'); }
+    }catch(__){}
+    if(!ok) toast('Memoria piena o navigazione privata: dati non salvati');
   }
+  finally{ S.registro=reg; }
 }
-try{ window.addEventListener('pagehide',()=>{ try{ save(); }catch(_){} }); }catch(_){}   /* iOS: salva anche se chiudi con lo swipe */
+
+function _scriviRegistro(){
+  try{ localStorage.setItem(LS_REG,JSON.stringify(S.registro||[])); }catch(_){}
+}
+
+function salvaSubito(){
+  if(_salvaT){ clearTimeout(_salvaT); _salvaT=null; }
+  _daSalvare=false;
+  _scriviStato();
+  _scriviRegistro();
+}
+
+function save(){
+  _daSalvare=true;
+  if(_salvaT) return;
+  _salvaT=setTimeout(function(){
+    _salvaT=null;
+    if(!_daSalvare) return;
+    _daSalvare=false;
+    _scriviStato();
+  },140);
+}
+
+/* il registro si posa da solo, molto piu di rado: e diagnostica, non memoria */
+setInterval(function(){ try{ if(!document.hidden) _scriviRegistro(); }catch(_){} },30000);
+
+/* PRIMA DI SPARIRE, SEMPRE E SUBITO. Sono i tre modi in cui iOS porta via
+   un'app: lo swipe, lo schermo che si spegne, la scheda che si chiude. */
+try{
+  window.addEventListener('pagehide',function(){ try{ salvaSubito(); }catch(_){} });
+  window.addEventListener('beforeunload',function(){ try{ salvaSubito(); }catch(_){} });
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){ try{ salvaSubito(); }catch(_){} }
+  });
+}catch(_){}
 const uid=coreUid;
 /* La ceralacca vive nel CSS, ma una tela non legge le variabili CSS: gliela si
    passa a mano. Letta UNA volta sola - a ogni frame sarebbe un getComputedStyle
@@ -5314,7 +5401,7 @@ document.querySelector('#btn-save').onclick=async()=>{
          non fara nascere ne bloccare niente: serve solo perche stasera
          l'osservatrice e domattina il frutto sappiano come parlare. */
       addDiary(transcript,[],[],'','','',pesoLocale(transcript));
-      save(); render(); iaRipensaUltima();
+      salvaSubito(); render(); iaRipensaUltima();   /* v252: le parole di una persona non aspettano */
       /* v212: la nota e salva, e adesso l'estrattore di casa guarda cosa c'era
          dentro. Quello che trova si PROPONE: non entra da solo nella lista. */
       let _prop=[];
@@ -5329,7 +5416,7 @@ document.querySelector('#btn-save').onclick=async()=>{
       return;
     }
   }catch(err){
-    addDiary(transcript,[],[],'','','',pesoLocale(transcript)); save(); render(); iaRipensaUltima(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}   /* v206: la rete e la stessa anche quando e la rete a cadere */
+    addDiary(transcript,[],[],'','','',pesoLocale(transcript)); salvaSubito(); render(); iaRipensaUltima(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}   /* v206: la rete e la stessa anche quando e la rete a cadere */
     const code=(err&&err.message)||'';
     let msg='IA non raggiungibile'+(code&&code!=='bad'?' ['+code.slice(0,90)+']':'')+': trascritto salvato comunque';
     if(code==='bad') msg='L\u2019IA ha risposto in un formato non leggibile: riprova. Trascritto salvato.';
@@ -5583,6 +5670,18 @@ function distillaLocaleIT(testo,oggiISO){
       for(let i=0;i<norm.length;i++){
         const w=norm[i];
         if(w.length>=4&&/o$/.test(w)&&!_MIC_NON_IO.has(w)&&!/^(gi|se|ci|vi)o$/.test(w)){ da=i; break; }
+      }
+    }
+    /* 4b · L'INFINITO USATO COME NOME: «il risolvere», «lo scrivere», «il fare».
+       In italiano parlato e comunissimo - «segna il rispondere alla mail»
+       - e l'estrattore non lo trovava, perche cercava l'infinito dopo un
+       marcatore o in testa, mai dopo un articolo. Una nota che diceva
+       chiaramente una cosa da fare non produceva niente.
+       L'articolo entra nel titolo? No: si parte dal verbo, cosi «il risolvere il
+       caso» diventa «Risolvere il caso» e non «Il risolvere il caso». */
+    if(da<0){
+      for(let i=0;i<norm.length-1;i++){
+        if(/^(il|lo|la|l')$/.test(norm[i])&&_micEInfinito(norm[i+1])){ da=i+1; break; }
       }
     }
     /* 5 · «e» / «ed» + infinito: «Nota per il 4 agosto e scrivere ad Adele» */
@@ -10900,6 +10999,7 @@ async function scrittoNelDiario(testo, dom){
        senza un avviso. Un di piu che non deve mai costare un di meno. */
     let _p=false; try{ _p=pesoLocale(testo); }catch(_){}
     try{ addDiary(testo,[],[],testo,'',dom,_p); }catch(_){}
+    try{ salvaSubito(); }catch(_){}   /* v252: la stanza della sera scrive subito */
     try{ iaRipensaUltima(); }catch(_){}
   }
   return {fatto:fatto, nuove:nuove};
