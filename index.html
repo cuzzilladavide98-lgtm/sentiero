@@ -3053,7 +3053,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.242 · 2026-08-12';
+const APP_VERSION='v60S.243 · 2026-08-12';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3064,6 +3064,11 @@ const APP_VERSION='v60S.242 · 2026-08-12';
    una persona possa notare, non si scrive niente: una lista che dice «piccole
    correzioni» insegna a non leggerla. */
 const NOVITA=[
+ {da:'v60S.243',righe:[
+   'Sull\u2019aspetto chiaro adesso si vede il giro del giorno: un tratto che cresce attorno al microfono e, quando il cerchio si chiude, si chiude anche lui.',
+   'La voce dentro il telefono parla anche quando Sentiero, da solo, non trovava le parole \u2014 prima aspettava che le trovasse lui, e cos\u00ec non parlava mai.',
+   'Questo foglietto, prima, non compariva a nessuno.'
+ ]},
  {da:'v60S.240',righe:[
    'Puoi far scrivere le righe della sera a una voce che vive dentro il telefono: gratis, senza chiave, e funziona anche senza rete.',
    'C\u2019e anche una seconda intelligenza, piu piccola, che capisce quando una giornata pesa davvero \u2014 cosi in un giorno storto l\u2019app non ti mette in lista quello che hai scritto per sfogarti.',
@@ -3085,7 +3090,18 @@ function mostraNovita(){
        per lui non e cambiato niente, e' tutto nuovo. */
     const ob=document.getElementById('onboard');
     if(ob&&!ob.classList.contains('hidden')) return;
-    if(!visto){ S.vistoVersione=APP_VERSION; save(); return; }   /* prima volta: si tace */
+    /* v243 — QUI C'ERA IL DIFETTO CHE LO RENDEVA MUTO PER TUTTI.
+       «segno vuoto» non vuol dire «prima installazione»: vuol dire anche «questa
+       cosa e nuova, e chi usa l'app da mesi non l'ha mai vista». Con la riga di
+       prima il foglietto veniva marcato come letto e non compariva a nessuno -
+       cioe non compariva proprio mai, che e il difetto peggiore per una cosa che
+       serve a dire quello che e cambiato.
+       Il primo giorno vero si riconosce dai DATI, non dal segno: chi non ha
+       ancora scritto niente non ha niente da confrontare. */
+    if(!visto){
+      const nuovo=!(S.diary&&S.diary.length)&&!(S.quests&&S.quests.length)&&!(S.scheduled&&S.scheduled.length);
+      if(nuovo){ S.vistoVersione=APP_VERSION; save(); return; }
+    }
     const blocco=NOVITA[0]; if(!blocco) return;
     const ul=document.getElementById('nov-righe'); if(!ul) return;
     ul.innerHTML=blocco.righe.map(r=>'<li>'+escapeHtml(r)+'</li>').join('');
@@ -8622,9 +8638,33 @@ function observerLineFor(el){
          parte, e gia qui. */
       const idL=el&&(el.dataset.tid||el.dataset.qid); if(!idL) return;
       const titL=((el.querySelector('.ttl')||{}).textContent||'').trim(); if(!titL) return;
+      const pkgL=buildLinePackage(idL,titL);
       let rigaL='';
-      try{ rigaL=sussurroLocale(buildLinePackage(idL,titL),titL); }catch(_){ rigaL=''; }
-      if(!rigaL) return;
+      try{ rigaL=sussurroLocale(pkgL,titL); }catch(_){ rigaL=''; }
+      /* v243 — IL MODELLO NON AVEVA MAI IL SUO TURNO.
+         Era agganciato DOPO la riga di casa: se la casa taceva, taceva anche lui.
+         E la casa tace quasi sempre, ed e giusto cosi - il contratto del sussurro
+         dice che uno specchio vale solo se ha in mano un filo piu vecchio di oggi.
+         Ma «c'e un filo» e «una delle sei forme di casa ci calza» sono due cose
+         diverse: il filo puo esserci e le forme non bastare. In quel caso, se in
+         casa c'e il modello, tocca a lui.
+         Il silenzio quando NON c'e filo resta intatto: quello non e un guasto,
+         e la ragione per cui il sussurro non e rumore. */
+      let filoL=false;
+      try{ filoL=!!_sussFilo(pkgL); }catch(_){ filoL=false; }
+      if(!rigaL&&!(filoL&&scriveDisponibile())) return;
+      if(!rigaL&&filoL&&scriveDisponibile()){
+        scriveRiga(pkgL,titL).then(function(r0){
+          try{
+            if(!r0) return;
+            S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(titL,120),riga:r0}]).slice(-12);
+            save();
+            regCantiere('sussurro',{task:titL,riga:r0,msg:'modello locale, dove le forme di casa non bastavano'});
+            _whisper(r0);
+          }catch(_){}
+        }).catch(function(){});
+        return;
+      }
       S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(titL,120),riga:rigaL}]).slice(-12);
       save();
       try{ regCantiere('sussurro',{task:titL,riga:rigaL,msg:'locale'}); }catch(_){}
@@ -8634,7 +8674,6 @@ function observerLineFor(el){
          passa il giudice. Nessuno ha aspettato niente. */
       if(scriveDisponibile()){
         try{
-          const pkgL=buildLinePackage(idL,titL);
           scriveRiga(pkgL,titL).then(function(r2){
             try{
               if(!r2) return;
@@ -8973,7 +9012,53 @@ function applyTheme(){ try{
       }
     }
     rctx.globalAlpha=1;
+    arcoDelGiorno();
   }
+
+  /* ══ L'ARCO DEL GIORNO, DISEGNATO (v243) ═════════════════════════════════
+     Sull'OLED la luce fa due mestieri insieme: e atmosfera ED e informazione -
+     l'anello che cresce lungo la giornata e fatto della stessa luce del fuoco.
+     Su carta quei due mestieri vanno separati, se no succede quello che e
+     successo: la polvere e piacevole e non dice niente, e chi chiude il cerchio
+     non se ne accorge.
+     Qui la polvere resta atmosfera e l'arco si DISEGNA: un tratto d'inchiostro
+     che parte dallo stesso punto e cresce dello stesso tanto. A cerchio chiuso
+     diventa un anello intero, piu spesso, con la sua tacca al punto d'inizio:
+     su un foglio «finito» si vede perche il segno si CHIUDE, non perche brilla.
+     La geometria e la stessa del fuoco - stesso centro, stessa scala, stesso
+     A0, stesso ARCO - se no le due cose si sfalsano e si vede. */
+  function arcoDelGiorno(){
+    try{
+      const q=Math.max(0,Math.min(1,p));
+      rctx.save();
+      rctx.setTransform(DPR,0,0,DPR,0,0);
+      rctx.translate(FCX,FCY); rctx.scale(FK,FK); rctx.translate(-C,-C);
+      rctx.lineCap='round';
+      /* la traccia: dove l'arco passera, appena accennata. Serve a far capire
+         che c'e un giro da fare, come la tacca vuota di un contenitore. */
+      rctx.strokeStyle='rgba(122,86,18,.14)'; rctx.lineWidth=1.6;
+      rctx.beginPath(); rctx.arc(C,C,R,A0,A0+ARCO); rctx.stroke();
+      if(q>0.004){
+        const chiuso=q>0.995;
+        rctx.strokeStyle=chiuso?'rgba(122,86,18,.92)':'rgba(122,86,18,.72)';
+        rctx.lineWidth=chiuso?4.2:3.2;
+        rctx.beginPath(); rctx.arc(C,C,R,A0,A0+ARCO*q); rctx.stroke();
+        /* la testa dell'arco: dove sei arrivato oggi. Un punto pieno, non un
+           bagliore: su carta il «qui» si segna. */
+        const a=A0+ARCO*q;
+        rctx.fillStyle='rgba(122,86,18,.95)';
+        rctx.beginPath(); rctx.arc(C+R*Math.cos(a),C+R*Math.sin(a),chiuso?3.4:2.6,0,6.2832); rctx.fill();
+        if(chiuso){
+          /* chiuso davvero: il secondo filo dentro. Due linee concentriche sono
+             il modo in cui la carta ha sempre detto «questo e finito». */
+          rctx.strokeStyle='rgba(122,86,18,.45)'; rctx.lineWidth=1.2;
+          rctx.beginPath(); rctx.arc(C,C,R-6.5,A0,A0+ARCO); rctx.stroke();
+        }
+      }
+      rctx.restore();
+    }catch(_){}
+  }
+
   function frame(ts){
     requestAnimationFrame(frame);
     if(document.hidden){ last=ts; return; }
