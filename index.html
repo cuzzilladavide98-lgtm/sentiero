@@ -2908,6 +2908,9 @@ function sanitizeState(raw,def){
     /* v242: senza questa riga sanitizeState butta vistoVersione a ogni avvio, e
        il foglietto di cosa e cambiato ricomparirebbe per sempre. */
     vistoVersione:(typeof raw.vistoVersione==='string')?raw.vistoVersione.slice(0,40):'',
+    /* v254: le famiglie che hanno gia parlato. Senza questa riga sanitizeState
+       le butta a ogni avvio e il turno riparte sempre da capo. */
+    obsFamiglie:Array.isArray(raw.obsFamiglie)?raw.obsFamiglie.filter(x=>typeof x==='string').slice(-8):[],
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
       voice:!!(raw.settings&&raw.settings.voice===true),
@@ -3214,7 +3217,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.253 · 2026-08-12';
+const APP_VERSION='v60S.256 · 2026-08-12';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3231,6 +3234,16 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Sull\u2019aspetto chiaro il mondo attorno al microfono e diventato un filo solo, che si allunga col giorno e chiude il cerchio quando il giorno si chiude.',
+   'Non tremola piu: quello che hai gia percorso sta fermo, si muove solo la punta.'
+ ]},
+ {righe:[
+   'Aprendo l\u2019app con l\u2019aspetto chiaro, il mondo partiva scuro e diventava chiaro solo entrando nelle impostazioni. Adesso parte giusto.'
+ ]},
+ {righe:[
+   'La riga della sera non si ripete piu come prima: se ieri ti ha parlato di una cosa, stasera guarda altrove.'
+ ]},
  {righe:[
    'Toccando una cosa l\u2019app rifa solo quello che e cambiato, invece di ridisegnare tutto: risponde prima e scalda meno.'
  ]},
@@ -7294,7 +7307,29 @@ function buildObserverLocal(digest){
   if(_pesaDiRecente(digest)) return {summary:'giorni che pesano',detectedPatterns:['peso'],note:OSS_RIGA_PESO};
 
   const precedenti=[].concat(digest.osservazioniPrecedenti||[],digest.sussurri_recenti||[]);
-  const fatti=_ossFatti(digest);
+  let fatti=_ossFatti(digest);
+
+  /* ══ CHI HA GIA PARLATO ASPETTA IL SUO TURNO (v254) ═════════════════════════
+     Misurando la varieta e venuto fuori un difetto che non si vedeva guardando
+     il codice: le forme scritte sono ventisei, in otto famiglie, ma ne uscivano
+     undici. Non perche mancassero frasi - perche i fatti si provano in ordine
+     di PESO e ci si ferma al primo che passa. L'attrito pesa dieci, il silenzio
+     nove: quando ci sono, vincono sempre. Le altre sei famiglie, negli anni,
+     non parlano quasi mai.
+     Non serve scrivere altre frasi: serve non pescare sempre dallo stesso
+     mazzo. Le famiglie che hanno parlato di recente scendono in fondo, e fra
+     quelle che restano vale il peso come prima. Se hanno parlato tutte, si
+     torna all'ordine di sempre: meglio ripetersi che tacere.
+     Cosi le stesse ventisei frasi si vedono davvero, invece di restare scritte. */
+  try{
+    const rec=(digest.famiglie_recenti||[]).slice(-4);
+    if(rec.length&&fatti.length>1){
+      const fresche=fatti.filter(f=>rec.indexOf(f.t)<0);
+      const usate=fatti.filter(f=>rec.indexOf(f.t)>=0);
+      if(fresche.length) fatti=fresche.concat(usate);
+    }
+  }catch(_){}
+
   const scartate=[];
   for(const f of fatti){
     for(const riga of _ossForme(f)){
@@ -7324,7 +7359,14 @@ async function observe(silent){
     if(S.apiKey){
       try{ result=await askObserver(digest); }catch(_){ result=null; }
     }
-    if(!result||!result.note||!String(result.note).trim()){ result=buildObserverLocal(digest); try{ result._locale=true; }catch(_){} } /* fallback: offline, IA non disponibile o nota vuota */
+    /* v254: al motore di casa si dice quali famiglie hanno gia parlato di
+     recente, cosi non pesca sempre dallo stesso mazzo. */
+  try{ digest.famiglie_recenti=(S.obsFamiglie||[]).slice(-4); }catch(_){}
+  if(!result||!result.note||!String(result.note).trim()){ result=buildObserverLocal(digest); try{ result._locale=true; }catch(_){} }
+  try{
+    const fam=result&&result.detectedPatterns&&result.detectedPatterns[0];
+    if(fam){ S.obsFamiglie=((S.obsFamiglie||[]).concat([fam])).slice(-8); }
+  }catch(_){} /* fallback: offline, IA non disponibile o nota vuota */
     try{ regCantiere('digest',{ms:Date.now()-t0Dig,msg:(result&&result._locale)?'locale':'ok'}); }catch(_){}
     /* v213: anche la nota della sera del modello viene riparata prima di essere
        scritta. Il ripiego resta l'ultima parola quando non resta niente. */
@@ -9345,7 +9387,7 @@ function applyTheme(){ try{
     _ultimoModo=ora;
     try{ rctx.setTransform(DPR,0,0,DPR,0,0); rctx.clearRect(0,0,VW,VH); }catch(_){}
     try{ pctx.setTransform(1,0,0,1,0,0); pctx.clearRect(0,0,POL.width,POL.height); }catch(_){}
-    _ultimaPolvere=0;
+    _ultimoFilo=0;
     return true;
   }
   const DPR=Math.min(2,window.devicePixelRatio||1);
@@ -9404,124 +9446,118 @@ function applyTheme(){ try{
     P.push({x:C+R*Math.cos(a)*0.98,y:C+R*Math.sin(a)*0.98,
       vx:Math.cos(a)*v,vy:Math.sin(a)*v-0.3,vita:1,dec:0.013+Math.random()*0.012,
       s:6+Math.random()*9,rosso:false,grav:0.045,wav:0}); }
-  /* v239 — IL FUOCO E FATTO DELLE STESSE MOLECOLE DEL CIELO.
-     La polvere a granelli era un secondo alfabeto dentro lo stesso cielo: le
-     stelle erano molecole - nucleo e guscio - e il fuoco un pulviscolo fitto,
-     che da vicino sembrava sporco. Due grammatiche nella stessa immagine non
-     fanno due cose, ne fanno una sbagliata.
-     Adesso il fuoco e fatto delle stesse molecole: si legge il campo su una
-     griglia PIU LARGA, e ogni cella accesa diventa UNA molecola - nucleo pieno
-     e guscio - grande secondo tre misure sole. Poche e distinte, non tante e
-     impastate. La luce si legge nel numero di molecole e nel loro calibro, non
-     in una nebbia.
-     Il calibro e a scatti apposta: tre misure si riconoscono, venti sfumature
-     tornano a essere una macchia. */
-  const KM=9;                              /* la griglia delle molecole, larga */
-  function stampaPolvere(){
-    const w=POL.width, hh=POL.height;
-    if(!w||!hh) return;
-    let d;
-    try{ d=pctx.getImageData(0,0,w,hh).data; }catch(_){ return; }
+  /* ══════ IL FILO (v256) ══════════════════════════════════════════════════
+     Il fuoco a polvere e a molecole non funzionava, e il motivo non erano i
+     numeri: erano una TEXTURE che imitava un bagliore, e su carta un bagliore
+     imitato e sporco. La carta non ha luce da imitare - ha il tratto. Le
+     famiglie native di un plotter sono linee: campi, curve di livello, spirali.
+
+     Qui il mondo diventa UNA LINEA SOLA che si allunga col giorno. Parte dal
+     centro, gira verso fuori, e quando il cerchio si chiude ha fatto tutto il
+     giro. Non c'e nessuna nuvola: c'e un solo segno, e alla fine e il tuo
+     giorno disegnato.
+
+     ══ E QUI STA LA RISPOSTA ALL'EPILESSIA, che non e una regolazione ma una
+     regola: IL PASSATO E INCHIOSTRO ASCIUTTO. La parte gia percorsa non si
+     muove piu - e successa, sta ferma. Respira solo la TESTA, l'ultimo pezzo,
+     dove il giorno e adesso. Cosi non c'e niente che possa tremolare: c'e una
+     linea immobile e un punto vivo. Il movimento non e stato ridotto: e stato
+     messo dove ha un senso, e tolto da tutto il resto.
+
+     Il fuoco non sparisce: e diventato il vento che increspa la testa. La
+     stessa simulazione, letta in un punto solo invece che su tutto lo schermo -
+     motivo per cui costa anche molto meno. */
+  const FILO_GIRI=2.4;
+  let _filoFase=0,_filoVento=0,_ultimoFilo=0;   /* l'ultima volta che il filo e stato disegnato */
+
+  function _filoCampo(x,y){
+    /* la forza del fuoco in UN punto: si legge la lastra piccola, una cella */
+    try{
+      const gx=Math.max(0,Math.min(POL.width-1,Math.round(x/KP)));
+      const gy=Math.max(0,Math.min(POL.height-1,Math.round(y/KP)));
+      const d=pctx.getImageData(gx,gy,1,1).data;
+      return Math.min(1,(d[3]/255)*((d[0]+d[1]+d[2])/765)*2.6);
+    }catch(_){ return 0; }
+  }
+
+  function disegnaFilo(ts){
+    const q=Math.max(0,Math.min(1,p));
     rctx.setTransform(DPR,0,0,DPR,0,0);
     rctx.clearRect(0,0,VW,VH);
-    rctx.globalCompositeOperation='source-over';
-    const passo=Math.max(1,Math.round(KM/KP));
-    for(let y=0;y<hh;y+=passo){
-      for(let x=0;x<w;x+=passo){
-        /* la forza della cella e la media del quadratino: cosi una molecola
-           rappresenta davvero la zona, e non il pixel piu fortunato */
-        let sa=0,sr=0,sg=0,sb=0,n=0;
-        for(let yy=y;yy<Math.min(hh,y+passo);yy++){
-          for(let xx=x;xx<Math.min(w,x+passo);xx++){
-            const k=(yy*w+xx)*4;
-            sa+=d[k+3]; sr+=d[k]; sg+=d[k+1]; sb+=d[k+2]; n++;
-          }
-        }
-        if(!n) continue;
-        const a=sa/n; if(a<14) continue;
-        const r=sr/n,g=sg/n,b2=sb/n;
-        const forza=Math.min(1,(a/255)*((r+g+b2)/765)*2.6);
-        if(forza<0.10) continue;
-        const cal=forza>0.62?2:(forza>0.30?1:0);      /* tre calibri, non venti */
-        const nucleo=[1.15,1.8,2.6][cal];
-        const mx=Math.max(r,g,b2)||1, sc=92;
-        const col=Math.round(r/mx*sc)+','+Math.round(g/mx*sc)+','+Math.round(b2/mx*sc);
-        const s=(x*73856093)^(y*19349663);
-        const jx=((s>>>3)%1000)/1000, jy=((s>>>13)%1000)/1000;
-        const px=(x+jx*passo)*KP, py=(y+jy*passo)*KP;
-        rctx.fillStyle='rgba('+col+','+(0.42+forza*0.45).toFixed(2)+')';
-        rctx.beginPath(); rctx.arc(px,py,nucleo,0,6.2832); rctx.fill();
-        rctx.strokeStyle='rgba('+col+','+(0.16+forza*0.22).toFixed(2)+')';
-        rctx.lineWidth=0.7;
-        rctx.beginPath(); rctx.arc(px,py,nucleo+2.2+cal*0.9,0,6.2832); rctx.stroke();
+    rctx.save();
+    rctx.translate(FCX,FCY); rctx.scale(FK,FK); rctx.translate(-C,-C);
+    rctx.lineCap='round'; rctx.lineJoin='round';
+
+    const R0=R*0.16, R1=R;
+    const N=460;
+    const nQ=Math.max(2,Math.round(N*q));
+    /* la fase avanza pianissimo: un giro completo in quaranta secondi. Non e
+       un'animazione, e un respiro. */
+    _filoFase=(ts||0)*0.00016;
+
+    const punto=(i)=>{
+      const u=i/N;
+      const a=A0+u*FILO_GIRI*Math.PI*2;
+      const r=R0+(R1-R0)*u;
+      /* quanto e VIVA questa parte: uno alla testa, zero dieci passi indietro.
+         Fuori dalla testa il valore e zero, e zero vuol dire immobile. */
+      const dist=(nQ-i)/N;
+      const viva=dist<0.13?(1-dist/0.13):0;
+      let off=0;
+      if(viva>0.001){
+        const forza=_filoVento;
+        off=Math.sin(u*26+_filoFase*6.2832)*(0.7+forza*5.2)*viva;
       }
+      const rr=r+off;
+      return [C+Math.cos(a)*rr, C+Math.sin(a)*rr*0.78];
+    };
+
+    /* 1 · la strada che resta da fare: appena accennata. Un giro si capisce se
+       si vede anche il vuoto. */
+    rctx.strokeStyle='rgba(122,86,18,.13)'; rctx.lineWidth=1;
+    rctx.beginPath();
+    for(let i=nQ;i<=N;i++){ const [x,y]=punto(i); i===nQ?rctx.moveTo(x,y):rctx.lineTo(x,y); }
+    rctx.stroke();
+
+    /* 2 · il filo percorso: inchiostro asciutto, immobile */
+    const chiuso=q>0.995;
+    rctx.strokeStyle=chiuso?'rgba(122,86,18,.90)':'rgba(23,21,18,.72)';
+    rctx.lineWidth=chiuso?2.2:1.5;
+    rctx.beginPath();
+    for(let i=0;i<=nQ;i++){ const [x,y]=punto(i); i===0?rctx.moveTo(x,y):rctx.lineTo(x,y); }
+    rctx.stroke();
+
+    /* 3 · la testa: dove il giorno e adesso */
+    const [hx,hy]=punto(nQ);
+    rctx.fillStyle='rgba(122,86,18,.95)';
+    rctx.beginPath(); rctx.arc(hx,hy,chiuso?3.2:2.4,0,6.2832); rctx.fill();
+    if(_filoVento>0.06){
+      rctx.strokeStyle='rgba(122,86,18,'+(0.12+_filoVento*0.30).toFixed(2)+')';
+      rctx.lineWidth=0.8;
+      rctx.beginPath(); rctx.arc(hx,hy,4.5+_filoVento*7,0,6.2832); rctx.stroke();
     }
-    rctx.globalAlpha=1;
-    arcoDelGiorno();
-  }
-
-  /* ══ L'ARCO DEL GIORNO, DISEGNATO (v243) ═════════════════════════════════
-     Sull'OLED la luce fa due mestieri insieme: e atmosfera ED e informazione -
-     l'anello che cresce lungo la giornata e fatto della stessa luce del fuoco.
-     Su carta quei due mestieri vanno separati, se no succede quello che e
-     successo: la polvere e piacevole e non dice niente, e chi chiude il cerchio
-     non se ne accorge.
-     Qui la polvere resta atmosfera e l'arco si DISEGNA: un tratto d'inchiostro
-     che parte dallo stesso punto e cresce dello stesso tanto. A cerchio chiuso
-     diventa un anello intero, piu spesso, con la sua tacca al punto d'inizio:
-     su un foglio «finito» si vede perche il segno si CHIUDE, non perche brilla.
-     La geometria e la stessa del fuoco - stesso centro, stessa scala, stesso
-     A0, stesso ARCO - se no le due cose si sfalsano e si vede. */
-  function arcoDelGiorno(){
-    try{
-      const q=Math.max(0,Math.min(1,p));
-      rctx.save();
-      rctx.setTransform(DPR,0,0,DPR,0,0);
-      rctx.translate(FCX,FCY); rctx.scale(FK,FK); rctx.translate(-C,-C);
-      rctx.lineCap='round';
-      /* la traccia: dove l'arco passera, appena accennata. Serve a far capire
-         che c'e un giro da fare, come la tacca vuota di un contenitore. */
-      rctx.strokeStyle='rgba(122,86,18,.14)'; rctx.lineWidth=1.6;
-      rctx.beginPath(); rctx.arc(C,C,R,A0,A0+ARCO); rctx.stroke();
-      if(q>0.004){
-        const chiuso=q>0.995;
-        rctx.strokeStyle=chiuso?'rgba(122,86,18,.92)':'rgba(122,86,18,.72)';
-        rctx.lineWidth=chiuso?4.2:3.2;
-        rctx.beginPath(); rctx.arc(C,C,R,A0,A0+ARCO*q); rctx.stroke();
-        /* la testa dell'arco: dove sei arrivato oggi. Un punto pieno, non un
-           bagliore: su carta il «qui» si segna. */
-        const a=A0+ARCO*q;
-        rctx.fillStyle='rgba(122,86,18,.95)';
-        rctx.beginPath(); rctx.arc(C+R*Math.cos(a),C+R*Math.sin(a),chiuso?3.4:2.6,0,6.2832); rctx.fill();
-        if(chiuso){
-          /* chiuso davvero: il secondo filo dentro. Due linee concentriche sono
-             il modo in cui la carta ha sempre detto «questo e finito». */
-          rctx.strokeStyle='rgba(122,86,18,.45)'; rctx.lineWidth=1.2;
-          rctx.beginPath(); rctx.arc(C,C,R-6.5,A0,A0+ARCO); rctx.stroke();
-        }
+    /* 4 · chiuso davvero: il secondo filo dentro. Due linee concentriche sono il
+       modo in cui la carta dice «questo e finito». */
+    if(chiuso){
+      rctx.strokeStyle='rgba(122,86,18,.40)'; rctx.lineWidth=1;
+      rctx.beginPath();
+      for(let i=0;i<=N;i+=2){
+        const u=i/N, a=A0+u*FILO_GIRI*Math.PI*2, r=R0+(R1-R0)*u-4.5;
+        const x=C+Math.cos(a)*r, y=C+Math.sin(a)*r*0.78;
+        i===0?rctx.moveTo(x,y):rctx.lineTo(x,y);
       }
-      rctx.restore();
-    }catch(_){}
+      rctx.stroke();
+    }
+    rctx.restore();
   }
-
-  /* 3 · IL RIDISEGNO A SESSANTA VOLTE AL SECONDO, che su carta non ha senso.
-     La polvere richiede una rilettura della lastra a ogni fotogramma: e il pezzo
-     piu caro dell'app, e sull'iPhone compariva «si e verificato un errore»,
-     cioe Safari che chiude la pagina. Ma la carta non ha bisogno di sessanta
-     fotogrammi: l'inchiostro si posa, non sfarfalla. Dodici volte al secondo
-     sono piu che abbastanza, e sono un quinto del lavoro.
-     Fra un ridisegno e l'altro resta in scena quello di prima, che e esattamente
-     come si comporta un foglio. */
-  let _ultimaPolvere=0;
   function frame(ts){
     requestAnimationFrame(frame);
     if(document.hidden){ last=ts; return; }
     const modo=inchiostro();
     cambioModo(modo);
     if(modo){
-      /* e se il foglio e tirato su a coprire il cielo, la polvere non si vede
-         nemmeno: calcolarla e lavoro buttato, ed e il lavoro piu caro che c'e.
-         Si lascia in scena quella di prima e si torna a casa. */
+      /* se il foglio e tirato su a coprire il cielo, non si disegna: e lavoro
+         buttato, e il filo di prima resta dov'e. */
       try{ if(document.body.getAttribute('data-foglio')==='picco') return; }catch(_){}
       /* v248 — QUI NASCEVA LO SFARFALLAMENTO, e l'avevo messo io il giorno prima.
          Sul fotogramma «saltato» chiamavo comunque frameInterno, ma con il
@@ -9533,11 +9569,25 @@ function applyTheme(){ try{
          resta dov'e, che e esattamente come si comporta un foglio. La
          simulazione avanza lo stesso, a passi piu lunghi, perche il tempo lo
          calcola da ts e non dal numero di giri. */
-      if(ts-_ultimaPolvere<83) return;   /* ~12 al secondo, e in mezzo non si tocca nulla */
-      _ultimaPolvere=ts;
+      /* v256 — OTTO VOLTE AL SECONDO, E MAI DI PIU.
+         Il filo non e un'animazione: e un segno che si allunga. Otto fotogrammi
+         al secondo sono piu di quanti ne servano a una linea che cresce quanto
+         un giorno, e sono un settimo del lavoro di prima. Fra un disegno e
+         l'altro resta in scena quello di prima, come farebbe un foglio. */
+      if(ts-_ultimoFilo<125) return;
+      _ultimoFilo=ts;
       const w=Math.max(1,Math.round(VW/KP)), hh=Math.max(1,Math.round(VH/KP));
       if(POL.width!==w||POL.height!==hh){ POL.width=w; POL.height=hh; }
-      ctx=pctx; frameInterno(ts); ctx=rctx; stampaPolvere(); return;
+      /* il fuoco si dipinge ancora, ma piccolo e solo per sapere quanto vento
+         c'e sulla testa del filo: una cella letta invece di una lastra intera. */
+      ctx=pctx; frameInterno(ts); ctx=rctx;
+      try{
+        const _q=Math.max(0,Math.min(1,p));
+        const _u=_q, _a=A0+_u*FILO_GIRI*Math.PI*2, _r=R*0.16+(R-R*0.16)*_u;
+        const _x=FCX+(C+Math.cos(_a)*_r-C)*FK, _y=FCY+((C+Math.sin(_a)*_r*0.78)-C)*FK;
+        _filoVento=_filoVento*0.72+_filoCampo(_x,_y)*0.28;   /* si muove piano */
+      }catch(_){ _filoVento=0; }
+      disegnaFilo(ts); return;
     }
     ctx=rctx; frameInterno(ts);
   }
@@ -12726,6 +12776,16 @@ if('serviceWorker' in navigator){
 }
 try{ initHaptic(); }catch(_){}
 try{ initDay(); }catch(_){}
+/* v255 — L'ASPETTO SI METTE ALL'AVVIO, DA SOLO.
+   applyTheme() vive dentro renderSettings(), e dalla v253 renderSettings non
+   gira piu quando il pannello e chiuso: cioe quasi mai, e all'avvio mai.
+   Risultato: il foglio partiva chiaro - quello lo mette lo script del primo
+   istante - ma il MONDO restava quello scuro, e diventava chiaro solo aprendo
+   le impostazioni. Un difetto che ho introdotto io ottimizzando, e che si
+   vedeva solo aprendo l'app: il posto in cui nessuna misura guarda.
+   Da qui in poi l'aspetto e roba dell'avvio, non un effetto collaterale di un
+   pannello. */
+try{ applyTheme(); }catch(_){}
 try{ render(); }catch(_){}
 try{ scheduleReminders(); }catch(_){}
 try{ maybeObserveAuto(); }catch(_){}
