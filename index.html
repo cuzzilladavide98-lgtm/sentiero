@@ -1180,10 +1180,13 @@ body.theme-carta .item .cal{color:#5C574E}
    il tasto.
    NOTA: lo stesso difetto c'e anche sull'OLED, identico, perche la larghezza e
    la stessa. Li non l'ho toccato: e una riga sola, quando lo dici. */
-body.theme-carta .switchrow{gap:14px}
-body.theme-carta .switchrow>span:first-child{min-width:0;flex:1 1 auto}
-body.theme-carta .switchrow .seg{flex:0 0 auto}
-body.theme-carta .switchrow .sw{flex:0 0 auto}
+/* v245 — E ADESSO ANCHE SULL'OLED, perche il difetto era identico e Davide
+   l'ha messo in elenco. Non cambia nulla quando c'e posto: cambia solo CHI
+   cede quando non ce n'e - il testo lungo invece del tasto. Su un 13 mini con
+   le etichette corte non si vede nessuna differenza. */
+.switchrow{gap:14px}
+.switchrow>span:first-child{min-width:0;flex:1 1 auto}
+.switchrow .seg,.switchrow .sw{flex:0 0 auto}
 
 /* v239 — IL SUSSURRO SULLA CARTA, nella stessa lingua di tutto il resto:
    chiuso in un bordo, senza sfocature e senza ombre morbide. Prima aveva
@@ -1192,6 +1195,98 @@ body.theme-carta .switchrow .sw{flex:0 0 auto}
 body.theme-carta #obs-whisper{box-shadow:0 2px 8px rgba(23,21,18,.12);border-width:1px}
 body.theme-carta #obs-whisper .verd-tit{opacity:1;color:#5C574E}
 body.theme-carta #obs-whisper .verd-ok{opacity:1;color:#3F3B34}
+
+/* ══════ v245 — TRE COSE CHE NESSUN TEMA POTEVA RAGGIUNGERE ══════
+   Tutte e tre hanno la stessa radice: uno stile scritto dove il CSS dei temi
+   non arriva. E' il filo che lega quasi ogni difetto di questa giornata.
+
+   1 · IL SUSSURRO restava scuro sulla carta. Non perche mancasse la regola: la
+   regola c'era, ma il sussurro nasce in _whisper() con lo stile scritto IN
+   LINEA sull'elemento, e uno stile in linea batte qualunque foglio. Qui si
+   risponde con la stessa forza. Brutto, e scritto che e brutto: la cura vera e
+   spostare quello stile nel foglio, ed e un giro a parte perche toccherebbe
+   anche l'OLED, dove il sussurro e perfetto e non si tocca. */
+body.theme-carta #obs-whisper{
+  background:rgba(247,245,239,.97) !important;
+  color:#14322A !important;
+  border:1px solid rgba(29,74,62,.38) !important;
+  box-shadow:0 2px 8px rgba(23,21,18,.12) !important;
+  -webkit-backdrop-filter:none !important;backdrop-filter:none !important}
+
+/* 2 · LA LETTERA INIZIALE spariva quando si spuntava una cosa: «Fare 1200 €»
+   diventava «—are 1200 €». Il capolettera delle righe fatte ha un colore chiaro
+   dichiarato !important, pensato per il buio. Sulla carta e bianco su bianco -
+   e non e un dettaglio estetico, e una lettera che manca a una parola. */
+body.theme-carta .item.done .ini{color:#6E6860 !important}
+body.theme-carta .item.passo .ini{color:var(--accent) !important}
+
+/* ══════ v246 — IL SATELLITE VIOLA, PIU MAESTOSO ══════════════════════════
+   E' il gioiello della sera: compare alle 19 e apre la stanza. Era un nucleo di
+   tredici pixel con due aloni. Maestoso non vuol dire piu grande e non vuol dire
+   piu acceso - vuol dire che ha PROFONDITA e un suo tempo. Quattro cose:
+
+   · una corona in piu, larga e tenuta bassissima, che da la sensazione dello
+     spazio attorno: e la differenza fra una lampadina e un corpo celeste;
+   · due respiri con periodi DIVERSI e primi fra loro, 7 e 11 secondi. Battendo
+     insieme tornerebbero un lampeggio; battendo sfasati non si ripetono mai,
+     e l'occhio non trova il ciclo;
+   · un anello sottilissimo staccato dal nucleo, il suo orbitale: e il dettaglio
+     che lo fa leggere come un satellite e non come un puntino;
+   · il nucleo cresce appena, da tredici a quindici, e il bianco al centro si
+     stringe: cosi la luce sembra venire da DENTRO invece che essere appiccicata
+     sopra. Il colore non cambia di un grado: e il tuo viola. */
+#notte-luce{width:74px;height:74px;margin:-37px 0 0 -37px}
+#notte-luce .nucleo::before{
+  width:15px;height:15px;
+  background:radial-gradient(circle,#ffffff 0%,hsl(var(--notte-h) 100% 92%) 14%,
+    var(--notte) 40%,hsla(var(--notte-h) var(--notte-s) 52% / .62) 64%,transparent 82%);
+  box-shadow:0 0 16px 6px hsla(var(--notte-h) var(--notte-s) 62% / .40),
+             0 0 40px 16px hsla(var(--notte-h) var(--notte-s) 58% / .20),
+             0 0 96px 40px hsla(var(--notte-h) var(--notte-s) 56% / .085);
+  animation:notte-respiro 7s ease-in-out infinite}
+/* la corona: il volume dello spazio attorno. Non si vede, si sente. */
+#notte-luce .nucleo::after{
+  content:'';position:absolute;left:50%;top:50%;width:70px;height:70px;
+  margin:-35px 0 0 -35px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 64% / .13) 0%,
+    hsla(var(--notte-h) var(--notte-s) 60% / .05) 42%,transparent 72%);
+  animation:notte-corona 11s ease-in-out infinite}
+/* l'orbitale: un filo staccato dal corpo. E' questo che lo fa satellite. */
+#notte-luce::after{
+  content:'';position:absolute;left:50%;top:50%;width:34px;height:34px;
+  margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;
+  border:.5px solid hsla(var(--notte-h) var(--notte-s) 70% / .28);
+  animation:notte-orbita 11s ease-in-out infinite}
+@keyframes notte-respiro{0%,100%{transform:scale(var(--luce-k,1))}50%{transform:scale(calc(var(--luce-k,1) * 1.075))}}
+@keyframes notte-corona{0%,100%{opacity:.68;transform:scale(1)}50%{opacity:1;transform:scale(1.09)}}
+@keyframes notte-orbita{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.85;transform:scale(1.06)}}
+/* chi ha chiesto quiete al telefono non riceve niente di tutto questo */
+@media (prefers-reduced-motion:reduce){
+  body:not(.anima-sempre) #notte-luce .nucleo::before,
+  body:not(.anima-sempre) #notte-luce .nucleo::after,
+  body:not(.anima-sempre) #notte-luce::after{animation:none}
+}
+/* la scia si allunga con lui: una coda corta su un corpo grande sembra un errore */
+.notte-scia::before{
+  background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 76% / .88) 0%,
+    hsla(var(--notte-h) var(--notte-s) 70% / .30) 48%,transparent 74%)}
+
+/* ── e sulla carta, dove niente brilla, maestoso si scrive in un altro modo:
+   un disco pieno del suo viola, e DUE anelli concentrici attorno. Su un foglio
+   l'importanza si dice con la geometria, non con la luce - come il bollo di una
+   ceralacca, che non emette niente e si vede da lontano. ── */
+body.theme-carta #notte-luce .nucleo::before{
+  background:var(--notte);
+  box-shadow:0 0 0 1.5px hsla(var(--notte-h) 62% 40% / .30),
+             0 0 0 5px hsla(var(--notte-h) 62% 40% / .14)}
+body.theme-carta #notte-luce .nucleo::after{
+  background:none;
+  border:.5px solid hsla(var(--notte-h) 62% 42% / .26);
+  width:46px;height:46px;margin:-23px 0 0 -23px}
+body.theme-carta #notte-luce::after{
+  border-color:hsla(var(--notte-h) 62% 42% / .42)}
+body.theme-carta .notte-scia::before{
+  background:radial-gradient(circle,hsla(var(--notte-h) 62% 44% / .62) 0%,transparent 70%)}
 /* ══════ TEMA INCHIOSTRO — porting fedele del mockup v1 ══════ */
 body.theme-inchiostro{--bg:#0B0F0E;--accent:#D9A441;--jade:#9FD8C4;--t1:#F5F2EA;--t2:#B8C0BB;--t3:#7E8884}
 body.theme-inchiostro .sec-head,body.theme-inchiostro #dateline,body.theme-inchiostro .ed-num,body.theme-inchiostro .entry p{font-family:ui-serif,Georgia,'Times New Roman',serif}
@@ -3053,7 +3148,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.244 · 2026-08-12';
+const APP_VERSION='v60S.246 · 2026-08-12';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3064,21 +3159,33 @@ const APP_VERSION='v60S.244 · 2026-08-12';
    una persona possa notare, non si scrive niente: una lista che dice «piccole
    correzioni» insegna a non leggerla. */
 const NOVITA=[
- {da:'v60S.243',righe:[
+ /* v245 — IL CAMPO «da» E STATO TOLTO, e per una ragione che vale come lezione:
+    conteneva un numero di versione, e il comando che alza la versione a ogni
+    consegna riscriveva anche QUESTI, mescolando le etichette delle voci. Un dato
+    che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
+    Le voci stanno in ordine: la prima e la piu recente. Basta quello.
+    Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'La luce viola della sera e piu grande e piu profonda: ha una corona attorno e un anello suo, e respira con due tempi diversi che non tornano mai uguali.'
+ ]},
+ {righe:[
+   'Sull\u2019aspetto chiaro il sussurro della sera adesso e chiaro anche lui: prima restava una bolla scura in mezzo al foglio.',
+   'Spuntando una cosa non le sparisce piu la prima lettera.',
+   'L\u2019aspetto chiaro consuma molto meno di prima: poteva far chiudere l\u2019app.'
+ ]},
+ {righe:[
    'Sentiero capisce qualche frase in piu di quelle che dici a voce: prima alcune sparivano senza lasciare traccia.',
    'Le righe della sera arrivano anche quando prima restava zitto.'
  ]},
- {da:'v60S.244',righe:[
-   'Sull\u2019aspetto chiaro adesso si vede il giro del giorno: un tratto che cresce attorno al microfono e, quando il cerchio si chiude, si chiude anche lui.',
-   'La voce dentro il telefono parla anche quando Sentiero, da solo, non trovava le parole \u2014 prima aspettava che le trovasse lui, e cos\u00ec non parlava mai.',
+ {righe:[
+   'Sull\u2019aspetto chiaro si vede il giro del giorno: un tratto che cresce attorno al microfono e, quando il cerchio si chiude, si chiude anche lui.',
    'Questo foglietto, prima, non compariva a nessuno.'
  ]},
- {da:'v60S.240',righe:[
+ {righe:[
    'Puoi far scrivere le righe della sera a una voce che vive dentro il telefono: gratis, senza chiave, e funziona anche senza rete.',
-   'C\u2019e anche una seconda intelligenza, piu piccola, che capisce quando una giornata pesa davvero \u2014 cosi in un giorno storto l\u2019app non ti mette in lista quello che hai scritto per sfogarti.',
-   'Quando arriva una versione nuova te lo dice, e ti mostra questo foglietto.'
+   'C\u2019e anche una seconda intelligenza, piu piccola, che capisce quando una giornata pesa davvero.'
  ]},
- {da:'v60S.232',righe:[
+ {righe:[
    'Un secondo aspetto, pensato per gli schermi LCD: fondo chiaro, testi piu leggibili al sole, e i colori restano quelli.',
    'Sui telefoni con lo schermo corto il foglio parte piu in alto: si vede una riga in piu.',
    'Il primo giorno adesso si puo scorrere: prima, se il testo non ci stava, il tasto per andare avanti restava irraggiungibile.'
@@ -9097,10 +9204,25 @@ function applyTheme(){ try{
     }catch(_){}
   }
 
+  /* 3 · IL RIDISEGNO A SESSANTA VOLTE AL SECONDO, che su carta non ha senso.
+     La polvere richiede una rilettura della lastra a ogni fotogramma: e il pezzo
+     piu caro dell'app, e sull'iPhone compariva «si e verificato un errore»,
+     cioe Safari che chiude la pagina. Ma la carta non ha bisogno di sessanta
+     fotogrammi: l'inchiostro si posa, non sfarfalla. Dodici volte al secondo
+     sono piu che abbastanza, e sono un quinto del lavoro.
+     Fra un ridisegno e l'altro resta in scena quello di prima, che e esattamente
+     come si comporta un foglio. */
+  let _ultimaPolvere=0;
   function frame(ts){
     requestAnimationFrame(frame);
     if(document.hidden){ last=ts; return; }
     if(inchiostro()){
+      /* e se il foglio e tirato su a coprire il cielo, la polvere non si vede
+         nemmeno: calcolarla e lavoro buttato, ed e il lavoro piu caro che c'e.
+         Si lascia in scena quella di prima e si torna a casa. */
+      try{ if(document.body.getAttribute('data-foglio')==='picco') return; }catch(_){}
+      if(ts-_ultimaPolvere<83){ frameInterno(ts); return; }   /* ~12 al secondo */
+      _ultimaPolvere=ts;
       const w=Math.max(1,Math.round(VW/KP)), hh=Math.max(1,Math.round(VH/KP));
       if(POL.width!==w||POL.height!==hh){ POL.width=w; POL.height=hh; }
       ctx=pctx; frameInterno(ts); ctx=rctx; stampaPolvere(); return;
