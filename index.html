@@ -132,6 +132,14 @@ body:not(.foglio-opaco) #app.trascinando{-webkit-backdrop-filter:saturate(140%) 
 #foglio-grip::before{content:'';width:36px;height:5px;border-radius:2.5px;
   background:linear-gradient(90deg,rgba(242,197,107,0.28),rgba(255,241,208,0.62) 50%,rgba(242,197,107,0.28));
   box-shadow:0 0 9px rgba(242,197,107,0.22)}
+/* v266 — anche il foglio e una colonna flex alta 100dvh: header e avvisi
+   potevano stringersi sotto il loro contenuto e finire addosso a quello
+   sotto. L'unico che deve cedere e «main», e cede scorrendo, non schiacciando
+   gli altri. min-height:0 serve perche un figlio flex, per difetto, si rifiuta
+   di scendere sotto la propria altezza naturale: senza, spinge invece di
+   restringersi. */
+#app>*{flex-shrink:0}
+#app>main{flex:1 1 auto;min-height:0}
 #app>header{touch-action:none}
 body[data-foglio="picco"] #app{touch-action:none}
 #btn-altro-mondo{position:fixed;top:calc(var(--safe-top) + 10px);right:14px;z-index:11;width:44px;height:44px;
@@ -177,6 +185,21 @@ header{padding:14px 28px 0}
 
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
 #mic-wrap{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;top:calc(32% - 155px);bottom:calc(122px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;padding:0 20px;z-index:1}
+/* ══ v266 — I RIQUADRI CHE SI SCRIVEVANO ADDOSSO ═══════════════════════════
+   #mic-wrap e una colonna flex con l'altezza FISSA (top e bottom insieme). I
+   figli di una colonna flex, per difetto, possono stringersi sotto la propria
+   altezza naturale: il riquadro si accorcia, il testo dentro non si accorcia,
+   e trabocca sopra il riquadro successivo. Sull'LCD del SE - lo schermo piu
+   corto - succedeva ogni volta che c'erano insieme la prossima mossa e la
+   domanda del lascito: «Vai al punto» finiva stampato sopra la domanda, e i due
+   tasti della risposta restavano sotto il foglio, non premibili.
+   Non e un caso singolo: e la forma del contenitore. Basta che il contenuto
+   superi l'altezza disponibile e succede a qualunque coppia di riquadri.
+   Due righe: i figli non si stringono piu, e se proprio non ci stanno la
+   colonna scorre invece di impilarsi addosso. */
+#mic-wrap > *{flex:0 0 auto}
+#mic-wrap{overflow-y:auto;overflow-x:visible;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
 #mic{width:310px;height:310px;border:none;background:transparent;position:relative;touch-action:none}
 #mic svg{width:100%;height:100%;display:block;overflow:visible;position:relative;z-index:1}
@@ -1549,7 +1572,7 @@ body.theme-carta #mic-label.butta{color:var(--ceralacca)}   /* sulla carta il si
 #soglia.via{opacity:0;pointer-events:none}
 #soglia canvas{position:absolute;inset:0;width:100%;height:100%}
 #soglia-saluto{position:relative;font-family:ui-serif,Georgia,serif;font-style:italic;font-size:19px;
-  letter-spacing:.03em;opacity:0;max-width:82%;text-align:center;line-height:1.5}
+  letter-spacing:.03em;max-width:82%;text-align:center;line-height:1.5}   /* v266: nasce visibile. L'animazione parte da zero, cosi se non parte resta lo stato buono */
 /* la pagina emerge ATTRAVERSO il velo che si alza, come nel mockup */
 body.alba #date-wrap{animation:su-alba .55s cubic-bezier(.22,1,.36,1) var(--alba-d,1.35s) both}
 body.alba #giorno-bar{animation:su-alba .55s cubic-bezier(.22,1,.36,1) calc(var(--alba-d,1.35s) + .14s) both}
@@ -1780,6 +1803,9 @@ body[data-pane="quest"] #notte-luce,body[data-pane="quest"] .notte-scia{display:
   transition:bottom .26s cubic-bezier(.32,.72,0,1)}
 /* quando la tastiera e fuori, sotto non serve piu il margine di sicurezza:
    quello spazio se lo prende gia la tastiera. */
+/* v266 — stessa forma, stesso rischio: con la tastiera aperta la carta si
+   accorcia e testa e piede si schiacciavano sul testo. */
+#stanza-carta>*{flex-shrink:0}
 #stanza.tastiera #stanza-carta{padding-bottom:14px}
 #stanza-testa{font-size:11px;letter-spacing:.30em;text-transform:uppercase;
   color:#8A8172;margin-bottom:22px;flex:none}
@@ -1790,7 +1816,7 @@ body[data-pane="quest"] #notte-luce,body[data-pane="quest"] .notte-scia{display:
 #stanza-txt{flex:1 1 auto;min-height:0;width:100%;background:none;border:none;outline:none;padding:0;
   font-family:var(--serif);font-size:19px;line-height:1.78;color:#E9E2D2;
   resize:none;box-sizing:border-box;caret-color:var(--notte);
-  overflow-y:auto;-webkit-overflow-scrolling:touch}
+  overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0}
 #stanza-txt::placeholder{color:#8A8172}   /* 4,9:1 sulla carta: sotto non si legge */
 #stanza-piede{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;flex:none}
 #stanza-piede button{background:none;border:.5px solid rgba(233,226,210,.22);
@@ -2007,9 +2033,20 @@ body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:
 #terra-testa{font-size:11px;letter-spacing:.26em;text-transform:uppercase;
   color:hsl(var(--terra-h) 70% 70%);margin-bottom:14px}
 #terra-dom{font-family:var(--serif);font-size:20px;line-height:1.45;color:var(--t1);margin-bottom:16px}
-#terra-dom .w{display:inline-block;opacity:0;transform:translateY(6px)}
+/* ══ v266 — LA DOMANDA NON NASCE PIU INVISIBILE ════════════════════════════
+   Alla v260 il guasto era stato tappato: le parole nascevano a «opacity:0» e
+   una regola dentro @media (prefers-reduced-motion) le rimetteva a uno. Ma un
+   ripiego dentro una media query vale solo dove quella media query vale, e la
+   domanda ha continuato a non vedersi. Non si tappa un'altra volta: si toglie
+   la causa. Le parole adesso NASCONO VISIBILI, e l'animazione le fa comparire
+   partendo da zero. Se l'animazione non parte - moto ridotto, batteria, un
+   browser che non la sostiene, una classe che non arriva - resta lo stato
+   finale, che e quello giusto.
+   La regola generale: mai far dipendere la VISIBILITA da un'animazione. Se
+   serve un ingresso, si parte dallo stato buono e si torna li. */
+#terra-dom .w{display:inline-block}
 #terra.aperto #terra-dom .w{animation:terra-w .34s cubic-bezier(.22,1,.36,1) both}
-@keyframes terra-w{to{opacity:1;transform:none}}
+@keyframes terra-w{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #terra-txt{width:100%;background:rgba(245,242,234,.04);border:.5px solid rgba(245,242,234,.14);border-radius:14px;
   padding:14px;font-family:var(--serif);font-size:17px;line-height:1.5;color:var(--t1);resize:none;box-sizing:border-box}
 #terra-txt:focus{outline:none;border-color:hsla(var(--terra-h) 80% 66% / .6)}
@@ -3312,7 +3349,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.265 · 2026-08-15';
+const APP_VERSION='v60S.266 · 2026-08-15';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3329,6 +3366,10 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Le scritte non si scrivono pi\u00f9 addosso. Sugli schermi corti «Vai al punto» finiva stampato sopra la domanda e i due tasti della risposta restavano sotto il foglio: non erano premibili.',
+   'E la domanda della chiamata a terra adesso si vede sempre. Prima nasceva invisibile e a farla comparire era solo un\u2019animazione: se quella non partiva, restava li senza che nessuno potesse leggerla.'
+ ]},
  {righe:[
    'Quando ti dice che una cosa \u00e8 ferma e un\u2019altra va, adesso cambia le parole ogni volta: al palo e in movimento, a terra e in piedi, in stallo e in corsa, nel dimenticatoio e a galla.',
    'Sono modi di dire che capisce chiunque, ed \u00e8 una regola: quello che l\u2019app dice deve arrivare a tutti, se no non serve a niente dirlo bene.'
@@ -7087,16 +7128,36 @@ function renderLetture(mo){
   };
 }
 function _isoPlus(gg){ const d=new Date(); d.setDate(d.getDate()+gg); return d.toISOString().slice(0,10); }
+/* quante volte una cosa e mancata, detta in parole: le quantita si dicono
+   in parole anche qui, e «racconti» non e un'unita di misura per nessuno. */
+function _lascDa(n){
+  const v=n|0;
+  if(v>=24) return 'da tanto';
+  if(v>=16) return 'da un pezzo';
+  if(v>=8)  return 'da parecchio';
+  return 'da un po\'';
+}
 function maybeLascito(){
   const box=document.querySelector('#lascito'); if(!box) return;
   const tk=todayKey();
   const c=lascitoCandidate(S,tk);
   if(!c){ box.classList.add('hidden'); box.innerHTML=''; return; }
   const tit=_titoloDiId(c.id); if(!tit){ box.classList.add('hidden'); return; }
+  /* ══ v266 — LA DOMANDA DEL LASCITO NON PASSAVA DA NESSUN GIUDICE ═══════════
+     Diceva, testuale: «Smettere di fumare» non entra nei tuoi racconti da 19
+     racconti — è ancora tua?
+     Tre cose sbagliate in una riga sola, e tutte e tre sono vietate altrove:
+       · il trattino lungo, che e la firma numero uno del giudice;
+       · una cifra in faccia, e per giunta di un'unita che nessuno conta
+         («diciannove racconti» non vuol dire niente a chi legge);
+       · «racconti da ... racconti», la stessa parola due volte in sei parole.
+     Il motore della sera passa da _ossGiudica dalla v204. Questa domanda no:
+     era nata prima e nessuno l'aveva mai riportata dentro. Adesso ci passa, e
+     un banco lo controlla. */
   const prova=c.motivo==='attrito'
-    ? 'ne parli come di un debito: \u00ab'+escapeHtml(c.frase)+'\u00bb, per la '+c.attriti+'\u00aa volta'
-    : 'non entra nei tuoi racconti da '+c.assenze+' racconti';
-  box.innerHTML='<div class="lasc-txt">\u00ab'+escapeHtml(tit)+'\u00bb '+prova+' \u2014 \u00e8 ancora tua?'+
+    ? 'ne parli come di un peso, e non solo stavolta: \u00ab'+escapeHtml(c.frase)+'\u00bb.'
+    : 'nei tuoi racconti non compare '+_lascDa(c.assenze)+'.';
+  box.innerHTML='<div class="lasc-txt">\u00ab'+escapeHtml(tit)+'\u00bb: '+prova+' \u00e8 ancora tua?'+
     '</div><div class="btn-row" style="margin-top:10px"><button class="act" id="lasc-si">\u00c8 ancora mia</button>'+
     '<button class="act" id="lasc-no">La lascio andare</button></div>';
   box.classList.remove('hidden');
