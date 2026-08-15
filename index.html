@@ -97,6 +97,25 @@ html,body{overflow-x:hidden}   /* il volto: il fuoco sborda i margini, la pagina
   border-radius:16px 16px 0 0;
   --fp:0;
   transition:transform .32s cubic-bezier(0.32,0.72,0,1),--fp .32s cubic-bezier(0.32,0.72,0,1)}
+/* ══ v259 — DOVE SI SCRIVE --fp ════════════════════════════════════════════
+   --fp e' EREDITATA: scriverla su #app obbligava il telefono a ricalcolare lo
+   stile di tutto quello che sta nel foglio - milleseicento elementi - a ogni
+   fotogramma dello scorrimento e del trascinamento. La leggono due elementi
+   soli, #dateline e #btn-pin, e stanno tutti e due nella testata: scrivendola
+   li, il ricalcolo tocca quindici elementi invece di milleseicento.
+
+   La regola di #app qui sopra NON e stata toccata: e' l'OLED, e l'OLED non si
+   tocca. Resta dichiarata a zero e nessuno la cambia piu; quello che si muove
+   e' il valore sulla testata, che vince per i suoi figli - cioe per i due che
+   la leggono. Sullo schermo non cambia un pixel, e l'impronta dell'OLED resta
+   quella di prima.
+
+   La transizione della testata NON sta qui ma nel codice, due righe accanto a
+   chi scrive il valore (cerca «scriviFp»). Non e' pigrizia: «header» e' gia una
+   regola dell'OLED, e aggiungerci dentro una riga la farebbe risultare CAMBIATA
+   all'impronta - cioe farei scattare l'allarme che difende il tema di Davide per
+   una cosa che non sposta un pixel. L'allarme non si spegne: si evita di
+   farlo suonare a vuoto. */
 @supports ((-webkit-backdrop-filter:blur(20px)) or (backdrop-filter:blur(20px))){
   body:not(.foglio-opaco) #app{background:var(--foglio-bg);-webkit-backdrop-filter:saturate(140%) blur(20px);backdrop-filter:saturate(140%) blur(20px)}
 }
@@ -1373,6 +1392,21 @@ body.theme-carta #mic-label.butta{color:var(--ceralacca)}   /* sulla carta il si
 .item.imp .txt{cursor:pointer}
 .item.in-modifica{box-shadow:inset 2px 0 0 var(--accent);padding-left:10px}
 .item.in-modifica .meta{color:var(--accent)}
+
+/* ══ v259 — LE VOCI DEL DIARIO FUORI SCHERMO NON SI DISEGNANO ══════════════
+   Centocinquanta voci: il telefono ne calcola e ne dipinge centocinquanta a
+   ogni scorrimento, anche quelle a due schermate di distanza. content-visibility
+   dice al browser «di questa, finche non arriva vicina, non fare niente»: resta
+   nella pagina, resta cercabile dal browser, ma non costa un pixel.
+   contain-intrinsic-size e' l'altezza che il browser le assegna finche non l'ha
+   mai vista: senza, la barra di scorrimento salterebbe. Il valore e la media
+   vera delle voci di un diario pieno, non un numero tondo a caso.
+   Dove non e' supportato, queste due righe vengono ignorate e non cambia nulla:
+   nessun ripiego da mantenere. */
+#list-diario .entry{content-visibility:auto;contain-intrinsic-size:auto 168px}
+/* l'intestazione del giorno NO: e' appiccicata in alto mentre scorri, e una
+   cosa appiccicata deve restare calcolata sempre. */
+#list-diario .d-giorno{content-visibility:visible}
 /* v251 — GLI A CAPO SI DEVONO VEDERE.
    Le pause diventano a capo nel testo, ma un a capo dentro l'HTML non si vede:
    il browser lo tratta come uno spazio. Senza questa riga la cosa funzionerebbe
@@ -2033,6 +2067,21 @@ body.theme-carta .item{overflow:visible}
   body:not(.anima-sempre) .patto-luce{animation:none}
   body:not(.anima-sempre) #terra-carta,body:not(.anima-sempre) #terra-dom .w,
   body:not(.anima-sempre) #terra-fiore{animation:none!important;transition:none!important}
+  /* ══ v260 — E LA DOMANDA SI DEVE VEDERE LO STESSO ═══════════════════════
+     Qui c'era il guasto piu grave di tutti, ed era invisibile due volte.
+     Le parole della domanda nascono a «opacity:0» e diventano visibili SOLO
+     grazie all'animazione «terra-w». Spegnendo l'animazione - come si deve
+     fare a moto ridotto - restava la prima riga: opacity zero per sempre.
+     La chiamata a terra si apriva, si poteva scrivere, e non c'era nessuna
+     domanda: il testo era li, nella pagina, e nessuno poteva vederlo.
+     Davide ha «Riduci movimento» acceso sul telefono - l'app se ne accorge da
+     sola e glielo dice - quindi per lui la porta e stata muta dall'inizio.
+
+     Regola generale, che vale per tutto quello che si fara' da qui in poi:
+     se una cosa si vede SOLO perche un'animazione la fa comparire, quando le
+     animazioni sono spente bisogna darle lo stato finale a mano. Un banco
+     adesso lo controlla. */
+  body:not(.anima-sempre) #terra.aperto #terra-dom .w{opacity:1!important;transform:none!important}
 }
 
 /* v252 — LE REGOLE DEL TEMA INCHIOSTRO SONO STATE TOLTE.
@@ -3259,7 +3308,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.259 · 2026-08-15';
+const APP_VERSION='v60S.261 · 2026-08-15';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3276,6 +3325,14 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'La chiamata a terra torna a fare domande. Se hai «Riduci movimento» acceso sul telefono, la domanda c\u2019era ma restava invisibile: adesso si vede.',
+   'E qualunque cosa succeda, quella porta chiede sempre qualcosa: non si apre piu su un foglio bianco.'
+ ]},
+ {righe:[
+   'Adesso scorre. Mentre trascini o scorri, i disegni di sfondo si mettono in pausa e riprendono da soli: il dito ha la precedenza su tutto.',
+   'E il diario non calcola piu le voci lontane dallo schermo: con centocinquanta note si sente.'
+ ]},
  {righe:[
    'L\u2019app e diventata molto piu leggera: ogni volta che spunti qualcosa non ridisegna piu tutto il diario, ma solo quello che e cambiato davvero.',
    'E quando lo schermo e coperto smette di lavorare: meno batteria, stessa app quando torni a guardarla.'
@@ -3547,6 +3604,24 @@ async function accendiLingua(){
   return ok;
 }
 /*SCRITTE-FINE*/
+
+/* ══ v259 — MENTRE IL DITO SI MUOVE, I PENNELLI SI FERMANO ══════════════════
+   L'app non si bloccava: non «scorreva». E' una cosa diversa e si sente lo
+   stesso. Sedici millesimi per fotogramma: se dentro ci finiscono anche il filo
+   del microfono e i due satelliti mentre il dito trascina il foglio, il
+   fotogramma salta - e un fotogramma saltato non si vede, si sente.
+
+   Qui non si toglie niente a nessuno: si sposta. Finche il dito e in movimento
+   i disegni di sfondo tacciono, e centoquaranta millesimi dopo l'ultimo
+   movimento ripartono da soli. Nessun timer da spegnere: un orario, e ogni
+   ciclo guarda l'orologio. Costa una sottrazione per fotogramma.
+
+   Il tempo dei disegni resta quello vero (si calcola da ts, non dai giri), cosi
+   al ritorno niente scatta in avanti: riprendono da dove sarebbero stati. */
+let _manoFino=0;
+function manoAlLavoro(){ try{ _manoFino=performance.now()+140; }catch(_){ _manoFino=Date.now()+140; } }
+function ditoInMovimento(){ try{ return performance.now()<_manoFino; }catch(_){ return false; } }
+window.manoAlLavoro=manoAlLavoro;
 
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
@@ -4990,12 +5065,12 @@ function foglioDopoVoce(){
   function posDi(d){ return d==='pieno'?Math.round(H*0.08):(d==='mezzo'?Math.round(H*(H<=700?0.48:0.54)):Math.max(0,Math.round(H-110-SB))); }   /* 110 = testata morfata a picco: tarare qui se spunta uno spiraglio */
   function fpDi(y){ const a=posDi('mezzo'), b=posDi('picco'); return Math.max(0,Math.min(1,(y-a)/Math.max(1,b-a))); }
   function scrivi(y){ penTy=y; if(raf) return;
-    raf=requestAnimationFrame(function(){ raf=0; if(penTy!=null){ fg.style.transform='translate(-50%,'+penTy+'px)'; fg.style.setProperty('--fp',fpDi(penTy).toFixed(4)); } }); }
+    raf=requestAnimationFrame(function(){ raf=0; if(penTy!=null){ fg.style.transform='translate(-50%,'+penTy+'px)'; scriviFp(fpDi(penTy).toFixed(4)); } }); }
   function applica(d){
     det=d; window._foglioDetent=d; ty=posDi(d); penTy=null;
     try{ document.body.classList.toggle('foglio-opaco',ridotto()); }catch(_){}
     fg.style.transform='translate(-50%,'+ty+'px)';
-    fg.style.setProperty('--fp',(d==='picco')?'1':'0');
+    scriviFp((d==='picco')?'1':'0');
     fpScroll=(d==='picco')?1:0;                       /* cambiando fermata il morphing riparte da capo */
     try{ document.body.classList.toggle('testa-raccolta',d==='picco'); }catch(_){}
     corpo.style.overflowY=(d==='pieno')?'auto':'hidden';
@@ -5011,16 +5086,23 @@ function foglioDopoVoce(){
      niente estetica nuova: si riusa il morphing gia tarato. */
   const SCROLL_MORPH=120;
   let rafS=0, fpScroll=0;
+  /* v259: la scrive una funzione sola, e la scrive sulla testata - dove la
+     leggono i due elementi che la usano. */
+  /* v259: il valore si muove qui, e qui vive anche la sua transizione - la
+     stessa curva e la stessa durata di prima, spostate di un elemento. */
+  try{ if(testa) testa.style.transition='--fp .32s cubic-bezier(0.32,0.72,0,1)'; }catch(_){}
+  function scriviFp(v){ try{ (testa||fg).style.setProperty('--fp',v); }catch(_){} }
   function fpDaScroll(){
     if(det!=='pieno'||dragging) return;
     const y=Math.max(0,corpo.scrollTop||0);
     const v=Math.max(0,Math.min(1,y/SCROLL_MORPH));
     if(Math.abs(v-fpScroll)<0.004) return;
     fpScroll=v;
-    fg.style.setProperty('--fp',v.toFixed(4));
+    scriviFp(v.toFixed(4));
     try{ document.body.classList.toggle('testa-raccolta',v>0.6); }catch(_){}
   }
   corpo.addEventListener('scroll',function(){
+    manoAlLavoro();            /* v259: si sta scorrendo - i pennelli aspettano */
     if(rafS) return;
     rafS=requestAnimationFrame(function(){ rafS=0; fpDaScroll(); });
   },{passive:true});
@@ -5033,6 +5115,7 @@ function foglioDopoVoce(){
     return y; }
   function trStart(y){ dragging=true; window._foglioVento=true; p0=y; ty0=(penTy!=null?penTy:ty); samples=[{t:performance.now(),y:y}]; fg.classList.add('trascinando'); }
   function trMove(y){ if(!dragging) return;
+    manoAlLavoro();            /* v259: il foglio e in mano, il resto aspetta */
     const now=performance.now(); samples.push({t:now,y:y});
     while(samples.length>2&&now-samples[0].t>120) samples.shift();
     scrivi(gomma(ty0+(y-p0))); }
@@ -5100,9 +5183,11 @@ function foglioDopoVoce(){
       if(!document.getElementById('soglia')||n>26){
         clearInterval(iv);
         if(ridotto()){ applica('mezzo'); return; }
-        fg.style.transition='transform .95s cubic-bezier(.22,1,.36,1),--fp .95s cubic-bezier(.22,1,.36,1)';
+        fg.style.transition='transform .95s cubic-bezier(.22,1,.36,1)';
+        try{ const _h=document.querySelector('header'); if(_h) _h.style.transition='--fp .95s cubic-bezier(.22,1,.36,1)'; }catch(_){}
         requestAnimationFrame(function(){ applica('mezzo'); });
-        setTimeout(function(){ fg.style.transition=''; },1050);
+        setTimeout(function(){ fg.style.transition='';
+          try{ const _h=document.querySelector('header'); if(_h) _h.style.transition=''; }catch(_){} },1050);
       }
     },150);
   })();
@@ -9747,6 +9832,9 @@ function applyTheme(){ try{
   function frame(ts){
     requestAnimationFrame(frame);
     if(document.hidden){ last=ts; return; }
+    /* v259: il dito sta scorrendo o trascinando. «last=ts» e' la riga che conta:
+       al ritorno il tempo riparte da adesso e niente scatta in avanti. */
+    if(ditoInMovimento()){ last=ts; return; }
     const modo=inchiostro();
     cambioModo(modo);
     if(modo){
@@ -11448,7 +11536,16 @@ function _terraVivaioLargo(mem){
       else Object.keys(v).forEach(g=>v[g].forEach(t=>tutte.push(t)));
     });
   }catch(_){ return ''; }
-  for(const t of tutte) if(!_terraGiaFatta(t,mem)) return t;
+  /* v260: la porta si chiama «chiamata a terra» e ha un compito solo: CHIEDERE.
+     Il ripiego largo pescava anche dalle caselle di conforto - «il sentiero non
+     si offende: aspetta.» - che sono frasi giuste al posto giusto ma non sono
+     domande: la porta si apriva con un'affermazione, e restare li a rispondere
+     a un'affermazione non ha senso. Qui passano solo le domande vere. */
+  for(const t of tutte){
+    if(!/\?\s*$/.test(String(t))) continue;
+    if(String(t).indexOf('%T')>=0) continue;
+    if(!_terraGiaFatta(t,mem)) return t;
+  }
   return '';
 }
 /* ══ LA DOMANDA DI CASA (v209) ══════════════════════════════════════════════
@@ -11580,6 +11677,39 @@ function terraDomanda(){
   return {id:'',testo:'cosa e successo davvero, oggi?',volante:true};
 }
 /* la domanda si scrive parola per parola: e una voce che parla, non un cartello */
+/* v260: le domande che restano vere anche senza sapere niente di chi le legge.
+   Sono l'ultimo gradino, non il primo: si arriva qui solo se ogni altra strada
+   ha taciuto. Girano in ordine col giorno, cosi due aperture vicine non danno
+   la stessa. */
+const TERRA_RETE=[
+ 'cosa ti sta chiedendo attenzione, in questo momento?',
+ 'di tutto quello che hai in testa adesso, cosa pesa di piu?',
+ 'se domani ne restasse una sola, quale terresti?',
+ 'cosa hai rimandato oggi, e perche proprio quella?',
+ 'cosa ti e riuscito oggi che nessuno ha notato?'
+];
+const TERRA_RETE_EN=[
+ 'what is asking for your attention right now?',
+ 'of everything on your mind, what weighs the most?',
+ 'if only one were left tomorrow, which would you keep?',
+ 'what did you put off today, and why that one?',
+ 'what went well today that nobody noticed?'
+];
+function _terraUltimaRete(){
+  /* la rete parla la lingua dell'app: se il pacchetto ne porta una sua, quella;
+     se no l'inglese per chi non e in italiano. Una domanda nella lingua
+     sbagliata non e una domanda, e un errore che si vede. */
+  let pool=TERRA_RETE;
+  try{
+    const p=(typeof PACCHETTO!=='undefined')?PACCHETTO:null;
+    if(p&&p.voci&&Array.isArray(p.voci.rete)&&p.voci.rete.length) pool=p.voci.rete;
+    else if(typeof linguaApp==='function'&&linguaApp()!=='it') pool=TERRA_RETE_EN;
+  }catch(_){}
+  try{
+    const g=Math.floor(Date.parse(todayKey()+'T12:00:00')/86400000)||0;
+    return pool[Math.abs(g)%pool.length];
+  }catch(_){ return pool[0]; }
+}
 function scriviTerraDomanda(testo){
   const d=document.querySelector('#terra-dom'); if(!d) return;
   d.innerHTML='';
@@ -11592,6 +11722,15 @@ function scriviTerraDomanda(testo){
 function apriTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
   _terraSeme=terraDomanda();
+  /* v260 — L'ULTIMA RETE. Se per qualunque strada quello che arriva qui non e
+     una domanda - un vivaio finito, un pacchetto lingua che non ha caricato, un
+     ramo che nessuno aveva previsto - la porta chiede lo stesso. Una chiamata a
+     terra senza domanda non e una porta: e un foglio bianco, e chi lo trova
+     pensa che l'app sia rotta. E ha ragione. */
+  try{
+    const t=String((_terraSeme&&_terraSeme.testo)||'').trim();
+    if(!t||!/\?$/.test(t)) _terraSeme={id:'',testo:_terraUltimaRete(),volante:true,rete:true};
+  }catch(_){ _terraSeme={id:'',testo:_terraUltimaRete(),volante:true,rete:true}; }
   el.querySelector('#terra-testa').textContent='chiamata a terra';
   scriviTerraDomanda(_terraSeme.testo);
   const txt=el.querySelector('#terra-txt');
@@ -11653,6 +11792,7 @@ function chiudiTerra(){
   function frame(now){
     requestAnimationFrame(frame);
     if(document.hidden) return;
+    if(ditoInMovimento()) return;   /* v259: il dito ha la precedenza */
     if(stato==='orbita'&&document.body.getAttribute('data-pane')==='quest') return;   /* coperta: zero lavoro */
     let x,y,k=1,op=1;
     if(stato==='orbita'){
@@ -11745,7 +11885,9 @@ function chiudiTerra(){
       if(alto > vv.height-24 && txt.rows>2) txt.rows=txt.rows-1;
     }catch(_){}
   }
-  if(vv){ vv.addEventListener('resize',tastiera); vv.addEventListener('scroll',tastiera); }
+  /* v259: passivi. Il telefono non deve aspettare la fine di questa funzione
+     per muovere la pagina: qui non si annulla niente. */
+  if(vv){ vv.addEventListener('resize',tastiera,{passive:true}); vv.addEventListener('scroll',tastiera,{passive:true}); }
   if(txt){
     txt.addEventListener('focus',()=>setTimeout(tastiera,60));
     txt.addEventListener('blur',()=>{ txt.rows=5; setTimeout(tastiera,80); });
@@ -11796,6 +11938,7 @@ function chiudiTerra(){
   function frame(now){
     requestAnimationFrame(frame);
     if(document.hidden) return;
+    if(ditoInMovimento()) return;                         /* v259: il dito ha la precedenza */
     if(!acceso) return;                                   /* fuori orario: zero lavoro */
     if(document.body.getAttribute('data-pane')==='quest') return;
     if(el.classList.contains('aperta')) return;           /* stanza aperta: la copre */
@@ -11848,7 +11991,7 @@ function chiudiTerra(){
         if(t && document.activeElement===t) t.scrollTop=t.scrollHeight;
       }catch(_){}
     };
-    vv.addEventListener('resize',tastiera); vv.addEventListener('scroll',tastiera);
+    vv.addEventListener('resize',tastiera,{passive:true}); vv.addEventListener('scroll',tastiera,{passive:true});   /* v259 */
   }
   const no=document.getElementById('stanza-no'), ok=document.getElementById('stanza-ok');
   if(no) no.addEventListener('click',()=>{ try{ chiudiStanza(); }catch(_){} });
