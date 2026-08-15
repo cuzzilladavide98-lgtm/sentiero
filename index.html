@@ -3312,7 +3312,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.264 · 2026-08-15';
+const APP_VERSION='v60S.265 · 2026-08-15';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3329,6 +3329,10 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Quando ti dice che una cosa \u00e8 ferma e un\u2019altra va, adesso cambia le parole ogni volta: al palo e in movimento, a terra e in piedi, in stallo e in corsa, nel dimenticatoio e a galla.',
+   'Sono modi di dire che capisce chiunque, ed \u00e8 una regola: quello che l\u2019app dice deve arrivare a tutti, se no non serve a niente dirlo bene.'
+ ]},
  {righe:[
    'Sentiero ha imparato a tenere insieme due cose invece di dirne una. Se una cosa \u00e8 ferma e un\u2019altra va avanti, adesso te le dice nella stessa riga, e chiude su quella che si \u00e8 mossa.',
    'E quando qualcosa passa proprio nel giorno che dava meno, te lo nomina. Non \u00e8 un complimento: \u00e8 la cosa precisa che hai fatto, e il merito resta tuo.'
@@ -7485,6 +7489,27 @@ function _ossFatti(d){
    l'app parli al primo avvio senza chiedere niente a nessuno. E se un pacchetto
    non porta le forme, quella voce tace invece di parlare italiano a uno che non
    lo capisce. */
+/* ══ v265 — I POLI, cioe i CONTRARI messi al lavoro ═════════════════════════
+   Il riflesso a due facce dice sempre la stessa opposizione: ferma / andata
+   avanti. Ma l'opposizione ha molti modi di dirsi, e sceglierne uno diverso ogni
+   volta e esattamente cosa vuol dire avere padronanza di una lingua.
+
+   LA REGOLA DI DANTE, e non e un ornamento. Nel «De vulgari eloquentia» Dante
+   scrive IN LATINO, per i dotti, e dentro sostiene il volgare per tutti: la
+   cultura sta nello studio, quello che arriva alla gente dev'essere capito da
+   chiunque. Percio qui entrano solo modi di dire che il vocabolario segna come
+   DIFFUSI - li capisce chiunque parli italiano, di qualunque eta e regione.
+   Una metafora che capisce solo chi la dice non comunica niente, ed e la cosa
+   peggiore che quest'app possa fare. Lo tiene chiuso banchi/provaVolgare.js.
+
+   Sono locuzioni invariabili di proposito: non si accordano, quindi non possono
+   sbagliare genere accanto al nome di una cosa che non conosciamo. */
+const POLI_IT=[
+  {fermo:'al palo',            mosso:'in movimento'},
+  {fermo:'a terra',            mosso:'in piedi'},
+  {fermo:'in stallo',          mosso:'in corsa'},
+  {fermo:'nel dimenticatoio',  mosso:'a galla'}
+];
 const FORME_IT={
   attrito:['di {cosa} avevi scritto «{parole}». quelle parole sono ancora li.',
             '«{parole}», scrivevi di {cosa}.',
@@ -7575,7 +7600,10 @@ const FORME_IT={
               'non e tutto fermo. lo e {ferma}, non {mossa}.',
               'una resta li e una no. {ferma} ferma, {mossa} avanti.',
               'su {ferma} niente. su {mossa} qualcosa si e mosso.',
-              '{ferma} sta dov\'era. {mossa} no.'],
+              '{ferma} sta dov\'era. {mossa} no.',
+              '{ferma} {fermoM}, {mossa} {mossoM}.',
+              '{ferma} resta {fermoM}. {mossa} e {mossoM}.',
+              'eccole insieme. {ferma} {fermoM}, {mossa} {mossoM}.'],
   tenuta:['non era un giorno pieno. {cosa} e passata lo stesso.',
            'quel giorno non ha lasciato quasi niente. {cosa} si.',
            'una giornata sottile. dentro c\'era {cosa}.',
@@ -7599,7 +7627,12 @@ function _ossRiempi(modelli,f){
     /* v264: le due parti del riflesso a due facce. Restano minuscole come tutto
        il resto, e restano SUE: il giudice non le conta come prosa nostra. */
     '{ferma}':_ossMinuscolo(f.ferma||''),
-    '{mossa}':_ossMinuscolo(f.mossa||'')
+    '{mossa}':_ossMinuscolo(f.mossa||''),
+    /* v265: i due poli dell'opposizione, presi dai modi di dire diffusi. Se
+       nessuno li ha scelti si usa il primo, cosi la forma resta viva anche
+       quando il motore gira senza memoria (nei banchi, per esempio). */
+    '{fermoM}':((f.polo||POLI_IT[0]).fermo),
+    '{mossoM}':((f.polo||POLI_IT[0]).mosso)
   };
   return (modelli||[]).map(m=>{
     let t=String(m);
@@ -7787,6 +7820,10 @@ function buildObserverLocal(digest){
   const _recF=(digest.forme_recenti||[]);
   const scartate=[];
   for(const f of fatti){
+    /* v265: a ogni giro l'opposizione si dice con un'altra coppia di modi di
+       dire. Gira sulla memoria delle costruzioni, cosi non serve un'altra
+       memoria e le due cose restano in fase. */
+    try{ if(f&&f.t==='contrasto') f.polo=POLI_IT[_recF.length%POLI_IT.length]; }catch(_){}
     const forme=_ossForme(f);
     const ordine=forme.map((_,i)=>i).sort((a,b)=>
       _recF.lastIndexOf(f.t+'#'+a)-_recF.lastIndexOf(f.t+'#'+b));   /* mai uscita (-1) per prima */
