@@ -3043,6 +3043,14 @@ function sanitizeState(raw,def){
        sanitizeState non e un dettaglio: senza, il turno riparte a ogni avvio e
        la prima forma di ogni famiglia torna a vincere sempre. */
     obsForme:Array.isArray(raw.obsForme)?raw.obsForme.filter(x=>typeof x==='string').slice(-24):[],
+    /* v267: la base linguistica scaricata vive nello stato, quindi entra nei
+       backup: cambiando telefono non si riparte da zero. Si tiene solo se e
+       ancora valida: una base rotta non e meglio di nessuna base. */
+    baseLing:(raw.baseLing&&typeof raw.baseLing==='object')?raw.baseLing:null,
+    baseLingQuando:(+raw.baseLingQuando)||0,
+    /* v268: la memoria del contenuto. Vive nello stato e nei backup: cambiando
+       telefono, Sentiero non ricomincia a raccontare le stesse cose da capo. */
+    obsDetti:Array.isArray(raw.obsDetti)?raw.obsDetti.filter(x=>x&&typeof x==='object'&&typeof x.cosa==='string').slice(-24):[],
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
       voice:!!(raw.settings&&raw.settings.voice===true),
@@ -3349,7 +3357,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.266 · 2026-08-15';
+const APP_VERSION='v60S.268 · 2026-08-15';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3366,6 +3374,14 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Adesso Sentiero decide prima COSA vale la pena dirti, e solo dopo come dirlo. E se nessuna cosa merita davvero di arrivarti, sta zitto: non riempie uno spazio perch\u00e9 lo spazio esiste.',
+   'E si ricorda di che cosa ti ha gi\u00e0 parlato, quando e in che senso. Cambiare le parole non rende nuova una cosa gi\u00e0 detta.'
+ ]},
+ {righe:[
+   'Adesso Sentiero non prende la prima frase buona che trova: le costruisce tutte, le mette in gara e sceglie la migliore. Sulle tue sere ne aveva trentuno fra cui scegliere, ogni volta, e ne prendeva una a caso.',
+   'E quando c\u2019\u00e8 rete impara: aggiorna la sua base di parole leggendo un file pubblicato con l\u2019app. Legge e basta \u2014 di te non esce niente. Senza rete usa quella che ha gi\u00e0.'
+ ]},
  {righe:[
    'Le scritte non si scrivono pi\u00f9 addosso. Sugli schermi corti «Vai al punto» finiva stampato sopra la domanda e i due tasti della risposta restavano sotto il foglio: non erano premibili.',
    'E la domanda della chiamata a terra adesso si vede sempre. Prima nasceva invisibile e a farla comparire era solo un\u2019animazione: se quella non partiva, restava li senza che nessuno potesse leggerla.'
@@ -7262,6 +7278,14 @@ function buildObserverDigest(){
      gia usata. Quattro coprivano meno di una settimana, e il giudice trovava
      costruzioni ripetute proprio nella finestra dei sette giorni che controlla. */
   const osservazioniPrecedenti=(S.observerNotes||[]).slice(-7).map(n=>n.note);
+  /* v268 — LA MEMORIA DEL CONTENUTO.
+     Fino alla v267 Sentiero ricordava le COSTRUZIONI e le FAMIGLIE: sapeva come
+     aveva parlato, non DI CHE COSA. Cambiare le parole non rende nuovo un
+     contenuto gia consumato, e il duello lo ha mostrato: cinque delle sette sere
+     bocciate parlavano di una cosa gia nominata nei giorni prima.
+     Qui viaggia quello che serve al livello COSA: di quale cosa, quando, in che
+     senso, con quale valore. Quattro campi, niente di piu. */
+  const detti_recenti=(S.obsDetti||[]).slice(-24);
   /* l'oro del Motore (acceso dalla v133): gli attriti con le parole esatte, le assenze lunghe, lo sguardo */
   const dalMotore={};
   try{
@@ -7279,7 +7303,7 @@ function buildObserverDigest(){
       dalMotore.sguardo_recente=m3>=3?'vede i propri pattern':(m2+m3)>=4?'spesso si osserva':'per lo piu cronaca';
     }
   }catch(_){}
-  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, passiGiornalieri:passiGiornalieri, dalMotore:dalMotore, sussurri_recenti:(S.obsLines||[]).slice(-5).map(n=>clampStr(n.riga,140)), osservazioniPrecedenti:osservazioniPrecedenti};
+  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, passiGiornalieri:passiGiornalieri, dalMotore:dalMotore, sussurri_recenti:(S.obsLines||[]).slice(-5).map(n=>clampStr(n.riga,140)), osservazioniPrecedenti:osservazioniPrecedenti, detti_recenti:detti_recenti};
 }
 
 async function askObserver(digest){
@@ -7399,6 +7423,12 @@ function _ossMinuscolo(t){ return String(t||'').trim().replace(/^./,c=>c.toLower
    Ogni fatto e una cosa vera e verificabile nei dati, col nome esatto della cosa.
    Niente categorie astratte: non «la costanza», ma «camminare».
    L'ordine dell'elenco e l'ordine di preferenza: le sue parole prima di tutto. */
+/* v267 — «conserva»: cosa una frase DEVE portare con se, qualunque parole usi.
+   E il primo pezzo del giorno in cui significato e frase saranno due cose
+   separate. Oggi e un elenco di stringhe e il controllo e letterale; domani sara
+   una struttura e il controllo sara strutturale. Ma il posto dove scriverlo
+   esiste da adesso, e la giuria lo guarda gia: cosi quando arrivera il livello
+   semantico non ci sara niente da smontare. */
 function _ossFatti(d){
   const F=[], diario=(d.diario||[]), oggi=d.oggi||'';
   const passi=(d.passiGiornalieri||[]), motore=(d.dalMotore||{});
@@ -7406,12 +7436,13 @@ function _ossFatti(d){
   /* 1 · le sue parole esatte sull'attrito. Sono oro perche non sono nostre:
         le ha scritte lui, e il Motore le ha gia messe da parte. */
   (motore.attriti_vivi||[]).slice(0,2).forEach(a=>{
-    if(a&&a.quest&&a.parole) F.push({t:'attrito',peso:10,cosa:a.quest,parole:String(a.parole).trim()});
+    if(a&&a.quest&&a.parole) F.push({t:'attrito',peso:10,cosa:a.quest,parole:String(a.parole).trim(),
+                                     conserva:[a.quest,String(a.parole).trim()]});
   });
 
   /* 2 · quello che tace da molti giorni, col suo nome */
   (motore.assenze_lunghe||[]).slice(0,2).forEach(x=>{
-    if(x) F.push({t:'silenzio',peso:8,cosa:x});
+    if(x) F.push({t:'silenzio',peso:8,cosa:x,conserva:[x]});
   });
 
   /* 3 · la promessa che torna: nata piu volte, mai fatta */
@@ -7422,7 +7453,7 @@ function _ossFatti(d){
     let peggio=null,gap=0;
     Object.keys(nate).forEach(t=>{ const v=nate[t]-(fatte[t]||0);
       if(nate[t]>=2&&v>gap){ gap=v; peggio=t; } });
-    if(peggio) F.push({t:'ricorrente',peso:9,cosa:peggio,volte:nate[peggio]});
+    if(peggio) F.push({t:'ricorrente',peso:9,cosa:peggio,volte:nate[peggio],conserva:[peggio]});
   }
 
   /* 4 · il ritorno: una cosa ricomparsa dopo un silenzio. E il fatto piu bello
@@ -7438,7 +7469,7 @@ function _ossFatti(d){
           if(perGiorno[giorni[i]].has(t)){ visto=giorni[i]; break; }
           vuoti++;
         }
-        if(visto&&vuoti>=3) F.push({t:'ritorno',peso:9,cosa:t,dopo:_ossGiorniFra(visto,ultimo)});
+        if(visto&&vuoti>=3) F.push({t:'ritorno',peso:9,cosa:t,dopo:_ossGiorniFra(visto,ultimo),conserva:[t]});
       });
     }
   }
@@ -7452,7 +7483,7 @@ function _ossFatti(d){
     Object.keys(perDow).forEach(dw=>{
       if(perDow[dw]>=2&&(vuotiDow[dw]||0)===perDow[dw]) quale=dw;
     });
-    if(quale) F.push({t:'giorno',peso:7,cosa:quale});
+    if(quale) F.push({t:'giorno',peso:7,cosa:quale,conserva:[quale]});
   }
 
   /* 6 · la piu vecchia rimasta aperta */
@@ -7464,14 +7495,14 @@ function _ossFatti(d){
       let vecchia=null,eta=0;
       ap.forEach(q=>{ const n=prima[q.titolo]; if(!n) return;
         const g=_ossGiorniFra(n,oggi); if(g>eta){ eta=g; vecchia=q.titolo; } });
-      if(vecchia&&eta>=7) F.push({t:'vecchia',peso:6,cosa:vecchia,giorni:eta});
+      if(vecchia&&eta>=7) F.push({t:'vecchia',peso:6,cosa:vecchia,giorni:eta,conserva:[vecchia]});
     }
   }
 
   /* 7 · lo scritto: quanto ha lasciato una riga, e non e una spunta */
   {
     const g=diario.length, tot=Math.max(passi.length,g);
-    if(g>=3) F.push({t:'scritto',peso:4,quanto:_ossQuanto(g,tot),giorni:tot});
+    if(g>=3) F.push({t:'scritto',peso:4,quanto:_ossQuanto(g,tot),giorni:tot,conserva:[_ossQuanto(g,tot)]});
   }
 
   /* 8 · il ritmo, che e il ripiego di sempre ma detto senza fare il maestro.
@@ -7480,7 +7511,8 @@ function _ossFatti(d){
   {
     const pieni=passi.filter(p=>p.passo!=='vuoto').length;
     if(passi.length>=4) F.push({t:'ritmo',peso:2,quanto:_ossQuanto(pieni,passi.length),
-                                pieni:pieni,vuoti:passi.length-pieni,giorni:passi.length});
+                                pieni:pieni,vuoti:passi.length-pieni,giorni:passi.length,
+                                conserva:[_ossQuanto(pieni,passi.length)]});
   }
 
   /* ══ v264 — I DUE FATTI CHE FANNO COMUNICARE, INVECE DI RIFERIRE ═══════════
@@ -7508,7 +7540,7 @@ function _ossFatti(d){
       /* la ferma piu insistita, la mossa piu recente: le due che pesano di piu */
       let ferma=ferme[0]; ferme.forEach(t=>{ if(nate[t]>nate[ferma]) ferma=t; });
       let mossa=mosse[0]; mosse.forEach(t=>{ if((ultimaFatta[t]||'')>(ultimaFatta[mossa]||'')) mossa=t; });
-      if(ferma&&mossa&&ferma!==mossa) F.push({t:'contrasto',peso:9.5,ferma:ferma,mossa:mossa});
+      if(ferma&&mossa&&ferma!==mossa) F.push({t:'contrasto',peso:9.5,ferma:ferma,mossa:mossa,conserva:[ferma,mossa]});
       /* il peso: sopra al ricorrente, sotto alle sue parole. Un riflesso a due
          facce contiene gia il fatto del ricorrente e in piu il contrappeso:
          dice di piu, quindi passa avanti. Sopra restano solo le parole che ha
@@ -7529,7 +7561,7 @@ function _ossFatti(d){
     if(magri.length){
       const g=magri[magri.length-1];
       const cosa=(azDi[g.giorno]||[])[0];
-      if(cosa) F.push({t:'tenuta',peso:6.5,cosa:cosa,giorno:g.giorno});   /* sopra al ritmo e allo scritto, che sono generici */
+      if(cosa) F.push({t:'tenuta',peso:6.5,cosa:cosa,giorno:g.giorno,conserva:[cosa]});   /* sopra al ritmo e allo scritto, che sono generici */
     }
   }
   return F.sort((a,b)=>b.peso-a.peso);
@@ -7836,6 +7868,384 @@ function _ossScheletro(riga){
   return tok.filter(w=>!_OSS_FUNZ.has(w)).slice(0,3).join(' ');
 }
 
+
+/* ══ v267 — LA BASE LINGUISTICA ════════════════════════════════════════════
+   Sentiero misura le proprie frasi. Per misurare serve un metro, e un metro
+   deve dire DA DOVE VIENE, se no e un'opinione con dei numeri sopra.
+
+   Tre livelli, in ordine di preferenza:
+     1. la base scaricata e validata (S.baseLing), quando c'e stata rete
+     2. la base pubblicata accanto all'app (lingue/base-it.json)
+     3. QUESTA, incorporata qui dentro: piccola, dichiarata, e permette
+        all'app di misurare qualcosa dal primo minuto e senza rete.
+
+   La minima NON e una misura: e un punto di partenza scritto a mano, e lo
+   dice. Il giorno in cui una fonte vera (il vocabolario di base della lingua
+   italiana, un corpus di frequenza) sara collegata, questi elenchi diventano
+   dati e questo commento va riscritto. */
+const BASE_MINIMA={"versione":0,"impronta":"minima-incorporata","nucleo":["a","adesso","affaccia","ancora","andare","andata","anche","appello","arriva","arrivano","aspetta","avanti","aveva","avevi","avuto","basta","bianco","bel","buco","cammina","capo","che","chi","chiude","chiusa","ci","cima","come","compare","con","corsa","cosa","cosi","cui","da","dal","dalla","dava","dentro","di","dice","dicevi","dimenticatoio","dopo","dov","due","durato","e","era","erano","essere","fa","farsi","fatto","fermo","ferma","fila","finalmente","fine","foglio","fondo","fosse","fuori","galla","giornata","giorni","giorno","gia","ha","hai","in","indietro","insieme","invecchia","la","lascia","lasciato","le","li","lista","lo","ma","magro","mai","mancava","manca","messa","mezzo","mosso","mossa","mosse","movimento","muove","muta","nasce","nascere","nel","nella","nessuna","nessuno","niente","no","non","nuovo","oggi","ogni","ora","ormai","palo","parla","parole","parte","parecchio","passa","passata","passo","pezzo","piede","piedi","piena","piene","piu","poco","poi","porta","posizione","pronta","proprio","qualcosa","quanto","quasi","quel","quella","questa","queste","qui","reggeva","resta","restano","restava","rientra","riga","righe","rimane","rimasta","rispunta","ritorno","scritto","scrivi","scrivevi","segno","sempre","senza","settimana","settimane","si","sente","sotto","spalle","sparita","sta","stallo","stessa","stesso","su","tace","tanto","tempo","tiene","torna","tornata","traccia","tua","tuoi","tutte","tutto","un","una","va","vecchia","vedere","viva","voce","volta","volte","vuota","zitta"],"bigrammi":["non compare","da un","un pezzo","non si","si parla","piu da","nessuna traccia","non e","e sparita","si fa","fa viva","messa da","da parte","non torna","torna a","a nascere","non se","se ne","ne va","in lista","piu di","di una","una volta","torna sempre","sempre li","da capo","ogni volta","non si chiude","si chiude","chiude mai","e tornata","dopo un","di silenzio","aveva smesso","smesso di","di comparire","ora c","di nuovo","al palo","in movimento","a terra","in piedi","in stallo","in corsa","nel dimenticatoio","a galla","non lascia","lascia mai","mai niente","passa liscio","il segno","scivola via","a mani","mani vuote","settimana dopo","dopo settimana","la piu","piu vecchia","rimasta aperta","sta li","li da","non si muove","in cima","alle cose","cose ferme","da un pezzo","hai lasciato","lasciato una","una riga","in queste","queste settimane","le righe","righe restano","il diario","la tua","tua voce","va cosi","cosi da","i giorni","giorni pieni","il passo","passo tiene","qualcosa si","si muove","un segno","nella giornata","le giornate","giornate piene","con dentro","dentro qualcosa","quel giorno","un giorno","giorno pieno","lo stesso","ha retto","poco spazio","ci e","e entrata","in fondo","a un","non era","e passata"],"lode":["bravo","brava","bravi","brave","complimenti","ottimo","ottima","benissimo","ben fatto","grande","fantastico","fantastica","orgoglioso","orgogliosa","congratulazioni","meritato","meritata","impressionante","eccellente","perfetto"],"biasimo":["pigro","pigra","pigrizia","fallito","fallita","colpa","sbagliato","sbagliata","dovevi","avresti dovuto","peccato","purtroppo","male","peggio","scarso","deludente","inutile","vergogna"],"consolazione":["non preoccuparti","va bene cosi","non e grave","capita a tutti","non importa","tranquillo","tranquilla","su con la vita","andra meglio"],"pronomi":["lei","lui","quella","quello","ci","ne","lo","la"],"deissi":["ieri","oggi","domani","stasera","stamattina","adesso","poco fa"],"pesi":{"comprensibilita":3.0,"carico":2.0,"fedelta":4.0,"neutralita":3.0,"ambiguita":0.0,"naturalezza":1.5,"vita":0.0,"coesione":3.0}};
+/* la cache sta in un oggetto e non in una variabile sciolta: cosi il montaggio
+   dei banchi la trova insieme alle altre costanti, invece di lasciarla fuori e
+   far morire il motore con «_BASE is not defined». Ci ho perso due minuti. */
+const _BASE_CACHE={v:null};
+function _baseLing(){
+  if(_BASE_CACHE.v) return _BASE_CACHE.v;
+  try{
+    const s=(typeof S!=='undefined'&&S&&S.baseLing)?S.baseLing:null;
+    if(s&&_baseValida(s)){ _BASE_CACHE.v=s; return s; }
+  }catch(_){}
+  _BASE_CACHE.v=BASE_MINIMA; return BASE_MINIMA;
+}
+/* UNA BASE CHE ARRIVA DA FUORI NON SI CREDE: SI CONTROLLA.
+   Puo aggiungere misure, non permessi: il contratto resta scritto nel codice e
+   nessun file scaricato lo puo allargare. Se manca un pezzo o la forma e
+   sbagliata, si tiene quella di prima. */
+function _baseValida(b){
+  try{
+    if(!b||typeof b!=='object') return false;
+    const liste=['nucleo','bigrammi','lode','biasimo','pronomi','deissi'];
+    for(const k of liste){ if(!Array.isArray(b[k])) return false; }
+    if(!b.nucleo.length||!b.pesi||typeof b.pesi!=='object') return false;
+    if(b.nucleo.length>60000) return false;                 /* niente file enormi sul telefono */
+    for(const w of b.nucleo){ if(typeof w!=='string'||w.length>40) return false; }
+    return true;
+  }catch(_){ return false; }
+}
+
+
+
+/* ══ v267 — QUANDO C'E RETE, SENTIERO IMPARA. QUANDO NON C'E, VIVE DI QUELLO
+      CHE HA GIA IMPARATO. ═══════════════════════════════════════════════════
+   Il confine e netto e va detto per intero: la rete serve a portare conoscenza
+   DENTRO Sentiero, non a portare la vita della persona FUORI.
+   Questa funzione fa una cosa sola: LEGGE un file statico pubblicato insieme
+   all'app. Non manda niente, non chiede niente su nessuno, non ha un corpo, non
+   ha parametri. Una richiesta identica per tutti quelli che usano l'app.
+
+   Quello che arriva non si crede: si controlla (_baseValida) e, se non passa,
+   si tiene la base di prima. Un file scaricato puo dare MISURE - quanto una
+   parola e comune, quanto una coppia di parole e frequente - e non puo dare
+   PERMESSI: il contratto sta scritto nel codice e nessun file lo allarga.
+
+   La base valida si tiene nello stato, quindi finisce nei backup: chi cambia
+   telefono non riparte da zero culturalmente. */
+const BASE_ORIGINE='lingue/base-it.json';
+const BASE_OGNI_MS=1000*60*60*24*7;     /* una volta a settimana basta e avanza */
+async function aggiornaBaseLinguistica(forza){
+  try{
+    if(!forza){
+      if(typeof navigator!=='undefined'&&navigator&&navigator.onLine===false) return {esito:'offline'};
+      const ultimo=(S&&S.baseLingQuando)||0;
+      if(Date.now()-ultimo<BASE_OGNI_MS) return {esito:'recente'};
+    }
+    const r=await fetch(BASE_ORIGINE,{cache:'no-cache'});
+    if(!r||!r.ok) return {esito:'non raggiungibile'};
+    const j=await r.json();
+    /* la forma pubblicata e piu larga di quella che serve al motore: si prende
+       solo cio che la giuria usa, e si prende solo se e tutto al suo posto. */
+    const b={
+      versione:(j&&j.versione)|0, impronta:String((j&&j.impronta)||''),
+      nucleo:(j&&j.nucleo&&j.nucleo.parole)||[],
+      bigrammi:(j&&j.sequenze_verificate&&j.sequenze_verificate.bigrammi)||[],
+      lode:(j&&j.lessico_del_giudizio&&j.lessico_del_giudizio.lode)||[],
+      biasimo:(j&&j.lessico_del_giudizio&&j.lessico_del_giudizio.biasimo)||[],
+      consolazione:(j&&j.lessico_del_giudizio&&j.lessico_del_giudizio.consolazione)||[],
+      pronomi:(j&&j.trappole_di_ambiguita&&j.trappole_di_ambiguita.pronome_sospeso)||[],
+      deissi:(j&&j.trappole_di_ambiguita&&j.trappole_di_ambiguita.deissi)||[],
+      pesi:(j&&j.pesi_della_giuria)||{}
+    };
+    if(!_baseValida(b)) return {esito:'scartata: non ha passato i controlli'};
+    if(b.versione<=((S&&S.baseLing&&S.baseLing.versione)|0)&&!forza) return {esito:'gia aggiornata'};
+    S.baseLing=b; S.baseLingQuando=Date.now(); _BASE_CACHE.v=null;
+    try{ save(); }catch(_){}
+    try{ regCantiere('base-linguistica',{msg:'versione '+b.versione+' · '+b.nucleo.length+' parole · impronta '+b.impronta}); }catch(_){}
+    return {esito:'aggiornata',versione:b.versione,parole:b.nucleo.length};
+  }catch(e){ return {esito:'errore'}; }
+}
+
+
+/* ══ v268 — IL LIVELLO «COSA», CHE PRIMA NON ESISTEVA ══════════════════════
+   Il duello alla cieca sui trenta giorni veri ha detto una cosa che non stavo
+   cercando: in VENTIQUATTRO coppie su trenta le due versioni non dicevano la
+   stessa cosa con parole diverse - dicevano COSE DIVERSE. Per l'ottanta per
+   cento del tempo il giudizio umano non riguardava la formulazione: riguardava
+   quale fatto meritasse di essere detto quella sera.
+   E sette volte su trenta la risposta e stata: nessuno dei due.
+
+   Fino alla v267 questo livello non esisteva. I fatti venivano ordinati per
+   peso e la prima riga che sopravviveva vinceva: la scelta del CONTENUTO era un
+   effetto collaterale della scelta della FORMA.
+   Adesso sono due domande separate, e il codice non permette piu di confonderle:
+   prima si decide COSA merita di arrivare, e solo dopo si lavora sul COME.
+
+   Ogni criterio dichiara che cos'e, come tutto il resto. */
+function _cosaVoti(f,digest){
+  const detti=(digest&&digest.detti_recenti)||[];
+  const oggi=(digest&&digest.oggi)||'';
+  const chi=String((f&&(f.cosa||f.ferma))||f.t||'');
+  const suDiLei=detti.filter(function(d){ return d&&d.cosa===chi; });
+  const ultima=suDiLei.length?suDiLei[suDiLei.length-1]:null;
+  const v={};
+
+  /* IMPORTANZA - misura: il peso del fatto, che e una scelta d'autore scritta
+     una volta sola in _ossFatti e non cambia da sera a sera. */
+  v.importanza={tipo:'misura',val:Math.min(1,(f.peso||1)/10),perche:'peso del fatto '+(f.peso||1)};
+
+  /* DISTANZA - misura: quanti giorni da quando abbiamo parlato di questa cosa.
+     Mai parlata = uno. Ieri = quasi zero. */
+  let gg=999;
+  if(ultima&&ultima.quando&&oggi){ try{ gg=Math.abs(_ossGiorniFra(ultima.quando,oggi)); }catch(_){ gg=999; } }
+  v.distanza={tipo:'misura',val:ultima?Math.min(1,gg/14):1,
+              perche:ultima?('gia parlato di questa cosa '+gg+' giorni fa'):'mai parlato di questa cosa'};
+
+  /* COSTO DELLA RIPETIZIONE - misura: quante volte ne abbiamo parlato di
+     recente. Cambiare le parole non rende nuovo un contenuto gia consumato. */
+  v.ripetizione={tipo:'misura',val:Math.max(0,1-suDiLei.length*0.34),
+                 perche:suDiLei.length+' volte nelle ultime sere'};
+
+  /* CAMBIAMENTO - misura DOVE il fatto porta un numero, e lo dice quando non lo
+     porta. Se la cosa e la stessa E il valore e lo stesso, non e una notizia. */
+  const val=(f.giorni!=null?f.giorni:(f.dopo!=null?f.dopo:(f.volte!=null?f.volte:(f.quanto!=null?f.quanto:null))));
+  if(val==null) v.cambiamento={tipo:'non misurabile',val:0.5,perche:'questo fatto non porta un valore da confrontare'};
+  else if(!ultima||ultima.valore==null) v.cambiamento={tipo:'misura',val:1,perche:'primo valore che vediamo'};
+  else v.cambiamento={tipo:'misura',val:(String(ultima.valore)===String(val))?0:1,
+                      perche:(String(ultima.valore)===String(val))?('stesso valore dell\'ultima volta: '+val):('era '+ultima.valore+', adesso '+val)};
+
+  /* STESSO SENSO - misura: se l'ultima volta ne abbiamo parlato con la stessa
+     famiglia, stiamo per rifare lo stesso discorso. */
+  v.senso={tipo:'misura',val:(ultima&&ultima.senso===f.t)?0.2:1,
+           perche:(ultima&&ultima.senso===f.t)?('gia detto nello stesso senso ('+f.t+')'):'senso nuovo per questa cosa'};
+
+  /* RILEVANZA - RIPIEGO. Vorrebbe dire «era questa la cosa da dire stasera»,
+     che e la massima di relazione di Grice e non la sappiamo misurare. Quello
+     che misura davvero: se la prova del fatto e recente. Un fatto che nasce da
+     qualcosa successo ieri pesa piu di uno che nasce da un mese fa. */
+  const fresco=(f.t==='attrito'||f.t==='tenuta'||f.t==='ritorno'||f.t==='contrasto')?1:
+               (f.t==='silenzio'||f.t==='vecchia')?0.5:0.35;
+  v.rilevanza={tipo:'ripiego',val:fresco,perche:'quanto il fatto guarda ai giorni vicini'};
+
+  /* CONVERGENZA - EURISTICA: se stasera due fatti diversi parlano della stessa
+     cosa, quella cosa pesa di piu. Due indizi che si incontrano valgono piu di
+     due indizi sparsi. */
+  v.convergenza={tipo:'euristica',val:0.5,perche:'calcolata su tutti i fatti insieme'};
+  return {chi:chi,voti:v};
+}
+
+/* LA SOGLIA DEL SILENZIO.
+   Non e tarata sulle sette N di Davide: sarebbe cucire un vestito su sette
+   punti. E il punto sotto il quale un fatto non porta abbastanza: gia detto di
+   recente, nello stesso senso, senza niente di cambiato. Il tasso di silenzio
+   che ne esce e una CONSEGUENZA da misurare, non un bersaglio da colpire. */
+const COSA_SOGLIA=0.42;
+const COSA_PESI={importanza:2.0,distanza:2.0,ripetizione:2.5,cambiamento:2.0,senso:2.0,rilevanza:1.5,convergenza:1.0};
+
+function _scegliCosa(fatti,digest){
+  if(!fatti||!fatti.length) return {silenzio:true,perche:{motivo:'nessun fatto disponibile',esaminati:0}};
+  const conto={};
+  fatti.forEach(function(f){ const c=String((f.cosa||f.ferma)||f.t); conto[c]=(conto[c]||0)+1; });
+  const val=fatti.map(function(f){
+    const x=_cosaVoti(f,digest);
+    x.voti.convergenza.val=Math.min(1,(conto[x.chi]||1)/2);
+    x.voti.convergenza.perche=(conto[x.chi]||1)+' fatti stasera parlano di questa cosa';
+    let s=0,w=0;
+    for(const k in COSA_PESI){ s+=x.voti[k].val*COSA_PESI[k]; w+=COSA_PESI[k]; }
+    return {f:f,chi:x.chi,voti:x.voti,punti:w?s/w:0};
+  }).sort(function(a,b){ return b.punti-a.punti; });
+
+  const primo=val[0];
+  const perche={
+    esaminati:val.length,
+    soglia:COSA_SOGLIA,
+    classifica:val.slice(0,4).map(function(x){ return {fatto:x.f.t,cosa:x.chi.slice(0,44),punti:+x.punti.toFixed(3)}; }),
+    scartati:val.slice(1).map(function(x){ return x.f.t+' ('+x.punti.toFixed(2)+')'; })
+  };
+  if(primo.punti<COSA_SOGLIA){
+    perche.motivo='niente di abbastanza utile da dire';
+    perche.migliore={fatto:primo.f.t,punti:+primo.punti.toFixed(3),voti:primo.voti};
+    return {silenzio:true,perche:perche};
+  }
+  perche.vincitore={fatto:primo.f.t,cosa:primo.chi.slice(0,60),punti:+primo.punti.toFixed(3),voti:primo.voti};
+  /* IL COSA NON CONSEGNA UN FATTO: CONSEGNA UNA GRADUATORIA.
+     Alla prima prova consegnava solo il vincitore, e succedeva questo: il fatto
+     scelto era buono, ma tutte le sue formulazioni finivano bocciate dal
+     contratto (quasi sempre per «gia detta»), e Sentiero taceva. Taceva per
+     mancanza di PAROLE, non perche non ci fosse niente da dire - e sono due
+     silenzi diversissimi, uno giusto e uno rotto.
+     Adesso il COSA passa tutti i fatti che superano la soglia, in ordine. Il
+     COME li prova in quell'ordine e non puo cambiarlo: la scelta del contenuto
+     resta tutta di qua, la scelta delle parole tutta di la. */
+  perche.sopra_soglia=val.filter(function(x){ return x.punti>=COSA_SOGLIA; }).length;
+  return {silenzio:false,fatto:primo.f,punti:primo.punti,perche:perche,
+          graduatoria:val.filter(function(x){ return x.punti>=COSA_SOGLIA; }).map(function(x){ return x.f; })};
+}
+
+/* ══ v267 — LA GIURIA ══════════════════════════════════════════════════════
+   Fino alla v266 il motore prendeva LA PRIMA COSTRUZIONE CHE PASSAVA. Misurato
+   sui trenta giorni veri di chi usa l'app: ogni sera passavano il contratto in
+   media 31 candidate, e non e mai successo che ne passasse una sola. Cioe: ogni
+   sera si sceglieva una frase su trentuno per la sua POSIZIONE IN UN ELENCO.
+
+   Adesso le candidate competono. Ogni criterio dichiara che cos'e - se e una
+   misura, un ripiego o una regola - perche una giuria che non lo dichiara e
+   peggio di nessuna giuria: sembra oggettiva e non lo e.
+
+     contratto        REGOLA DETERMINISTICA · veto, non punteggio
+     carico           MISURA OGGETTIVA      · quante parole nella frase piu lunga
+     fedelta          MISURA OGGETTIVA      · conserva cio che il fatto dichiara
+     neutralita       REGOLA DETERMINISTICA · su un elenco dichiarato, non esaustivo
+     comprensibilita  RIPIEGO               · parole fuori dal nucleo incorporato
+     ambiguita        EURISTICA             · solo le trappole che sappiamo vedere
+     naturalezza      RIPIEGO               · bigrammi contro una lista scritta a mano
+     vita             EURISTICA             · secondaria, decide solo fra pari
+
+   Le prime quattro sono vere. Le altre quattro sono quello che si puo fare
+   senza corpora, e vanno chiamate col loro nome finche non arriva un dato. */
+function _giuria(riga,f,precedenti){
+  const B=_baseLing(), t=String(riga||'').trim();
+  const sue=[f&&f.cosa,f&&f.parole,f&&f.ferma,f&&f.mossa];
+  /* LA PROSA NOSTRA: la riga meno i nomi che si e dati la persona e meno le sue
+     parole fra virgolette. Su quello che ha scritto lei non si misura niente. */
+  let nostro=t.replace(/«[^»]*»/g,' ');
+  for(const s of sue){ const q=String(s||'').trim(); if(!q) continue;
+    nostro=nostro.split(q).join(' § ').split(_ossMinuscolo(q)).join(' § '); }
+  const parole=nostro.toLowerCase().replace(/[^a-zà-ÿ\s§]/g,' ').split(/\s+/).filter(w=>w&&w!=='§');
+  const frasi=t.split(/(?<=[.?…])\s+/).filter(x=>x.trim());
+  const v={};
+
+  /* 1 · CONTRATTO - regola deterministica, ed e un VETO */
+  const male=_ossGiudica(t,precedenti,sue);
+  v.contratto={tipo:'regola',veto:true,val:male?0:1,perche:male||'passa'};
+
+  /* 2 · CARICO - misura oggettiva. Sette parole per frase valgono uno,
+        venticinque valgono zero. La soglia viene dal contratto di sempre. */
+  const lunghe=frasi.map(x=>x.split(/\s+/).filter(Boolean).length);
+  const maxF=lunghe.length?Math.max.apply(null,lunghe):0;
+  v.carico={tipo:'misura',val:Math.max(0,Math.min(1,1-(maxF-7)/18)),
+            perche:'frase piu lunga: '+maxF+' parole'};
+
+  /* 3 · FEDELTA - misura oggettiva, ed e il seme del giorno in cui significato
+        e frase saranno due cose diverse: il fatto DICHIARA cosa va conservato,
+        e qui si controlla che ci sia. Oggi il controllo e letterale; domani,
+        con una rappresentazione del significato, sara strutturale. */
+  const deve=(f&&f.conserva)||[];
+  const giu=t.toLowerCase();
+  const persi=deve.filter(x=>{ const q=_ossMinuscolo(String(x||'')).toLowerCase();
+                               return !q||giu.indexOf(q)<0; });
+  v.fedelta={tipo:'misura',val:deve.length?(1-persi.length/deve.length):1,
+             perche:persi.length?('non conserva: '+persi.join(' · ')):'conserva tutto'};
+
+  /* 4 · NEUTRALITA - regola deterministica su elenchi dichiarati. Non e
+        esaustiva e non puo esserlo: e una lista, non una comprensione. */
+  const male2=[];
+  ['lode','biasimo','consolazione'].forEach(function(k){
+    (B[k]||[]).forEach(function(w){ if(nostro.toLowerCase().indexOf(w)>=0) male2.push(k+': '+w); });
+  });
+  v.neutralita={tipo:'regola',val:male2.length?0:1,
+                perche:male2.length?male2.join(' · '):'nessun verdetto sulla persona'};
+
+  /* 5 · COMPRENSIBILITA - RIPIEGO. Conta le parole della nostra prosa che non
+        stanno nel nucleo incorporato. Il nucleo e scritto a mano: quindi questo
+        misura la distanza da cio che abbiamo gia usato, non da cio che gli
+        italiani capiscono. Diventera una misura vera quando al posto del nucleo
+        ci sara una fascia del vocabolario di base. */
+  const fuori=parole.filter(function(w){ return w.length>2&&(B.nucleo||[]).indexOf(w)<0; });
+  v.comprensibilita={tipo:'ripiego',val:parole.length?(1-fuori.length/parole.length):1,
+                     perche:fuori.length?('fuori dal nucleo: '+fuori.slice(0,4).join(', ')):'tutte nel nucleo'};
+
+  /* 6 · AMBIGUITA - EURISTICA. Vede tre trappole di forma e nient'altro. La
+        misura vera - due letture messe a confronto sulle loro conseguenze - non
+        la sappiamo fare qui dentro, e non fingiamo di saperla fare. */
+  const trappole=[];
+  const dueNomi=sue.filter(function(x){ return String(x||'').trim(); }).length>=2;
+  if(dueNomi){
+    (B.pronomi||[]).forEach(function(pr){
+      if(new RegExp('(^|\\s)'+pr+'(\\s|,|\\.|$)').test(nostro.toLowerCase())) trappole.push('pronome sospeso fra due nomi: «'+pr+'»');
+    });
+    /* la coda in fondo e sospesa SOLO se e una sola: se tutti e due i poli hanno
+       la loro locuzione, il parallelismo lega ognuna al suo, e non c'e piu
+       niente da attaccare. La prima versione di questa euristica accusava
+       proprio la costruzione fatta apposta per essere bilanciata. */
+    const code=(nostro.match(/(^|[.\s])(in|a|al|nel|su|per|da)\s+[a-zà-ÿ']+/g)||[]).length;
+    if(code===1&&/(^|[.\s])(in|a|al|nel|su|per|da)\s+[a-zà-ÿ]+\s*[.?]?\s*$/.test(nostro.trim()))
+      trappole.push('coda che puo attaccarsi a tutti e due');
+  }
+  (B.deissi||[]).forEach(function(d){
+    if(new RegExp('(^|\\s)'+d+'(\\s|,|\\.|$)').test(nostro.toLowerCase())) trappole.push('punta a un momento: «'+d+'» domani vuol dire un\'altra cosa');
+  });
+  /* v268: ANCHE QUESTA E SOLO DIAGNOSTICA (peso zero). Nel duello ha indovinato
+     una volta su sei: e anti-correlata col giudizio umano. Le tre trappole di
+     forma non colgono l'ambiguita vera - che si misura confrontando due letture
+     sulle loro conseguenze - e intanto penalizzavano righe che vanno bene.
+     Sospesa dal ranking, non invertita: invertire un'euristica sbagliata da
+     un'euristica sbagliata al contrario. */
+  v.ambiguita={tipo:'euristica',val:trappole.length?Math.max(0,1-trappole.length*0.5):1,
+               perche:trappole.length?trappole.join(' · '):'nessuna trappola nota'};
+
+  /* 7 · NATURALEZZA - RIPIEGO. Quanti dei nostri bigrammi stanno in una lista
+        scritta a mano. Con un corpus vero questo diventa una frequenza; oggi e
+        solo «somiglia a quello che abbiamo gia scritto». */
+  const bg=[]; for(let i=0;i<parole.length-1;i++) bg.push(parole[i]+' '+parole[i+1]);
+  const noti=bg.filter(function(x){ return (B.bigrammi||[]).indexOf(x)>=0; });
+  v.naturalezza={tipo:'ripiego',val:bg.length?noti.length/bg.length:1,
+                 perche:noti.length+' coppie di parole su '+bg.length+' gia viste'};
+
+  /* 8 · COESIONE - REGOLA DETERMINISTICA, ed e nuova.
+        Il duello ha fatto emergere una riga che nessun criterio bocciava e che
+        era comunque rotta: «...scrivi oggi tutte le spese dell'ultima settimana.
+        e in corsa.» - il titolo si comporta da frase, e il pezzo finale resta
+        appeso senza niente a cui attaccarsi.
+        Non e una frase da correggere: e una classe. Tre forme, tutte visibili
+        senza capire la lingua:
+          · un frammento che comincia con un connettivo e non ha un antecedente
+          · una frase finale fatta di sole parole vuote
+          · una punteggiatura DENTRO il titolo, che spezza la costruzione
+        Resta una regola su forme note, non una comprensione della coesione. */
+  const rotture=[];
+  {
+    const CONN=/^(e|ma|poi|invece|pero|quindi|allora|anzi|inoltre)\b/i;
+    for(let k=0;k<frasi.length;k++){
+      const fr=frasi[k].trim(), pf=fr.replace(/[.?…]$/,'').split(/\s+/).filter(Boolean);
+      const piene=pf.filter(function(w){ return !_OSS_FUNZ.has(w.toLowerCase()); });
+      if(k>0&&CONN.test(fr)&&pf.length<=4) rotture.push('frammento appeso: «'+fr.slice(0,28)+'»');
+      else if(pf.length&&!piene.length) rotture.push('frase senza niente dentro: «'+fr.slice(0,24)+'»');
+    }
+    /* NON OGNI SEGNO SPEZZA UNA FRASE. La prima versione di questa regola
+       prendeva i due punti di «Niente caffe dopo le 15:00» - che sono un orario,
+       non una pausa - e faceva tacere Sentiero su una delle abitudini piu vere
+       di chi la usa. Spezza chi CHIUDE: un punto seguito da spazio o a fine
+       titolo, o un punto e virgola. I due punti fra due cifre no. */
+    for(const s of sue){ const q=String(s||'');
+      if(q&&(/\.\s/.test(q)||/\.$/.test(q)||/;/.test(q)))
+        rotture.push('il titolo contiene una punteggiatura che chiude una frase'); }
+  }
+  v.coesione={tipo:'regola',val:rotture.length?Math.max(0,1-rotture.length*0.5):1,
+              perche:rotture.length?rotture.join(' · '):'la riga sta insieme'};
+
+  /* 9 · VITA - EURISTICA, E ADESSO SOLO DIAGNOSTICA (peso zero).
+        Nel duello, quando «vita» distingueva due candidate, la riga con
+        l'immagine e quella che il giudizio umano ha rifiutato: ha indovinato
+        UNA volta su dieci. Non la inverto - dieci casi non dimostrano che ogni
+        frase viva sia peggiore - ma non puo piu decidere niente finche non
+        sapremo misurarla. Resta scritta nei voti per poterla studiare. */
+  let vita=0;
+  try{ (POLI_IT||[]).forEach(function(p){ if(giu.indexOf(p.fermo)>=0||giu.indexOf(p.mosso)>=0) vita=1; }); }catch(_){}
+  if(/«[^»]+»/.test(t)) vita=1;                       /* le sue parole, riportate */
+  v.vita={tipo:'euristica',val:vita,perche:vita?'porta un\'immagine o le sue parole':'prosa piana'};
+
+  /* IL PUNTEGGIO. I pesi non sono tarati contro nessun giudizio umano, e sta
+     scritto nella base: finche non lo saranno, questo e un ordine ragionevole,
+     non una verita. */
+  const P=B.pesi||{};
+  let punti=0,peso=0;
+  /* v268: «ambiguita» e «vita» hanno peso zero e restano nei voti come
+     diagnostica. Non sono state tolte: sono state sospese, con la ragione
+     scritta sopra e il numero del duello accanto. */
+  ['carico','fedelta','neutralita','comprensibilita','naturalezza','coesione'].forEach(function(k){
+    const w=(typeof P[k]==='number')?P[k]:1; punti+=v[k].val*w; peso+=w;
+  });
+  return {voti:v, punti:peso?punti/peso:0, veto:!v.contratto.val, motivoVeto:v.contratto.perche};
+}
+
 /* ── L'OSSERVATRICE ────────────────────────────────────────────────────────
    Prende i fatti in ordine di forza, prova le costruzioni, tiene la prima che
    passa il giudice. Se non passa niente, tace invece di dire una frase qualunque:
@@ -7880,24 +8290,91 @@ function buildObserverLocal(digest){
      sente ancora la forma che l'autore ha messo per prima. */
   const _recF=(digest.forme_recenti||[]);
   const scartate=[];
-  for(const f of fatti){
-    /* v265: a ogni giro l'opposizione si dice con un'altra coppia di modi di
-       dire. Gira sulla memoria delle costruzioni, cosi non serve un'altra
-       memoria e le due cose restano in fase. */
+
+  /* ══ LA CATENA, E ADESSO E UNA SOLA E NON SI PUO CONFONDERE ═══════════════
+        fatti disponibili
+          -> SELEZIONE DEL COSA (memoria del contenuto, possibile silenzio)
+          -> fatto vincitore
+          -> generazione delle formulazioni DI QUEL FATTO SOLO
+          -> controlli duri, misure, ranking
+          -> frase finale
+     Il livello COSA non vede nemmeno una parola. Il livello COME non puo piu
+     cambiare di cosa si parla: riceve un fatto e basta. */
+  const scelta=_scegliCosa(fatti,digest);
+  if(scelta.silenzio){
+    return {summary:'niente da dire oggi',detectedPatterns:[],note:'',
+            _cosa:scelta.perche,_silenzio:true,_locale:true};
+  }
+  /* si scorre la graduatoria del COSA nell'ordine che il COSA ha deciso, e ci si
+     ferma al primo fatto che sa farsi dire. */
+  let f=null, candidate=[];
+  for(const cand of (scelta.graduatoria||[scelta.fatto])){
+    f=cand;
+    candidate=[];
     try{ if(f&&f.t==='contrasto') f.polo=POLI_IT[_recF.length%POLI_IT.length]; }catch(_){}
     const forme=_ossForme(f);
-    const ordine=forme.map((_,i)=>i).sort((a,b)=>
-      _recF.lastIndexOf(f.t+'#'+a)-_recF.lastIndexOf(f.t+'#'+b));   /* mai uscita (-1) per prima */
-    for(const i of ordine){
+    for(let i=0;i<forme.length;i++){
       const riga=forme[i];
-      /* v262: al giudice si dice qual e il nome che la persona ha dato a questa
-         cosa, e quali sono le sue parole. Cosi le misure cadono sulla nostra
-         prosa e non su quello che ha scritto lei. */
-      const male=_ossGiudica(riga,precedenti,[f&&f.cosa,f&&f.parole,f&&f.ferma,f&&f.mossa]);
-      if(!male) return {summary:'lo sguardo sugli ultimi giorni',detectedPatterns:[f.t],
-                        note:riga,_forma:f.t+'#'+i,_locale:true};
-      scartate.push(f.t+': '+male);
+      let g=null;
+      try{ g=_giuria(riga,f,precedenti); }catch(_){ g=null; }
+      if(!g){ scartate.push(f.t+': la giuria non ha potuto misurare'); continue; }
+      if(g.veto){ scartate.push(f.t+': '+g.motivoVeto); continue; }
+      const quando=_recF.lastIndexOf(f.t+'#'+i);
+      const freschezza=quando<0?1:(quando/Math.max(1,_recF.length));
+      /* qui dentro NON c'e piu ne il peso del fatto ne la freschezza della
+         famiglia: quelle appartengono al COSA, e il COSA ha gia deciso. */
+      candidate.push({riga:riga,f:f,i:i,g:g,freschezza:freschezza,
+                      totale:g.punti*0.85 + freschezza*0.15});
     }
+    if(candidate.length) break;
+    scartate.push(f.t+': nessuna formulazione ha retto, passo al fatto dopo');
+  }
+
+  if(candidate.length){
+    candidate.sort((a,b)=>b.totale-a.totale);
+    /* ══ IL PAVIMENTO — l'altra porta del silenzio ═════════════════════════════
+       Il COSA dice se una cosa merita di arrivare. Questo dice se le PAROLE che
+       abbiamo per dirla sono abbastanza: una frase che non conserva il fatto,
+       che giudica la persona, o che non sta insieme, e peggio del silenzio.
+       Non e una soglia numerica scelta a occhio - quelle si tarano su cio che si
+       vuole ottenere. Sono i tre criteri DETERMINISTICI della giuria: se il
+       meglio che sappiamo dire fallisce uno di quelli, si tace.
+       Le misure incerte (comprensibilita, naturalezza) non possono far tacere
+       nessuno: sono ripieghi dichiarati, e un ripiego non merita un veto. */
+    const buone=candidate.filter(function(c){
+      const v=c.g.voti;
+      return v.fedelta.val>=1 && v.neutralita.val>=1 && v.coesione.val>=1;
+    });
+    if(!buone.length){
+      return {summary:'niente da dire oggi',detectedPatterns:[],note:'',
+              _cosa:scelta.perche,_silenzio:true,
+              _perche:{motivo:'il fatto meritava, le parole che ho non bastano',
+                       migliore:candidate[0].riga.slice(0,80),
+                       cade_su:['fedelta','neutralita','coesione'].filter(function(k){ return candidate[0].g.voti[k].val<1; })},
+              _locale:true};
+    }
+    candidate=buone;
+    const w=candidate[0];
+    const perche={
+      cosa:scelta.perche,
+      candidate:candidate.length,
+      scartate_dal_contratto:scartate.length,
+      vincitrice:{forma:w.f.t+'#'+w.i, totale:+w.totale.toFixed(3), punti:+w.g.punti.toFixed(3),
+                  freschezza:+w.freschezza.toFixed(2), voti:w.g.voti,
+                  conserva:(w.f.conserva||[]).slice()},
+      seconde:candidate.slice(1,4).map(c=>({forma:c.f.t+'#'+c.i,totale:+c.totale.toFixed(3),
+                                            riga:c.riga.slice(0,70)}))
+    };
+    return {summary:'lo sguardo sugli ultimi giorni',detectedPatterns:[w.f.t],
+            note:w.riga,_forma:w.f.t+'#'+w.i,_perche:perche,_cosa:scelta.perche,_locale:true};
+  }
+  /* il COSA aveva scelto, ma nessuna formulazione di quel fatto ha superato il
+     contratto. Non si ripiega su un altro fatto: sarebbe rimettere insieme le
+     due domande. Si tace, e si dice perche. */
+  if(scelta&&!scelta.silenzio){
+    return {summary:'niente da dire oggi',detectedPatterns:[],note:'',
+            _cosa:scelta.perche,_silenzio:true,_scartate:scartate,
+            _perche:{motivo:'il fatto era buono, nessuna formulazione ha retto'},_locale:true};
   }
   if(!(digest.diario||[]).length&&!(digest.passiGiornalieri||[]).length){
     return {summary:'poche tracce',detectedPatterns:['poche tracce'],
@@ -7933,8 +8410,28 @@ async function observe(silent){
     if(fam){ S.obsFamiglie=((S.obsFamiglie||[]).concat([fam])).slice(-8); }
     const frm=result&&result._forma;
     if(frm){ S.obsForme=((S.obsForme||[]).concat([frm])).slice(-24); }
+    /* v268: e si segna DI CHE COSA si e parlato, quando, in che senso, con che
+       valore. E la memoria che il livello COSA legge la sera dopo. */
+    const _C=result&&result._cosa&&result._cosa.vincitore;
+    if(_C){ let _val=null;
+      try{ const pc=_C.voti&&_C.voti.cambiamento&&_C.voti.cambiamento.perche;
+           if(pc&&/adesso /.test(pc)) _val=pc.split('adesso ')[1];
+           else if(pc&&/stesso valore dell'ultima volta: /.test(pc)) _val=pc.split(': ')[1]; }catch(_){}
+      S.obsDetti=((S.obsDetti||[]).concat([{cosa:_C.cosa,quando:digest.oggi,senso:_C.fatto,valore:_val}])).slice(-24); }
   }catch(_){} /* fallback: offline, IA non disponibile o nota vuota */
     try{ regCantiere('digest',{ms:Date.now()-t0Dig,msg:(result&&result._locale)?'locale':'ok'}); }catch(_){}
+    /* v267 — IL PERCHE FINISCE NEL CANTIERE, non solo nella testa del motore.
+       Una giuria che dice un numero e non dice come ci e arrivata non si puo
+       correggere: si puo solo credere o non credere. Qui resta scritto quante
+       candidate c'erano, quale ha vinto, con che voti, e chi era seconda. */
+    try{ const P=result&&result._perche;
+      if(P) regCantiere('giuria',{msg:P.candidate+' candidate · '+P.scartate_dal_contratto+
+        ' fuori per contratto · vince '+P.vincitrice.forma+' con '+P.vincitrice.totale,
+        voti:P.vincitrice.voti, seconde:P.seconde});
+    }catch(_){}
+    /* e ogni tanto, se c'e rete, si aggiorna la base linguistica. Una lettura di
+       un file statico: non esce niente di suo. */
+    try{ aggiornaBaseLinguistica(); }catch(_){}
     /* v213: anche la nota della sera del modello viene riparata prima di essere
        scritta. Il ripiego resta l'ultima parola quando non resta niente. */
     let _n=raffinaRiga((result&&result.note)||'');
