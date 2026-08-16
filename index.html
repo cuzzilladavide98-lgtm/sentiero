@@ -113,7 +113,7 @@ html,body{overflow-x:hidden}   /* il volto: il fuoco sborda i margini, la pagina
    La transizione della testata NON sta qui ma nel codice, due righe accanto a
    chi scrive il valore (cerca «scriviFp»). Non e' pigrizia: «header» e' gia una
    regola dell'OLED, e aggiungerci dentro una riga la farebbe risultare CAMBIATA
-   all'impronta - cioe farei scattare l'allarme che difende il tema di Davide per
+   all'impronta - cioe farei scattare l'allarme che difende il tema OLED per
    una cosa che non sposta un pixel. L'allarme non si spegne: si evita di
    farlo suonare a vuoto. */
 @supports ((-webkit-backdrop-filter:blur(20px)) or (backdrop-filter:blur(20px))){
@@ -615,7 +615,7 @@ body.theme-carta #novita{background:rgba(122,86,18,.07);border-color:rgba(122,86
 
 /* ════════ onboarding: nero, enso, una frase ════════ */
 /* v232 — LA GABBIA IN VERTICALE.
-   La madre di Davide, su un iPhone SE, non e riuscita ad andare avanti il primo
+   Una persona alla prima apertura, su uno schermo piccolo, non e riuscita ad andare avanti il primo
    giorno. Il motivo non era un tasto mancante: era che #onboard e' fisso a
    tutto schermo, CENTRA il contenuto e NON PUO SCORRERE. Quando il contenuto e
    piu alto della finestra, un contenitore centrato lo fa uscire da tutte e due
@@ -1220,8 +1220,8 @@ body.theme-carta .item .cal{color:#5C574E}
    il tasto.
    NOTA: lo stesso difetto c'e anche sull'OLED, identico, perche la larghezza e
    la stessa. Li non l'ho toccato: e una riga sola, quando lo dici. */
-/* v245 — E ADESSO ANCHE SULL'OLED, perche il difetto era identico e Davide
-   l'ha messo in elenco. Non cambia nulla quando c'e posto: cambia solo CHI
+/* v245 — E ADESSO ANCHE SULL'OLED, perche il difetto era identico.
+    Non cambia nulla quando c'e posto: cambia solo CHI
    cede quando non ce n'e - il testo lungo invece del tasto. Su un 13 mini con
    le etichette corte non si vede nessuna differenza. */
 .switchrow{gap:14px}
@@ -1253,15 +1253,15 @@ body.theme-carta #obs-whisper{
   box-shadow:0 2px 8px rgba(23,21,18,.12) !important;
   -webkit-backdrop-filter:none !important;backdrop-filter:none !important}
 
-/* 2 · LA LETTERA INIZIALE spariva quando si spuntava una cosa: «Fare 1200 €»
-   diventava «—are 1200 €». Il capolettera delle righe fatte ha un colore chiaro
+/* 2 · LA LETTERA INIZIALE spariva quando si spuntava una cosa: «Fare 300 €»
+   diventava «—are 300 €». Il capolettera delle righe fatte ha un colore chiaro
    dichiarato !important, pensato per il buio. Sulla carta e bianco su bianco -
    e non e un dettaglio estetico, e una lettera che manca a una parola. */
 body.theme-carta .item.done .ini{color:#6E6860 !important}
 body.theme-carta .item.passo .ini{color:var(--accent) !important}
 
 /* ══════ v247 — IL SATELLITE VIOLA: DUE FORZE CHE COLLIDONO ════════════════
-   Davide ci tiene, e ha detto perche: e il vero diario - la luce che apre la
+   Ci si tiene, e per una ragione detta: e il vero diario - la luce che apre la
    stanza della sera, dove si scrive a lungo - e insieme un easter egg. Il
    riferimento e l'Hollow Purple: un viola che non e un colore ma il RISULTATO
    di due forze opposte che si incontrano, blu e rosso.
@@ -2111,8 +2111,8 @@ body.theme-carta .item{overflow:visible}
      fare a moto ridotto - restava la prima riga: opacity zero per sempre.
      La chiamata a terra si apriva, si poteva scrivere, e non c'era nessuna
      domanda: il testo era li, nella pagina, e nessuno poteva vederlo.
-     Davide ha «Riduci movimento» acceso sul telefono - l'app se ne accorge da
-     sola e glielo dice - quindi per lui la porta e stata muta dall'inizio.
+     Chi ha «Riduci movimento» acceso - e l'app se ne accorge da sola - aveva
+     quindi la porta muta dall'inizio, e sono tanti.
 
      Regola generale, che vale per tutto quello che si fara' da qui in poi:
      se una cosa si vede SOLO perche un'animazione la fa comparire, quando le
@@ -2220,8 +2220,8 @@ body.theme-carta .item{overflow:visible}
     <p class="ob-note" id="ob-note"></p>
 
     <!-- v224 — LA DOMANDA DEL PRIMO GIORNO.
-         Prima qui non c'era niente e la lista partiva con due abitudini di
-         Davide. Adesso parte vuota, e vuota resta se la persona salta: chi
+         Prima qui non c'era niente e la lista partiva con due abitudini che
+         appartenevano a qualcun altro. Adesso parte vuota, e vuota resta se la persona salta: chi
          salta non viene piu disturbato. Una domanda sola, e la piu facile a cui
          rispondere - non «cosa vuoi cambiare della tua vita», che e' una
          domanda da terapeuta, ma «c'e' qualcosa che gia' provi a fare». -->
@@ -2242,7 +2242,7 @@ body.theme-carta .item{overflow:visible}
      misura sull'elemento con getBoundingClientRect, quindi non puo' finire fuori
      posto quando l'app cambia. Si salta a ogni passo, e saltata una volta non
      torna mai piu.
-     Perche esiste: sua madre, davanti alla prima schermata, non ha capito cosa
+     Perche esiste: in prova, davanti alla prima schermata, una persona non ha capito cosa
      doveva toccare. Una riga di testo spiega a chi legge; un dito indica a
      chiunque. -->
 <div id="tour" class="hidden" role="dialog" aria-modal="true">
@@ -2391,7 +2391,7 @@ body.theme-carta .item{overflow:visible}
                Si vedono solo quando l'aspetto e Carta, perche altrove non
                vogliono dire niente: sono due modi di dipingere il cielo, il
                fuoco del microfono e il giardino a inchiostro invece che a luce.
-               Sono prove: servono a Davide per decidere guardandole sul telefono. -->
+               Sono prove: servono per decidere guardandole sul telefono. -->
           <div class="switchrow prova-ink"><span>Cielo e microfono a inchiostro<small style="display:block;color:var(--t3);font-size:12px;line-height:1.35;margin-top:3px">prova: la luce diventa deposito, come una lastra incisa</small></span>
             <button type="button" class="sw" id="sw-inkmondo" aria-label="Cielo e microfono a inchiostro"></button>
           </div>
@@ -3143,7 +3143,7 @@ function accumFromResults(results){
   /* Chrome/Android consegna finali CUMULATIVI (ogni finale contiene l'intera frase fin li,
      e i precedenti restano in lista); iOS li consegna incrementali. Questa fusione regge entrambi:
      se il nuovo finale inizia con l'accumulato lo sostituisce, se e un'eco identica si ignora,
-     altrimenti si accoda. Bug dal campo: Anna, Redmi Note 12 Pro. */
+     altrimenti si accoda. Difetto visto in prova su un Android di fascia media. */
   let fin='', interim='';
   const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
   for(const r of results){
@@ -3409,7 +3409,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.268.6 · 2026-08-16';
+const APP_VERSION='v60S.269.1 · 2026-08-16';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3419,6 +3419,16 @@ const APP_VERSION='v60S.268.6 · 2026-08-16';
    Chi aggiunge una versione aggiunge una voce in cima. Se non c'e niente che
    una persona possa notare, non si scrive niente: una lista che dice «piccole
    correzioni» insegna a non leggerla. */
+/* ══ v269.1 — QUESTO ELENCO VIAGGIA CON L'APP, ANCHE QUELLO CHE NON SI VEDE ══
+   Si mostra solo NOVITA[0], ma tutte queste stringhe finiscono nel file che va
+   sul telefono di chiunque. Fino alla v269 tre voci portavano MISURE FATTE
+   SULL'ARCHIVIO DI UNA PERSONA VERA e le raccontavano a chi legge come se
+   fossero le sue: «sul tuo archivio erano trentacinque righe su cento», «sui
+   tuoi ultimi trenta giorni: prima quattordici frasi diverse». Due difetti in
+   uno: un dato privato distribuito, e una frase falsa detta a tutti gli altri.
+   REGOLA: qui dentro si parla di cosa fa l'app, mai di cosa ha fatto una
+   persona. Nessun numero che venga da un archivio reale. Nessun titolo scritto
+   da qualcuno. Gli esempi, se servono, si inventano. */
 const NOVITA=[
  /* v245 — IL CAMPO «da» E STATO TOLTO, e per una ragione che vale come lezione:
     conteneva un numero di versione, e il comando che alza la versione a ogni
@@ -3426,6 +3436,12 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Dentro l\u2019app non c\u2019\u00e8 pi\u00f9 niente della vita di chi l\u2019ha scritta: gli esempi sono inventati e il cielo, se non gli dai la posizione, non \u00e8 pi\u00f9 quello sopra casa sua ma una decorazione.'
+ ]},
+ {righe:[
+   'Sentiero ha smesso di fingere di scegliere le parole con sei criteri: tre erano soglie da passare, non voti, e uno premiava soltanto le frasi che avevamo scritto per prime. Adesso pesa quanto una riga chiede a chi legge e quanto \u00e8 facile da leggere \u2014 con l\u2019indice Gulpease, che \u00e8 aritmetica, non un nostro elenco di parole.'
+ ]},
  {righe:[
    'Se rispondi che una cosa \u00e8 ancora tua, Sentiero smette di trattarla come abbandonata \u2014 ma non cancella pi\u00f9 le parole con cui ne avevi parlato. Restano tue. Semplicemente non te le rinfaccia pi\u00f9 come se valessero ancora oggi.'
  ]},
@@ -3438,7 +3454,7 @@ const NOVITA=[
    'E si ricorda di che cosa ti ha gi\u00e0 parlato, quando e in che senso. Cambiare le parole non rende nuova una cosa gi\u00e0 detta.'
  ]},
  {righe:[
-   'Adesso Sentiero non prende la prima frase buona che trova: le costruisce tutte, le mette in gara e sceglie la migliore. Sulle tue sere ne aveva trentuno fra cui scegliere, ogni volta, e ne prendeva una a caso.',
+   'Adesso Sentiero non prende la prima frase buona che trova: le costruisce tutte, le mette in gara e sceglie la migliore. Prima ne aveva decine fra cui scegliere, ogni volta, e ne prendeva una a caso.',
    'E quando c\u2019\u00e8 rete impara: aggiorna la sua base di parole leggendo un file pubblicato con l\u2019app. Legge e basta \u2014 di te non esce niente. Senza rete usa quella che ha gi\u00e0.'
  ]},
  {righe:[
@@ -3455,11 +3471,11 @@ const NOVITA=[
  ]},
  {righe:[
    'La voce della sera ha imparato a non ripetersi. Le costruzioni sono passate da ventisei a ottanta, e soprattutto adesso fanno a turno: prima si leggeva sempre dalla prima riga dell\u2019elenco e le altre non uscivano mai.',
-   'Sui tuoi ultimi trenta giorni: prima quattordici frasi diverse, adesso ventitr\u00e9. E non tace pi\u00f9 nessuna sera.'
+   'Adesso si ripete molto meno, e non tace pi\u00f9 nessuna sera senza una ragione.'
  ]},
  {righe:[
-   'Le cose che hai chiamato con un numero dentro \u2014 «7 ore e mezza di sonno», «Niente caff\u00e8 dopo le 15:00» \u2014 tornano a farsi nominare. L\u2019app evitava i numeri per non fartene mai pesare uno, e finiva per censurare i nomi che gli avevi dato tu.',
-   'Sul tuo archivio erano trentacinque righe su cento a morire cos\u00ec, in silenzio: tre delle otto voci della sera non parlavano da un mese.'
+   'Le cose che hai chiamato con un numero dentro \u2014 «10 000 passi», «Niente schermi dopo le 22:00» \u2014 tornano a farsi nominare. L\u2019app evitava i numeri per non fartene mai pesare uno, e finiva per censurare i nomi che gli avevi dato tu.',
+   'Era una riga su tre a morire cos\u00ec, in silenzio, e tre delle otto voci della sera erano mute.'
  ]},
  {righe:[
    'La chiamata a terra torna a fare domande. Se hai «Riduci movimento» acceso sul telefono, la domanda c\u2019era ma restava invisibile: adesso si vede.',
@@ -3571,7 +3587,7 @@ function mostraNovita(){
 }
 
 /* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
-   Il registro di Davide, 7 agosto 16:29: «Can't find variable: _lastNextMoveKey».
+   Dal registro del cantiere: «Can't find variable: _lastNextMoveKey».
    Cercandola ho scoperto che era usata due volte e dichiarata zero. Il lint dei
    muri, con la famiglia O scritta per l'occasione, ne ha trovate TRE - e la terza,
    _laterOpen, e anche lei LETTA al primo uso: un secondo errore vivo che nessuno
@@ -3759,21 +3775,65 @@ function manoAlLavoro(){ try{ _manoFino=performance.now()+140; }catch(_){ _manoF
 function ditoInMovimento(){ try{ return performance.now()<_manoFino; }catch(_){ return false; } }
 window.manoAlLavoro=manoAlLavoro;
 
+/* ══ IL CONFINE FRA UNA PERSONA E UN'ALTRA — DETTO CON PRECISIONE ═══════════
+   Sentiero NON ha account, NON ha profili, NON ha un identificatore di persona
+   e non ha un server. Quindi non isola gli utenti: NON LI DISTINGUE AFFATTO.
+   E una scelta, non una mancanza, e va detta com'e invece che lasciata credere.
+
+   COSA C'E, tutto qui:
+     · localStorage['sentiero-v1']  lo stato: diario, cose da fare, impostazioni,
+       e la chiave dell'IA se e stata messa. In chiaro.
+     · dodici chiavi 'sentiero-*'   roba di interfaccia: se l'accoglienza e gia
+       stata vista, l'ultima posizione del cielo, il meteo in cache, i flag.
+     · indexedDB (suoni)            i campioni audio generati.
+     · cache del service worker     i file dell'app, per funzionare offline.
+
+   COSA VUOL DIRE, in pratica:
+     · l'isolamento e quello del browser: origine + profilo del browser + utente
+       del sistema. Non e nostro, e non lo controlliamo noi.
+     · DUE PERSONE SULLO STESSO PROFILO DELLO STESSO BROWSER CONDIVIDONO LO
+       STESSO SENTIERO. Non c'e niente qui dentro che lo impedisca o lo avvisi.
+     · due profili, due dispositivi, o due domini diversi = due Sentieri che non
+       si parlano mai e non si sincronizzano mai.
+     · in incognito lo stato esiste finche la finestra e aperta, poi sparisce.
+     · niente e cifrato: chi ha accesso al profilo del browser o a un backup del
+       telefono legge tutto, chiave dell'IA compresa.
+     · cancellare i dati del sito cancella tutto, e l'unico recupero e l'export
+       che la persona si e fatta da sola.
+
+   COSA NON SI FA, e perche:
+     non si aggiungono account o profili multipli. Servirebbero a distinguere
+     persone che oggi non ci sono, e per essere veri vorrebbero un server o
+     almeno una password - cioe esattamente le due cose che questo progetto ha
+     deciso di non avere. Se un giorno serviranno, sara una decisione dichiarata,
+     non un effetto collaterale.
+   Difeso da provaChiunque, sezione D2. */
 const LS='sentiero-v1';
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Maestria','Pieno','Tao'];
 const todayKey=()=>localDayKey(new Date());
+/* ══ GLI ESEMPI IN QUESTO FILE SONO INVENTATI ════════════════════════════════
+   L'ELENCO DICHIARATO, e provaChiunque non ne ammette altri con dentro un numero:
+     «10 000 passi» · «Niente schermi dopo le 22:00» · «Fare 300 €»
+     «Devo essere in via Roma 1» · «Chiamare il commercialista»
+     («—are 300 €» e lo stesso esempio rotto apposta, per mostrare un difetto)
+   Nessuno di questi e stato scritto da una persona che usa Sentiero. Servono a spiegare una regola, e vanno tenuti finti.
+   La vita vera di chi sviluppa sta nel laboratorio, che non viene distribuito;
+   qui dentro non entra - ne come stato di partenza, ne come esempio, ne come
+   commento, ne come statistica, ne come coordinata geografica.
+   Il banco che difende questo confine e provaChiunque, e dalla v269.1 non cerca
+   piu un nome: cerca la vita. */
 const defaultState={
   apiKey:'',quests:[],diary:[],
-  /* v224 — QUI DENTRO C'ERANO LE ABITUDINI DI DAVIDE.
-     «80 g proteine» tutti i giorni e «Sveglia alle 7» dal lunedi al venerdi:
-     due voci vere, sue, scritte nello stato di partenza. Chiunque installasse
-     Sentiero se le trovava addosso il primo giorno, senza sapere da dove
-     venissero ne come toglierle - la × sta nelle impostazioni, in fondo a una
-     sezione che al primo giorno non si sa che esiste.
-     L'ha scoperto sua madre, provando l'app: senza qualcuno accanto non avrebbe
-     capito. E provaChiunque era verde, perche cercava il NOME di Davide, non la
-     sua VITA: un banco puo difendere solo la cosa a cui e stato puntato.
+  /* v224 — QUI DENTRO C'ERANO LE ABITUDINI DI UNA PERSONA VERA.
+     Due voci ricorrenti, sue, finite nello stato di partenza. Chiunque
+     installasse Sentiero se le trovava addosso il primo giorno, senza sapere da
+     dove venissero ne come toglierle - la × sta nelle impostazioni, in fondo a
+     una sezione che al primo giorno non si sa che esiste.
+     L'ha scoperto una persona che provava l'app senza nessuno accanto. E
+     provaChiunque era verde, perche cercava un NOME, non una VITA: un banco puo
+     difendere solo la cosa a cui e stato puntato. Alla v269.1 e stato ripuntato
+     sulla vita, e questo file e stato ripulito di conseguenza.
      Adesso si parte vuoti, e la prima domanda la fa l'app. */
   scheduled:[],
   checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],frutti:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
@@ -3808,7 +3868,7 @@ function load(){
 /* ══════════════════════════════════════════════════════════════════════════
    IL SALVATAGGIO (v252) — misurato prima di toccarlo.
 
-   Lo stato di Davide, serializzato, pesa 204.000 byte. save() lo riscriveva
+   Uno stato pieno, serializzato, pesa piu di duecentomila byte. save() lo riscriveva
    TUTTO, e nel file ci sono novantasette punti che lo chiamano: spuntare una
    cosa, cambiare un'impostazione, ogni riga che nasce. Ogni chiamata e una
    serializzazione sincrona di duecentomila caratteri piu una scrittura su disco,
@@ -4979,7 +5039,7 @@ function mapsUrl(p){ return 'https://maps.google.com/?q='+p.lat+','+p.lon; }
    rifiuta. E il rifiuto finiva in un catch vuoto con scritto \u00abcondivisione
    annullata: nessun errore\u00bb, quindi non appariva nemmeno un messaggio: il tasto
    sembrava semplicemente morto.
-   Sul telefono di Davide funzionava perche il permesso era gia dato e la
+   Sul telefono di chi sviluppa funzionava perche il permesso era gia dato e la
    posizione gia in memoria; su un telefono nuovo, mai.
 
    Adesso: se la posizione c'e gia (capturePos la tiene fresca mezz'ora) si
@@ -5853,8 +5913,8 @@ document.querySelector('#btn-save').onclick=async()=>{
     else if(code==='BUSY') msg='Server IA sovraccarichi: riprova tra poco. Trascritto salvato.';
     else if(err&&err.name==='AbortError') msg='IA troppo lenta (timeout): riprova. Trascritto salvato.';
     else if(err instanceof TypeError) msg='Rete assente o bloccata: controlla la connessione. Trascritto salvato.';
-    /* v212 — IL CASO DEL 10 AGOSTO. Davide aveva finito i crediti senza saperlo,
-       ha dettato una nota e quella e finita solo nel diario: momento perso, e
+    /* v212 — I CREDITI FINITI SENZA SAPERLO. Visto in prova: si detta una nota
+       e quella finisce solo nel diario: momento perso, e
        l'app non gliel'ha nemmeno detto in modo utile. Adesso, quando il modello
        doveva rispondere e non ce l'ha fatta - per qualunque ragione - subentra
        l'estrattore di casa e propone quello che ha sentito. La nota non basta:
@@ -5885,13 +5945,13 @@ function _micNorm(t){
    Da soli non bastano (anche «mare» finisce in -are), e infatti non si cercano da
    soli: si cercano dopo un marcatore, o in testa a una frase. */
 /* La radice puo essere corta: «dare», «fare», «dire» hanno una lettera sola prima
-   della desinenza, e chiedendone tre si perdevano «Fare 1200 €» e «dare
+   della desinenza, e chiedendone tre si perdevano «Fare 300 €» e «dare
    un'occhiata». Serve solo che la parola intera arrivi a quattro lettere. */
 const _MIC_INF=/^[a-z']+(?:are|arsi|ere|ersi|ire|irsi|urre|arre|orre|ursi|orsi|arla|arlo|arli|arle|erla|erlo|irla|irlo)$/  /* v244: mancavano -urre, -arre, -orre. «Introdurre le istruzioni» non
      produceva niente pur cominciando con un infinito, e con lei condurre,
      produrre, tradurre, ridurre, porre, comporre, proporre, esporre, trarre.
      Non e un caso raro: e una coniugazione intera. */;
-/* «fare» stava qui dentro come verbo servile, e si mangiava «Fare 1200 € prima di
+/* «fare» stava qui dentro come verbo servile, e si mangiava «Fare 300 € prima di
    domenica»: e uno dei verbi piu concreti che ci siano. Restano fuori solo quelli
    che da soli non sono mai una cosa da fare. */
 const _MIC_NONVERBI=new Set(['essere','avere','stare','potere','volere','dovere','sapere',
@@ -5907,7 +5967,7 @@ const _MIC_NON_IO=new Set(['solo','modo','tempo','giorno','momento','ufficio','p
   'gruppo','punto','posto','pezzo','pezzo','conto','termine','sguardo','ricordo','bisogno','esempio',
   'periodo','progetto','contratto','appuntamento','corso','centro','stato','caso','cambio','peso',
   /* i servili non sono la cosa da fare: se dopo «devo» non c'e un infinito, il
-     titolo non puo essere «devo». Usciva «Devo essere in via Saluzzo 46». */
+     titolo non puo essere «devo». Usciva «Devo essere in via Roma 1». */
   'devo','debbo','voglio','posso','riesco','dovro','saro','faro','andro']);
 const _MIC_TEMPO_FUT=/\b(domani|dopodomani|stasera|stamattina|stamane|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|alle |dalle |entro |fra |tra |prossim|a partire da)/;
 function _micEInfinito(p){ return p.length>=4&&_MIC_INF.test(p)&&!_MIC_NONVERBI.has(p); }
@@ -6000,7 +6060,7 @@ function _micFrasi(testo){
 
 /* ── il titolo ────────────────────────────────────────────────────────────── */
 /* v232 — I RIEMPITIVI E LE BALBUZIE DELLA DETTATURA.
-   Misurando l'estrattore sui trascritti veri di Davide e venuto fuori che il
+   Misurando l'estrattore su trascritti veri di dettatura e venuto fuori che il
    divario col modello non e il tempo - quello lo legge quasi sempre giusto - ma
    il TITOLO: dieci parole in mediana contro le quattro del modello, e ventisei
    titoli su sessantuno arrivati al tetto delle dodici parole, cioe TRONCATI e
@@ -6110,7 +6170,7 @@ function distillaLocaleIT(testo,oggiISO){
         if(/^(il|lo|la|l')$/.test(norm[i])&&_micEInfinito(norm[i+1])){ da=i+1; break; }
       }
     }
-    /* 5 · «e» / «ed» + infinito: «Nota per il 4 agosto e scrivere ad Adele» */
+    /* 5 · «e» / «ed» + infinito: «Nota per il 4 agosto e scrivere a chi di dovere» */
     if(da<0){
       for(let i=0;i<norm.length-1;i++){
         if((norm[i]==='e'||norm[i]==='ed')&&_micEInfinito(norm[i+1])){ da=i+1; break; }
@@ -6129,7 +6189,7 @@ function distillaLocaleIT(testo,oggiISO){
        v244 — CI HO PROVATO A CAMBIARLA, E L'HO RIMESSA COM'ERA.
        Tenendo la negazione dentro il titolo si recuperavano due note su
        novantaquattro - «domani non fumo erba» diventava «Non fumo erba». Ma
-       questa non e una regola tecnica: e una decisione di Davide, scritta qui
+       questa non e una regola tecnica: e una decisione di prodotto, scritta qui
        sopra e difesa da provaMicrofono. Il banco mi ha fermato, ed e servito.
        Se un giorno si vuole cambiare, si cambia la decisione E il banco insieme,
        non il codice di nascosto. Il prezzo e noto: due note su novantaquattro. */
@@ -7375,7 +7435,7 @@ const OBSERVER_SYS='Sei la voce di Sentiero: l\'amico con la memoria lunga, nel 
 /* v202 — LA RIGA DEL PESO, quando l'osservatrice non ha il modello.
    Senza chiave o con la rete rotta, l'osservatrice non puo scrivere: puo solo
    scegliere fra frasi gia scritte. Questa e l'unica che dice davanti a un giorno
-   che pesa, ed e per questo che le parole le ha scelte Davide e non io. */
+   che pesa, ed e per questo che le parole le ha scelte una persona e non un modello. */
 const OSS_RIGA_PESO='ho letto. non ho niente da dirti su come stai andando, e non serve che tu faccia niente.';
 
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
@@ -7933,7 +7993,7 @@ const OSS_SOGLIE={copule:0.133, frase:31, corta:7, lettere:280};
 const _OSS_COP=/\b(e|è|sono|sei|siamo|siete|era|erano|eri|essere|stato|stata|stati|state|ho|hai|ha|abbiamo|avete|hanno|avevo|avevi|aveva|avevano|avere|avuto)\b/g;
 const _OSS_PRESCRIVE=/\b(devi|dovresti|dovrai|prova a|cerca di|ricorda di|basta che|ti serve|scegli)\b/;
 /* v249 — LE PAROLE CHE DENTRO L'APP NON SI LEGGONO DA NESSUNA PARTE.
-   Il sussurro ha detto a Davide «...su questo rituale». «Rituale» e una parola
+   Il sussurro ha detto «...su questo rituale». «Rituale» e una parola
    nostra: sullo schermo non compare mai, e chi usa Sentiero non l'ha mai vista.
    Il divieto esisteva gia - il contratto del modello grande lo scrive nero su
    bianco - ma viveva SOLO dentro quel contratto, e il giudice del sussurro non
@@ -7946,7 +8006,7 @@ const _OSS_PRESCRIVE=/\b(devi|dovresti|dovrai|prova a|cerca di|ricorda di|basta 
    ma NON «rituale», che e proprio la parola che aveva detto. Una lettera, e
    la regola non serviva a niente - se n'e accorta la prova, non io. */
 /* «spunta» NON e in elenco, e la prova me l'ha insegnato: una riga scritta a
-   mano da Davide la usa - «una riga, una spunta, e qui comincia a esserci
+   mano la usa - «una riga, una spunta, e qui comincia a esserci
    qualcosa» - e li dentro non e gergo, e italiano. Il contratto del modello
    grande la vieta a LUI, che potrebbe usarla come termine tecnico; il giudice
    invece guarda righe gia scritte, dove la stessa parola puo essere innocente.
@@ -7957,18 +8017,17 @@ const _OSS_GERGO=/\b(ritual[ei]|quests?|tasks?|streaks?|arco delle|occasioni pre
    Il divieto sui numeri serve a impedire che l'app faccia i conti in faccia a
    qualcuno: «aspetta da 3 giorni» e sbagliata, e resta bocciata per sempre. Ma
    era scritto sulla riga INTERA, e nella riga intera c'e il titolo, e il titolo
-   se l'e scritto la persona. Chi chiama un suo impegno «7 ore e mezza di sonno»
-   o «Niente caffe dopo le 15:00» veniva censurato dal proprio nome.
+   se l'e scritto la persona. Chi chiama un suo impegno «10 000 passi»
+   o «Niente schermi dopo le 22:00» veniva censurato dal proprio nome.
 
    Misurato sull'archivio vero del 12 agosto, rivivendo i trenta giorni:
-     546 righe candidate provate · 189 bocciate per «cifra» (35%)
-     e tutte e 189 per una cifra che stava in un titolo suo:
-        90x «7» · 90x «15:00» · 9x «1200»
-     tre famiglie su otto - silenzio, ritorno, giorno - mute per trenta giorni.
+     Misurato su un archivio reale, in laboratorio: una riga su tre bocciata per
+     «cifra», e ogni volta per una cifra che stava in un titolo scritto dalla
+     persona - un orario, una quantita, una somma.
+     Tre famiglie su otto - silenzio, ritorno, giorno - mute per trenta giorni.
 
    La riparazione era gia stata scritta una volta, per la chiamata a terra: il
-   commento dentro terraDomandaCasa la racconta per esteso, «Fare 1200 €»
-   compreso. Ma viveva li, in quel punto solo, e l'osservatrice della sera e il
+   commento dentro terraDomandaCasa la racconta per esteso. Ma viveva li, in quel punto solo, e l'osservatrice della sera e il
    sussurro della spunta hanno continuato a morire sulla stessa pietra. Adesso
    sta nel giudice, che e il posto dove la sapevano tutti quelli che la chiamano.
 
@@ -8057,7 +8116,7 @@ function _ossScheletro(riga){
    dice. Il giorno in cui una fonte vera (il vocabolario di base della lingua
    italiana, un corpus di frequenza) sara collegata, questi elenchi diventano
    dati e questo commento va riscritto. */
-const BASE_MINIMA={"versione":0,"impronta":"minima-incorporata","nucleo":["a","adesso","affaccia","ancora","andare","andata","anche","appello","arriva","arrivano","aspetta","avanti","aveva","avevi","avuto","basta","bianco","bel","buco","cammina","capo","che","chi","chiude","chiusa","ci","cima","come","compare","con","corsa","cosa","cosi","cui","da","dal","dalla","dava","dentro","di","dice","dicevi","dimenticatoio","dopo","dov","due","durato","e","era","erano","essere","fa","farsi","fatto","fermo","ferma","fila","finalmente","fine","foglio","fondo","fosse","fuori","galla","giornata","giorni","giorno","gia","ha","hai","in","indietro","insieme","invecchia","la","lascia","lasciato","le","li","lista","lo","ma","magro","mai","mancava","manca","messa","mezzo","mosso","mossa","mosse","movimento","muove","muta","nasce","nascere","nel","nella","nessuna","nessuno","niente","no","non","nuovo","oggi","ogni","ora","ormai","palo","parla","parole","parte","parecchio","passa","passata","passo","pezzo","piede","piedi","piena","piene","piu","poco","poi","porta","posizione","pronta","proprio","qualcosa","quanto","quasi","quel","quella","questa","queste","qui","reggeva","resta","restano","restava","rientra","riga","righe","rimane","rimasta","rispunta","ritorno","scritto","scrivi","scrivevi","segno","sempre","senza","settimana","settimane","si","sente","sotto","spalle","sparita","sta","stallo","stessa","stesso","su","tace","tanto","tempo","tiene","torna","tornata","traccia","tua","tuoi","tutte","tutto","un","una","va","vecchia","vedere","viva","voce","volta","volte","vuota","zitta"],"bigrammi":["non compare","da un","un pezzo","non si","si parla","piu da","nessuna traccia","non e","e sparita","si fa","fa viva","messa da","da parte","non torna","torna a","a nascere","non se","se ne","ne va","in lista","piu di","di una","una volta","torna sempre","sempre li","da capo","ogni volta","non si chiude","si chiude","chiude mai","e tornata","dopo un","di silenzio","aveva smesso","smesso di","di comparire","ora c","di nuovo","al palo","in movimento","a terra","in piedi","in stallo","in corsa","nel dimenticatoio","a galla","non lascia","lascia mai","mai niente","passa liscio","il segno","scivola via","a mani","mani vuote","settimana dopo","dopo settimana","la piu","piu vecchia","rimasta aperta","sta li","li da","non si muove","in cima","alle cose","cose ferme","da un pezzo","hai lasciato","lasciato una","una riga","in queste","queste settimane","le righe","righe restano","il diario","la tua","tua voce","va cosi","cosi da","i giorni","giorni pieni","il passo","passo tiene","qualcosa si","si muove","un segno","nella giornata","le giornate","giornate piene","con dentro","dentro qualcosa","quel giorno","un giorno","giorno pieno","lo stesso","ha retto","poco spazio","ci e","e entrata","in fondo","a un","non era","e passata"],"lode":["bravo","brava","bravi","brave","complimenti","ottimo","ottima","benissimo","ben fatto","grande","fantastico","fantastica","orgoglioso","orgogliosa","congratulazioni","meritato","meritata","impressionante","eccellente","perfetto"],"biasimo":["pigro","pigra","pigrizia","fallito","fallita","colpa","sbagliato","sbagliata","dovevi","avresti dovuto","peccato","purtroppo","male","peggio","scarso","deludente","inutile","vergogna"],"consolazione":["non preoccuparti","va bene cosi","non e grave","capita a tutti","non importa","tranquillo","tranquilla","su con la vita","andra meglio"],"pronomi":["lei","lui","quella","quello","ci","ne","lo","la"],"deissi":["ieri","oggi","domani","stasera","stamattina","adesso","poco fa"],"pesi":{"comprensibilita":3.0,"carico":2.0,"fedelta":4.0,"neutralita":3.0,"ambiguita":0.0,"naturalezza":1.5,"vita":0.0,"coesione":3.0}};
+const BASE_MINIMA={"versione":0,"impronta":"minima-incorporata","nucleo":["a","adesso","affaccia","ancora","andare","andata","anche","appello","arriva","arrivano","aspetta","avanti","aveva","avevi","avuto","basta","bianco","bel","buco","cammina","capo","che","chi","chiude","chiusa","ci","cima","come","compare","con","corsa","cosa","cosi","cui","da","dal","dalla","dava","dentro","di","dice","dicevi","dimenticatoio","dopo","dov","due","durato","e","era","erano","essere","fa","farsi","fatto","fermo","ferma","fila","finalmente","fine","foglio","fondo","fosse","fuori","galla","giornata","giorni","giorno","gia","ha","hai","in","indietro","insieme","invecchia","la","lascia","lasciato","le","li","lista","lo","ma","magro","mai","mancava","manca","messa","mezzo","mosso","mossa","mosse","movimento","muove","muta","nasce","nascere","nel","nella","nessuna","nessuno","niente","no","non","nuovo","oggi","ogni","ora","ormai","palo","parla","parole","parte","parecchio","passa","passata","passo","pezzo","piede","piedi","piena","piene","piu","poco","poi","porta","posizione","pronta","proprio","qualcosa","quanto","quasi","quel","quella","questa","queste","qui","reggeva","resta","restano","restava","rientra","riga","righe","rimane","rimasta","rispunta","ritorno","scritto","scrivi","scrivevi","segno","sempre","senza","settimana","settimane","si","sente","sotto","spalle","sparita","sta","stallo","stessa","stesso","su","tace","tanto","tempo","tiene","torna","tornata","traccia","tua","tuoi","tutte","tutto","un","una","va","vecchia","vedere","viva","voce","volta","volte","vuota","zitta"],"bigrammi":["non compare","da un","un pezzo","non si","si parla","piu da","nessuna traccia","non e","e sparita","si fa","fa viva","messa da","da parte","non torna","torna a","a nascere","non se","se ne","ne va","in lista","piu di","di una","una volta","torna sempre","sempre li","da capo","ogni volta","non si chiude","si chiude","chiude mai","e tornata","dopo un","di silenzio","aveva smesso","smesso di","di comparire","ora c","di nuovo","al palo","in movimento","a terra","in piedi","in stallo","in corsa","nel dimenticatoio","a galla","non lascia","lascia mai","mai niente","passa liscio","il segno","scivola via","a mani","mani vuote","settimana dopo","dopo settimana","la piu","piu vecchia","rimasta aperta","sta li","li da","non si muove","in cima","alle cose","cose ferme","da un pezzo","hai lasciato","lasciato una","una riga","in queste","queste settimane","le righe","righe restano","il diario","la tua","tua voce","va cosi","cosi da","i giorni","giorni pieni","il passo","passo tiene","qualcosa si","si muove","un segno","nella giornata","le giornate","giornate piene","con dentro","dentro qualcosa","quel giorno","un giorno","giorno pieno","lo stesso","ha retto","poco spazio","ci e","e entrata","in fondo","a un","non era","e passata"],"lode":["bravo","brava","bravi","brave","complimenti","ottimo","ottima","benissimo","ben fatto","grande","fantastico","fantastica","orgoglioso","orgogliosa","congratulazioni","meritato","meritata","impressionante","eccellente","perfetto"],"biasimo":["pigro","pigra","pigrizia","fallito","fallita","colpa","sbagliato","sbagliata","dovevi","avresti dovuto","peccato","purtroppo","male","peggio","scarso","deludente","inutile","vergogna"],"consolazione":["non preoccuparti","va bene cosi","non e grave","capita a tutti","non importa","tranquillo","tranquilla","su con la vita","andra meglio"],"pronomi":["lei","lui","quella","quello","ci","ne","lo","la"],"deissi":["ieri","oggi","domani","stasera","stamattina","adesso","poco fa"],"pesi":{"comprensibilita":3.0,"carico":2.0,"fedelta":4.0,"neutralita":3.0,"ambiguita":0.0,"naturalezza":0.0,"vita":0.0,"coesione":3.0}};
 /* la cache sta in un oggetto e non in una variabile sciolta: cosi il montaggio
    dei banchi la trova insieme alle altre costanti, invece di lasciarla fuori e
    far morire il motore con «_BASE is not defined». Ci ho perso due minuti. */
@@ -8206,7 +8265,7 @@ function _cosaVoti(f,digest){
 }
 
 /* LA SOGLIA DEL SILENZIO.
-   Non e tarata sulle sette N di Davide: sarebbe cucire un vestito su sette
+   Non e tarata su sette giudizi di una persona sola: sarebbe cucire un vestito su sette
    punti. E il punto sotto il quale un fatto non porta abbastanza: gia detto di
    recente, nello stesso senso, senza niente di cambiato. Il tasso di silenzio
    che ne esce e una CONSEGUENZA da misurare, non un bersaglio da colpire. */
@@ -8305,6 +8364,7 @@ function _giuria(riga,f,precedenti){
   const giu=t.toLowerCase();
   const persi=deve.filter(x=>{ const q=_ossMinuscolo(String(x||'')).toLowerCase();
                                return !q||giu.indexOf(q)<0; });
+  /* v269: PAVIMENTO. Vedi la nota sul punteggio in fondo. */
   v.fedelta={tipo:'misura',val:deve.length?(1-persi.length/deve.length):1,
              perche:persi.length?('non conserva: '+persi.join(' · ')):'conserva tutto'};
 
@@ -8317,14 +8377,33 @@ function _giuria(riga,f,precedenti){
   v.neutralita={tipo:'regola',val:male2.length?0:1,
                 perche:male2.length?male2.join(' · '):'nessun verdetto sulla persona'};
 
-  /* 5 · COMPRENSIBILITA - RIPIEGO. Conta le parole della nostra prosa che non
-        stanno nel nucleo incorporato. Il nucleo e scritto a mano: quindi questo
-        misura la distanza da cio che abbiamo gia usato, non da cio che gli
-        italiani capiscono. Diventera una misura vera quando al posto del nucleo
-        ci sara una fascia del vocabolario di base. */
-  const fuori=parole.filter(function(w){ return w.length>2&&(B.nucleo||[]).indexOf(w)<0; });
-  v.comprensibilita={tipo:'ripiego',val:parole.length?(1-fuori.length/parole.length):1,
-                     perche:fuori.length?('fuori dal nucleo: '+fuori.slice(0,4).join(', ')):'tutte nel nucleo'};
+  /* 5 · COMPRENSIBILITA - MISURA (v269). Prima contava le parole fuori dal
+        nucleo incorporato, e il nucleo l'avevamo scritto noi guardando le nostre
+        stesse forme: misurava la distanza da cio che avevamo gia usato, non da
+        cio che un italiano capisce. Misurato: l'83% del nucleo viene dalle
+        nostre righe. Era un ripiego, ed era anche circolare.
+        Adesso e l'indice GULPEASE, la formula di leggibilita fatta per
+        l'italiano (Lucisano e Piemontese, 1988): dipende solo da quante lettere,
+        quante parole e quante frasi ci sono nel testo. Aritmetica sul testo, non
+        un nostro elenco - quindi funziona anche su parole che non abbiamo mai
+        scritto, ed e riproducibile da chiunque.
+           G = 89 + (300 x frasi - 10 x lettere) / parole
+        Le bande sono quelle pubblicate, non tarate sulle nostre righe:
+        sotto 40 e difficile anche per un diplomato, 40-60 per la terza media,
+        60-80 per la licenza elementare, sopra 80 e facile per tutti. Il
+        pavimento universale di Sentiero e «un italiano comune», quindi il voto
+        vale 1 da 80 in su e 0 sotto 40, in mezzo cresce dritto.
+        RESTA UN PROXY, e va detto: la leggibilita non e la comprensione. Una
+        frase corta di parole rare prende un buon voto. Per questo il nucleo non
+        sparisce - continua a servire alla base linguistica - ma non e piu lui a
+        dare il voto. */
+  const _testo=nostro.replace(/\{[a-z]+\}/g,'una cosa');
+  const _par=_testo.split(/\s+/).filter(function(x){ return x; }).length;
+  const _let=_testo.replace(/[^A-Za-zà-ÿ]/g,'').length;
+  const _fra=Math.max(1,(_testo.match(/[.?!…]+/g)||[]).length);
+  const _G=_par?(89+(300*_fra-10*_let)/_par):89;
+  v.comprensibilita={tipo:'misura',val:Math.max(0,Math.min(1,(_G-40)/40)),
+                     perche:'Gulpease '+Math.round(_G)+(_G>=80?' (facile per tutti)':_G>=60?' (licenza elementare)':_G>=40?' (terza media)':' (difficile anche per un diplomato)')};
 
   /* 6 · AMBIGUITA - EURISTICA. Vede tre trappole di forma e nient'altro. La
         misura vera - due letture messe a confronto sulle loro conseguenze - non
@@ -8355,13 +8434,24 @@ function _giuria(riga,f,precedenti){
   v.ambiguita={tipo:'euristica',val:trappole.length?Math.max(0,1-trappole.length*0.5):1,
                perche:trappole.length?trappole.join(' · '):'nessuna trappola nota'};
 
-  /* 7 · NATURALEZZA - RIPIEGO. Quanti dei nostri bigrammi stanno in una lista
-        scritta a mano. Con un corpus vero questo diventa una frequenza; oggi e
-        solo «somiglia a quello che abbiamo gia scritto». */
+  /* 7 · NATURALEZZA - SOSPESA DALLA v269, e non perche sia un ripiego: perche
+        misura la cosa sbagliata. Contava quanti dei nostri bigrammi stanno in
+        una lista scritta a mano - e il 92% di quella lista viene dalle nostre
+        stesse forme, quelle scritte per prime. Misurato su tutte e 103:
+          silenzio, ritmo, ricorrente (le famiglie piu vecchie)  0.50 - 0.67
+          contrasto, tenuta (nate alla v264)                     0.00
+          42 forme su 103 prendono esattamente zero
+        Non era «naturalezza»: era ANZIANITA DI SCRITTURA. E questo criterio, con
+        il peso piu basso di tutti, cambiava il vincitore in 20 sere su 29: era
+        il primo decisore della giuria. Peso zero, come ambiguita e vita, con la
+        stessa regola - non si inverte un criterio sbagliato, si sospende e si
+        continua a calcolarlo per poterlo studiare.
+        Perche torni serve una frequenza su un corpus vero, non un nostro elenco:
+        e il cantiere della base linguistica, non un ritocco qui. */
   const bg=[]; for(let i=0;i<parole.length-1;i++) bg.push(parole[i]+' '+parole[i+1]);
   const noti=bg.filter(function(x){ return (B.bigrammi||[]).indexOf(x)>=0; });
-  v.naturalezza={tipo:'ripiego',val:bg.length?noti.length/bg.length:1,
-                 perche:noti.length+' coppie di parole su '+bg.length+' gia viste'};
+  v.naturalezza={tipo:'euristica',val:bg.length?noti.length/bg.length:1,
+                 perche:noti.length+' coppie su '+bg.length+' gia scritte da noi (diagnostica: peso zero)'};
 
   /* 8 · COESIONE - REGOLA DETERMINISTICA, ed e nuova.
         Il duello ha fatto emergere una riga che nessun criterio bocciava e che
@@ -8384,7 +8474,7 @@ function _giuria(riga,f,precedenti){
       else if(pf.length&&!piene.length) rotture.push('frase senza niente dentro: «'+fr.slice(0,24)+'»');
     }
     /* NON OGNI SEGNO SPEZZA UNA FRASE. La prima versione di questa regola
-       prendeva i due punti di «Niente caffe dopo le 15:00» - che sono un orario,
+       prendeva i due punti di «Niente schermi dopo le 22:00» - che sono un orario,
        non una pausa - e faceva tacere Sentiero su una delle abitudini piu vere
        di chi la usa. Spezza chi CHIUDE: un punto seguito da spazio o a fine
        titolo, o un punto e virgola. I due punti fra due cifre no. */
@@ -8409,13 +8499,31 @@ function _giuria(riga,f,precedenti){
   /* IL PUNTEGGIO. I pesi non sono tarati contro nessun giudizio umano, e sta
      scritto nella base: finche non lo saranno, questo e un ordine ragionevole,
      non una verita. */
+  /* ══ v269 — PAVIMENTO E GIUDIZIO SONO DUE COSE ═══════════════════════════
+     Misurato sulle trenta sere vere, togliendo un criterio alla volta e
+     guardando se il vincitore cambiava:
+         fedelta     peso 4    cambia in  0 sere su 29
+         neutralita  peso 3    cambia in  0 sere su 29
+         coesione    peso 3    cambia in  0 sere su 29
+     Il 61% del peso dichiarato non spostava niente. Non perche i criteri siano
+     sbagliati: perche sono PAVIMENTI, e il pavimento e gia stato applicato
+     prima - dal veto e dal filtro di buildObserverLocal. Quando si vota, tutte
+     le candidate ammesse hanno gia preso 1: sommare una costante a tutti non
+     cambia l'ordine di nessuno. Li contavamo due volte, e la seconda non
+     serviva a niente se non a far credere che la giuria pesasse la fedelta.
+     Adesso il pavimento resta pavimento - chi non lo passa non entra - e il
+     punteggio lo fanno solo i criteri che possono distinguere due righe
+     entrambe ammissibili. I pesi dichiarati tornano a dire la verita. */
+  ['fedelta','neutralita','coesione'].forEach(function(k){ v[k].pavimento=true; });
   const P=B.pesi||{};
   let punti=0,peso=0;
-  /* v268: «ambiguita» e «vita» hanno peso zero e restano nei voti come
-     diagnostica. Non sono state tolte: sono state sospese, con la ragione
-     scritta sopra e il numero del duello accanto. */
-  ['carico','fedelta','neutralita','comprensibilita','naturalezza','coesione'].forEach(function(k){
-    const w=(typeof P[k]==='number')?P[k]:1; punti+=v[k].val*w; peso+=w;
+  /* «ambiguita» e «vita» dalla v268, «naturalezza» dalla v269: peso zero, e
+     restano nei voti come diagnostica. Non tolte - sospese, con la ragione
+     scritta sopra e il numero accanto. */
+  Object.keys(v).forEach(function(k){
+    if(k==='contratto'||v[k].pavimento) return;
+    const w=(typeof P[k]==='number')?P[k]:1; if(!w) return;
+    punti+=v[k].val*w; peso+=w;
   });
   return {voti:v, punti:peso?punti/peso:0, veto:!v.contratto.val, motivoVeto:v.contratto.perche};
 }
@@ -8968,7 +9076,7 @@ function paroleDistanza(gg){
   return 'mesi fa';
 }
 /* v199 — QUANDO E NATO UN RITUALE.
-   Nessuno dei rituali di Davide aveva una data di nascita: il campo non esisteva.
+   I rituali creati prima della v199 non avevano una data di nascita: il campo non c'era.
    Per quelli che ci sono gia la si deduce dal primo giorno in cui e stato spuntato,
    che e la sola traccia vera che ne resta. Se non e mai stato spuntato non si puo
    sapere, e allora si torna al comportamento di prima invece di inventare. */
@@ -9010,7 +9118,7 @@ function buildLinePackage(id,title){
     pkg.occasione_precedente=lastPlan
       ?('la precedente prevista era '+(lastPlan.diff===1?'ieri':lastPlan.giorno+', '+lastPlan.diff+' giorni fa')+': '+(lastPlan.done?'fatta':'mancata'))
       :'nessuna occasione prevista nei 6 giorni precedenti';
-    /* l'eta del cammino: mai leggere storie precedenti alla prima traccia vera (Anna, giorno uno) */
+    /* l'eta del cammino: mai leggere storie precedenti alla prima traccia vera */
     let inizio='';
     try{
       const kc=Object.keys(S.checks||{}).sort()[0]||'';
@@ -9020,11 +9128,11 @@ function buildLinePackage(id,title){
     }catch(_){}
     if(!inizio||inizio>tk) inizio=tk;
     const etaGiorni=Math.max(0,Math.round((Date.parse(tk)-Date.parse(inizio))/86400000));
-  /* v199 — L'INIZIO GIUSTO. «inizio» e il primo giorno del cammino intero (Anna,
-     giorno uno). Ma un rituale nato ieri non puo aver mancato i giorni in cui non
-     esisteva. Il 7 agosto Sentiero ha detto a Davide che il respiro consapevole
-     «saltava da ventotto giorni di fila»: era nato il giorno prima. Da qui il conto
-     parte dal piu recente fra i due inizi. */
+  /* v199 — L'INIZIO GIUSTO. «inizio» e il primo giorno del cammino intero. Ma un
+     rituale nato ieri non puo aver mancato i giorni in cui non esisteva: in prova,
+     Sentiero ha detto a una persona che una cosa «saltava da ventotto giorni di
+     fila» quando era nata il giorno prima. Da qui il conto parte dal piu recente
+     fra i due inizi. */
   const _nasc=_nascitaRituale(S,sched);
   const inizioRit=(_nasc&&_nasc>inizio)?_nasc:inizio;
   const etaRit=Math.max(0,Math.round((Date.parse(tk)-Date.parse(inizioRit))/86400000));
@@ -9520,7 +9628,7 @@ async function askObserverLine(pkg){
   };
 })();
 /* ══════ v249 — MENTRE SI REGISTRA, IL TELEFONO NON FA ALTRO ═══════════════
-   Davide ha dovuto rifare la stessa registrazione piu volte, e ruotando il
+   In prova si e dovuta rifare la stessa registrazione piu volte, e ruotando il
    telefono la registrazione si interrompeva. Il riavvio automatico c'era gia:
    il problema e piu a monte. Girando lo schermo partono tutti insieme i
    ridimensionamenti di TRE tele a schermo intero, ognuna con la sua
@@ -10300,7 +10408,7 @@ function sussurroLocale(pkg,titolo){
          Il controllo stava QUI, sulla riga cruda, mentre la riga col titolo
          sostituito nasce nella riga dopo. Due sole forme del sussurro incollano
          il titolo dentro (quelle del ritorno), e per chi chiama la sua cosa
-         «7 ore e mezza di sonno» morivano tutte e due, in silenzio. Il divieto
+         «10 000 passi» morivano tutte e due, in silenzio. Il divieto
          non si e tolto: si e spostato di una riga, dentro il giudice, dove
          guarda «nostro» come tutte le altre misure. */
       const nostro=titolo?r.split(_ossMinuscolo(titolo)).join('quella'):r;
@@ -11066,7 +11174,18 @@ function applyTheme(){ try{
     [13.92,18.4,2.68],[15.74,6.4,2.63],[22.09,-46.96,2.40],[10.99,20.5,2.56],[9.76,23.8,3.14],
     [1.91,20.8,2.64],[2.98,53.5,2.93]
   ];
-  let LAT=44.65, LON=7.66;   /* default: il cielo di casa; con la geo attiva si specchia dove sei */
+  /* ══ v269.1 — SENZA POSIZIONE IL CIELO NON E IL CIELO DI NESSUNO ═════════
+     Qui c'erano le coordinate di casa di chi ha scritto l'app. Chi installava
+     Sentiero e non dava la posizione non vedeva un cielo neutro: vedeva il
+     cielo sopra un paese preciso, senza saperlo e senza averlo chiesto. Un dato
+     personale che viaggiava come impostazione predefinita.
+     Adesso il valore di partenza non e un luogo: 45 gradi e la latitudine media
+     dell'emisfero nord, 0 e il meridiano di riferimento internazionale. Senza
+     posizione il cielo e una DECORAZIONE con una geometria plausibile, non «il
+     tuo cielo» e non quello di qualcun altro. Con la geolocalizzazione accesa -
+     e solo allora - diventa davvero quello sopra la testa di chi guarda, e
+     resta sul telefono. */
+  let LAT=45, LON=0;
   try{ const c=JSON.parse(localStorage.getItem('sentiero-cielo-pos')||'null');
     if(c&&isFinite(c.la)&&isFinite(c.lo)){ LAT=c.la; LON=c.lo; } }catch(_){}
   try{
@@ -12189,7 +12308,7 @@ function inizialeQuest(titolo,id){
      pena mappare, quindi il capolettera diventa monocromatico e segue il FUOCO, come tutto il
      resto di cio che e vivo. Il colore sta nel CSS, non piu inline: cosi il tema lo governa.
      E si applica SOLO se il titolo comincia con una lettera: su una cifra faceva sembrare il
-     numero un dato staccato dal resto («40 gr proteine» con il 4 grande e d'oro). */
+     numero un dato staccato dal resto («10 000 passi» con il 10 grande e d'oro). */
   const t=String(titolo||''); if(!t) return '';
   const c0=t.charAt(0);
   if(!/\p{L}/u.test(c0)) return escapeHtml(t);
@@ -12625,7 +12744,7 @@ const TERRA_SYS =
 'FORMATO: UNA domanda sola, sotto i centotrenta caratteri, finisce col punto interrogativo. Rispondi SOLO JSON compatto: {"domanda":"..."}';
 
 function terraPacchetto(){
-  /* gli ultimi quattordici giorni di diario, che e la materia che Davide ha
+  /* gli ultimi quattordici giorni di diario, che e la materia che la persona ha
      scelto, piu le domande gia fatte perche non tornino */
   const oggi = new Date(todayKey()+'T12:00:00');
   const giorni = [];
@@ -12726,7 +12845,7 @@ function _terraVivaioLargo(mem){
    nessuna forma nomina una colpa, e piu d'una offre di lasciar andare: «e ancora
    tua?», «la vuoi ancora?». Sono le Tre Leggi applicate a una domanda.
 
-   Le parole sono di Davide da rivedere: qui la macchina sceglie il materiale,
+   Le parole sono scritte a mano e da rivedere: qui la macchina sceglie il materiale,
    non il tono. */
 const DOMANDE_IT={
   attrito:['di {cosa} avevi scritto «{parole}». cosa la rende cosi pesante?',
@@ -12765,7 +12884,7 @@ function terraDomandaCasa(){
     if(_pesaDiRecente(d)) return '';        /* nei giorni che pesano non si chiede niente */
     const mem=(S.semi||[]).map(s=>s&&s.testo).concat((S.domChieste||[]).map(x=>x&&x.testo)).filter(Boolean);
     /* l'ultima domanda fatta, per non tornare due volte di fila sulla stessa cosa:
-       tre mattine su «fare 1200 €» sono tre modi di dire la stessa frase. */
+       tre mattine sulla stessa cosa sono tre modi di dire la stessa frase. */
     const ultima=_ossMinuscolo(String(mem[mem.length-1]||''));
     for(const f of _terraFattiCasa(d)){
       const suo=String(f.cosa||'');
@@ -12774,11 +12893,12 @@ function terraDomandaCasa(){
         if(!q) continue;
         if(!/\?$/.test(q.trim())) continue;                 /* deve restare una domanda */
         if(/\s[—–-]\s/.test(q)) continue;
-        /* le cifre si cercano SOLO nella prosa nostra. Una sua quest si chiama
-           «Fare 1200 €», e il divieto sui numeri - che esiste perche l'app non
-           faccia i conti in faccia a nessuno - gli stava censurando i titoli che
-           si e scritto da solo. Sul suo archivio vero questo bastava a far uscire
-           zero domande: il difetto si vedeva solo li, e non nei casi finti. */
+        /* le cifre si cercano SOLO nella prosa nostra. Se una quest si chiama
+           «Fare 300 €», il divieto sui numeri - che esiste perche l'app non
+           faccia i conti in faccia a nessuno - censura un titolo che la persona
+           si e scritta da sola. Su un archivio reale, in laboratorio, questo
+           bastava a far uscire zero domande: il difetto si vedeva solo li, e non
+           nei casi finti. */
         /* la domanda si giudica con il suo titolo sostituito da un pronome: cosi
            le misure cadono sulla NOSTRA prosa e non sulle sue parole. Vale per le
            cifre e vale per tutto il resto - e la stessa scelta fatta per le
@@ -13458,14 +13578,14 @@ function renderDiary(forza){
     setEmpty(el,'Il diario e vuoto. Non va riempito: va lasciato dietro ogni azione vera.','speak','Registra la prima nota'); return; }
   el.innerHTML='';
   /* v182 (Fase 9): il giorno si scriveva su OGNI voce. Con centosedici voci lo
-     stesso «1 agosto» tornava sei volte di fila, e il diario sembrava un elenco
+     stesso «1 marzo» tornava sei volte di fila, e il diario sembrava un elenco
      di ricevute invece che di giornate. Ora la data si dice una volta sola, in
      testa al gruppo, e resta appiccicata in alto mentre scorri quel giorno. */
   let _giornoIn=null, _nEntry=0;
   const _chiaveGiorno=e=>{ try{ return localDayKey(new Date(e.iso)); }catch(_){ return e.data||''; } };
   /* la giornata di Sentiero comincia all'alba (ALBA_MS), non a mezzanotte: quello
      che scrivi alle due di notte sta sotto il giorno prima, ed e giusto. Ma senza
-     dirlo un «00:32» sotto «venerdi 31 luglio» sembra uno sbaglio. */
+     dirlo un «00:32» sotto «venerdi 28 febbraio» sembra uno sbaglio. */
   const _notte=d=>{ try{
     const cal=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     return localDayKey(d)!==cal;      /* la definizione, non un giro di date: la voce
@@ -13482,7 +13602,7 @@ function renderDiary(forza){
       /* v183: prima usciva «1 sabato agosto», che non si legge. La grammatica
          giusta l'app ce l'ha gia nella sua testata - SABATO sopra, poi il numero
          grande e il mese in corsivo - e questa intestazione e la stessa cosa, un
-         piano piu giu. _stanzaNomeGiorno da «sabato 1 agosto»: si prendono i tre
+         piano piu giu. _stanzaNomeGiorno da «sabato 1 marzo»: si prendono i tre
          pezzi e si rimettono in quell'ordine, invece di ritagliare a stringhe. */
       const _pz=_stanzaNomeGiorno(_k).split(' ');
       t.innerHTML='<span class="dg-num">'+escapeHtml(_pz[1]||'')+'</span>'+
@@ -14519,7 +14639,7 @@ function maybeOnboard(){
 
   /* v224: «Inizia» non chiude piu la schermata, apre la domanda. Chiudere e
      lasciare uno sconosciuto davanti a un'app vuota era esattamente il punto in
-     cui la madre di Davide si e fermata. */
+     cui, in prova, una persona si e fermata. */
   const chiudi=()=>{
     ob.style.transition='opacity .4s ease'; ob.style.opacity='0';
     setTimeout(()=>{ ob.classList.add('hidden'); try{ avviaMano(); }catch(_){} },400);
@@ -14565,9 +14685,9 @@ function maybeOnboard(){
    getBoundingClientRect: se domani il cerchio si sposta, il buco lo segue da
    solo. Se un elemento non c'e, il passo si salta invece di accendere il vuoto.
 
-   Nasce da una prova sul campo: la madre di Davide, iPhone SE, davanti alla
-   prima schermata non ha capito cosa toccare. Il testo spiega a chi legge; il
-   dito indica a chiunque.
+   Nasce da una prova sul campo: su uno schermo piccolo, davanti alla prima
+   schermata, una persona non ha capito cosa toccare. Il testo spiega a chi
+   legge; il dito indica a chiunque.
 
    Si salta a ogni passo, e saltata una volta non torna mai piu.
    ══════════════════════════════════════════════════════════════════════════ */
