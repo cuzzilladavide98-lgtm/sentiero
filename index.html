@@ -2767,6 +2767,7 @@ function sanitizeObserverNotes(arr){
     out.push({
       id:clampStr(n.id,40)||('o'+Math.random().toString(36).slice(2,9)),
       createdAt:(typeof n.createdAt==='string')?n.createdAt.slice(0,40):new Date().toISOString(),
+      vista:!!n.vista,   /* v268.3: cosi non si ripresenta ogni apertura */
       sourceRange:{
         from:(n.sourceRange&&typeof n.sourceRange.from==='string')?n.sourceRange.from.slice(0,40):null,
         to:(n.sourceRange&&typeof n.sourceRange.to==='string')?n.sourceRange.to.slice(0,40):null
@@ -3051,6 +3052,7 @@ function sanitizeState(raw,def){
     /* v268: la memoria del contenuto. Vive nello stato e nei backup: cambiando
        telefono, Sentiero non ricomincia a raccontare le stesse cose da capo. */
     obsDetti:Array.isArray(raw.obsDetti)?raw.obsDetti.filter(x=>x&&typeof x==='object'&&typeof x.cosa==='string').slice(-24):[],
+    obsZitto:typeof raw.obsZitto==='string'?raw.obsZitto:'',   /* v268.2: il giorno in cui si e scelto di tacere */
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
       voice:!!(raw.settings&&raw.settings.voice===true),
@@ -3154,6 +3156,50 @@ function accumFromResults(results){
     else fin=f+' '+t;
   }
   return {sessionFinal:fin?fin+' ':'',interim};
+}
+/* ══ v268.2 — LA STACCIONATA, E IL PROTOCOLLO CHE ARRIVAVA ALLA PERSONA ═════
+   Sulla v268 Generativa il Frutto e uscito cosi, sullo schermo di chi la usa:
+       ```json {"frutto":"la meditazione e tornata ieri..."} ```
+   Il contenuto era buono. Ad arrivare e stato il protocollo.
+
+   La causa: le risposte dei modelli spesso arrivano dentro una staccionata di
+   Markdown. Il codice provava a leggerle con «testo.startsWith('{')?testo:'{'+testo»,
+   che su una risposta recintata costruisce una graffa in piu e rompe il parsing;
+   e il ripiego successivo toglieva solo la coppia di virgolette del campo, non
+   la staccionata. Cosi la stringa grezza finiva in scena.
+
+   Qui si chiude la CLASSE, non quel caso: qualunque risposta strutturata viene
+   prima ripulita, poi letta; e qualunque cosa stia per essere mostrata passa da
+   un ultimo controllo che riconosce il protocollo e lo ferma. */
+/* GLI APICI INVERSI NON SI SCRIVONO, SI CODIFICANO. \x60 e l'apice inverso.
+   Scritti per esteso dentro un'espressione regolare, tre apici di fila fanno
+   credere agli strumenti che li dentro cominci un template literal: lo
+   spogliatoio del setaccio mangiava tutto fino all'apice successivo e la
+   funzione qui sotto spariva dalla sua vista, che poi gridava «fantasma» su una
+   funzione che c'era. E la stessa cosa che era gia costata mezz'ora a
+   closeJsonFragment, ed e scritta nel montaggio: la ripeto perche l'ho appena
+   rifatta. */
+function scrostaProtocollo(t){
+  const TRE_APICI='\x60\x60\x60';   /* dentro, non fuori: una funzione che si porta
+     dietro una costante sciolta non si puo montare da sola in un banco, e ogni
+     banco che la usa si rompe. E gia successo tre volte in questa versione. */
+  let s=String(t||'').trim();
+  /* la staccionata, con o senza etichetta di linguaggio, aperta o chiusa */
+  s=s.replace(new RegExp('^\\s*'+TRE_APICI+'[a-zA-Z0-9_-]*\\s*'),'')
+     .replace(new RegExp('\\s*'+TRE_APICI+'\\s*$'),'').trim();
+  s=s.replace(new RegExp(TRE_APICI+'[a-zA-Z0-9_-]*','g'),' ').trim();
+  return s;
+}
+/* riconosce cio che NON deve mai comparire davanti a una persona: staccioni,
+   graffe di oggetto, nomi di campo col due punti, chiavi note del protocollo. */
+function haProtocollo(t){
+  const TRE_APICI='\x60\x60\x60';
+  const s=String(t||'');
+  if(s.indexOf(TRE_APICI)>=0) return 'staccionata markdown';
+  if(/^\s*[\{\[]/.test(s.trim())) return 'comincia con una graffa';
+  if(/"\s*(frutto|note|summary|detectedPatterns|riga|testo)\s*"\s*:/.test(s)) return 'nome di campo del protocollo';
+  if(/\{\s*"[a-z_]+"\s*:/i.test(s)) return 'oggetto json dentro il testo';
+  return '';
 }
 function extractJson(text){
   if(typeof text!=='string') return null;
@@ -3282,8 +3328,14 @@ function sanitizeMastery(raw){
   if(!raw||typeof raw!=='object') return m;
   if(raw.quest&&typeof raw.quest==='object') Object.keys(raw.quest).slice(0,220).forEach(id=>{
     const q=raw.quest[id]; if(!q||typeof q!=='object') return;
-    m.quest[clampStr(id,40)]={assenze:Math.max(0,Math.min(999,q.assenze|0)),attriti:Math.max(0,Math.min(99,q.attriti|0)),
+    const v={assenze:Math.max(0,Math.min(999,q.assenze|0)),attriti:Math.max(0,Math.min(99,q.attriti|0)),
       fraseAttrito:clampStr(q.fraseAttrito||'',140),taciFino:clampStr(q.taciFino||'',12)};
+    /* v268.4: senza queste due righe la fotografia di fine ieri veniva buttata a
+       ogni avvio, e la finestra tornava a dipendere dall'ora. */
+    if(q.tocco) v.tocco=clampStr(q.tocco,12);
+    if(q.prima&&typeof q.prima==='object') v.prima={assenze:Math.max(0,Math.min(999,q.prima.assenze|0)),
+      attriti:Math.max(0,Math.min(99,q.prima.attriti|0)),fraseAttrito:clampStr(q.prima.fraseAttrito||'',140)};
+    m.quest[clampStr(id,40)]=v;
   });
   if(raw.giorni&&typeof raw.giorni==='object') Object.keys(raw.giorni).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).slice(-120).forEach(k=>{
     const g=raw.giorni[k]; if(g&&typeof g==='object') m.giorni[k]={pianificate:Math.max(0,g.pianificate|0),fatte:Math.max(0,g.fatte|0)};
@@ -3357,7 +3409,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.268 · 2026-08-15';
+const APP_VERSION='v60S.268.6 · 2026-08-16';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3374,6 +3426,13 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Se rispondi che una cosa \u00e8 ancora tua, Sentiero smette di trattarla come abbandonata \u2014 ma non cancella pi\u00f9 le parole con cui ne avevi parlato. Restano tue. Semplicemente non te le rinfaccia pi\u00f9 come se valessero ancora oggi.'
+ ]},
+ {righe:[
+   'Sentiero guarda i giorni finiti. Oggi non \u00e8 ancora un giorno: contarlo voleva dire, alle otto del mattino, chiamare \u00abvuoto\u00bb un giorno che non era nemmeno cominciato. Adesso quello che ti dice \u00e8 lo stesso che tu apra l\u2019app alle 8, alle 14 o alle 20.',
+   'E una riga che non hai fatto in tempo a leggere non va persa: resta l\u00ec e te la ritrovi alla prossima apertura.'
+ ]},
  {righe:[
    'Adesso Sentiero decide prima COSA vale la pena dirti, e solo dopo come dirlo. E se nessuna cosa merita davvero di arrivarti, sta zitto: non riempie uno spazio perch\u00e9 lo spazio esiste.',
    'E si ricorda di che cosa ti ha gi\u00e0 parlato, quando e in che senso. Cambiare le parole non rende nuova una cosa gi\u00e0 detta.'
@@ -6828,6 +6887,9 @@ function fruttoPacchetto(S,tk){
 }
 function fruttoVeto(S,testo){
   const t=String(testo||'');
+  /* v268.2: il protocollo si ferma qui, l'ultimo posto prima della persona.
+     Vale come proprieta generale di tutte le uscite, non come toppa sul frutto. */
+  const prot=haProtocollo(t); if(prot) return 'protocollo: '+prot;
   if(!t||t.length<40) return 'corto';
   if(t.length>420) return 'lungo';
   const ti=t.toLowerCase();
@@ -6855,11 +6917,14 @@ async function scriviFrutto(S,tk){
     max_tokens:2600,thinking:1800,effort:SUSSURRO_EFFORT,timeout:75000});
   const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined};
   if(!res||res.err) return {errore:res?res.err:'nulla',meta:meta};
-  const testo=String(res.text||'').trim();
+  const testo=scrostaProtocollo(res.text);
   if(/^silenzio[.!…]?$/i.test(testo)) return {silenzio:true,perche:'scelto',meta:meta};
   let riga='';
-  try{ const j=extractJson(testo.startsWith('{')?testo:'{'+testo); riga=String((j&&j.frutto)||'').trim(); }catch(_){}
-  if(!riga) riga=testo.replace(/^\{?\s*"?frutto"?\s*:\s*"?/,'').replace(/"?\s*\}?$/,'').trim();
+  /* prima si legge il json ripulito. La graffa si aggiunge SOLO se davvero non
+     c'e: aggiungerla a una risposta che ne ha gia una era il guasto. */
+  try{ const j=extractJson(/[\{\[]/.test(testo)?testo:'{'+testo+'}'); riga=String((j&&j.frutto)||'').trim(); }catch(_){}
+  if(!riga) riga=scrostaProtocollo(testo).replace(/^\{?\s*"?frutto"?\s*:\s*"?/,'').replace(/"?\s*\}?$/,'').trim();
+  riga=scrostaProtocollo(riga);
   const veto=fruttoVeto(S,riga);
   if(veto) return {veto:veto,meta:meta};
   return {riga:clampStr(riga,420),meta:meta};
@@ -7044,7 +7109,15 @@ async function apriSoglia(){
     } })();
   const gia=(S.frutti||[]).filter(x=>x&&x.tk===tk)[0];
   if(gia&&(gia.silenzio||gia.visto)) return;                    /* oggi e gia stato: si entra e basta */
-  if(!S.apiKey||!S.apiKey.startsWith('sk-ant-')) return;
+  /* ══ v268.2 — LA PORTA CHIUSA DAVANTI AL FRUTTO DI CASA ═══════════════════
+     Qui c'era: «senza chiave, esci». Ma dalla v208 il frutto senza chiave lo
+     scrive la casa, dentro fruttoDiOggi(), nel ramo !generativa(). Il motore
+     c'era e la porta era chiusa: chi usa Sentiero senza chiave non ha mai visto
+     un frutto, e non poteva saperlo.
+     Adesso decide fruttoDiOggi(), che sa quale strada prendere. Se non esce
+     niente - silenzio, veto, rete - la soglia si chiude da sola due righe piu
+     sotto, come faceva prima. Nessuna chiamata in piu: senza chiave la strada e
+     tutta locale. */
   el.classList.remove('hidden');
   const corpo=el.querySelector('#frutto-corpo');
   if(!corpo) return;                                   /* mai piu in silenzio su un pezzo che manca */
@@ -7082,13 +7155,24 @@ function processMastery(mo){
   const tk=todayKey(), dw=dowOf();
   const attivi=scheduledFor(S,dw,tk).map(t=>t.id).concat(activeQuests(S,tk).map(q=>q.id));   /* BUG STORICO (v133): era activeQuests(S.quests) - TypeError silenziato dal catch: la Maestria non era MAI partita */
   const toccati=new Set((mo.menzioni||[]).concat((mo.letture||[]).map(l=>l.id)));
+  /* ══ v268.4 — LA FOTOGRAFIA DI FINE IERI ══════════════════════════════════
+     Questi contatori non cambiano a mezzanotte: cambiano quando il modello legge
+     un racconto, cioe a un'ora qualunque. E sono la sorgente dei due fatti che
+     pesano di piu (le sue parole sull'attrito, cio che tace da molti giorni).
+     Quindi raccontare la giornata alle 18 poteva togliere all'Osservatrice un
+     fatto che alle 8 c'era. La prima volta che si tocca un contatore in un
+     giorno nuovo si mette da parte com'era a fine ieri: il digest legge quello,
+     e la finestra resta la stessa a qualunque ora. */
+  const _fermaIeri=q=>{ if(q.tocco!==tk){ q.prima={assenze:q.assenze|0,attriti:q.attriti|0,fraseAttrito:q.fraseAttrito||''}; q.tocco=tk; } };
   attivi.forEach(id=>{
     if(!S.mastery.quest[id]) S.mastery.quest[id]={assenze:0,attriti:0,fraseAttrito:'',taciFino:''};
     const q=S.mastery.quest[id];
+    _fermaIeri(q);
     if(toccati.has(id)) q.assenze=0; else q.assenze++;
   });
   (mo.attriti||[]).forEach(a=>{
     if(!S.mastery.quest[a.id]) S.mastery.quest[a.id]={assenze:0,attriti:0,fraseAttrito:'',taciFino:''};
+    _fermaIeri(S.mastery.quest[a.id]);
     S.mastery.quest[a.id].attriti++; S.mastery.quest[a.id].fraseAttrito=a.frase;
   });
   if(mo.sguardo){ S.mastery.sguardo.push({iso:new Date().toISOString().slice(0,16),livello:mo.sguardo.livello}); if(S.mastery.sguardo.length>180) S.mastery.sguardo=S.mastery.sguardo.slice(-180); }
@@ -7096,6 +7180,29 @@ function processMastery(mo){
   save();
 }
 let _pendingLetture=null;
+/* ══ v268.6 — MEMORIA E STATO SONO DUE COSE ═══════════════════════════════
+   «non ho mai voglia di telefonare» e una frase che la persona ha detto una
+   volta. Fino alla v268.5 c'erano due modi di trattarla, tutti e due sbagliati:
+     · cancellarla quando rispondeva «e ancora mia» - cioe distruggere le sue
+       parole perche il nostro contatore era stato azzerato;
+     · tenerla e continuare a usarla come attrito di ADESSO - cioe rinfacciarle
+       un peso che ha appena detto di aver ripreso in mano.
+   La distinzione e questa, e vale una definizione sola:
+
+     MEMORIA  «avevo detto che questa cosa mi pesava»  ->  fraseAttrito, resta
+     STATO    «questa cosa mi sta pesando adesso»      ->  attriti >= 1
+
+   Nessun campo nuovo: il contatore che gia c'era E' lo stato. Azzerarlo spegne
+   l'attrito senza toccare il ricordo; un attrito nuovo lo riaccende e riscrive
+   la frase (processMastery fa attriti++ e fraseAttrito=a.frase insieme).
+   Chi vuole «l'attrito che pesa ora» chiede QUI, e non guarda piu se la frase
+   esiste: i tre posti che lo facevano sono buildObserverDigest, buildLinePackage
+   e semeDigest. Una nozione, tre consumatori, zero eccezioni sparse. */
+function _attritoVivo(q){
+  if(!q) return '';
+  if((q.attriti|0)<1) return '';   /* c'e il ricordo, non il peso di adesso */
+  return String(q.fraseAttrito||'');
+}
 function _titoloDiId(id){
   const s=(S.scheduled||[]).find(t=>t.id===id); if(s) return s.titolo;
   const q=(S.quests||[]).find(t=>t.id===id); return q?q.titolo:null;
@@ -7180,7 +7287,35 @@ function maybeLascito(){
   /* mostrata: silenzio breve anche senza risposta, per non assillare */
   if(S.mastery&&S.mastery.quest[c.id]){ S.mastery.quest[c.id].taciFino=_isoPlus(2); save(); }
   document.querySelector('#lasc-si').onclick=()=>{
-    if(S.mastery&&S.mastery.quest[c.id]){ const q=S.mastery.quest[c.id]; q.taciFino=_isoPlus(45); q.assenze=0; q.attriti=0; q.fraseAttrito=''; }
+    /* ══ v268.5 — L'ECCEZIONE ALL'INVARIANZA, DETTA BENE ══════════════════════
+       Il commento della v268.4 stava qui e diceva «chiedere di lasciar andare»:
+       era il ramo sbagliato. Questo e «E ANCORA MIA» - la quest resta, si azzera
+       il conto delle assenze e si tace per quarantacinque giorni. Sbagliare il
+       nome di un ramo non e un refuso: e il modo in cui si finisce per ragionare
+       sul pezzo di codice che non si sta guardando.
+
+       La regola vera non e «lasciar andare vale subito». E questa, e vale per
+       tutte e due i tasti:
+
+         i fatti sui giorni conclusi non dipendono dall'ORA in cui apro l'app;
+         dipendono pero da cio che la persona FA di proposito, quando quello che
+         fa e una risposta diretta a quel fatto.
+
+       Aprire l'app alle 14 invece che alle 8 e un caso. Rispondere a una domanda
+       non lo e. Sentiero ha chiesto «e ancora tua?» proprio su questa cosa: se
+       stasera ripetesse la stessa osservazione, avrebbe chiesto senza ascoltare.
+       Percio la fotografia di fine ieri va buttata: il conto delle assenze era
+       un indizio di abbandono, e la persona ha appena portato una prova migliore
+       di qualunque contatore - la propria parola.
+       Misurato: senza queste due assegnazioni la riga di stasera resta
+       ««non ho mai voglia di telefonare», avevi scritto...», cioe il rimprovero
+       a cui ha appena risposto.
+       DICHIARATA: banchi/provaOraDelGiorno.js, sezione D. */
+    /* v268.6: «fraseAttrito» NON si cancella piu. «E ancora mia» non vuol dire
+       «non e piu dura»: azzera il nostro giudizio sull'abbandono e sull'attrito,
+       non le parole che la persona aveva detto. Il contatore a zero basta a
+       spegnere l'attrito ovunque, perche adesso tutti passano da _attritoVivo. */
+    if(S.mastery&&S.mastery.quest[c.id]){ const q=S.mastery.quest[c.id]; q.taciFino=_isoPlus(45); q.assenze=0; q.attriti=0; q.prima=null; q.tocco=''; }
     save(); box.classList.add('hidden'); box.innerHTML='';
   };
   document.querySelector('#lasc-no').onclick=()=>{
@@ -7246,12 +7381,31 @@ const OSS_RIGA_PESO='ho letto. non ho niente da dirti su come stai andando, e no
 /* raccoglie SOLO i dati necessari: intenzioni (quest nate), azioni (compiute), promesse aperte, continuità */
 function buildObserverDigest(){
   const tk=todayKey();
+  /* ══ v268.4 — LA FINESTRA: I GIORNI CONCLUSI, E BASTA ═════════════════════
+     L'app promette «una riga su come stanno andando i tuoi giorni». Un giorno
+     ancora in corso non e un giorno: e mezzo giorno, e non si sa quale meta.
+     Fino alla v268.3 il digest prendeva il diario e le spunte senza escludere
+     oggi. Conseguenza misurata: la stessa vita produceva fatti diversi secondo
+     l'ORA CASUALE in cui l'app veniva aperta.
+       · alle 08:00 oggi risultava «vuoto» - cioe un giorno fallito che non era
+         nemmeno cominciato: il ritmo scendeva, il giorno-della-settimana che
+         cede si accendeva, la tenuta spariva;
+       · alle 20:00 oggi era l'ultimo giorno del diario, e il fatto «ritorno»
+         guarda proprio l'ultimo giorno: quindi esisteva solo la sera.
+     Non e un difetto d'interfaccia: cambia il SIGNIFICATO di cio che viene
+     detto. Da qui l'orizzonte e uno solo e non dipende dall'orologio: si guarda
+     fino a IERI compreso. «oggi» resta, ma come punto di riferimento per le
+     distanze - non come dato.
+     Cio che non ha data resta dichiarato in «senza_data»: si veda piu sotto. */
+  const _ieri=(function(k){ try{ const d=new Date(k+'T12:00:00'); d.setDate(d.getDate()-1);
+    return d.toISOString().slice(0,10); }catch(_){ return k; } })(tk);
   /* azioni reali dalle spunte toccate (questLog), raggruppate per giorno */
   const log=Array.isArray(S.questLog)?S.questLog:[];
-  const azioniPerGiorno={};
+  const azioniPerGiorno={}, chiuseOggi=new Set();
   log.forEach(e=>{ if(e.lasciata) return;   /* v148: una quest lasciata andare non e un fatto */
+    if((e.day||'')>_ieri){ if(e.titolo) chiuseOggi.add(e.titolo); return; }   /* v268.4: oggi non e ancora un giorno */
     if(!azioniPerGiorno[e.day]) azioniPerGiorno[e.day]=[]; azioniPerGiorno[e.day].push(e.titolo); });
-  const diario=(S.diary||[]).slice(0,30).map(e=>{
+  const diario=(S.diary||[]).filter(e=>((e.iso||'').slice(0,10))<=_ieri).slice(0,30).map(e=>{
     const g=(e.iso||'').slice(0,10);
     const dettate=Array.isArray(e.done)?e.done.slice(0,12):[];
     const toccate=azioniPerGiorno[g]||[];
@@ -7265,9 +7419,15 @@ function buildObserverDigest(){
     if(e.peso===true) v.pesa=true;
     return v;
   });
-  const questAperte=(S.quests||[]).filter(q=>!q.fatto).map(q=>({titolo:q.titolo,prio:q.prio||3,quando:q.quando||null}));
+  /* v268.4: aperte COM'ERANO A FINE IERI. Una quest nata stamattina ieri non
+     esisteva; una chiusa stamattina ieri era ancora aperta. Se no, spuntare una
+     cosa alle 14 cancellava un fatto che alle 8 c'era. */
+  const questAperte=(S.quests||[])
+    .filter(q=>q&&(!q.nata||q.nata<=_ieri))
+    .filter(q=>!q.fatto||chiuseOggi.has(q.titolo))
+    .map(q=>({titolo:q.titolo,prio:q.prio||3,quando:q.quando||null}));
   /* giorni con attività = sia task ricorrenti spuntate sia quest completate */
-  const giorniSet=new Set([...Object.keys(S.checks||{}),...Object.keys(azioniPerGiorno)]);
+  const giorniSet=new Set([...Object.keys(S.checks||{}).filter(k=>k<=_ieri),...Object.keys(azioniPerGiorno)]);
   const giorni=Array.from(giorniSet).sort().slice(-14);
   const passiGiornalieri=giorni.map(day=>{
     const n=Object.values((S.checks||{})[day]||{}).filter(v=>v===true).length + (azioniPerGiorno[day]?azioniPerGiorno[day].length:0);
@@ -7291,8 +7451,15 @@ function buildObserverDigest(){
   try{
     const mq=(S.mastery&&S.mastery.quest)||{};
     const att=[], ass=[];
-    Object.keys(mq).forEach(id=>{ const q=mq[id]||{};
-      if(q.fraseAttrito){ const t=_titoloDiId(id); if(t) att.push({quest:clampStr(t,60),parole:clampStr(q.fraseAttrito,120)}); }
+    Object.keys(mq).forEach(id=>{ const q0=mq[id]||{};
+      /* v268.4: i contatori della Maestria non cambiano a mezzanotte, cambiano
+         quando il modello legge un racconto - quindi anche alle 18 di oggi.
+         Dalla v268.4 processMastery mette da parte lo stato di FINE IERI prima
+         di toccarli il primo volta di ogni giorno: se sono gia stati toccati
+         oggi si legge quello. Se non c'e (stato vecchio), si legge il vivo. */
+      const q=(q0.tocco===tk&&q0.prima)?q0.prima:q0;
+      const _vive=_attritoVivo(q);   /* v268.6: l'attrito di adesso, non il ricordo */
+      if(_vive){ const t=_titoloDiId(id); if(t) att.push({quest:clampStr(t,60),parole:clampStr(_vive,120)}); }
       if((q.assenze|0)>=4){ const t=_titoloDiId(id); if(t) ass.push(clampStr(t,60)); }
     });
     if(att.length) dalMotore.attriti_vivi=att.slice(0,4);
@@ -7303,7 +7470,14 @@ function buildObserverDigest(){
       dalMotore.sguardo_recente=m3>=3?'vede i propri pattern':(m2+m3)>=4?'spesso si osserva':'per lo piu cronaca';
     }
   }catch(_){}
-  return {oggi:tk, diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, passiGiornalieri:passiGiornalieri, dalMotore:dalMotore, sussurri_recenti:(S.obsLines||[]).slice(-5).map(n=>clampStr(n.riga,140)), osservazioniPrecedenti:osservazioniPrecedenti, detti_recenti:detti_recenti};
+  return {oggi:tk, fino:_ieri,
+    /* la finestra viaggia col digest: chi legge questi dati - il motore locale,
+       il modello, gli attrezzi del laboratorio - deve sapere fin dove arrivano. */
+    finestra:'giorni conclusi, fino a '+_ieri+' compreso: oggi non e ancora un giorno',
+    /* cio che non porta una data e non si puo tagliare a ieri. Dichiarato, non
+       nascosto: lo sguardo del Motore e un giudizio accumulato, non un giorno. */
+    senza_data:['taskRicorrenti','sguardo_recente'],
+    diario:diario, questAperte:questAperte, taskRicorrenti:(S.scheduled||[]).map(t=>t.titolo), giorniRecenti:giorni, passiGiornalieri:passiGiornalieri, dalMotore:dalMotore, sussurri_recenti:(S.obsLines||[]).slice(-5).map(n=>clampStr(n.riga,140)), osservazioniPrecedenti:osservazioniPrecedenti, detti_recenti:detti_recenti};
 }
 
 async function askObserver(digest){
@@ -8300,14 +8474,30 @@ function buildObserverLocal(digest){
           -> frase finale
      Il livello COSA non vede nemmeno una parola. Il livello COME non puo piu
      cambiare di cosa si parla: riceve un fatto e basta. */
-  const scelta=_scegliCosa(fatti,digest);
+  /* v268.1: se il coordinatore ha gia deciso COSA (perche doveva decidere prima
+     di sapere se chiamare il modello), quella decisione si rispetta e non si
+     rifa. Una domanda, una risposta, una volta sola. */
+  const scelta=(digest&&digest.cosa_gia_scelta)?digest.cosa_gia_scelta:_scegliCosa(fatti,digest);
   if(scelta.silenzio){
     return {summary:'niente da dire oggi',detectedPatterns:[],note:'',
             _cosa:scelta.perche,_silenzio:true,_locale:true};
   }
   /* si scorre la graduatoria del COSA nell'ordine che il COSA ha deciso, e ci si
      ferma al primo fatto che sa farsi dire. */
-  let f=null, candidate=[];
+  /* ══ IL COORDINATORE, E LA VERITA SU CHI DECIDE ═══════════════════════════
+     Non e vero, alla lettera, che «il COME non puo cambiare di cosa si parla».
+     E vero che il COSA classifica i fatti SENZA GUARDARE UNA PAROLA, e che il
+     COME non puo riordinare quella classifica. Ma se il primo fatto non e
+     dicibile, qualcuno deve decidere fra il secondo e il silenzio: quel
+     qualcuno e questo pezzo qui, e si chiama coordinatore.
+     La dicibilita puo quindi cambiare QUALE fatto arriva. Va detto e va
+     tracciato, non nascosto dietro una separazione che non esiste. Percio ogni
+     esito ha un nome suo nel registro:
+       · silenzio perche nessun fatto merita        (deciso dal COSA)
+       · fatto migliore non dicibile                 (visto dal COME)
+       · ripiego sul fatto N                         (deciso dal coordinatore)
+       · silenzio perche nessuno dei meritevoli era dicibile */
+  let f=null, candidate=[], _posto=0, _saltati=[];
   for(const cand of (scelta.graduatoria||[scelta.fatto])){
     f=cand;
     candidate=[];
@@ -8326,7 +8516,17 @@ function buildObserverLocal(digest){
       candidate.push({riga:riga,f:f,i:i,g:g,freschezza:freschezza,
                       totale:g.punti*0.85 + freschezza*0.15});
     }
+    /* ══ DICIBILE VUOL DIRE: C'E ALMENO UNA FRASE CHE SI PUO MOSTRARE ═════════
+       Il pavimento faceva la sua parte DOPO il ciclo, e cosi un fatto che aveva
+       formulazioni buone per il contratto ma tutte sotto il pavimento fermava la
+       graduatoria e portava al silenzio, senza mai provare il fatto dopo.
+       La dicibilita non e «passa il contratto»: e «esiste una frase mostrabile».
+       Quindi il pavimento sta qui dentro, e il ripiego funziona. */
+    candidate=candidate.filter(function(c){ const v=c.g.voti;
+      return v.fedelta.val>=1 && v.neutralita.val>=1 && v.coesione.val>=1; });
     if(candidate.length) break;
+    _saltati.push(f.t+' (non dicibile)');
+    _posto++;
     scartate.push(f.t+': nessuna formulazione ha retto, passo al fatto dopo');
   }
 
@@ -8341,19 +8541,6 @@ function buildObserverLocal(digest){
        meglio che sappiamo dire fallisce uno di quelli, si tace.
        Le misure incerte (comprensibilita, naturalezza) non possono far tacere
        nessuno: sono ripieghi dichiarati, e un ripiego non merita un veto. */
-    const buone=candidate.filter(function(c){
-      const v=c.g.voti;
-      return v.fedelta.val>=1 && v.neutralita.val>=1 && v.coesione.val>=1;
-    });
-    if(!buone.length){
-      return {summary:'niente da dire oggi',detectedPatterns:[],note:'',
-              _cosa:scelta.perche,_silenzio:true,
-              _perche:{motivo:'il fatto meritava, le parole che ho non bastano',
-                       migliore:candidate[0].riga.slice(0,80),
-                       cade_su:['fedelta','neutralita','coesione'].filter(function(k){ return candidate[0].g.voti[k].val<1; })},
-              _locale:true};
-    }
-    candidate=buone;
     const w=candidate[0];
     const perche={
       cosa:scelta.perche,
@@ -8365,6 +8552,7 @@ function buildObserverLocal(digest){
       seconde:candidate.slice(1,4).map(c=>({forma:c.f.t+'#'+c.i,totale:+c.totale.toFixed(3),
                                             riga:c.riga.slice(0,70)}))
     };
+    if(_posto>0) perche.ripiego='ripiego sul fatto '+(_posto+1)+' della graduatoria: '+_saltati.join(', ');
     return {summary:'lo sguardo sugli ultimi giorni',detectedPatterns:[w.f.t],
             note:w.riga,_forma:w.f.t+'#'+w.i,_perche:perche,_cosa:scelta.perche,_locale:true};
   }
@@ -8374,7 +8562,10 @@ function buildObserverLocal(digest){
   if(scelta&&!scelta.silenzio){
     return {summary:'niente da dire oggi',detectedPatterns:[],note:'',
             _cosa:scelta.perche,_silenzio:true,_scartate:scartate,
-            _perche:{motivo:'il fatto era buono, nessuna formulazione ha retto'},_locale:true};
+            _perche:{motivo:(_saltati.length===1)
+                       ?'fatto migliore non dicibile: le parole che ho non bastano'
+                       :'silenzio: nessun fatto meritevole era dicibile',
+                     non_dicibili:_saltati},_locale:true};
   }
   if(!(digest.diario||[]).length&&!(digest.passiGiornalieri||[]).length){
     return {summary:'poche tracce',detectedPatterns:['poche tracce'],
@@ -8394,17 +8585,75 @@ async function observe(silent){
     const range={from:(digest.diario.length?digest.diario[digest.diario.length-1].giorno:null),to:digest.oggi};
     let result=null;
     const t0Dig=Date.now();
-    if(S.apiKey){
-      try{ result=await askObserver(digest); }catch(_){ result=null; }
-    }
-    /* v254: al motore di casa si dice quali famiglie hanno gia parlato di
-     recente, cosi non pesca sempre dallo stesso mazzo. */
+
+    /* ══ v268.1 — UNA CATENA SOLA, CON CLAUDE E SENZA ══════════════════════════
+       Fino a un momento fa c'erano due Sentiero. Con la chiave accesa si chiamava
+       il modello per primo e, se rispondeva, buildObserverLocal non veniva mai
+       eseguito: il livello COSA, la memoria del contenuto e il silenzio non
+       esistevano proprio. E siccome «obsDetti» si scriveva solo leggendo
+       «result._cosa» - che solo il motore di casa produce - per chi usa la
+       versione Generativa la memoria del contenuto non si riempiva MAI.
+       Cioe: la v268 aveva rifondato il ripiego e lasciato intatto il caso
+       normale, e lo aveva fatto in silenzio.
+
+       Adesso la catena e una. IL COSA APPARTIENE A SENTIERO, NON AL MODELLO.
+       Si decide qui, sempre, prima di qualunque rete:
+         · se non c'e niente che meriti, si tace E NON SI CHIAMA NESSUNO
+           (e anche il modo piu economico: le sere mute non costano niente)
+         · se qualcosa merita, il modello riceve IL FATTO GIA SCELTO e fa una
+           cosa sola: trovare le parole. La sua riga passa dagli stessi controlli
+           delle nostre - contratto, giuria, pavimento - e se non li passa si usa
+           la formulazione di casa. */
   try{ digest.famiglie_recenti=(S.obsFamiglie||[]).slice(-4); }catch(_){}
-  /* v263: e quali COSTRUZIONI sono gia uscite, cosi dentro la famiglia non si
-     legge sempre dalla prima riga dell'elenco. La memoria e piu lunga di quella
-     delle famiglie perche le costruzioni sono dieci per famiglia, non una. */
   try{ digest.forme_recenti=(S.obsForme||[]).slice(-24); }catch(_){}
-  if(!result||!result.note||!String(result.note).trim()){ result=buildObserverLocal(digest); try{ result._locale=true; }catch(_){} }
+
+  let _fatti=[], _scelta=null, _esito='';
+  try{ _fatti=_ossFatti(digest); _scelta=_scegliCosa(_fatti,digest); }catch(_){ _scelta=null; }
+
+  if(_scelta&&_scelta.silenzio){
+    /* nessun fatto merita: si tace, e non si spende niente per scoprirlo */
+    _esito='silenzio: nessun fatto merita';
+    result={summary:'niente da dire oggi',detectedPatterns:[],note:'',
+            _cosa:_scelta.perche,_silenzio:true,_locale:true};
+  } else {
+    if(_scelta) digest.cosa_gia_scelta=_scelta;
+    /* IL COME DI CASA, sempre: e il paragone e il ripiego, e costa niente */
+    const casa=buildObserverLocal(digest);
+    try{ casa._locale=true; }catch(_){}
+    result=casa; _esito=casa&&casa.note?'riga di casa':'silenzio: nessun fatto meritevole era dicibile';
+
+    /* e SOLO SE c'e la chiave, si chiede al modello di dire QUELLA cosa li */
+    if(S.apiKey&&_scelta&&_scelta.fatto){
+      try{
+        digest.fatto_scelto={tipo:_scelta.fatto.t,di:(_scelta.fatto.cosa||_scelta.fatto.ferma||''),
+                             conserva:(_scelta.fatto.conserva||[]).slice(),
+                             istruzione:'Scrivi la riga SOLO su questo fatto. Non sceglierne un altro.'};
+        const dalModello=await askObserver(digest);
+        const riga=dalModello&&dalModello.note?String(dalModello.note).trim():'';
+        if(riga){
+          /* la riga del modello passa dagli stessi controlli delle nostre */
+          const prec=[].concat(digest.osservazioniPrecedenti||[],digest.sussurri_recenti||[]);
+          const g=_giuria(riga,_scelta.fatto,prec);
+          const ok=g&&!g.veto&&g.voti.fedelta.val>=1&&g.voti.neutralita.val>=1&&g.voti.coesione.val>=1;
+          if(ok){
+            result={summary:dalModello.summary||'lo sguardo sugli ultimi giorni',
+                    detectedPatterns:[_scelta.fatto.t],note:riga,
+                    _cosa:_scelta.perche,_modello:true,
+                    _perche:{cosa:_scelta.perche,candidate:1,scartate_dal_contratto:0,
+                             vincitrice:{forma:'modello',totale:+g.punti.toFixed(3),punti:+g.punti.toFixed(3),
+                                         freschezza:1,voti:g.voti,conserva:(_scelta.fatto.conserva||[]).slice()},
+                             seconde:[]}};
+            _esito='riga del modello, accettata';
+          } else {
+            _esito='riga del modello scartata ('+((g&&(g.motivoVeto||'pavimento'))||'?')+'), uso la mia';
+          }
+        }
+      }catch(_){ _esito+=' · il modello non ha risposto'; }
+    }
+  }
+  try{ regCantiere('catena',{msg:_esito+
+      (result&&result._cosa&&result._cosa.vincitore?(' · fatto: '+result._cosa.vincitore.fatto+' ('+result._cosa.vincitore.punti+')'):'')+
+      (result&&result._perche&&result._perche.ripiego?(' · '+result._perche.ripiego):'')}); }catch(_){}
   try{
     const fam=result&&result.detectedPatterns&&result.detectedPatterns[0];
     if(fam){ S.obsFamiglie=((S.obsFamiglie||[]).concat([fam])).slice(-8); }
@@ -8436,17 +8685,36 @@ async function observe(silent){
        scritta. Il ripiego resta l'ultima parola quando non resta niente. */
     let _n=raffinaRiga((result&&result.note)||'');
     if(_n&&rigaDaButtare(_n)){ try{ regCantiere('digest',{msg:'veto: '+rigaDaButtare(_n)}); }catch(_){} _n=''; }
-    const safeNote=_n||'Pochi segnali per ora. Lascia una riga o spunta una cosa: al prossimo sguardo il pattern emerge.';
+    /* ══ v268.2 — IL SILENZIO DECISO NON SI RIEMPIE ════════════════════════
+       Qui il ripiego cancellava la decisione: se il COSA sceglieva di tacere,
+       «note» era vuota e questa riga ci metteva davanti una frase lo stesso.
+       Sono due cose diverse e adesso restano diverse:
+         · SILENZIO DECISO  -> non si scrive nessuna nota. La persona non vede
+           niente, che e esattamente cio che il COSA ha stabilito.
+         · RISULTATO MANCANTE (errore, rete, veto) -> il ripiego tecnico resta,
+           perche li una frase non c'e per un guasto, non per una scelta.
+       Il giorno resta segnato in tutti e due i casi, cosi l'osservatrice
+       automatica non ritenta all'infinito. */
+    const zitta=!!(result&&result._silenzio);
+    const safeNote=zitta?'':(_n||'Pochi segnali per ora. Lascia una riga o spunta una cosa: al prossimo sguardo il pattern emerge.');
     const entry={
       id:'o'+Date.now().toString(36),
       createdAt:new Date().toISOString(),
       sourceRange:range,
       summary:result.summary||'',
       detectedPatterns:result.detectedPatterns||[],
-      note:safeNote
+      note:safeNote,
+      silenzio:zitta
     };
-    S.observerNotes.push(entry);
-    S.observerNotes=sanitizeObserverNotes(S.observerNotes);
+    if(zitta){
+      /* la nota vuota non entra nell'elenco - sanitizeObserverNotes la
+         scarterebbe comunque - ma il giorno va segnato lo stesso. */
+      S.obsZitto=entry.createdAt;
+      try{ regCantiere('catena',{msg:'silenzio mostrato: nessuna frase alla persona'}); }catch(_){}
+    } else {
+      S.observerNotes.push(entry);
+      S.observerNotes=sanitizeObserverNotes(S.observerNotes);
+    }
     save(); if(!silent){ try{ playEventSound('observerReady'); }catch(_){} try{ haptic(); }catch(_){} }
   }finally{
     observing=false;
@@ -8458,8 +8726,33 @@ function maybeObserveAuto(){
     const notes=S.observerNotes||[];
     const last=notes.length?notes[notes.length-1]:null;
     if(last && (last.createdAt||'').slice(0,10)===todayKey()) return;   /* già osservato oggi */
+    if((S.obsZitto||'').slice(0,10)===todayKey()) return;                /* oggi ha scelto di tacere, e vale come osservazione */
+    /* ══ v268.3 — NON SI PAGA PER SOVRASCRIVERE UNA COSA CHE NESSUNO HA LETTO
+       Se l'ultima osservazione e ancora da leggere ed e fresca, verra mostrata
+       all'apertura. Farne un'altra adesso vorrebbe dire spendere una chiamata
+       per coprire una riga che la persona non ha ancora visto. E la regola
+       dell'economia applicata dove serve: non il risparmio a tutti i costi, ma
+       niente lavoro che non puo cambiare cosa arriva. */
+    if(last&&!last.vista&&last.note&&(Date.now()-Date.parse(last.createdAt||0))<36*3600*1000) return;
     const haDati=(S.diary&&S.diary.length>=2)||Object.keys(S.checks||{}).length>=2;
     if(!haDati) return;                                                  /* troppo poco da osservare */
+    /* ══ v268.2 — QUI MANCAVA LA CHIAMATA ═══════════════════════════════════
+       Questa funzione controllava se era il caso di osservare e poi finiva.
+       Non chiamava observe(). La Mente Osservatrice automatica non e mai
+       partita da sola: funzionava solo quando la si chiedeva a mano.
+       E la classe di guasto che questo progetto continua a trovare - il motore
+       c'e, il collegamento no - e stavolta era l'anello del TRIGGER.
+       In silenzio: e un gesto che nessuno ha chiesto, non deve fare rumore.
+       La doppia chiamata e gia impossibile: observe() ha la sua guardia
+       («observing»), e la riga qui sopra ferma chi ha gia osservato oggi. */
+    /* v268.3: observe e async. Un try/catch attorno alla chiamata non vede
+       niente se la promessa si rompe DOPO - lo stesso guasto che alla v185 era
+       rimasto invisibile per diciotto versioni su apriSoglia. Il catch si
+       aggancia alla promessa, e quello che cade finisce nel cantiere, in
+       silenzio: e un gesto che la persona non ha chiesto. */
+    try{ const _po=observe(true);
+      if(_po&&_po.catch) _po.catch(function(e){ try{ regCantiere('errore',{msg:'osservatrice: '+String((e&&e.message)||e).slice(0,140)}); }catch(_){} });
+    }catch(_){}
   }catch(_){}
 }
 
@@ -8857,7 +9150,8 @@ function buildLinePackage(id,title){
   }catch(_){}
   try{
     const mq=S.mastery&&S.mastery.quest&&S.mastery.quest[id];
-    if(mq&&mq.fraseAttrito) pkg.attrito_nominato='sul farla aveva detto: '+clampStr(mq.fraseAttrito,120);
+    const _vive=_attritoVivo(mq);   /* v268.6 */
+    if(_vive) pkg.attrito_nominato='sul farla aveva detto: '+clampStr(_vive,120);
   }catch(_){}
   try{
     const sv=(S.semi||[]).filter(s=>s&&s.stato==='piantato'&&s.testo).slice(-1)[0];
@@ -10054,6 +10348,7 @@ function raffinaRiga(t){
 function rigaDaButtare(t){
   const r=String(t||'');
   if(!r.trim()) return 'vuota';
+  { const prot=haProtocollo(r); if(prot) return 'protocollo: '+prot; }
   if(r.indexOf('!')>=0) return 'esclamazione';
   for(let i=0;i<r.length;i++){ if(r.charCodeAt(i)>0x2100) return 'emoji'; }
   if(/\b(devi|dovresti|dovrai|prova a|cerca di|ricorda di)\b/i.test(r)) return 'prescrizione';
@@ -11117,7 +11412,56 @@ function applyTheme(){ try{
       setTimeout(()=>{ try{ document.body.classList.remove('app-nasce'); }catch(_){} },1700); }catch(_){} }
     sg.classList.add('via'); setTimeout(()=>{ try{ sg.remove(); }catch(_){} },520); };
   sg.addEventListener('click',fine);   /* tap salta sempre */
-  if(!prima || (rmq.matches&&!animaSempre)){ setTimeout(fine,180); return; }   /* micro-entrata */
+  /* ══ v268.4 — LA NOTA SI PRENDE PRIMA DI QUALUNQUE USCITA ══════════════════
+     Qui c'era un ritorno anticipato con DUE condizioni, e stava sopra al punto
+     in cui l'osservazione viene letta:
+       · «!prima»: la soglia si compone solo alla prima apertura del giorno;
+       · «rmq.matches»: con «Riduci movimento» acceso non si compone mai.
+     Risultato: chi tiene acceso Riduci movimento - cioe chi ha costruito questa
+     app - non ha MAI potuto ricevere un'osservazione, per nessuna via. E alla
+     seconda apertura della giornata nemmeno gli altri.
+     Riduci movimento deve ridurre il MOVIMENTO, non il contenuto. Quindi la
+     nota si prende adesso, e se c'e viene consegnata comunque: ferma, senza
+     animazione, per il tempo che serve a leggerla. Se non c'e nessuna nota -
+     compreso il caso in cui il COSA ha scelto il silenzio - non cambia niente
+     e la soglia sparisce come prima. */
+  const _oss=(function(){
+    try{ const notes=S.observerNotes||[];
+      const ult=notes.length?notes[notes.length-1]:null;
+      const eta=ult&&ult.createdAt?(Date.now()-Date.parse(ult.createdAt)):1e12;
+      if(ult&&!ult.vista&&ult.note&&eta<36*3600*1000) return ult;
+    }catch(_){}
+    return null;
+  })();
+  /* ══ v268.4 — «VISTA» VUOL DIRE STATA IN SCENA, NON MESSA IN SCENA ════════
+     Fino alla v268.3 la nota veniva segnata come vista nell'istante in cui il
+     testo veniva assegnato all'elemento. Se in quell'istante l'app era in
+     secondo piano - riapertura dallo sfondo, telefono che si blocca, iOS che
+     ricarica la pagina mentre lo schermo e spento - la nota risultava letta e
+     spariva per sempre: maybeObserveAuto ne fa una nuova solo il giorno dopo, e
+     quella non tornava piu. Nessuna ricevuta di lettura: si segna alla fine del
+     tempo in cui e stata davvero sullo schermo, e solo se lo schermo c'era. */
+  function _segnaVista(ult){
+    try{ if(document.hidden) return; }catch(_){}
+    if(!ult||ult.vista) return;
+    ult.vista=true; try{ save(); }catch(_){}
+    try{ regCantiere('osservatrice',{msg:'letta all\'apertura'}); }catch(_){}
+  }
+  function _consegna(ult,ms){
+    if(!ult) return;
+    const s=document.getElementById('soglia-saluto');
+    if(s){ s.textContent=ult.note; s.style.color='rgba(232,168,76,.92)'; }
+    /* la soglia nasce «aria-hidden»: e giusto finche e decorazione. Nel momento
+       in cui ci mettiamo dentro un CONTENUTO, tenerla nascosta a chi legge con
+       una voce sintetica e lo stesso guasto di prima, in un'altra forma. */
+    try{ sg.setAttribute('aria-hidden','false'); }catch(_){}
+    setTimeout(function(){ _segnaVista(ult); }, ms||2600);
+  }
+  if(!prima || (rmq.matches&&!animaSempre)){
+    if(_oss){ _consegna(_oss,2600); setTimeout(fine,2600); }   /* ferma, ma leggibile */
+    else setTimeout(fine,180);
+    return;                                                    /* micro-entrata */
+  }
   const hnow=new Date().getHours();
   const F=(hnow>=5&&hnow<9)?{c:'232,168,76',s:"il mattino ha l'oro in bocca"}:
           (hnow>=9&&hnow<17)?{c:'214,209,196',s:'un passo alla volta'}:
@@ -11137,10 +11481,26 @@ function applyTheme(){ try{
       if(rr){ F.c=rr.c[Math.random()<0.5?0:1]; if(Math.random()<0.5) F.s=rr.s; }
     }
   }catch(_){}
-  /* saluto intelligente: se la musica è attiva e l'osservatrice ha un pensiero, parla lei */
+  /* ══ v268.3 — L'OSSERVAZIONE ARRIVA QUI, E PRIMA NON ARRIVAVA DA NESSUNA PARTE
+     La stanza dell'osservatrice e stata tolta alla v165. Da allora l'unica strada
+     verso la persona era questa riga, e aveva un interruttore sbagliato:
+     «S.settings.music» - che e l'impostazione dell'AUDIO, e nasce spenta.
+     Quindi la Mente Osservatrice poteva spendere una chiamata, scrivere una
+     buona riga, salvarla, e non farla leggere a nessuno. Mai.
+
+     La casa naturale e questa: l'apertura del giorno. Non serve una stanza
+     nuova, serve che quello che ha visto ieri sera arrivi stamattina - che e
+     anche il momento in cui ha senso leggerlo.
+     Tre condizioni, per non fare rumore:
+       · la nota non e ancora stata letta
+       · e recente (entro trentasei ore: piu vecchia non parla di oggi)
+       · e non e vuota - se il COSA ha scelto il silenzio, non c'e nessuna nota
+         e il saluto resta quello di sempre. Il silenzio continua a non mostrare
+         niente, come deve. */
   let testo=F.s, durata=1.9;
-  try{ const notes=S.observerNotes||[];
-    if(S.settings&&S.settings.music&&notes.length){ testo=notes[notes.length-1].note; durata=2.6; } }catch(_){}
+  if(_oss){ testo=_oss.note; durata=2.6;
+    try{ sg.setAttribute('aria-hidden','false'); }catch(_){}
+    setTimeout(function(){ _segnaVista(_oss); }, 2600); }
   const sal=document.getElementById('soglia-saluto');
   if(sal){ sal.textContent=testo; sal.style.color='rgba('+F.c+',.92)'; }
   try{ document.body.style.setProperty('--alba-d',(durata-0.55).toFixed(2)+'s');
@@ -12063,7 +12423,8 @@ const SEME_SYS='Sei l\u2019osservatrice di Sentiero. Ogni tanto pianti una DOMAN
 'FORMATO: UNA domanda sola, massimo centotrenta caratteri, finisce col punto interrogativo. Rispondi SOLO JSON compatto: {"seme":"..."}';
 function semeDigest(cand){
   const dia=(S.diary||[]).slice(0,2).map(e=>clampStr(e.testo,240));
-  const attr=[]; try{ Object.values((S.mastery&&S.mastery.quest)||{}).forEach(q=>{ if(q&&q.fraseAttrito) attr.push(clampStr(q.fraseAttrito,90)); }); }catch(_){}
+  /* v268.6: gli attriti VIVI, non tutti quelli mai nominati */
+  const attr=[]; try{ Object.values((S.mastery&&S.mastery.quest)||{}).forEach(q=>{ const v=_attritoVivo(q); if(v) attr.push(clampStr(v,90)); }); }catch(_){}
   const d={momento:(new Date().getHours()<12)?'mattina':'sera',asse:cand.asse||cand.tipo,gesto:cand.gesto||'',
     quest_aperte:(S.quests||[]).filter(q=>!q.fatto).slice(0,8).map(q=>q.titolo),
     attriti:attr.slice(0,3),diario_recente:dia,
