@@ -1,0 +1,41 @@
+{
+ "formato": 2,
+ "versione": "v60S.269.10 · 2026-08-19",
+ "generazione": 269010,
+ "cache": "sentiero-v60s-269-10",
+ "_nota": "sha256 completo, 64 caratteri esadecimali. Il campo del manifest v269.9 conteneva un PREFISSO di 16 caratteri e si chiamava sha256: era un nome piu forte del contenuto.",
+ "file": {
+  "index.html": {
+   "byte": 1179018,
+   "sha256": "4a613a8703abbad683a5cf1ab4b5ab4ad7197bd62455e363a06d7fb84b8579b9"
+  },
+  "sw.js": {
+   "byte": 4566,
+   "sha256": "64c9b9584cc880162311861b1d091b5484f1b56e3fe1ffab3a6a57518c646541"
+  },
+  "manifest.json": {
+   "byte": 598,
+   "sha256": "ee31e80c07af0b3b02804875b933377a649e593e2318da4a914193bf26106064"
+  },
+  "privacy.html": {
+   "byte": 15052,
+   "sha256": "219d258e63f0d918bc9a825be9328967f98bd76f3cd0564d52552034a2848c4a"
+  },
+  "guida.html": {
+   "byte": 25014,
+   "sha256": "5c560bdf0748ab12dcdb8e37522e09c5472e4905b3c11655a8fd8c715c0a849e"
+  },
+  "inizia.html": {
+   "byte": 13833,
+   "sha256": "e97325259400315f6d782b338b3b439f6d1defb0612ebe315e36159d5ce9fcf4"
+  },
+  "lingue/base-it.json": {
+   "byte": 13191,
+   "sha256": "27f56f997f40a5d491bb03b0fa8128ec6e4085a6285448f12839118e0698208e"
+  },
+  "lingue/en.json": {
+   "byte": 21032,
+   "sha256": "004893604704999849f6e2a0764a46d7029aa83ee45df71b81e97b630b1856f3"
+  }
+ }
+}

@@ -1727,7 +1727,7 @@ body.app-nasce #giorno-bar{animation:nasce .5s cubic-bezier(.22,1,.36,1) .16s bo
   width:var(--sd,8px);height:var(--sd,8px);
   margin:calc(var(--sd,8px) / -2) 0 0 calc(var(--sd,8px) / -2);border-radius:50%;
   background:radial-gradient(circle,hsla(var(--notte-h) var(--notte-s) 74% / .85) 0%,transparent 70%)}
-body[data-pane="quest"] #notte-luce,body[data-pane="quest"] .notte-scia{display:none}
+body[data-mondo="coperto"] #notte-luce,body[data-mondo="coperto"] .notte-scia{display:none}
 #notte-fiore{position:fixed;left:0;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;z-index:141;
   border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(circle,#fff 0%,hsl(var(--notte-h) 100% 86%) 40%,transparent 72%)}
@@ -1991,7 +1991,7 @@ body.testa-raccolta #btn-pin{pointer-events:none}
   background:radial-gradient(circle,hsla(var(--terra-h) 96% 78% / .9) 0%,
     hsla(var(--terra-h) var(--terra-s) 58% / .5) 45%,transparent 72%);
   filter:blur(.6px)}
-body[data-pane="quest"] #terra-luce,body[data-pane="quest"] .terra-scia{display:none}
+body[data-mondo="coperto"] #terra-luce,body[data-mondo="coperto"] .terra-scia{display:none}
 /* il fiore: l'istante in cui la luce smette di essere un punto e diventa il
    bordo della scheda. Un solo elemento, scalato: nessun frame in piu. */
 #terra-fiore{position:fixed;left:0;top:0;width:10px;height:10px;margin:-5px 0 0 -5px;z-index:131;
@@ -2469,8 +2469,11 @@ body.theme-carta .item{overflow:visible}
       <section>
         <div class="sec-head">I tuoi dati</div>
         <p class="note">Quello che scrivi resta su questo telefono. Non c'è un server che lo riceve, perché non c'è un server: nessuno lo legge, nemmeno chi ha fatto l'app. Non c'è un account, non c'è pubblicità, non ci sono statistiche.</p>
-        <p class="note">Escono dal telefono tre cose sole, e sono queste. Quando apri l'indirizzo, GitHub — che ospita l'app — vede il tuo indirizzo IP come farebbe qualunque sito; una volta installata, l'app funziona senza rete. Quando parli, è la dettatura del tuo browser a trasformare la voce in testo, e a seconda del telefono può farlo qui o sui server di chi l'ha fatta: Sentiero riceve solo il testo. Se accendi la posizione, resta nel diario qui e non va da nessuna parte.</p>
-        <p class="note">La quarta cosa esce solo se lo decidi tu, ed è la chiave qui sotto: da quel momento il testo che serve a rispondere viene mandato ad Anthropic, con il tuo account. Togli la chiave e smette.</p>
+        <p class="note">Distinguiamo tre cose diverse. <b>Quello che Sentiero manda</b>: le tue parole escono per volontà dell'app in un caso solo, e lo decidi tu — è la chiave qui sotto. <b>Quello che fa il telefono</b>: la dettatura non è nostra, ed è il browser o il sistema a trasformare la voce in testo, qui dentro o sui propri server. <b>Quello che l'app scarica</b>: programmi e modelli, che sono file in arrivo, non tue parole in partenza.</p>
+        <p class="note">Cosa esce comunque, e non sono tue parole: quando apri l'indirizzo, GitHub — che ospita l'app — vede il tuo indirizzo IP come farebbe qualunque sito. Una volta installata, l'app funziona senza rete. Quando parli, è la dettatura del tuo browser a trasformare la voce in testo, e a seconda del telefono può farlo lì o sui server di chi l'ha fatta: Sentiero riceve solo il testo. Se accendi la posizione, resta nel diario qui e non va da nessuna parte.</p>
+        <p class="note">Cosa scarica, e solo se lo accendi tu: «Una voce dentro il telefono» e «Intelligenza locale» prendono due programmi da <b>esm.run</b>, e quei programmi si scaricano poi da soli il modello che serve — circa quattrocento mega il primo, ventitré il secondo. Sono file che arrivano, non dati che partono: da lì non esce niente di tuo, e dopo funzionano senza rete. Se non li accendi, non viene scaricato niente.</p>
+        <p class="note">E infine la sola cosa tua che può uscire per volontà di Sentiero: se metti la chiave qui sotto, da quel momento il testo che serve a rispondere viene mandato ad Anthropic, con il tuo account. Togli la chiave e smette.</p>
+        <p class="note">Senza chiave, <b>Sentiero non manda quello che scrivi né ad Anthropic né a un proprio server</b> — un proprio server non ce l'ha. Un confine che però non è nostro e va detto: se usi la voce, la dettatura la fa il browser o il telefono, e a seconda del modello può trascriverla qui dentro oppure sui server di chi l'ha fatta. Sentiero riceve solo il testo che torna indietro. Su quel pezzo non possiamo prometterti niente, perché non è nostro: possiamo solo dirti che c'è.</p>
         <p class="note">Copia di tutto te la fai da qui, quando vuoi. Cancellare l'app cancella tutto: non ne esiste una copia altrove da chiedere indietro.</p>
         <div class="btn-row"><button class="act" id="btn-privacy">Leggi tutto</button></div>
         <p class="note">Titolare del trattamento: Davide Cuzzilla — cuzzilladavide98@gmail.com</p>
@@ -2528,8 +2531,10 @@ body.theme-carta .item{overflow:visible}
         <div class="sec-head">Dati</div>
         <div class="btn-row">
           <button class="act" id="btn-export">Esporta backup</button>
+          <button class="act" id="btn-diagnostica">Diagnostica</button>
           <button class="act" id="btn-import">Importa</button>
         </div>
+        <p class="note">Il <b>backup</b> è la tua vita: tienilo per te. La <b>diagnostica</b> contiene solo ingranaggi — versione, telefono, quello che è successo all'app — e nessuna delle tue parole: quella la puoi mandare a chi ripara.</p>
         <input type="file" id="import-file" accept="application/json" class="hidden">
         <p class="note" id="version-line" style="text-align:center;margin-top:18px;opacity:.6"></p>
       </section>
@@ -3409,7 +3414,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.269.2 · 2026-08-18';
+const APP_VERSION='v60S.269.10 · 2026-08-19';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3436,6 +3441,21 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Un dito, una cosa sola \u2014 e adesso davvero: chi comincia un gesto lo finisce sempre lui, e un secondo dito non pu\u00f2 avviare niente n\u00e9 chiudere quello che stavi facendo.'
+ ]},
+ {righe:[
+   'Un dito, una cosa sola. Prima il foglio e il microfono ascoltavano tutti e due lo stesso dito e nessuno dei due sapeva dell\u2019altro: adesso chi tocca per primo comanda, e un secondo dito non gli toglie il gesto di mano.',
+   'E se il microfono si interrompe, adesso si spegne davvero: prima restava acceso in silenzio.'
+ ]},
+ {righe:[
+   'Adesso puoi mandare a chi ripara una \u00abdiagnostica\u00bb: dice che telefono hai, che versione stai usando e cosa \u00e8 successo all\u2019app, e non contiene nessuna delle tue parole. Il backup resta un\u2019altra cosa: quello \u00e8 la tua vita e tienilo per te.',
+   'E la pagina \u00abI tuoi dati\u00bb adesso distingue due cose diverse: quello che scrivi tu, che esce solo se metti la chiave, e i programmi che l\u2019app scarica per funzionare, che sono file che arrivano \u2014 non tuoi che partono.'
+ ]},
+ {righe:[
+   'Se il microfono si interrompe mentre parli, quello che avevi gi\u00e0 detto non sparisce pi\u00f9: lo ritrovi dove lo ritrovi sempre, con i soliti due tasti. E dopo un errore Sentiero torna davvero a riposo, invece di restare mezzo acceso.',
+   'La domanda \u00abquesta cosa \u00e8 ancora tua?\u00bb non si considera pi\u00f9 fatta se non hai potuto vederla. E quando il foglio \u00e8 gi\u00f9, il mondo torna vivo: la Chiamata a terra c\u2019\u00e8.'
+ ]},
  {righe:[
    'Dentro l\u2019app non c\u2019\u00e8 pi\u00f9 niente della vita di chi l\u2019ha scritta: gli esempi sono inventati e il cielo, se non gli dai la posizione, non \u00e8 pi\u00f9 quello sopra casa sua ma una decorazione.'
  ]},
@@ -5191,10 +5211,479 @@ function renderFlow(){
 document.querySelector('#flow').addEventListener('click',e=>{
   const b=e.target.closest('[data-flow]'); if(b) handleFlowAction(b.dataset.flow,{target:b.dataset.target,kind:b.dataset.kind});
 });
+/* ══ v269.3 — UNO STATO, UNA DOMANDA ════════════════════════════════════════
+   Il mondo (cielo, luci orbitali, microfono) e il foglio sono due superfici.
+   Chi disegna nel mondo ha una domanda sola: «adesso il mondo si vede?».
+   Fino alla v269.2 quella domanda non esisteva, e ognuno se la rispondeva da
+   solo leggendo uno stato scritto per un'altra ragione. Due lettori su due
+   hanno letto male, e nessuno dei due era distratto:
+
+     · «data-pane === "quest"» veniva letto come «il mondo e coperto» in tre
+       punti. Ma showPane('quest') e cio che succede quando tocchi «parla»:
+       il foglio scende a picco e il mondo si vede PIU DI SEMPRE. Effetto:
+       la Chiamata a terra andava in display:none proprio quando doveva esserci,
+       e le due luci orbitali smettevano di muoversi.
+     · «data-foglio === "picco"» veniva letto come «il foglio copre il cielo»,
+       col commento scritto accanto. Ma posDi('picco') mette il foglio a
+       H-110-safe, cioe IN FONDO. Effetto: in modo inchiostro il cielo non si
+       ridipingeva proprio quando era in vista.
+
+   Non e un errore di due persone: e uno stato che risponde a una domanda
+   diversa da quella che gli veniva fatta. Correggere i due selettori avrebbe
+   lasciato in piedi la condizione che li ha generati - e la terza funzione che
+   nascera nel mondo la sbaglierebbe di nuovo.
+   Quindi la domanda diventa esplicita e ha una risposta sola, scritta in un
+   posto solo. Chi disegna nel mondo legge «data-mondo», e basta.
+
+   LIMITE DICHIARATO: qui dentro pesano solo foglio e pane. Gli strati che
+   coprono tutto (stanza, giardino, terra, proposte, soglia, accoglienza) hanno
+   z-index >= 110 e coprono comunque: non entrano in questo calcolo, e quando
+   sono aperti il mondo continua a girare sotto. E lavoro sprecato, non un
+   errore di stato, ed e un debito dichiarato - non un difetto nascosto. */
+/* ══ v269.5 — LA SCATOLA NERA ═══════════════════════════════════════════════
+   Il 18 agosto l'app e diventata bianca per alcuni secondi, piu volte, e le
+   spiegazioni possibili erano almeno otto: ricaricamento, riavvio della PWA,
+   WebKit che uccide la pagina, cambio di service worker, interfaccia fuori
+   dalla finestra, tema applicato tardi, disegno fallito, memoria.
+   Senza strumenti, ognuna di quelle costa una versione per essere esclusa.
+
+   LA REGOLA CHE RENDE QUESTA SCATOLA SICURA NON E UNA PROMESSA, E UNA FORMA:
+   qui non si scrive testo. Si scrive un CODICE preso da una tabella chiusa e
+   due numeri. Non c'e nessun modo di far entrare una trascrizione, il titolo di
+   una cosa da fare, una riga del diario o una posizione: non esiste il campo.
+   Non e «stiamo attenti a non registrare» - e «non si puo».
+
+   Vive in un magazzino suo, separato dal registro del cantiere: quello e il
+   corpus privato dell'IA e contiene le parole della persona. Questi sono
+   ingranaggi. Due cose diverse non stanno nello stesso cassetto.
+
+   LA DOMANDA A CUI DEVE SAPER RISPONDERE, e per cui e nata:
+   quando lo schermo torna bianco, e la PAGINA che e morta o e l'INTERFACCIA che
+   e sparita? Se nel nastro compare una «sessione» nuova, la pagina e ripartita
+   (ricaricamento, o iOS che ha ucciso la PWA). Se non compare, la pagina era
+   viva e il guasto e nel disegno o nella posizione. Sono due mondi diversi e
+   fin qui non sapevamo distinguerli. */
+const SCATOLA_LS='sentiero-scatola-v1';
+const SCATOLA_TETTO=400;              /* nastro circolare: le vecchie escono da sole */
+/* la tabella chiusa. Un codice che non e qui dentro non entra. */
+const SCATOLA_VOCI={
+  ses:'sessione nuova (n1=numero, n2=generazione dell\'HTML che l\'ha aperta)',
+  avv:'app pronta',
+  pgs:'pageshow  (n1=1 se ripresa dalla cache di iOS)',
+  pgh:'pagehide  (n1=1 se messa in cache invece che chiusa)',
+  vis:'tornata in primo piano',
+  nas:'andata in secondo piano',
+  swc:'il service worker che comanda e cambiato',
+  swn:'c\'e una versione nuova in attesa',
+  bgv:'base linguistica scartata (n1: 1 timbro di un\'altra generazione, 0 senza timbro)',
+  swg:'generazione del service worker che serve la pagina (n1, 0 = non si e presentato)',
+  gnu:'gesto nuovo: un dito ha preso possesso',
+  gd2:'un secondo dito e stato ignorato (Sentiero e monodito)',
+  gfi:'gesto finito (n1=1 se annullato dal sistema)',
+  gsi:'gesto chiuso d\'ufficio (n1: 1 pagehide, 2 secondo piano)',
+  gkn:'un click e stato fermato: il contatto non apparteneva a quel comando',
+  gks:'attivazione da tastiera o lettore di schermo: sempre permessa',
+  vwp:'la finestra e cambiata (n1=larghezza, n2=altezza)',
+  fog:'foglio (n1: 0 picco, 1 mezzo, 2 pieno)',
+  pan:'schermata (n1: 0 oggi, 1 diario, 2 quest, 3 altro)',
+  mnd:'mondo (n1: 1 vivo, 0 coperto)',
+  mgi:'dito giu sul microfono',
+  mav:'avvio del riconoscimento',
+  mon:'il microfono e davvero aperto',
+  msu:'dito su',
+  mst:'chiusura normale',
+  mko:'chiusura anomala (n1: 1 start, 2 permesso, 3 riavvio)',
+  msv:'parole salvate dopo la chiusura anomala (n1=1 se c\'era del testo)',
+  err:'errore JS (n1: tipo, n2: riga)',
+  prm:'promessa rifiutata (n1: tipo)'
+};
+const SCATOLA_ERR={TypeError:1,ReferenceError:2,RangeError:3,SyntaxError:4,DOMException:5,Error:6};
+/* ══ v269.8 — CHI HA PRODOTTO QUESTO EVENTO? ════════════════════════════════
+   Il nastro sopravvive agli aggiornamenti: puo contenere una sessione fatta
+   dalla generazione N-1 seguita da una fatta da N. Alla v269.7 non c'era modo
+   di attribuirle, e «swc» diceva che il controllore era cambiato senza dire da
+   cosa a cosa. Il commento prometteva piu di quanto il nastro contenesse.
+   Senza aprire un campo di testo: la generazione diventa un NUMERO, ricavato
+   dalla versione. v60S.269.8 -> 269008. Ogni sessione porta con se il numero
+   dell'HTML che l'ha aperta, e - appena il worker risponde - quello del worker
+   che la sta servendo. Un worker vecchio, che non conosce la domanda, non
+   risponde: e zero, e «zero» e a sua volta un'informazione utile. */
+function _genNumero(v){
+  try{
+    const t=String(v||APP_VERSION||'').split('\u00b7')[0];
+    const m=t.match(/(\d+)(?:\.(\d+))?\s*$/);
+    if(!m) return 0;
+    return (parseInt(m[1],10)||0)*1000+(parseInt(m[2]||'0',10)||0);
+  }catch(_){ return 0; }
+}
+let _scatola=[],_scatolaSes=0,_scatolaPen=0;
+function scatolaLeggi(){
+  try{ const r=JSON.parse(localStorage.getItem(SCATOLA_LS)||'null');
+    if(r&&Array.isArray(r.n)) { _scatola=r.n.slice(-SCATOLA_TETTO); _scatolaSes=(r.s|0); } }catch(_){}
+}
+function scatolaScrivi(){
+  _scatolaPen=0;
+  try{ localStorage.setItem(SCATOLA_LS,JSON.stringify({s:_scatolaSes,n:_scatola.slice(-SCATOLA_TETTO)})); }catch(_){}
+}
+/* nota(codice, numero, numero). Nient'altro puo entrare, per costruzione. */
+function nota(cod,n1,n2){
+  try{
+    /* si prova la PRESENZA della chiave, non la verita del valore: una voce con
+       descrizione vuota sarebbe stata scartata in silenzio. Trovato dal banco. */
+    if(!Object.prototype.hasOwnProperty.call(SCATOLA_VOCI,cod)) return;
+    const v=[Date.now()%86400000,cod];                   /* solo l'ora del giorno, in millesimi */
+    if(Number.isFinite(n1)) v.push(Math.round(n1));
+    if(Number.isFinite(n2)) v.push(Math.round(n2));
+    _scatola.push(v);
+    if(_scatola.length>SCATOLA_TETTO) _scatola=_scatola.slice(-SCATOLA_TETTO);
+    /* si scrive con calma: un nastro che rallenta l'app non serve a niente */
+    if(!_scatolaPen) _scatolaPen=setTimeout(scatolaScrivi,1500);
+  }catch(_){}
+}
+/* la stretta di mano: una domanda, una risposta, niente protocollo. Se il
+   worker e di prima della v269.8 non risponde e resta zero. */
+function _chiediGenerazioneWorker(){
+  try{
+    const sw=navigator.serviceWorker;
+    if(!sw||!sw.controller){ nota('swg',0); return; }
+    const mc=new MessageChannel();
+    let risposto=false;
+    mc.port1.onmessage=function(e){
+      risposto=true;
+      const g=(e&&e.data&&Number(e.data.gen))||0;
+      nota('swg',Number.isFinite(g)?g:0);
+    };
+    sw.controller.postMessage({q:'gen'},[mc.port2]);
+    setTimeout(function(){ if(!risposto) nota('swg',0); },1500);
+  }catch(_){ try{ nota('swg',0); }catch(__){} }
+}
+/* ══ v269.8 — DUE ARTEFATTI, NON UNO ════════════════════════════════════════
+   La scatola nera e privata per costruzione. Il suo mezzo di trasporto no: alla
+   v269.7 usciva DENTRO il backup completo, cioe dentro Object.assign({},S,...),
+   che contiene esattamente la vita che la scatola era stata progettata per non
+   chiedere. Scatola sicura non vuol dire file sicuro da mandare.
+   Da qui in poi sono due cose diverse, e si chiamano diversamente:
+
+     BACKUP        e della persona. Contiene la sua vita. Serve a portarsela via.
+     DIAGNOSTICA   e per chi ripara. Non contiene niente di lei.
+
+   E costruita per LISTA BIANCA: si parte dal vuoto e si aggiunge solo cio che
+   serve a distinguere una causa. Non si copia lo stato per poi togliere i campi
+   privati - quella e la strada per cui, prima o poi, ne resta uno.
+   Dello stato escono soltanto CONTEGGI: quante note, quante cose, quanti byte.
+   Un numero non e un contenuto, e serve a capire se il telefono e sotto sforzo. */
+function diagnosticaSicura(){
+  const d={formato:1, quando:new Date().toISOString().slice(0,19)};
+  try{ d.versione={html:String(APP_VERSION||''), generazione:_genNumero()}; }catch(_){}
+  try{
+    d.dispositivo={
+      ua:String(navigator.userAgent||'').slice(0,180),
+      viewport:[window.innerWidth|0,window.innerHeight|0],
+      schermo:[(screen&&screen.width)|0,(screen&&screen.height)|0],
+      dpr:Math.round((window.devicePixelRatio||1)*100)/100,
+      lingua:String(navigator.language||'').slice(0,12),
+      ridottoMovimento:(function(){ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches?1:0; }catch(_){ return -1; } })(),
+      inHome:(function(){ try{ return (matchMedia('(display-mode: standalone)').matches||navigator.standalone)?1:0; }catch(_){ return -1; } })(),
+      memoria:(navigator.deviceMemory|0)||0
+    };
+  }catch(_){}
+  /* SOLO NUMERI. Nessun titolo, nessuna riga, nessuna data della sua vita. */
+  try{
+    const b=JSON.stringify(S||{});
+    d.quanto={
+      byteStato:b.length,
+      note:((S&&S.diary)||[]).length,
+      cose:((S&&S.quests)||[]).length,
+      ricorrenti:((S&&S.scheduled)||[]).length,
+      osservazioni:((S&&S.observerNotes)||[]).length,
+      conChiave:(S&&S.apiKey)?1:0,
+      baseLinguistica:(S&&S.baseLing)?1:0
+    };
+  }catch(_){}
+  try{ scatolaScrivi(); d.scatola={voci:SCATOLA_VOCI,sessione:_scatolaSes,nastro:_scatola.slice(-SCATOLA_TETTO)}; }catch(_){}
+  return d;
+}
+function scaricaDiagnostica(){
+  try{
+    const j=JSON.stringify(diagnosticaSicura(),null,1);
+    const blob=new Blob([j],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='sentiero-diagnostica-'+todayKey()+'.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(_){} },1000);
+    toast('Diagnostica salvata: ingranaggi, non i tuoi dati');
+  }catch(_){ toast('Non sono riuscito a salvarla'); }
+}
+function scatolaAvvia(){
+  scatolaLeggi();
+  _scatolaSes=(_scatolaSes|0)+1;
+  /* n1 = quale sessione, n2 = QUALE GENERAZIONE l'ha aperta. Da qui ogni evento
+     che segue appartiene a quella, finche non compare la sessione dopo. */
+  nota('ses',_scatolaSes,_genNumero());
+  scatolaScrivi();
+  /* e la domanda al worker: «chi sta servendo questa pagina?» */
+  try{ _chiediGenerazioneWorker(); }catch(_){}
+  try{
+    nota('vwp',window.innerWidth,window.innerHeight);
+    addEventListener('pageshow',function(e){ nota('pgs',(e&&e.persisted)?1:0); });
+    addEventListener('pagehide',function(e){ nota('pgh',(e&&e.persisted)?1:0); scatolaScrivi(); });
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden){ nota('nas'); scatolaScrivi(); } else { nota('vis'); } });
+    let _rt=0;
+    addEventListener('resize',function(){ if(_rt) return;
+      _rt=setTimeout(function(){ _rt=0; nota('vwp',window.innerWidth,window.innerHeight); },400); });
+    addEventListener('error',function(e){
+      const t=(e&&e.error&&e.error.constructor&&SCATOLA_ERR[e.error.constructor.name])||0;
+      nota('err',t,(e&&e.lineno)||0); });
+    addEventListener('unhandledrejection',function(e){
+      const r=e&&e.reason; const t=(r&&r.constructor&&SCATOLA_ERR[r.constructor.name])||0;
+      nota('prm',t); });
+    if(navigator.serviceWorker){
+      navigator.serviceWorker.addEventListener('controllerchange',function(){
+        nota('swc'); try{ _chiediGenerazioneWorker(); }catch(_){} scatolaScrivi(); });
+    }
+  }catch(_){}
+}
+/* si accende subito: se l'app muore fra dieci secondi, i dieci secondi ci sono */
+try{ scatolaAvvia(); }catch(_){}
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ARBITRO DEL GESTO — un contatto fisico, un proprietario, un'interpretazione.
+
+   PERCHE ESISTE. Nel sorgente di Sentiero ci sono quattordici ascoltatori di
+   gesto agganciati a window o document, usati da quattro macchine indipendenti
+   (trascinamento del foglio, gesto del microfono, pressione lunga della stanza,
+   pressione lunga del verdetto). Ognuna decide da se se il dito e suo, e una
+   sola consulta nelMondo(). Il trascinamento del foglio e il gesto del
+   microfono ascoltano ENTRAMBI pointermove su window, per lo stesso dito: che
+   non si pestino i piedi dipende da due variabili che nessuno confronta mai.
+
+   L'INVARIANTE, nella forma che regge anche ai bordi:
+
+     una singola intenzione fisica non viene interpretata contemporaneamente da
+     due macchine; le attivazioni semantiche native restano disponibili.
+
+   Tre conseguenze, e sono le tre cose che questo file rende vere:
+
+   1 · UN CONTATTO, UN PROPRIETARIO, DECISO UNA VOLTA.
+       Il proprietario e legato al pointerId, non a una variabile globale. Il
+       primo pointer ammesso acquisisce il gesto; un secondo dito NON puo
+       cambiare la proprieta del primo, e il suo pointerup non termina il gesto
+       altrui. Sentiero e monodito per decisione dichiarata: il secondo contatto
+       viene ignorato, non arbitrato.
+
+   2 · LA GEOMETRIA PUO CAMBIARE, L'IDENTITA NO.
+       Dopo il pointerdown il foglio puo muoversi, la tastiera aprirsi, il nodo
+       sparire, l'orientamento girare. Il proprietario resta quello. Si esce
+       solo con un evento terminale dichiarato: pointerup, pointercancel, o una
+       cancellazione sistemica (pagehide, la pagina che va in secondo piano,
+       il nodo che lascia il documento). Niente proprietari zombie.
+
+   3 · IL CLICK NON E UNA SECONDA AUTORITA.
+       Un <button> deve restare un <button>: tastiera, VoiceOver, Invio. Quindi
+       non si vieta il click. Si distingue:
+         · click con detail === 0  ->  attivazione SEMANTICA (tastiera, lettore
+           di schermo, .click() da codice). Sempre permessa: non nasce da un
+           contatto fisico e non puo essere in conflitto con nessuno.
+         · click con detail > 0    ->  generato dal contatto fisico appena
+           finito. Permesso solo se QUEL contatto apparteneva a questo comando.
+       Cosi il singolo contatto resta interpretato una volta sola, e chi usa la
+       tastiera non perde niente.
+
+   USO
+     const ARB = arbitroDelGesto({
+       macchine: [ {nome:'foglio', dove:'#app', priorita:1},
+                   {nome:'voce',   dove:'#mic', priorita:3} ],
+       suRegistro: (cod,n1,n2) => nota(cod,n1,n2)      // facoltativo
+     });
+     ARB.mio('voce', e)     -> true se questo evento appartiene alla voce
+     ARB.proprietario()     -> nome del proprietario corrente, o null
+   ═══════════════════════════════════════════════════════════════════════════ */
+function arbitroDelGesto(opz) {
+  const MACCHINE = (opz && opz.macchine) || [];
+  const registra = (opz && opz.suRegistro) || function () { };
+  /* LA CAMPANA. Un arbitro che sa solo dire «non e tuo» crea un guaio nuovo:
+     se cancella il gesto per conto suo - la pagina che sparisce, lo schermo che
+     si spegne - la macchina proprietaria non riceve piu il proprio pointerup e
+     resta aperta. Quindi quando l'arbitro chiude d'ufficio, AVVISA chi possedeva.
+     E la stessa lezione della v269.2: chi termina qualcosa deve riportare a casa
+     chi la stava usando. */
+  const avvisa = (opz && opz.suCancellazione) || function () { };
+  const doc = (opz && opz.document) || document;
+  const win = (opz && opz.window) || window;
+
+  /* lo stato: UNO solo, legato a un pointerId preciso, e con DUE momenti
+     distinti che alla prima stesura erano uno solo (vedi «finisci»). */
+  let gesto = null;   /* {id, macchina, nato, bersaglio, finito} */
+  let ultimo = null;  /* l'ultimo gesto concluso: serve a giudicare il click */
+
+  function scegli(bersaglio) {
+    let vinta = null;
+    for (const m of MACCHINE) {
+      if (!m.dove) continue;
+      try { if (bersaglio && bersaglio.closest && bersaglio.closest(m.dove)) {
+        if (!vinta || m.priorita > vinta.priorita) vinta = m; } } catch (_) { }
+    }
+    return vinta || MACCHINE.filter(m => !m.dove)[0] || null;
+  }
+
+  function giu(e) {
+    /* IL SECONDO DITO NON ESISTE. Non si arbitra: si ignora. Sentiero e
+       monodito, e dichiararlo qui e piu onesto che scoprirlo in un bordo.
+       ATTENZIONE: perche questo valga davvero, anche gli INGRESSI delle
+       macchine devono chiedere «e mio?» prima di partire. Ignorare il secondo
+       dito qui dentro e inutile se poi la macchina parte lo stesso: e
+       esattamente il difetto della v269.9, dove il secondo dito avviava un
+       trascinamento che non avrebbe mai ricevuto la propria fine. */
+    if (gesto && !gesto.finito) { registra('gd2', 1); return; }
+    const m = scegli(e.target);
+    gesto = { id: e.pointerId, macchina: m ? m.nome : null, nato: Date.now(), bersaglio: e.target };
+    registra('gnu', 1);
+  }
+  /* ══ «TERMINALE RICEVUTO» NON E «PROPRIETA LIBERATA» ══════════════════════
+     Alla prima stesura questa funzione faceva «gesto = null» subito. Ma
+     l'arbitro ascolta in CATTURA e le macchine in BOLLA: su window la cattura
+     arriva prima e la bolla dopo. Quindi la sequenza reale era
+
+       pointerup -> arbitro (cattura) -> gesto=null -> macchina (bolla)
+                 -> «e mio?» -> NO -> il proprietario non riceve la sua fine
+
+     cioe l'arbitro conteneva esattamente la classe che doveva eliminare:
+     qualcuno dichiarava morto il gesto prima che il proprietario potesse
+     riportarsi a casa. Provato: quattro terminali su quattro non arrivavano.
+
+     Adesso i due momenti sono separati. Al terminale il gesto viene MARCATO
+     finito - e continua a rispondere «si, e tuo» al proprietario per tutto il
+     resto della propagazione - e viene LIBERATO in una microtask, cioe appena
+     la propagazione e conclusa e prima di qualunque altro evento.
+     La microtask non e un ritardo scelto a caso: e il primo istante in cui si
+     e sicuri che la bolla e finita. */
+  function liberaDopo() {
+    const fine = function () { if (gesto && gesto.finito) gesto = null; };
+    try { Promise.resolve().then(fine); }
+    catch (_) { try { setTimeout(fine, 0); } catch (__) { gesto = null; } }
+  }
+  function finisci(e, cancellato) {
+    if (!gesto || gesto.finito) return;
+    /* solo il pointer PROPRIETARIO puo chiudere il gesto. Il pointerup di un
+       secondo dito non tocca niente: era proprio il bordo da chiudere. */
+    if (e && e.pointerId !== undefined && e.pointerId !== gesto.id) return;
+    gesto.finito = true;
+    ultimo = { macchina: gesto.macchina, bersaglio: gesto.bersaglio, fine: Date.now(), cancellato: !!cancellato };
+    registra('gfi', cancellato ? 1 : 0);
+    liberaDopo();
+  }
+  /* la cancellazione sistemica: se la pagina sparisce, il gesto e finito.
+     Un proprietario che sopravvive alla pagina e uno zombie. */
+  function cancellaTutto(perche) {
+    /* la campana suona SOLO quando non c'e un terminale consegnabile. Se il
+       gesto e gia stato chiuso da un pointerup o da un pointercancel, la
+       macchina si e gia riportata a casa da sola: suonare adesso sarebbe la
+       seconda chiusura. Ne due ne zero: esattamente una. */
+    if (!gesto || gesto.finito) return;
+    const chi = gesto.macchina;
+    finisci({ pointerId: gesto.id }, true);
+    registra('gsi', perche | 0);
+    try { avvisa(chi, perche | 0); } catch (_) { }
+  }
+
+  try {
+    win.addEventListener('pointerdown', giu, true);
+    win.addEventListener('pointerup', e => finisci(e, false), true);
+    win.addEventListener('pointercancel', e => finisci(e, true), true);
+    win.addEventListener('pagehide', () => cancellaTutto(1), true);
+    doc.addEventListener('visibilitychange', () => { if (doc.hidden) cancellaTutto(2); }, true);
+  } catch (_) { }
+
+  /* IL CLICK. Non si vieta: si giudica solo quello nato da un contatto. */
+  function giudicaClick(e) {
+    const semantico = !e.detail;          /* 0 = tastiera, lettore di schermo, .click() */
+    if (semantico) { registra('gks', 0); return true; }
+    const m = scegli(e.target);
+    const nome = m ? m.nome : null;
+    /* il contatto appena concluso apparteneva a questo comando? */
+    const buono = ultimo && ultimo.macchina === nome && !ultimo.cancellato;
+    if (!buono) { registra('gkn', 1);
+      try { e.preventDefault(); e.stopPropagation(); } catch (_) { } }
+    return !!buono;
+  }
+  try { win.addEventListener('click', giudicaClick, true); } catch (_) { }
+
+  return {
+    /* la domanda che ogni macchina fa, al posto di deciderlo da sola */
+    mio(nome, e) {
+      if (!gesto) return false;
+      if (e && e.pointerId !== undefined && e.pointerId !== gesto.id) return false;
+      return gesto.macchina === nome;
+    },
+    /* «chi possiede un gesto IN CORSO». Un gesto gia terminato non e piu di
+       nessuno, anche se la proprieta viene liberata un istante dopo per poter
+       consegnare il terminale: le due domande sono diverse e vanno tenute
+       diverse. mio() dice «questo evento e tuo» - e vero anche durante la
+       consegna della fine; proprietario() dice «c'e un gesto aperto». */
+    proprietario() { return (gesto && !gesto.finito) ? gesto.macchina : null; },
+    pointerProprietario() { return (gesto && !gesto.finito) ? gesto.id : null; },
+    ultimoConcluso() { return ultimo; },
+    /* per i banchi e per le cancellazioni dichiarate dall'app */
+    cancella(perche) { cancellaTutto(perche || 0); },
+    _giudicaClick: giudicaClick
+  };
+}
+/* ══ v269.9 — L'ARBITRO ENTRA, E SOLO SU DUE MACCHINE ═══════════════════════
+   La prima integrazione tocca la coppia piu importante e piu dimostrabile:
+   il trascinamento del FOGLIO e il gesto della VOCE, che fino a ieri
+   ascoltavano ENTRAMBI pointermove su window per lo stesso dito. Le altre due
+   macchine (pressione lunga della stanza, pressione lunga del verdetto)
+   restano com'erano: si estendera quando questa avra retto sul telefono.
+
+   IL RITORNO INDIETRO E UNA RIGA. Se sul dispositivo qualcosa non torna,
+   ARBITRO_ACCESO=false e il gesto ridiventa esattamente quello della v269.8:
+   le guardie sono tutte della forma «se l'arbitro e spento, passa».
+
+   LA CAMPANA: quando l'arbitro chiude d'ufficio un gesto - la pagina che va in
+   secondo piano, pagehide - avvisa chi lo possedeva. Senza, il microfono
+   resterebbe aperto senza mai ricevere il proprio pointerup: sarebbe la stessa
+   classe del P0 del 18 agosto, creata da noi con una funzione nuova. */
+const ARBITRO_ACCESO=true;
+let ARB=null;
+try{
+  ARB=arbitroDelGesto({
+    macchine:[{nome:'voce',dove:'#mic',priorita:3},
+              {nome:'foglio',dove:'#app',priorita:1},
+              {nome:'mondo',dove:null,priorita:0}],
+    suRegistro:function(c,n1,n2){ try{ nota(c,n1,n2); }catch(_){} },
+    suCancellazione:function(chi){
+      try{
+        if(chi==='voce'&&typeof _endHold==='function') _endHold({type:'pointercancel'});
+        if(chi==='foglio'&&typeof window._fogliOraBasta==='function') window._fogliOraBasta();
+      }catch(_){}
+    }
+  });
+}catch(_){ ARB=null; }
+/* la domanda, in una forma sola: «questo evento e mio?». Con l'arbitro spento
+   risponde sempre di si, cioe il comportamento di prima. */
+function mioGesto(nome,e){
+  if(!ARBITRO_ACCESO||!ARB) return true;
+  return ARB.mio(nome,e);
+}
+function segnaMondo(){
+  try{
+    const pane=document.body.getAttribute('data-pane')||'';
+    const fog=document.body.getAttribute('data-foglio')||'';
+    /* coperto = il foglio e tirato su fino in cima, oppure siamo in Altro, che
+       il foglio lo apre a pieno. Tutto il resto - compreso «quest», che e il
+       foglio a picco - vuol dire che il mondo si vede. */
+    const coperto=(fog==='pieno')||(pane==='impostazioni');
+    document.body.setAttribute('data-mondo',coperto?'coperto':'vivo');
+    try{ nota('mnd',coperto?0:1); nota('fog',fog==='picco'?0:(fog==='mezzo'?1:2));
+         nota('pan',pane==='oggi'?0:(pane==='diario'?1:(pane==='quest'?2:3))); }catch(_){}
+  }catch(_){}
+}
 function showPane(name){
   /* il foglio ha preso il posto delle pagine: Oggi e Diario vivono impilati nel corpo.
      'impostazioni' = pannello Altro (foglio a pieno) · 'quest' = foglio a picco, la voce e nel mondo */
   try{ document.body.setAttribute('data-pane',name); }catch(_){}
+  segnaMondo();
   const alt=(name==='impostazioni');
   try{   /* punto 5 (lente Modi #60): entrando in Altro ricordo dove eri, per restituirtelo */
     if(alt&&document.body.getAttribute('data-pane')!=='impostazioni'){
@@ -5271,7 +5760,7 @@ function foglioDopoVoce(){
     try{ document.body.classList.toggle('testa-raccolta',d==='picco'); }catch(_){}
     corpo.style.overflowY=(d==='pieno')?'auto':'hidden';
     if(d==='pieno'){ try{ requestAnimationFrame(fpDaScroll); }catch(_){} }   /* si entra a «pieno» gia scrollati: la testata si adegua subito */
-    try{ document.body.setAttribute('data-foglio',d); }catch(_){}
+    try{ document.body.setAttribute('data-foglio',d); segnaMondo(); }catch(_){}   /* v269.3: la posizione del foglio decide se il mondo si vede */
   }
   window.foglioVai=function(d){ if(d==='picco'||d==='mezzo'||d==='pieno') applica(d); };
   /* ── FASE 1 (v169): lo scroll guida il morphing ────────────────────────────────────────
@@ -5333,6 +5822,12 @@ function foglioDopoVoce(){
     if(dest!==detPrima){ try{ haptic(); }catch(_){} }   /* il detent risponde: un tick, mai dietro foglioVai */
   }
   function giu(e){
+    /* v269.10: la guardia d'ingresso. Ignorare il secondo dito dentro l'arbitro
+       non serviva a niente finche la macchina partiva lo stesso: il foglio
+       cominciava un trascinamento che non avrebbe mai ricevuto la propria fine,
+       perche i suoi terminali sarebbero stati rifiutati. Monodito vuol dire
+       anche QUI, all'ingresso. */
+    if(!mioGesto('foglio',e)) return;
     if(dragging) return;
     if(e.pointerType==='mouse'&&e.button!==0) return;
     pdGrip=!!(e.target&&grip.contains(e.target));
@@ -5341,9 +5836,12 @@ function foglioDopoVoce(){
   grip.addEventListener('pointerdown',giu);
   if(testa) testa.addEventListener('pointerdown',giu);
   fg.addEventListener('pointerdown',function(e){ if(det==='picco') giu(e); });
-  window.addEventListener('pointermove',function(e){ if(dragging){ trMove(e.clientY); if(e.cancelable) e.preventDefault(); } },{passive:false});
-  window.addEventListener('pointerup',function(){ trEnd(pdGrip); pdGrip=false; });
-  window.addEventListener('pointercancel',function(){ trEnd(false); pdGrip=false; });
+  window.addEventListener('pointermove',function(e){ if(!mioGesto('foglio',e)) return;
+    if(dragging){ trMove(e.clientY); if(e.cancelable) e.preventDefault(); } },{passive:false});
+  window.addEventListener('pointerup',function(e){ if(!mioGesto('foglio',e)) return; trEnd(pdGrip); pdGrip=false; });
+  window.addEventListener('pointercancel',function(e){ if(!mioGesto('foglio',e)) return; trEnd(false); pdGrip=false; });
+  /* la campana dell'arbitro suona qui, quando chiude d'ufficio */
+  try{ window._fogliOraBasta=function(){ try{ trEnd(false); pdGrip=false; }catch(_){} }; }catch(_){}
   /* regola dello scroll: il corpo scorre solo a pieno; da scrollTop 0, giu >8pt = handoff al foglio */
   let hs=null;
   corpo.addEventListener('touchstart',function(e){
@@ -5469,6 +5967,7 @@ try{ if(anzianita(S)>=1&&SR){
    NON e un refactoring della registrazione: stopRec e buttaRegistrazione
    restano com'erano. Questa e solo la porta che mancava. */
 function chiudiRegistrazioneFallita(motivo,msg){
+  try{ nota('mko',motivo==='start-sincrono'?1:(motivo==='riavvio-fallito'?3:2)); }catch(_){}
   recording=false;
   try{ _butta=false; _buttaVia=0; _mostraButta(0); }catch(_){}
   try{ _fermo=false; _mostraFermo(false); _tastoFermo(false); }catch(_){}
@@ -5482,8 +5981,25 @@ function chiudiRegistrazioneFallita(motivo,msg){
   try{ sMicOff(); }catch(_){}
   try{ releaseWake(); }catch(_){}
   try{ if(S.settings&&S.settings.music){ MUSIC.recDuck(false); ORCH.duck(false); ATHEME.duck(false); } }catch(_){}
-  try{ if(msg) micLabel.textContent=msg; }catch(_){}
+  /* ══ v269.9 — E IL RICONOSCITORE, CHE MI ERO DIMENTICATO ═════════════════
+     Trovato dal banco di equivalenza, non rileggendo il codice: confrontando
+     gli EFFETTI della macchina vera con quelli del modello, il riconoscimento
+     risultava ancora ATTIVO dopo una chiusura anomala. stopRec lo chiude
+     (rec.onend=…; rec.stop()), questa uscita no. Su «not-allowed» non cambia
+     niente perche non era mai partito; su «service-not-allowed» a sessione
+     aperta, e sul riavvio fallito dentro onend, il motore restava acceso senza
+     che nessuno lo governasse piu.
+     Si azzera onend prima di fermarlo: se no il riavvio automatico riparte
+     proprio mentre stiamo chiudendo. */
+  if(rec){ try{ rec.onend=null; rec.stop(); }catch(_){} }
+  /* v269.6: prima di tutto, le sue parole. Se ce ne sono, la riga della
+     rilettura vince sul messaggio d'errore: il guasto glielo diciamo dopo, con
+     un avviso di passaggio, ma quello che ha detto lo deve ritrovare. */
+  let _salve=false;
+  try{ _salve=presentaRaccolto(''); }catch(_){}
+  try{ if(msg){ if(_salve) toast(msg); else micLabel.textContent=msg; } }catch(_){}
   try{ regCantiere('microfono',{msg:'chiusura anomala: '+String(motivo||'?').slice(0,60)}); }catch(_){}
+  try{ nota('msv',_salve?1:0); }catch(_){}
 }
 function startRec(){
   committedText=''; sessionFinal=''; interimText=''; _pausaDa=0;
@@ -5493,6 +6009,7 @@ function startRec(){
   rec.onstart=()=>{
     /* il microfono è DAVVERO attivo: solo ora invitiamo a parlare ed entriamo in rosso */
     if(!recording) return;
+    try{ nota('mon'); }catch(_){}
     micBtn.classList.remove('arming'); micBtn.classList.add('rec');
     try{ window._cieloVoce&&window._cieloVoce('rec'); }catch(_){}   /* la voce prende il cosmo */
     micLabel.textContent='Parla… rilascia per fermare';
@@ -5546,6 +6063,7 @@ function startRec(){
       }
     }
   };
+  try{ nota('mav'); }catch(_){}
   recording=true;
     _staRegistrando=true;
     try{ _tastoFermo(true); }catch(_){}   /* v249: da qui i ridimensionamenti aspettano */
@@ -5558,6 +6076,7 @@ function startRec(){
             toast('Impossibile avviare il microfono'); }
 }
 function stopRec(){
+  try{ nota('mst'); }catch(_){}
   recording=false;
   try{ _mostraButta(0); _buttaVia=0; }catch(_){}   /* nessun segno del gesto sopravvive alla chiusura */
   try{ _fermo=false; _mostraFermo(false); _tastoFermo(false); }catch(_){}   /* il fermo non sopravvive alla chiusura */
@@ -5573,19 +6092,42 @@ function stopRec(){
   try{ if(S.settings.music) ORCH.duck(false); }catch(_){}
   try{ if(S.settings.music) ATHEME.duck(false); }catch(_){}
   micLabel.textContent='\u2026';
-  setTimeout(function(){   /* 420ms: il tempo del flush del motore - \u00abCavour\u00bb arriva intero */
+  setTimeout(function(){ presentaRaccolto('Silenzio. Riprova quando vuoi.'); },420);
+}
+/* ══ v269.6 — CIO CHE E STATO DETTO SI RILEGGE, COMUNQUE SIA FINITA ═════════
+   Questa era la coda di stopRec e viveva solo li. Percio, quando il microfono
+   moriva da solo - il caso «onend, riavvio fallito due volte» - le parole gia
+   trascritte restavano dentro committedText e non le vedeva piu nessuno: la
+   persona aveva parlato, il sistema aveva ricevuto, e il testo spariva.
+
+   LA PROPRIETA: un errore tecnico non decide al posto della persona di
+   distruggere parole che il sistema ha gia ricevuto.
+
+   Sono state pesate quattro strade prima di scegliere:
+     · perdere: viola la proprieta, ed e cio che succedeva;
+     · chiedere «vuoi tenerlo?»: aggiunge una decisione nel momento peggiore,
+       e ce n'e gia una subito dopo;
+     · un ricupero temporaneo tipo «Rimettila»: giusto per chi BUTTA apposta,
+       sbagliato qui - non ha buttato niente;
+     · la rilettura di sempre: la persona ritrova quello che ha detto dove se lo
+       aspetta, con i due tasti che conosce gia. Nessuna schermata nuova,
+       nessuno stato nuovo, nessuna domanda in piu.
+   Vince la quarta, ed e anche l'unica che non aggiunge niente. */
+function presentaRaccolto(seNiente){
+  try{
     const txt=(committedText+sessionFinal+' '+interimText).replace(/\s+/g,' ').trim()||(!SR?live.textContent.trim():'');
     if(txt){
       micLabel.textContent='Rileggi e raccogli';
       live.textContent=txt; live.classList.add('show'); live.scrollTop=0;   /* si rilegge dall'inizio */
-      document.querySelector('#confirm-row').classList.remove('hidden');
+      const cr=document.querySelector('#confirm-row'); if(cr) cr.classList.remove('hidden');
       renderFlow();
-    }else{
-      micLabel.textContent='Silenzio. Riprova quando vuoi.';
-      live.classList.remove('show');
-      updateRing();
+      return true;
     }
-  },420);
+    if(seNiente) micLabel.textContent=seNiente;
+    live.classList.remove('show');
+    try{ updateRing(); }catch(_){}
+  }catch(_){}
+  return false;
 }
 /* ── PRESS-TO-REC (stile WhatsApp): tieni premuto il cerchio per dettare, rilascia per fermare.
      Niente preventDefault né pointer-capture (su iOS bloccavano l'audio del microfono / lanciavano
@@ -5634,7 +6176,7 @@ function _startHold(e){
      uscirne, e deve essere il piu ovvio possibile. */
   if(_fermo){ _fermo=false; _mostraFermo(false); if(recording) stopRec(); return; }
   if(_holdActive) return;
-  _holdActive=true; _pressT0=Date.now();
+  _holdActive=true; _pressT0=Date.now(); try{ nota('mgi'); }catch(_){}
   _holdY0=(e&&typeof e.clientY==='number')?e.clientY:0;
   _holdX0=(e&&typeof e.clientX==='number')?e.clientX:0;
   _buttaVia=0; _butta=false;
@@ -5733,6 +6275,7 @@ function buttaRegistrazione(){
 
 function _endHold(e){
   if(!_holdActive) return;
+  try{ nota('msu'); }catch(_){}
   _holdActive=false;
   const held=Date.now()-_pressT0;
   /* prima di tutto: se il dito e finito abbastanza di lato, si butta. Vale
@@ -5773,10 +6316,10 @@ try{
     try{ haptic(); }catch(_){}
   };
 }catch(_){}
-micBtn.addEventListener('pointerdown',_startHold);
-window.addEventListener('pointermove',_muoviHold,{passive:true});
-window.addEventListener('pointerup',_endHold);
-window.addEventListener('pointercancel',_endHold);
+micBtn.addEventListener('pointerdown',function(e){ if(!mioGesto('voce',e)) return; _startHold(e); });
+window.addEventListener('pointermove',function(e){ if(!mioGesto('voce',e)) return; _muoviHold(e); },{passive:true});
+window.addEventListener('pointerup',function(e){ if(!mioGesto('voce',e)) return; _endHold(e); });
+window.addEventListener('pointercancel',function(e){ if(!mioGesto('voce',e)) return; _endHold(e); });
 document.querySelector('#btn-discard').onclick=()=>{ resetCapture(); try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(_){} };
 /* domanda priorità: se l'IA rileva quest urgenti/importanti, l'utente conferma */
 let pendingPrioIds=[];
@@ -7356,11 +7899,114 @@ function _lascDa(n){
   if(v>=8)  return 'da parecchio';
   return 'da un po\'';
 }
+/* ══ v269.4 — «MOSTRATO» DEVE VOLER DIRE MOSTRATO ═══════════════════════════
+   Il Lascito e nato sotto il foglio: #lascito e figlio di #mic-wrap (z-index 1)
+   e il foglio e #app (z-index 10). Su uno schermo corto il foglio scende a
+   48vh, e la domanda finisce sotto. Dimostrato: si legge nella schermata di chi
+   usa l'app, sbiadita sotto il bordo del foglio, con i due tasti tagliati.
+   Non e solo un guaio grafico. Appena costruita, la domanda faceva anche:
+       taciFino = fra due giorni
+   cioe Sentiero scriveva «gliel'ho mostrata» perche aveva tolto la classe
+   «hidden» a un elemento. Ma togliere «hidden» non e mostrare: e la stessa
+   distinzione che alla v268.4 abbiamo dovuto fare fra «presentata» e «vista»
+   per la nota della sera, li nel tempo, qui nello spazio.
+
+   TRE STATI, e non cinque - questi sono i soli che cambiano il comportamento:
+     GENERATO   c'e una domanda da fare. Non consegue niente.
+     VISIBILE   la persona ha AVUTO LA POSSIBILITA di leggerla: e sullo schermo,
+                grande abbastanza, non coperta da nient'altro, per un tempo
+                minimo. Da qui - e solo da qui - il breve silenzio.
+     RISPOSTO   ha toccato uno dei due tasti. Da qui il silenzio lungo.
+   «Presentato» non serve: non ha conseguenze diverse da «generato».
+   «Visto» non lo sappiamo e non lo sapremo: nessuno legge gli occhi. «Visibile»
+   e il piu vicino che si possa misurare, e si chiama cosi apposta.
+
+   COSA MISURA quandoDavveroVisibile: che l'elemento intersechi la finestra per
+   almeno il 60%, che il suo centro appartenga davvero a lui (elementFromPoint:
+   se sopra c'e il foglio, non e lui), e che la pagina non sia in secondo piano.
+   Per un tempo minimo continuo. Non e una ricevuta di lettura: e la fine
+   dell'alibi «l'ho messo nel DOM». */
+function quandoDavveroVisibile(el,ms,cb){
+  if(!el||typeof cb!=='function') return function(){};
+  let fatto=false,t=null,giri=0,io=null,iv=null;
+  /* ══ v269.8 — SI FALLISCE VERSO LA PRUDENZA ══════════════════════════════
+     Alla v269.7 questa misura aveva il verso sbagliato in due punti, e tutti e
+     due davano il beneficio del dubbio a noi invece che alla persona:
+       · il catch tornava «non coperto», cioe «non riesco a misurare» diventava
+         «e visibile». Per una funzione che concede il diritto di scrivere
+         taciFino, e l'errore piu costoso possibile;
+       · e il controllo periodico - l'unico che resta quando IntersectionObserver
+         manca o fallisce - guardava soltanto il centro, non la superficie.
+         Un elemento visibile al dieci per cento col centro sullo schermo veniva
+         promosso, mentre il commento sopra prometteva il sessanta per cento.
+     La regola adesso e una sola e vale per tutte le strade:
+         si dichiara VISIBILE solo con la prova. Nessuna prova, nessuna
+         conseguenza. Non accusiamo il contenuto di essere coperto: ci
+         rifiutiamo di dichiararlo visto senza evidenza.
+     E la prova si calcola qui, con l'aritmetica, non delegata a un osservatore
+     che potrebbe non esserci. */
+  const QUOTA=0.6;                     /* la stessa che promette il commento */
+  function provaVisibile(){
+    try{
+      if(document.hidden) return false;
+      const W=window.innerWidth||0, H=window.innerHeight||0;
+      if(!W||!H) return false;
+      const r=el.getBoundingClientRect();
+      if(!r.width||!r.height) return false;
+      /* 1 · quanta della sua superficie sta davvero dentro la finestra */
+      const dx=Math.max(0,Math.min(r.right,W)-Math.max(r.left,0));
+      const dy=Math.max(0,Math.min(r.bottom,H)-Math.max(r.top,0));
+      if((dx*dy)/(r.width*r.height)<QUOTA) return false;
+      /* 2 · e il suo centro appartiene a lui, cioe non c'e nessuno sopra */
+      const x=Math.round(r.left+r.width/2), y=Math.round(r.top+r.height/2);
+      if(x<0||y<0||x>=W||y>=H) return false;
+      const q=document.elementFromPoint(x,y);
+      if(!(q&&(q===el||el.contains(q)||q.contains(el)))) return false;
+      return true;
+    }catch(_){ return false; }   /* non misurabile = non dimostrato = non visibile */
+  }
+  function ferma(){ if(t){ clearTimeout(t); t=null; } }
+  /* v269.8: chiudi() toglie TUTTO, compreso l'ascoltatore. Prima lo toglieva
+     solo annulla(): su una promozione riuscita restava attaccato per sempre, e
+     dopo mesi d'uso sarebbero stati cento ascoltatori addormentati. */
+  function chiudi(){
+    fatto=true; ferma();
+    try{ io&&io.disconnect(); }catch(_){} io=null;
+    if(iv){ clearInterval(iv); iv=null; }
+    try{ document.removeEventListener('visibilitychange',guarda); }catch(_){}
+  }
+  function guarda(){
+    if(fatto) return;
+    if(!provaVisibile()){ ferma(); return; }   /* e il tempo riparte da capo */
+    if(t) return;
+    t=setTimeout(function(){
+      t=null;
+      if(fatto||!provaVisibile()) return;      /* deve reggere anche alla fine */
+      chiudi(); try{ cb(); }catch(_){}
+    },ms||1200);
+  }
+  /* l'osservatore resta, ma solo come SVEGLIA: dice quando vale la pena
+     guardare. La decisione la prende sempre provaVisibile, che non delega. */
+  try{
+    io=new IntersectionObserver(function(){ guarda(); },{threshold:[0,QUOTA,1]});
+    io.observe(el);
+  }catch(_){}
+  /* la rete: l'osservatore non vede chi sta SOPRA, e qui e proprio quello il caso */
+  iv=setInterval(function(){ if(fatto||++giri>120){ chiudi(); return; } guarda(); },400);
+  try{ document.addEventListener('visibilitychange',guarda); }catch(_){}
+  guarda();
+  /* annulla() non fa altro che chiudere: la rimozione dell'ascoltatore vive
+     dentro chiudi(), e farla due volte era un difetto vero - trovato dal banco
+     che contava gli ascoltatori residui, non dal codice riletto. */
+  return function annulla(){ chiudi(); };
+}
+let _lascitoAnnulla=null;
 function maybeLascito(){
   const box=document.querySelector('#lascito'); if(!box) return;
   const tk=todayKey();
   const c=lascitoCandidate(S,tk);
-  if(!c){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  if(!c){ try{ if(_lascitoAnnulla){ _lascitoAnnulla(); _lascitoAnnulla=null; } }catch(_){}
+          box.classList.add('hidden'); box.innerHTML=''; return; }
   const tit=_titoloDiId(c.id); if(!tit){ box.classList.add('hidden'); return; }
   /* ══ v266 — LA DOMANDA DEL LASCITO NON PASSAVA DA NESSUN GIUDICE ═══════════
      Diceva, testuale: «Smettere di fumare» non entra nei tuoi racconti da 19
@@ -7380,8 +8026,14 @@ function maybeLascito(){
     '</div><div class="btn-row" style="margin-top:10px"><button class="act" id="lasc-si">\u00c8 ancora mia</button>'+
     '<button class="act" id="lasc-no">La lascio andare</button></div>';
   box.classList.remove('hidden');
-  /* mostrata: silenzio breve anche senza risposta, per non assillare */
-  if(S.mastery&&S.mastery.quest[c.id]){ S.mastery.quest[c.id].taciFino=_isoPlus(2); save(); }
+  /* v269.4: il silenzio breve NON si applica piu perche la domanda e stata
+     costruita. Si applica quando la persona ha avuto la possibilita di leggerla.
+     Se resta sotto il foglio, Sentiero la riproporra: e giusto, non l'ha vista. */
+  try{ if(_lascitoAnnulla) _lascitoAnnulla(); }catch(_){}
+  _lascitoAnnulla=quandoDavveroVisibile(box,1200,function(){
+    try{ if(S.mastery&&S.mastery.quest[c.id]){ S.mastery.quest[c.id].taciFino=_isoPlus(2); save(); } }catch(_){}
+    try{ regCantiere('lascito',{msg:'visibile davvero'}); }catch(_){}
+  });
   document.querySelector('#lasc-si').onclick=()=>{
     /* ══ v268.5 — L'ECCEZIONE ALL'INVARIANZA, DETTA BENE ══════════════════════
        Il commento della v268.4 stava qui e diceva «chiedere di lasciar andare»:
@@ -7412,12 +8064,14 @@ function maybeLascito(){
        non le parole che la persona aveva detto. Il contatore a zero basta a
        spegnere l'attrito ovunque, perche adesso tutti passano da _attritoVivo. */
     if(S.mastery&&S.mastery.quest[c.id]){ const q=S.mastery.quest[c.id]; q.taciFino=_isoPlus(45); q.assenze=0; q.attriti=0; q.prima=null; q.tocco=''; }
+    try{ if(_lascitoAnnulla){ _lascitoAnnulla(); _lascitoAnnulla=null; } }catch(_){}   /* risposto: non serve piu guardare se era visibile */
     save(); box.classList.add('hidden'); box.innerHTML='';
   };
   document.querySelector('#lasc-no').onclick=()=>{
     S.scheduled=(S.scheduled||[]).filter(t=>t.id!==c.id);
     S.quests=(S.quests||[]).filter(t=>t.id!==c.id);
     if(S.mastery&&S.mastery.quest[c.id]) delete S.mastery.quest[c.id];
+    try{ if(_lascitoAnnulla){ _lascitoAnnulla(); _lascitoAnnulla=null; } }catch(_){}
     save(); render(); try{ updateRing(); }catch(_){}
     box.classList.add('hidden'); box.innerHTML='';
     toast('Messa gi\u00f9. Va bene cos\u00ec.');
@@ -8162,6 +8816,10 @@ function _baseLing(){
   try{
     const s=(typeof S!=='undefined'&&S&&S.baseLing)?S.baseLing:null;
     if(s&&_baseValida(s)){ _BASE_CACHE.v=s; return s; }
+    /* v269.8: una base salvata prima del contratto, o di un'altra generazione,
+       non resta li ad aspettare il prossimo avvio: si butta una volta sola.
+       _baseValida ha gia annotato il perche nella scatola nera. */
+    if(s&&typeof S!=='undefined'&&S){ S.baseLing=null; try{ save(); }catch(_){} }
   }catch(_){}
   _BASE_CACHE.v=BASE_MINIMA; return BASE_MINIMA;
 }
@@ -8169,9 +8827,54 @@ function _baseLing(){
    Puo aggiungere misure, non permessi: il contratto resta scritto nel codice e
    nessun file scaricato lo puo allargare. Se manca un pezzo o la forma e
    sbagliata, si tiene quella di prima. */
+/* ══ v269.7 — UNA SESSIONE NON MESCOLA DUE GENERAZIONI ══════════════════════
+   Il service worker serve index.html dalla rete (network-first) e tutto il
+   resto dalla cache (cache-first, con aggiornamento dopo). E una scelta giusta
+   - la versione nuova arriva subito, e offline si vive lo stesso - ma ha una
+   conseguenza che nessuno aveva scritto:
+
+     una sessione puo eseguire l'HTML della generazione N e leggere
+     lingue/base-it.json della generazione N-1.
+
+   Non e teoria. Fra la v268.6 e la v269 quel file e passato da versione 1 a 2,
+   e la versione 2 porta «naturalezza: 0.0» - il criterio sospeso perche
+   premiava l'anzianita di scrittura. Con la base vecchia in cache, il codice
+   nuovo gira con la giuria vecchia: peso 1.5 a un criterio che abbiamo
+   dimostrato rotto. Nessuno se ne accorgerebbe: l'app funziona, dice solo
+   frasi scelte con una regola che credevamo di aver tolto.
+
+   IL CONTRATTO: ogni pezzo che viaggia separato porta scritto PER QUALE
+   VERSIONE e stato fatto. Chi non corrisponde non viene usato - si ripiega
+   sulla base incorporata, che sta dentro l'HTML e quindi non puo mai essere di
+   un'altra generazione. Si fallisce verso la coerenza, non verso il piu nuovo.
+   E la coerenza non dipende piu dal fatto che qualcuno si ricordi di aggiornare
+   tre file insieme: se ne accorge PROVA-versioni-allineate. */
+function _baseGenerazione(){
+  try{ return String(APP_VERSION||'').split('\u00b7')[0].trim(); }catch(_){ return ''; }
+}
 function _baseValida(b){
   try{
     if(!b||typeof b!=='object') return false;
+    /* ══ IL CONTRATTO, v269.8: SENZA TIMBRO NON SI ENTRA ═══════════════════
+       Alla v269.7 il contratto c'era ed era inerte, per due ragioni insieme:
+         · «timbro assente» valeva «accettata», quindi ogni base di prima del
+           contratto passava - cioe proprio quelle che dovevamo fermare;
+         · e soprattutto aggiornaBaseLinguistica costruiva un oggetto nuovo
+           campo per campo e NON copiava per_versione: il timbro spariva nella
+           trasformazione prima di arrivare qui. Il controllo non ha mai avuto
+           niente da controllare.
+       Un contratto che dipende dal fatto che qualcuno si ricordi di copiare un
+       campo non e un contratto. Adesso il timbro e OBBLIGATORIO e deve
+       corrispondere: assente, vuoto o diverso, la base non entra - venga dal
+       download, dalla cache o dallo stato salvato mesi fa.
+       La base INCORPORATA non ha timbro e non le serve: sta dentro l'HTML,
+       quindi e la generazione per definizione, e _baseLing la restituisce
+       senza passare di qui. Si fallisce sempre verso di lei. */
+    const _tim=String((b&&b.per_versione)||'');
+    if(_tim!==_baseGenerazione()){
+      try{ nota('bgv',_tim?1:0); }catch(_){}   /* n1=1 timbro sbagliato, 0 assente */
+      return false;
+    }
     const liste=['nucleo','bigrammi','lode','biasimo','pronomi','deissi'];
     for(const k of liste){ if(!Array.isArray(b[k])) return false; }
     if(!b.nucleo.length||!b.pesi||typeof b.pesi!=='object') return false;
@@ -8213,6 +8916,9 @@ async function aggiornaBaseLinguistica(forza){
     /* la forma pubblicata e piu larga di quella che serve al motore: si prende
        solo cio che la giuria usa, e si prende solo se e tutto al suo posto. */
     const b={
+      /* v269.8: il timbro viaggia per primo. Era questa la riga mancante: senza,
+         il controllo di generazione non aveva niente da controllare. */
+      per_versione:String((j&&j.per_versione)||''),
       versione:(j&&j.versione)|0, impronta:String((j&&j.impronta)||''),
       nucleo:(j&&j.nucleo&&j.nucleo.parole)||[],
       bigrammi:(j&&j.sequenze_verificate&&j.sequenze_verificate.bigrammi)||[],
@@ -11079,7 +11785,7 @@ function applyTheme(){ try{
     if(modo){
       /* se il foglio e tirato su a coprire il cielo, non si disegna: e lavoro
          buttato, e il filo di prima resta dov'e. */
-      try{ if(document.body.getAttribute('data-foglio')==='picco') return; }catch(_){}
+      try{ if(document.body.getAttribute('data-mondo')==='coperto') return; }catch(_){}
       /* v248 — QUI NASCEVA LO SFARFALLAMENTO, e l'avevo messo io il giorno prima.
          Sul fotogramma «saltato» chiamavo comunque frameInterno, ma con il
          contesto puntato alla TELA VERA: il fuoco si ridipingeva col suo
@@ -12143,7 +12849,7 @@ function updateRing(){
    NUOVO GIORNO
    ====================================================================== */
 let renderedDay=todayKey();
-function initDay(){ if(rolloverDay(S,todayKey())) save(); }
+function initDay(){ if(rolloverDay(S,todayKey())) save(); try{ nota('avv'); }catch(_){} }
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible'){ try{ save(); }catch(_){}  try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
   try{FX.resume();}catch(_){}
@@ -13110,7 +13816,7 @@ function chiudiTerra(){
     requestAnimationFrame(frame);
     if(document.hidden) return;
     if(ditoInMovimento()) return;   /* v259: il dito ha la precedenza */
-    if(stato==='orbita'&&document.body.getAttribute('data-pane')==='quest') return;   /* coperta: zero lavoro */
+    if(stato==='orbita'&&document.body.getAttribute('data-mondo')==='coperto') return;   /* coperta: zero lavoro */
     let x,y,k=1,op=1;
     if(stato==='orbita'){
       ang=((now-t0)/GIRO)*Math.PI*2 - Math.PI/2;
@@ -13257,7 +13963,7 @@ function chiudiTerra(){
     if(document.hidden) return;
     if(ditoInMovimento()) return;                         /* v259: il dito ha la precedenza */
     if(!acceso) return;                                   /* fuori orario: zero lavoro */
-    if(document.body.getAttribute('data-pane')==='quest') return;
+    if(document.body.getAttribute('data-mondo')==='coperto') return;
     if(el.classList.contains('aperta')) return;           /* stanza aperta: la copre */
     ang=((now-t0)/GIRO)*Math.PI*2 + Math.PI/2;
     const x=CX+Math.cos(ang)*RR, y=CY+Math.sin(ang)*RR;
@@ -14432,6 +15138,7 @@ function renderLingua(){
     : 'Dettatura e date in ' + ((LINGUE_NOTE[linguaApp()]||{}).nome||'') + '. Le scritte dell\u2019app sono ancora in italiano.';
 }
 
+{ const _bd=document.querySelector('#btn-diagnostica'); if(_bd) _bd.onclick=scaricaDiagnostica; }
 document.querySelector('#btn-export').onclick=()=>{
   try{
     /* la diagnosi di cantiere viaggia nel backup: chi legge il file sa dispositivo, versione e forma dello stato.
@@ -14452,7 +15159,14 @@ document.querySelector('#btn-export').onclick=()=>{
    diventava falsa nel momento esatto in cui qualcuno faceva la cosa giusta,
    cioe una copia dei propri dati. Ora esce vuota e si riscrive a mano: sono
    dieci secondi, contro una chiave che gira in chiaro. */
-    const blob=new Blob([JSON.stringify(Object.assign({},S,{apiKey:'',_cantiere:diag}),null,2)],{type:'application/json'});
+    /* v269.10 — LA SCATOLA VIAGGIA ANCHE COL BACKUP, MA IL BACKUP NON E
+     CONDIVISIBILE. Il commento della v269.5 diceva che da qui si poteva mandare
+     tutto a chi ripara: era vero della scatola, falso del file che la contiene.
+     Il backup e la vita della persona. Per chi ripara c'e diagnosticaSicura(),
+     costruita per lista bianca. La scatola resta anche qui perche a chi si
+     porta via i propri dati fa comodo avere tutto in un posto. */
+  let _sn=null; try{ scatolaScrivi(); _sn={voci:SCATOLA_VOCI,sessione:_scatolaSes,nastro:_scatola.slice(-SCATOLA_TETTO)}; }catch(_){}
+  const blob=new Blob([JSON.stringify(Object.assign({},S,{apiKey:'',_cantiere:diag,_scatola:_sn}),null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='sentiero-backup-'+todayKey()+'.json'; a.rel='noopener';
     document.body.appendChild(a); a.click(); a.remove();

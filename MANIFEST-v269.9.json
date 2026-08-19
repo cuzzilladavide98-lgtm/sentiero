@@ -1,0 +1,39 @@
+{
+ "versione": "v60S.269.9 · 2026-08-19",
+ "generazione": 269009,
+ "cache": "sentiero-v60s-269-9",
+ "file": {
+  "index.html": {
+   "byte": 1175236,
+   "sha256": "31b3a3dc614cca2f"
+  },
+  "sw.js": {
+   "byte": 4564,
+   "sha256": "a34163b16ecbef4b"
+  },
+  "manifest.json": {
+   "byte": 598,
+   "sha256": "ee31e80c07af0b3b"
+  },
+  "privacy.html": {
+   "byte": 15052,
+   "sha256": "219d258e63f0d918"
+  },
+  "guida.html": {
+   "byte": 25014,
+   "sha256": "5c560bdf0748ab12"
+  },
+  "inizia.html": {
+   "byte": 13833,
+   "sha256": "e97325259400315f"
+  },
+  "lingue/base-it.json": {
+   "byte": 12927,
+   "sha256": "16f44ff4c5d95b57"
+  },
+  "lingue/en.json": {
+   "byte": 21032,
+   "sha256": "0048936047049998"
+  }
+ }
+}
