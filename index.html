@@ -2,7 +2,10 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<!-- v270: «user-scalable=no» e stato TOLTO. Impediva di ingrandire il testo, e
+     il cassetto lo pretendeva perche il trascinamento andava in conflitto con il
+     pinch. Senza cassetto non serve piu, e chi ha bisogno di ingrandire puo. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sentiero — Diario vocale</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -86,17 +89,18 @@ html,body{overflow-x:hidden}   /* il volto: il fuoco sborda i margini, la pagina
 #bg,#watermark,#grain,#fx,#flash{display:none !important}
 
 /* ══════ IL FOGLIO — lo strato sopra il mondo, come Mappe ══════ */
-#app{position:fixed;top:0;left:50%;width:100%;max-width:480px;height:100vh;height:100dvh;z-index:10;
-  display:flex;flex-direction:column;margin:0;
-  transform:translate(-50%,54vh);transform:translate(-50%,54dvh);
-  /* sotto i 700 punti il foglio riposa piu in alto: sull'SE, 667 punti,
-     recupera 40 punti di lettura, cioe una riga e mezza. Sui telefoni alti
-     non cambia niente. Il valore vero lo calcola posDi() nel JS: qui e solo
-     la prima pittura, e le due devono dire la stessa cosa. */
-  background:var(--foglio-bg-opaco);
-  border-radius:16px 16px 0 0;
-  --fp:0;
-  transition:transform .32s cubic-bezier(0.32,0.72,0,1),--fp .32s cubic-bezier(0.32,0.72,0,1)}
+/* ══ v270 — #app NON E PIU UN CASSETTO ═════════════════════════════════════
+   Era: position:fixed + transform:translate(-50%,54vh), tre detent, trascinabile.
+   Adesso e semplicemente il contenitore delle destinazioni che non sono il
+   mondo: occupa tutto lo spazio sopra la barra, non si sposta, non si trascina,
+   e appare solo quando la destinazione corrente non e «parla».
+   Niente transform: percio nessun pannello fixed al suo interno viene piu
+   trascinato dal contesto di trasformazione - era una delle famiglie di
+   incidenti piu vecchie del progetto. */
+#app{position:fixed;left:50%;transform:translateX(-50%);top:0;bottom:var(--barra-h);
+  width:100%;max-width:480px;z-index:10;display:none;flex-direction:column;margin:0;
+  background:var(--foglio-bg)}
+body[data-sez="oggi"] #app,body[data-sez="diario"] #app,body[data-sez="altro"] #app{display:flex}
 /* ══ v259 — DOVE SI SCRIVE --fp ════════════════════════════════════════════
    --fp e' EREDITATA: scriverla su #app obbligava il telefono a ricalcolare lo
    stile di tutto quello che sta nel foglio - milleseicento elementi - a ogni
@@ -119,19 +123,17 @@ html,body{overflow-x:hidden}   /* il volto: il fuoco sborda i margini, la pagina
 @supports ((-webkit-backdrop-filter:blur(20px)) or (backdrop-filter:blur(20px))){
   body:not(.foglio-opaco) #app{background:var(--foglio-bg);-webkit-backdrop-filter:saturate(140%) blur(20px);backdrop-filter:saturate(140%) blur(20px)}
 }
-body.foglio-opaco #app{transition:none}
-#app.trascinando{transition:none;will-change:transform}
-body:not(.foglio-opaco) #app.trascinando{-webkit-backdrop-filter:saturate(140%) blur(12px);backdrop-filter:saturate(140%) blur(12px)}
+
+
+body:not(.foglio-opaco) 
 /* C (lab chiaroscuro): ombra portata sul mondo · filo di luce · luce che cade sul primo tratto */
 #app::before{content:'';position:absolute;left:6px;right:6px;top:-26px;height:26px;pointer-events:none;
   background:radial-gradient(60% 100% at 50% 100%,rgba(0,0,0,0.55) 0,transparent 78%)}
 #app::after{content:'';position:absolute;left:0;right:0;top:-1px;height:64px;border-radius:16px 16px 0 0;pointer-events:none;
   background:linear-gradient(90deg,transparent 4%,rgba(242,197,107,0.16) 26%,rgba(255,244,215,0.55) 50%,rgba(242,197,107,0.16) 74%,transparent 96%) top/100% 1.5px no-repeat,
              linear-gradient(180deg,rgba(255,244,215,0.055) 0,rgba(255,244,215,0.02) 26px,transparent 64px)}
-#foglio-grip{flex:0 0 auto;min-height:38px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}
-#foglio-grip::before{content:'';width:36px;height:5px;border-radius:2.5px;
-  background:linear-gradient(90deg,rgba(242,197,107,0.28),rgba(255,241,208,0.62) 50%,rgba(242,197,107,0.28));
-  box-shadow:0 0 9px rgba(242,197,107,0.22)}
+
+
 /* v266 — anche il foglio e una colonna flex alta 100dvh: header e avvisi
    potevano stringersi sotto il loro contenuto e finire addosso a quello
    sotto. L'unico che deve cedere e «main», e cede scorrendo, non schiacciando
@@ -139,17 +141,39 @@ body:not(.foglio-opaco) #app.trascinando{-webkit-backdrop-filter:saturate(140%) 
    di scendere sotto la propria altezza naturale: senza, spinge invece di
    restringersi. */
 #app>*{flex-shrink:0}
-#app>main{flex:1 1 auto;min-height:0}
-#app>header{touch-action:none}
-body[data-foglio="picco"] #app{touch-action:none}
-#btn-altro-mondo{position:fixed;top:calc(var(--safe-top) + 10px);right:14px;z-index:11;width:44px;height:44px;
-  display:flex;align-items:center;justify-content:center;border:none;border-radius:22px;
-  background:rgba(7,10,9,0.55);color:var(--t2)}
+/* v270: Oggi e Diario vivono impilati nello stesso <main>; la destinazione
+   decide quale si vede. Nessuna geometria, nessun trascinamento: una classe. */
+body[data-sez="diario"] #tab-oggi{display:none}
+body[data-sez="oggi"] #tab-diario{display:none}
+body[data-sez="altro"] #tab-oggi,body[data-sez="altro"] #tab-diario{display:none}
+body:not([data-sez="altro"]) #tab-impostazioni{display:none}
+body[data-sez="altro"] #tab-impostazioni{display:block}
+#app>main{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* ══ LA BARRA DELLE DESTINAZIONI ══════════════════════════════════════════
+   Quattro destinazioni, sempre nello stesso ordine, sempre visibili, ognuna
+   con il proprio nome scritto. Su 375 px sono 93,75 px l'una: molto sopra il
+   pavimento che ci siamo dati (44x44 CSS px - nostro, conservativo; WCAG 2.2
+   SC 2.5.8 AA chiede 24x24, e non e quello che stiamo usando come criterio).
+   max(8px, env(safe-area-inset-bottom)) e il modo indicato da WebKit per non
+   incollarsi al bordo quando l'inset e zero; il @supports e obbligatorio
+   perche una variabile invalida invaliderebbe la dichiarazione. */
+:root{--barra-h:61px}
+@supports (padding: max(0px)){ :root{--barra-h:calc(53px + max(8px, env(safe-area-inset-bottom)))} }
+#barra{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;
+  z-index:60;display:flex;background:var(--foglio-bg);border-top:1px solid var(--linea);
+  padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+#barra a{flex:1 1 0;min-height:53px;min-width:44px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;text-decoration:none;color:var(--t2);
+  font:500 11px/1.1 var(--sans,system-ui);padding:6px 2px}
+#barra a[aria-current="page"]{color:var(--accent)}
+#barra .ico{font-size:17px;line-height:1}
+@media (prefers-reduced-motion: no-preference){ #barra a{transition:color .18s ease} }
+
+
+
 /* punto 2 (lente Canali #59): i testi del mondo parlano solo quando il mondo e il layer attivo.
    A mezzo/pieno quei dati vivono gia nel foglio (day-line, liste): un canale solo. */
-body:not([data-foglio="picco"]) #ring-count,
-body:not([data-foglio="picco"]) #mic-label,
-body:not([data-foglio="picco"]) #flow{visibility:hidden}
+
 /* terra: nel mondo nessun testo fluttua nel nero */
 #flow:not(:empty){background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.10);border-radius:16px;padding:14px 16px}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
@@ -165,8 +189,8 @@ body:not([data-foglio="picco"]) #flow{visibility:hidden}
 /* punto 3 riscritto (v60S.93): morphing continuo guidato da --fp (0=aperto, 1=picco).
    Solo transform/opacity, il layout non si muove mai: capolettera 84->46 (scala .548),
    anello 84->52 (scala .619) che sale al posto del "dove sono" mentre svanisce. */
-#dateline{transform:scale(calc(1 - 0.452*var(--fp,0)));transform-origin:left top}
-#btn-pin{opacity:calc(1 - var(--fp,0))}
+
+
 body[data-foglio="picco"] #btn-pin{pointer-events:none}
 main{flex:1;padding:0 28px calc(28px + var(--safe-bot));overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 /* la molla del v60S.80 e superata dal foglio: lo scroll vive nel corpo, solo a pieno */
@@ -184,7 +208,13 @@ header{padding:14px 28px 0}
 #btn-pin:active{color:var(--accent);transform:scale(1.15)}
 
 /* ════════ ENSO: l'unico oggetto, sospeso nel nero ════════ */
-#mic-wrap{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;top:calc(32% - 155px);bottom:calc(122px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;padding:0 20px;z-index:1}
+#mic-wrap{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+  top:calc(var(--safe-top) + 8px);bottom:var(--barra-h);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;
+  padding:0 20px;z-index:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* v270: il mondo e una destinazione a pieno titolo, non lo sfondo di un cassetto.
+   Lascito e Rivelazione vivono qui dentro e NON possono piu finire sotto niente:
+   sopra di loro non c'e piu nessuna superficie. */
 /* ══ v266 — I RIQUADRI CHE SI SCRIVEVANO ADDOSSO ═══════════════════════════
    #mic-wrap e una colonna flex con l'altezza FISSA (top e bottom insieme). I
    figli di una colonna flex, per difetto, possono stringersi sotto la propria
@@ -198,7 +228,19 @@ header{padding:14px 28px 0}
    Due righe: i figli non si stringono piu, e se proprio non ci stanno la
    colonna scorre invece di impilarsi addosso. */
 #mic-wrap > *{flex:0 0 auto}
-#mic-wrap{overflow-y:auto;overflow-x:visible;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* ══ v270.1 — DUE MESTIERI, DUE ELEMENTI ══════════════════════════════════
+   Alla v270 questa riga dichiarava lo scroll di Parla, e settecento caratteri
+   dopo una regola con la stessa specificita lo annullava mettendo lo shorthand
+   «overflow:visible» su #mic-wrap: sorgente successiva, vince l'ultima. La
+   proprieta scritta nel commento non era garantita da niente.
+   Il contenitore che POSSIEDE il contenuto e l'unico che scorre, e non deve
+   mai dover sbordare. La decorazione che deve sbordare vive su #mic - che sta
+   dentro - e su #cielo e #enso-fx, che sono livelli fissi a se, fuori da
+   questo scroll e quindi non toccati.
+   overflow-x:hidden e voluto: per la specifica «overflow-x:visible» insieme a
+   «overflow-y:auto» viene comunque calcolato come auto, quindi li dentro
+   «visible» era gia una parola che non voleva dire niente. */
+#mic-wrap{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
 #mic{width:310px;height:310px;border:none;background:transparent;position:relative;touch-action:none}
@@ -207,7 +249,7 @@ header{padding:14px 28px 0}
    /* niente transition: la pittura la guida il rAF, frame per frame */
 #enso-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1}
 #cielo{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
-#mic,#mic-wrap{overflow:visible}
+#mic{overflow:visible}   /* v270.1: solo il cerchio sborda; il contenitore scorre */
 
 #firma{fill:var(--ceralacca);opacity:0;transform-origin:14px 60px}
 #mic.sealed #firma{opacity:1;animation:timbroensa .7s cubic-bezier(.2,1.5,.4,1) both}
@@ -724,7 +766,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:14px 22px 0}
   #dateline{font-size:27px}
   #mic{width:212px;height:212px}
-  #mic-wrap{top:calc(32% - 106px)}
+  
   .entry p{font-size:17px}
   .item .txt{font-size:17px}
 }
@@ -734,7 +776,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 18px 0}
   #dateline{font-size:25px}
   #mic{width:196px;height:196px}
-  #mic-wrap{top:calc(32% - 98px)}
+  
   #mic-label{font-size:16px;margin-top:18px}
   .ed-num{font-size:30px}
 }
@@ -744,7 +786,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 16px 0}
   #dateline{font-size:23px}
   #mic{width:184px;height:184px}
-  #mic-wrap{top:calc(32% - 92px)}
+  
   .days{gap:5px}
   .days button{font-size:15px}
   button.act{padding:12px 20px;font-size:16.5px}
@@ -760,7 +802,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 20px 0}
   #dateline{font-size:26px}
   #mic{width:200px;height:200px}
-  #mic-wrap{padding:30px 0 22px}
+  
   #mic-label{font-size:16px;margin-top:18px}
   .item .txt{font-size:17px}
   .ed-num{font-size:30px}
@@ -773,7 +815,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 16px 0}
   #dateline{font-size:24px}
   #mic{width:184px;height:184px}
-  #mic-wrap{top:calc(32% - 92px)}
+  
   .days{gap:5px}
   .days button{max-width:34px;font-size:15px}
   .seg{gap:14px}
@@ -812,14 +854,12 @@ body.theme-carta #btn-pin svg.share{stroke:#3F3B34;opacity:.8}
 
 /* testata Diario con accesso ad Altro */
 .diario-head{display:flex;align-items:center;justify-content:space-between;padding-top:4px}
-.altro-link{display:inline-flex;align-items:center;gap:6px;border:none;background:none;
-  color:var(--t2);font-size:15px;font-weight:500;padding:8px 4px;transition:color .2s}
+
 .altro-link:active{color:var(--accent)}
 .altro-link svg{display:block}
 
 /* back dal Altro al Diario */
-.back-link{display:inline-flex;align-items:center;gap:4px;border:none;background:none;
-  color:var(--accent);font-size:16px;font-weight:500;padding:6px 0 12px;margin-top:2px}
+
 .back-link svg{display:block}
 .back-link:active{opacity:.6}
 /* "il pensiero che si forma": streaming + cursore che respira — la firma di Claude, qui di casa */
@@ -972,7 +1012,7 @@ body.theme-carta #terra-piede button{border:.5px solid rgba(23,21,18,0.34)}
    quaderno la sera - mentre un cielo di giorno sarebbe un'altra app, e la
    mappa delle stelle la' dietro e disegnata sul serio. */
 body.theme-carta #flow:not(:empty),body.theme-carta #live.show{background:rgba(244,241,232,.90)}
-body.theme-carta #btn-altro-mondo{background:rgba(244,241,232,.72)}
+body.theme-carta 
 body.theme-carta #mic-wrap #confirm-row:not(.hidden),
 body.theme-carta #mic-wrap #prio-row:not(.hidden){background:rgba(247,245,239,.94)}
 body.theme-carta #tour-box{background:rgba(247,245,239,.98)}
@@ -1137,8 +1177,7 @@ body.theme-carta input[type=number],body.theme-carta textarea{
   border-bottom:.5px solid rgba(23,21,18,.28)}
 body.theme-carta #letture,body.theme-carta #lascito,body.theme-carta #rivelazione{
   box-shadow:inset 0 1px 0 rgba(23,21,18,.07),0 2px 6px rgba(23,21,18,.10)}
-body.theme-carta #foglio-grip::before{
-  background:linear-gradient(90deg,rgba(122,86,18,.30),rgba(23,21,18,.20))}
+body.theme-carta 
 body.theme-carta #app::after{background:none}
 
 /* v235 — IL ROMBO DELL'ESSENZIALE.
@@ -1748,11 +1787,11 @@ body[data-mondo="coperto"] #notte-luce,body[data-mondo="coperto"] .notte-scia{di
   border-top-left-radius:22px;border-top-right-radius:22px;
   padding:20px 20px calc(18px + env(safe-area-inset-bottom));
   border:.5px solid rgba(245,242,234,.12);max-height:82vh;overflow:auto}
-@media (max-height:700px){#app{transform:translate(-50%,48vh);transform:translate(-50%,48dvh)}}
+
 /* v236: sullo schermo corto la carta della prossima mossa restava sotto il
    bordo del foglio. Alzando di venti punti il fondo del microfono, la carta
    sale con lui e si vede intera. Provvisorio: va confermato sul telefono. */
-@media (max-height:700px){#mic-wrap{bottom:calc(142px + env(safe-area-inset-bottom,0px))}}
+
 /* v236: la corsia del toast vale SOLO sullo schermo corto. Il difetto - il
    sussurro che copriva il toast - nasce dal bordo inferiore a zero, che e
    dell'SE: sul 13 mini i due non si sono mai pestati, e li resta tutto com'era. */
@@ -1903,7 +1942,7 @@ body.no-sel, body.no-sel *{-webkit-user-select:none!important;user-select:none!i
 /* respiro fra la pill e l'anello: erano 6px, ne servono 16 */
 #hd-dx{gap:16px}
 /* testata raccolta: la pill non e solo invisibile, e anche intoccabile (restava un bersaglio fantasma) */
-body.testa-raccolta #btn-pin{pointer-events:none}
+
 
 /* ════════ FASE 4 (v172) — il capolettera segue il fuoco ════════ */
 .ini{color:var(--accent)}
@@ -2197,9 +2236,7 @@ body.theme-carta .item{overflow:visible}
           <button class="act primary" id="btn-prio-yes">Tieni le priorità</button>
         </div>
       </div>
-<button id="btn-altro-mondo" aria-label="Apri Altro">
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-</button>
+
 <div id="onboard" class="hidden">
   <div class="ob-inner">
     <svg class="ob-enso" viewBox="0 0 200 200" aria-hidden="true">
@@ -2257,7 +2294,7 @@ body.theme-carta .item{overflow:visible}
   </div>
 </div>
 <div id="app">
-  <div id="foglio-grip" aria-hidden="true"></div>
+  
   <!-- v222 — LA RIGA CHE PROTEGGE IL DIARIO DI CHI NON SA DI DOVERLO PROTEGGERE.
        Su iPhone, un sito tenuto dentro Safari perde tutto cio che ha salvato dopo
        circa sette giorni che non lo si apre: e una regola di Apple contro chi
@@ -2354,10 +2391,7 @@ body.theme-carta .item{overflow:visible}
     <div id="tab-diario">
       <div class="diario-head">
         <div class="sec-head" style="margin:0">Diario</div>
-        <button id="open-altro" class="altro-link" aria-label="Apri Altro">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-          Altro
-        </button>
+        
       </div>
       <section style="margin-top:14px">
         <div id="capitoli"></div>
@@ -2367,11 +2401,8 @@ body.theme-carta .item{overflow:visible}
           </div>
 
     <!-- ===== ALTRO (nascosto, aperto dal Diario) ===== -->
-    <div id="tab-impostazioni" class="hidden">
-      <button id="close-altro" class="back-link" aria-label="Torna dove eri">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        Indietro
-      </button>
+    <div id="tab-impostazioni">
+      
       <section>
         <div class="sec-head">Esperienza</div>
         <div class="group">
@@ -2472,6 +2503,7 @@ body.theme-carta .item{overflow:visible}
         <p class="note">Distinguiamo tre cose diverse. <b>Quello che Sentiero manda</b>: le tue parole escono per volontà dell'app in un caso solo, e lo decidi tu — è la chiave qui sotto. <b>Quello che fa il telefono</b>: la dettatura non è nostra, ed è il browser o il sistema a trasformare la voce in testo, qui dentro o sui propri server. <b>Quello che l'app scarica</b>: programmi e modelli, che sono file in arrivo, non tue parole in partenza.</p>
         <p class="note">Cosa esce comunque, e non sono tue parole: quando apri l'indirizzo, GitHub — che ospita l'app — vede il tuo indirizzo IP come farebbe qualunque sito. Una volta installata, l'app funziona senza rete. Quando parli, è la dettatura del tuo browser a trasformare la voce in testo, e a seconda del telefono può farlo lì o sui server di chi l'ha fatta: Sentiero riceve solo il testo. Se accendi la posizione, resta nel diario qui e non va da nessuna parte.</p>
         <p class="note">Cosa scarica, e solo se lo accendi tu: «Una voce dentro il telefono» e «Intelligenza locale» prendono due programmi da <b>esm.run</b>, e quei programmi si scaricano poi da soli il modello che serve — circa quattrocento mega il primo, ventitré il secondo. Sono file che arrivano, non dati che partono: da lì non esce niente di tuo, e dopo funzionano senza rete. Se non li accendi, non viene scaricato niente.</p>
+        <p class="note">Gli indirizzi che compaiono nel codice di questa versione sono quattro, e fanno cose diverse: <b>api.anthropic.com</b> è la sola richiesta che porta fuori parole tue, e solo con la chiave; <b>esm.run</b> è la sola richiesta che scarica programmi, e solo se accendi le due funzioni qui sopra; <b>maps.google.com</b> non è una richiesta, è un collegamento che si apre soltanto se lo tocchi tu; <b>www.w3.org</b> non è un indirizzo a cui si chiede niente, è un nome tecnico dentro i disegni.</p>
         <p class="note">E infine la sola cosa tua che può uscire per volontà di Sentiero: se metti la chiave qui sotto, da quel momento il testo che serve a rispondere viene mandato ad Anthropic, con il tuo account. Togli la chiave e smette.</p>
         <p class="note">Senza chiave, <b>Sentiero non manda quello che scrivi né ad Anthropic né a un proprio server</b> — un proprio server non ce l'ha. Un confine che però non è nostro e va detto: se usi la voce, la dettatura la fa il browser o il telefono, e a seconda del modello può trascriverla qui dentro oppure sui server di chi l'ha fatta. Sentiero riceve solo il testo che torna indietro. Su quel pezzo non possiamo prometterti niente, perché non è nostro: possiamo solo dirti che c'è.</p>
         <p class="note">Copia di tutto te la fai da qui, quando vuoi. Cancellare l'app cancella tutto: non ne esiste una copia altrove da chiedere indietro.</p>
@@ -3414,7 +3446,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.269.10 · 2026-08-19';
+const APP_VERSION='v60S.270.1 · 2026-08-19';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3441,6 +3473,13 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
+ {righe:[
+   'Altro adesso si apre davvero: prima la barra diceva di esserci arrivata e il contenuto restava nascosto. E in Parla, se le cose non ci stanno, la pagina scorre: prima lo diceva un commento e non lo faceva nessuno.'
+ ]},
+ {righe:[
+   'Sentiero ha quattro luoghi, in fondo allo schermo: Parla, Oggi, Diario, Altro. Tocchi dove vuoi andare e ci sei. Il cassetto che si tirava su e gi\u00f9 non c\u2019\u00e8 pi\u00f9: si richiudeva da solo e ti toglieva met\u00e0 dell\u2019app.',
+   'Ogni luogo si ricorda dove eri: torni al Diario e ritrovi la riga che stavi leggendo. E adesso puoi ingrandire il testo, cosa che prima l\u2019app ti impediva.'
+ ]},
  {righe:[
    'Un dito, una cosa sola \u2014 e adesso davvero: chi comincia un gesto lo finisce sempre lui, e un secondo dito non pu\u00f2 avviare niente n\u00e9 chiudere quello che stavi facendo.'
  ]},
@@ -5284,8 +5323,8 @@ const SCATOLA_VOCI={
   gkn:'un click e stato fermato: il contatto non apparteneva a quel comando',
   gks:'attivazione da tastiera o lettore di schermo: sempre permessa',
   vwp:'la finestra e cambiata (n1=larghezza, n2=altezza)',
-  fog:'foglio (n1: 0 picco, 1 mezzo, 2 pieno)',
-  pan:'schermata (n1: 0 oggi, 1 diario, 2 quest, 3 altro)',
+  nav:'destinazione (n1: 0 parla, 1 oggi, 2 diario, 3 altro)',
+  pan:'destinazione, come la vede segnaMondo (stessa scala di nav)',
   mnd:'mondo (n1: 1 vivo, 0 coperto)',
   mgi:'dito giu sul microfono',
   mav:'avvio del riconoscimento',
@@ -5666,54 +5705,104 @@ function mioGesto(nome,e){
   if(!ARBITRO_ACCESO||!ARB) return true;
   return ARB.mio(nome,e);
 }
+/* ══ v270 — UNA SOLA AUTORITA SULLA DESTINAZIONE ═══════════════════════════
+   Prima «dove sono» era una posizione geometrica (picco/mezzo/pieno) decisa da
+   quattro macchine di gesto, e la si negoziava col dito. Adesso e uno STATO,
+   e ha un autore solo: NAV.vai().
+
+   Le proprieta che questo modello rende vere per costruzione:
+     · un tap di navigazione naviga; niente altro naviga;
+     · nessun pointercancel, secondo dito, scroll, resize o tastiera puo
+       cambiare destinazione: nessuno di loro chiama NAV.vai;
+     · ogni destinazione ha il proprio scroll, salvato quando si esce e
+       rimesso quando si torna;
+     · lo scroll della UI NON entra nello stato della persona: vive qui, in
+       memoria, e se si perde si perde una comodita, non un ricordo.
+   La barra e fatta di <a>: un tocco e un click, e un click non ha bisogno di
+   nessun arbitro per dire «Diario». */
+const NAV_SEZIONI=['parla','oggi','diario','altro'];
+const NAV={corrente:'parla',scroll:{parla:0,oggi:0,diario:0,altro:0}};
+function _navCorpo(sez){
+  if(sez==='parla') return document.getElementById('mic-wrap');
+  return document.querySelector('#app>main');
+}
+function navVai(sez,perche){
+  try{
+    if(NAV_SEZIONI.indexOf(sez)<0) return;
+    const vecchia=NAV.corrente;
+    if(vecchia===sez&&document.body.getAttribute('data-sez')===sez) return;
+    /* si mette da parte lo scroll di dove si era, PRIMA di cambiare */
+    try{ const cv=_navCorpo(vecchia); if(cv) NAV.scroll[vecchia]=cv.scrollTop; }catch(_){}
+    NAV.corrente=sez;
+    document.body.setAttribute('data-sez',sez);
+    /* «quale schermata» resta quello di prima, per chi lo legge gia */
+    try{ document.body.setAttribute('data-pane',sez==='altro'?'impostazioni':(sez==='parla'?'quest':sez)); }catch(_){}
+    try{ segnaMondo(); }catch(_){}
+    document.querySelectorAll('#barra a').forEach(function(a){
+      if(a.getAttribute('data-sez')===sez) a.setAttribute('aria-current','page');
+      else a.removeAttribute('aria-current');
+    });
+    /* e si rimette quello di dove si sta andando */
+    try{ const cn=_navCorpo(sez); if(cn) cn.scrollTop=NAV.scroll[sez]||0; }catch(_){}
+    try{ nota('nav',NAV_SEZIONI.indexOf(sez)); }catch(_){}
+    /* v270.1: entrando in Altro il pannello si aggiorna. Fuori da Altro non si
+       ricostruisce niente: il criterio vive in renderSettings, una porta sola. */
+    try{ if(sez==='altro'&&typeof renderSettings==='function') renderSettings(); }catch(_){}
+    /* v270: quale delle due pile si vede lo decide data-sez, in CSS. */
+  }catch(_){}
+}
+/* Oggi e Diario vivono impilati dentro lo stesso <main>: qui si dice quale dei
+   due si vede. E l'unico pezzo di geometria rimasto, ed e una classe, non un
+   trascinamento. */
+function _navMostraOggi(){ try{ document.body.classList.remove('solo-diario'); }catch(_){} }
+try{
+  document.addEventListener('DOMContentLoaded',function(){
+    const b=document.getElementById('barra'); if(!b) return;
+    b.addEventListener('click',function(e){
+      const a=e.target.closest&&e.target.closest('a[data-sez]');
+      if(!a) return; e.preventDefault(); navVai(a.getAttribute('data-sez'),'tap');
+    });
+  });
+}catch(_){}
+function _navMostraDiario(){
+  try{ document.body.classList.add('solo-diario');
+    const m=document.querySelector('#app>main'); if(m) m.scrollTop=NAV.scroll.diario||0; }catch(_){}
+}
+window.NAV=NAV; window.navVai=navVai;
+/* ══ v270 — «IL MONDO E COPERTO?» ADESSO E BANALE ═════════════════════════
+   Alla v269.3 questa funzione doveva ricostruire la copertura da due stati
+   scritti per altre ragioni (data-pane e data-foglio), ed e li che due lettori
+   su due avevano sbagliato. Adesso la domanda ha una risposta diretta: il
+   mondo si vede quando la destinazione E il mondo. */
 function segnaMondo(){
   try{
-    const pane=document.body.getAttribute('data-pane')||'';
-    const fog=document.body.getAttribute('data-foglio')||'';
-    /* coperto = il foglio e tirato su fino in cima, oppure siamo in Altro, che
-       il foglio lo apre a pieno. Tutto il resto - compreso «quest», che e il
-       foglio a picco - vuol dire che il mondo si vede. */
-    const coperto=(fog==='pieno')||(pane==='impostazioni');
+    const sez=document.body.getAttribute('data-sez')||'parla';
+    const coperto=(sez!=='parla');
     document.body.setAttribute('data-mondo',coperto?'coperto':'vivo');
-    try{ nota('mnd',coperto?0:1); nota('fog',fog==='picco'?0:(fog==='mezzo'?1:2));
-         nota('pan',pane==='oggi'?0:(pane==='diario'?1:(pane==='quest'?2:3))); }catch(_){}
+    try{ nota('mnd',coperto?0:1); nota('pan',NAV_SEZIONI.indexOf(sez)); }catch(_){}
   }catch(_){}
 }
+
+/* ══ v270 — showPane NON DECIDE PIU: TRADUCE ═══════════════════════════════
+   Restava per compatibilita con i punti che la chiamavano gia. Ma «quale
+   schermata» non e piu una posizione del foglio: e una destinazione, e chi la
+   decide e navVai. Qui si traduce il vecchio vocabolario nel nuovo, e basta.
+     'quest'        -> parla   (era «foglio a picco, la voce e nel mondo»)
+     'impostazioni' -> altro
+     'diario'       -> diario
+     tutto il resto -> oggi                                                */
 function showPane(name){
-  /* il foglio ha preso il posto delle pagine: Oggi e Diario vivono impilati nel corpo.
-     'impostazioni' = pannello Altro (foglio a pieno) · 'quest' = foglio a picco, la voce e nel mondo */
-  try{ document.body.setAttribute('data-pane',name); }catch(_){}
-  segnaMondo();
-  const alt=(name==='impostazioni');
-  try{   /* punto 5 (lente Modi #60): entrando in Altro ricordo dove eri, per restituirtelo */
-    if(alt&&document.body.getAttribute('data-pane')!=='impostazioni'){
-      const m0=document.querySelector('main');
-      window._primaDiAltro={det:window._foglioDetent||'mezzo',st:m0?m0.scrollTop:0};
-    }
-  }catch(_){}
-  try{ $('#tab-oggi').classList.toggle('hidden',alt); }catch(_){}
-  try{ $('#tab-diario').classList.toggle('hidden',alt); }catch(_){}
-  try{ $('#tab-impostazioni').classList.toggle('hidden',!alt); }catch(_){}
-  /* v253: qui il pannello si apre, quindi si ridisegna ANCHE lui, e SUBITO:
-     due righe sotto si legge il DOM. Fuori di qui renderSettings si salta,
-     perche ricostruire un pannello che nessuno guarda e lavoro buttato. */
-  _forzaSettings=true;
-  try{ renderSubito(); }finally{ _forzaSettings=false; }
-  try{
-    const m=document.querySelector('main');
-    if(alt){ if(window.foglioVai) foglioVai('pieno'); if(m) m.scrollTop=0; }
-    else if(name==='quest'){ if(window.foglioVai) foglioVai('picco'); }
-    else if(name==='diario'){ if(window.foglioVai) foglioVai('pieno');
-      setTimeout(()=>{ try{ const d=document.querySelector('#tab-diario'); if(m&&d) m.scrollTo({top:Math.max(0,d.offsetTop-8),behavior:'smooth'}); }catch(_){} },90); }
-    else { if(window.foglioVai) foglioVai('mezzo'); if(m) m.scrollTop=0; }
-  }catch(_){}
+  const dest = (name==='quest')?'parla':(name==='impostazioni')?'altro':(name==='diario')?'diario':'oggi';
+  
+  navVai(dest,'showPane');
 }
+
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>showPane(b.dataset.tab);
 });
 /* Altro è nascosto: si apre dal Diario e si torna indietro */
-document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
-{ const ba=document.querySelector('#btn-altro-mondo'); if(ba) ba.onclick=()=>showPane('impostazioni'); }
+
+
 { const ph=document.querySelector('#prog-head'); if(ph) ph.onclick=()=>{
   const sec=document.querySelector('#sec-programma');
   const apre=sec.classList.contains('collapsed');   /* sta per aprirsi */
@@ -5728,164 +5817,21 @@ function foglioDopoVoce(){
       const el=document.querySelector(s);
       return el&&!el.classList.contains('hidden')&&el.textContent.trim();
     });
-    window.foglioVai&&window.foglioVai(vivo?'picco':'mezzo');
-  }catch(_){ try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(__){} }
+    navVai(vivo?'parla':'oggi');
+  }catch(_){ try{ navVai('oggi'); }catch(__){} }
 }
-/* ══════ IL FOGLIO — tre detent, velocita, gomma (contratti B/F4) ══════ */
-(function(){
-  const fg=document.getElementById('app'); if(!fg) return;
-  const grip=document.getElementById('foglio-grip');
-  const corpo=document.querySelector('main');
-  const testa=document.querySelector('header');
-  if(!grip||!corpo) return;
-  let H=1,SB=0,det='mezzo',ty=0,raf=0,penTy=null;
-  function ridotto(){ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches&&!(S.settings&&S.settings.anim==='sempre'); }catch(_){ return false; } }
-  function misura(){
-    H=Math.max(1,window.innerHeight);
-    try{ const pr=document.createElement('div');
-      pr.style.cssText='position:fixed;left:-9999px;top:0;height:0;padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden';
-      document.body.appendChild(pr); SB=pr.getBoundingClientRect().height||0; pr.remove();
-    }catch(_){ SB=0; }
-  }
-  function posDi(d){ return d==='pieno'?Math.round(H*0.08):(d==='mezzo'?Math.round(H*(H<=700?0.48:0.54)):Math.max(0,Math.round(H-110-SB))); }   /* 110 = testata morfata a picco: tarare qui se spunta uno spiraglio */
-  function fpDi(y){ const a=posDi('mezzo'), b=posDi('picco'); return Math.max(0,Math.min(1,(y-a)/Math.max(1,b-a))); }
-  function scrivi(y){ penTy=y; if(raf) return;
-    raf=requestAnimationFrame(function(){ raf=0; if(penTy!=null){ fg.style.transform='translate(-50%,'+penTy+'px)'; scriviFp(fpDi(penTy).toFixed(4)); } }); }
-  function applica(d){
-    det=d; window._foglioDetent=d; ty=posDi(d); penTy=null;
-    try{ document.body.classList.toggle('foglio-opaco',ridotto()); }catch(_){}
-    fg.style.transform='translate(-50%,'+ty+'px)';
-    scriviFp((d==='picco')?'1':'0');
-    fpScroll=(d==='picco')?1:0;                       /* cambiando fermata il morphing riparte da capo */
-    try{ document.body.classList.toggle('testa-raccolta',d==='picco'); }catch(_){}
-    corpo.style.overflowY=(d==='pieno')?'auto':'hidden';
-    if(d==='pieno'){ try{ requestAnimationFrame(fpDaScroll); }catch(_){} }   /* si entra a «pieno» gia scrollati: la testata si adegua subito */
-    try{ document.body.setAttribute('data-foglio',d); segnaMondo(); }catch(_){}   /* v269.3: la posizione del foglio decide se il mondo si vede */
-  }
-  window.foglioVai=function(d){ if(d==='picco'||d==='mezzo'||d==='pieno') applica(d); };
-  /* ── FASE 1 (v169): lo scroll guida il morphing ────────────────────────────────────────
-     Il collasso della testata esisteva dalla v93 ma era agganciato alla POSIZIONE del foglio:
-     --fp saliva solo trascinando da mezzo a picco. Il contenuto pero scorre solo a «pieno»,
-     dove --fp vale 0 - cioe nell'unico stato in cui si legge, la testata restava grande.
-     Qui lo scroll del corpo guida lo stesso --fp, sui primi SCROLL_MORPH px. Niente DOM nuovo,
-     niente estetica nuova: si riusa il morphing gia tarato. */
-  const SCROLL_MORPH=120;
-  let rafS=0, fpScroll=0;
-  /* v259: la scrive una funzione sola, e la scrive sulla testata - dove la
-     leggono i due elementi che la usano. */
-  /* v259: il valore si muove qui, e qui vive anche la sua transizione - la
-     stessa curva e la stessa durata di prima, spostate di un elemento. */
-  try{ if(testa) testa.style.transition='--fp .32s cubic-bezier(0.32,0.72,0,1)'; }catch(_){}
-  function scriviFp(v){ try{ (testa||fg).style.setProperty('--fp',v); }catch(_){} }
-  function fpDaScroll(){
-    if(det!=='pieno'||dragging) return;
-    const y=Math.max(0,corpo.scrollTop||0);
-    const v=Math.max(0,Math.min(1,y/SCROLL_MORPH));
-    if(Math.abs(v-fpScroll)<0.004) return;
-    fpScroll=v;
-    scriviFp(v.toFixed(4));
-    try{ document.body.classList.toggle('testa-raccolta',v>0.6); }catch(_){}
-  }
-  corpo.addEventListener('scroll',function(){
-    manoAlLavoro();            /* v259: si sta scorrendo - i pennelli aspettano */
-    if(rafS) return;
-    rafS=requestAnimationFrame(function(){ rafS=0; fpDaScroll(); });
-  },{passive:true});
-  /* il drag: maniglia e testata sempre, tutto il foglio quando e a picco */
-  let dragging=false,p0=0,ty0=0,samples=[],pdGrip=false;
-  function gomma(y){ const mn=posDi('pieno'), mx=posDi('picco');
-    if(ridotto()) return Math.max(mn,Math.min(mx,y));
-    if(y<mn) return mn+(y-mn)/3;
-    if(y>mx) return mx+(y-mx)/3;
-    return y; }
-  function trStart(y){ dragging=true; window._foglioVento=true; p0=y; ty0=(penTy!=null?penTy:ty); samples=[{t:performance.now(),y:y}]; fg.classList.add('trascinando'); }
-  function trMove(y){ if(!dragging) return;
-    manoAlLavoro();            /* v259: il foglio e in mano, il resto aspetta */
-    const now=performance.now(); samples.push({t:now,y:y});
-    while(samples.length>2&&now-samples[0].t>120) samples.shift();
-    scrivi(gomma(ty0+(y-p0))); }
-  function trEnd(tapGrip){
-    if(!dragging) return; dragging=false;
-    window._foglioVento=false;
-    const detPrima=det;
-    fg.classList.remove('trascinando');
-    const a=samples[0], b=samples[samples.length-1];
-    const v=(a&&b&&b.t>a.t)?((b.y-a.y)/(b.t-a.t)):0;   /* px/ms, positivo verso il basso */
-    const mosso=(a&&b)?Math.abs(b.y-a.y):0;
-    const ORD=['pieno','mezzo','picco'];
-    let dest;
-    if(tapGrip&&mosso<6){ dest=ORD[(ORD.indexOf(det)+1)%3]; }   /* tap sulla maniglia: cicla */
-    else if(Math.abs(v)>0.5){ dest=ORD[Math.max(0,Math.min(2,ORD.indexOf(det)+(v>0?1:-1)))]; }
-    else{ const cur=(penTy!=null?penTy:ty), proj=cur+v*180;
-      dest=ORD.reduce(function(m,d){ return Math.abs(posDi(d)-proj)<Math.abs(posDi(m)-proj)?d:m; },'mezzo'); }
-    applica(dest);
-    if(dest!==detPrima){ try{ haptic(); }catch(_){} }   /* il detent risponde: un tick, mai dietro foglioVai */
-  }
-  function giu(e){
-    /* v269.10: la guardia d'ingresso. Ignorare il secondo dito dentro l'arbitro
-       non serviva a niente finche la macchina partiva lo stesso: il foglio
-       cominciava un trascinamento che non avrebbe mai ricevuto la propria fine,
-       perche i suoi terminali sarebbero stati rifiutati. Monodito vuol dire
-       anche QUI, all'ingresso. */
-    if(!mioGesto('foglio',e)) return;
-    if(dragging) return;
-    if(e.pointerType==='mouse'&&e.button!==0) return;
-    pdGrip=!!(e.target&&grip.contains(e.target));
-    trStart(e.clientY);
-  }
-  grip.addEventListener('pointerdown',giu);
-  if(testa) testa.addEventListener('pointerdown',giu);
-  fg.addEventListener('pointerdown',function(e){ if(det==='picco') giu(e); });
-  window.addEventListener('pointermove',function(e){ if(!mioGesto('foglio',e)) return;
-    if(dragging){ trMove(e.clientY); if(e.cancelable) e.preventDefault(); } },{passive:false});
-  window.addEventListener('pointerup',function(e){ if(!mioGesto('foglio',e)) return; trEnd(pdGrip); pdGrip=false; });
-  window.addEventListener('pointercancel',function(e){ if(!mioGesto('foglio',e)) return; trEnd(false); pdGrip=false; });
-  /* la campana dell'arbitro suona qui, quando chiude d'ufficio */
-  try{ window._fogliOraBasta=function(){ try{ trEnd(false); pdGrip=false; }catch(_){} }; }catch(_){}
-  /* regola dello scroll: il corpo scorre solo a pieno; da scrollTop 0, giu >8pt = handoff al foglio */
-  let hs=null;
-  corpo.addEventListener('touchstart',function(e){
-    hs=(det==='pieno'&&corpo.scrollTop<=0&&e.touches.length===1)?{y:e.touches[0].clientY,on:false}:null;
-  },{passive:true});
-  corpo.addEventListener('touchmove',function(e){
-    if(!hs) return;
-    const y=e.touches[0].clientY, dy=y-hs.y;
-    if(!hs.on){
-      if(dy>8){ hs.on=true; trStart(y); }
-      else if(dy<-2){ hs=null; return; }
-    }
-    if(hs&&hs.on){ trMove(y); if(e.cancelable) e.preventDefault(); }
-  },{passive:false});
-  corpo.addEventListener('touchend',function(){ if(hs&&hs.on) trEnd(false); hs=null; },{passive:true});
-  window.addEventListener('resize',function(){
-    const ae=document.activeElement;   /* Android: la tastiera ridimensiona la viewport; col cursore in un campo il foglio non deve saltare */
-    if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA')) return;
-    misura(); applica(det);
-  });
-  document.addEventListener('focusout',function(){ setTimeout(function(){ try{
-    const ae=document.activeElement;
-    if(!ae||(ae.tagName!=='INPUT'&&ae.tagName!=='TEXTAREA')){ misura(); applica(det); }
-  }catch(_){} },350); });   /* tastiera chiusa: il foglio si rimisura una volta sola */
-  misura();
-  /* l'apertura: la barra nasce in basso, i numeri piccoli; alla dissolvenza della soglia
-     sale lentamente a mezzo e i numeri crescono con lei — un unico movimento */
-  applica('picco');
-  (function alba(){
-    let n=0;
-    const iv=setInterval(function(){
-      n++;
-      if(!document.getElementById('soglia')||n>26){
-        clearInterval(iv);
-        if(ridotto()){ applica('mezzo'); return; }
-        fg.style.transition='transform .95s cubic-bezier(.22,1,.36,1)';
-        try{ const _h=document.querySelector('header'); if(_h) _h.style.transition='--fp .95s cubic-bezier(.22,1,.36,1)'; }catch(_){}
-        requestAnimationFrame(function(){ applica('mezzo'); });
-        setTimeout(function(){ fg.style.transition='';
-          try{ const _h=document.querySelector('header'); if(_h) _h.style.transition=''; }catch(_){} },1050);
-      }
-    },150);
-  })();
-})();
+/* ══ v270 — IL CASSETTO NON C'E PIU ═══════════════════════════════════════
+   Qui vivevano i tre detent (picco, mezzo, pieno), il trascinamento con
+   velocita, proiezione, inerzia e gomma, l'handoff scroll->foglio, il morphing
+   della testata e i riposizionamenti su resize e focus. Circa novemila
+   caratteri di codice il cui compito era decidere QUANTO DELL'APP SI PUO
+   VEDERE, e che sulla PWA reale (375x647, iPhone SE) si richiudeva da solo al
+   punto da rendere Sentiero inutilizzabile.
+   Non e stato riparato: e stato tolto. Al suo posto c'e una navigazione con
+   quattro destinazioni, dove «dove sono» e uno stato dichiarato e non una
+   posizione geometrica da negoziare col dito.
+   Il codice rimosso resta nella release v269.10, che e il reperto. */
+
 document.querySelectorAll('#seg-uitheme button').forEach(b=>{
   b.onclick=()=>{ S.settings.uiTheme=(b.dataset.uitheme==='carta')?'carta':'classico'; save(); applyTheme(); renderSettings(); };
 });
@@ -5923,15 +5869,13 @@ setTimeout(()=>{ try{
   }
 }catch(_){} },1600);
 
-document.querySelector('#close-altro').onclick=()=>{
-  const r=window._primaDiAltro; window._primaDiAltro=null;
-  showPane('oggi');   /* rimonta Oggi+Diario impilati (mezzo di default) */
-  try{
-    if(r){ if(window.foglioVai) foglioVai(r.det);
-      const m=document.querySelector('main');
-      if(m) m.scrollTop=(r.det==='pieno')?r.st:0; }
-  }catch(_){}
-};
+/* v270.1 — I TRE INGRESSI RIDONDANTI SONO SPARITI.
+   «open-altro» nel Diario, «close-altro» dentro Altro, «btn-altro-mondo» nel
+   mondo: tre porte per una destinazione che adesso e nella barra, sempre, in
+   quarta posizione. Il Back interno esisteva solo perche Altro era un pannello
+   temporaneo: una destinazione top-level non torna indietro, si lascia.
+   Con loro se ne va _primaDiAltro, che ricordava «dove eri prima di aprire il
+   pannello»: adesso ogni luogo ricorda il proprio scroll da se. */
 
 /* ======================================================================
    DETTATURA
@@ -6181,7 +6125,10 @@ function _startHold(e){
   _holdX0=(e&&typeof e.clientX==='number')?e.clientX:0;
   _buttaVia=0; _butta=false;
   if(!recording) startRec();   /* avviato dentro il gesto: l'audio di iOS si attiva */
-  try{ window.foglioVai&&window.foglioVai('picco'); }catch(_){}   /* il foglio si fa da parte: la voce e nel mondo */
+  /* v270: qui c'era foglioVai('picco') - «il foglio si fa da parte». Adesso il
+     microfono e VISIBILE SOLO dentro Parla: se lo stai toccando, sei gia li.
+     Toglierla non e una pulizia estetica: era l'unica strada per cui un
+     pointerdown poteva cambiare destinazione, e questo banco la vietava. */   /* il foglio si fa da parte: la voce e nel mondo */
 }
 
 /* ══════ v257 — PERCHE IL FERMO NON SCATTAVA MAI SU iPHONE ═════════════════
@@ -6320,7 +6267,9 @@ micBtn.addEventListener('pointerdown',function(e){ if(!mioGesto('voce',e)) retur
 window.addEventListener('pointermove',function(e){ if(!mioGesto('voce',e)) return; _muoviHold(e); },{passive:true});
 window.addEventListener('pointerup',function(e){ if(!mioGesto('voce',e)) return; _endHold(e); });
 window.addEventListener('pointercancel',function(e){ if(!mioGesto('voce',e)) return; _endHold(e); });
-document.querySelector('#btn-discard').onclick=()=>{ resetCapture(); try{ window.foglioVai&&window.foglioVai('mezzo'); }catch(_){} };
+document.querySelector('#btn-discard').onclick=()=>{ resetCapture();
+  /* v270: buttare via una registrazione ti lascia dove sei. Prima riportava il
+     foglio a «mezzo», cioe ti spostava. */ };
 /* domanda priorità: se l'IA rileva quest urgenti/importanti, l'utente conferma */
 let pendingPrioIds=[];
 function maybeAskPriority(bornIds){
@@ -10304,7 +10253,7 @@ async function askObserverLine(pkg){
   }
   window._nascitaQuest=function(qid){
     try{
-      window.foglioVai&&window.foglioVai('pieno');
+      /* v270 */
       setTimeout(function(){
         const row=document.querySelector('#list-quest-today .item[data-qid="'+qid+'"]');
         if(!row){ try{ foglioDopoVoce(); }catch(_){} return; }
@@ -11849,7 +11798,7 @@ function applyTheme(){ try{
       const d=(RIE?14:10)+3*f;   /* al rientro la brace e piu grande: non si era spenta */
       ctx.drawImage(RIE?spBrace:spOro,C+R*Math.cos(A0)-d/2,C+R*Math.sin(A0)-d/2,d,d);
       ctx.globalAlpha=1; }
-    const rate=(rec?1.5:(sealed?0.55:(p>0?(0.25+p*0.9):0.05)))*(0.8+0.6*CAL)*((window._foglioDetent==='pieno')?0.3:1)*(window._foglioVento?1.35:1);
+    const rate=(rec?1.5:(sealed?0.55:(p>0?(0.25+p*0.9):0.05)))*(0.8+0.6*CAL)*((document.body.getAttribute('data-sez')==='parla')?1:0.3)   /* v270: si disegna piano quando il mondo non e la destinazione */*(window._foglioVento?1.35:1);
     if(Math.random()<rate*dt*0.6) (rec?spawnSpirale:spawnArco)(rec||(RIE&&Math.random()<0.5));
     if(pieno&&Math.random()<0.28*dt) spawnArco(false);
     if(burst>0){ const n=Math.min(6,burst); for(let i=0;i<n;i++) spawnBurst(); burst-=n; }
@@ -12849,7 +12798,8 @@ function updateRing(){
    NUOVO GIORNO
    ====================================================================== */
 let renderedDay=todayKey();
-function initDay(){ if(rolloverDay(S,todayKey())) save(); try{ nota('avv'); }catch(_){} }
+function initDay(){ if(rolloverDay(S,todayKey())) save(); try{ nota('avv'); }catch(_){}
+  try{ navVai('parla','avvio'); }catch(_){} }
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible'){ try{ save(); }catch(_){}  try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
   try{FX.resume();}catch(_){}
@@ -14456,9 +14406,17 @@ function renderSettings(){
   /* v253 — non si ricostruisce un pannello che nessuno sta guardando.
      renderSettings rifa la lingua, i segmenti, gli interruttori, i rituali e i
      suoni: otto cicli. Girava a ogni spunta, anche col pannello chiuso. */
+  /* ══ v270.1 — IL CRITERIO E SEMANTICO, NON UNA CLASSE ═══════════════════
+     Qui c'era: «se il pannello ha ancora la classe hidden, non ricostruirlo».
+     Era giusto quando Altro ERA un pannello nascosto. Nella v270 Altro e una
+     destinazione e la classe non serve piu: se la togli dal markup questo
+     criterio diventa falso per sempre e Altro si ricostruisce a ogni spunta;
+     se la lasci, e vero per sempre e Altro non si ricostruisce MAI - compare,
+     e dentro c'e quello che c'era prima.
+     La domanda giusta non e «questo div ha una classe»: e «la destinazione
+     corrente e Altro?». */
   try{
-    const pan=document.getElementById('tab-impostazioni');
-    if(pan&&pan.classList.contains('hidden')&&!_forzaSettings) return;
+    if(typeof NAV!=='undefined'&&NAV&&NAV.corrente!=='altro'&&!_forzaSettings) return;
   }catch(_){}
   /* v207 — I DUE LIVELLI, CHIAMATI PER NOME.
      Il livello base non si chiama «Sentiero Free» ne «Sentiero Lite»: si chiama
@@ -15446,7 +15404,7 @@ const MANO_PASSI=[
   {sel:'#mic',        txt:'Tieni premuto qui e di’ quello che ti passa per la testa. Quando lasci, resta scritto.'},
   {sel:'#sec-today-quests', txt:'Le cose che dici di voler fare finiscono qui sotto da sole. Nessuno te le cancella se passa una settimana.'},
   {sel:'#nascita-apri', txt:'Se preferisci scriverle a mano invece che dirle, si aggiungono da qui.'},
-  {sel:'#open-altro', txt:'E qui dentro c’è tutto il resto: come si usa, i tuoi dati, e da dove porti via tutto quando vuoi.'}
+  {sel:'#barra a[data-sez="altro"]', txt:'E qui dentro c’è tutto il resto: come si usa, i tuoi dati, e da dove porti via tutto quando vuoi.'}
 ];
 let _manoI=0;
 function manoFinita(){
@@ -15557,5 +15515,21 @@ async function primeMicPermission(){
 }
 
 </script>
+
+<!-- ══ v270 — LE QUATTRO DESTINAZIONI ═══════════════════════════════════════
+     <nav> con quattro <a>, non role="tablist". Il contratto ARIA Tabs vuole
+     frecce, tabindex roving e aria-controls, e serve a un widget a pannelli.
+     Queste sono DESTINAZIONI: una navigazione di sito. <nav> + aria-current
+     e' gia corretto per VoiceOver e per la tastiera senza aggiungere niente,
+     ed e' la cosa piu semplice che dice la verita.
+     Ogni voce ha il proprio NOME SCRITTO: nessuna funzione primaria e' solo
+     un'icona. -->
+<script>try{document.body.setAttribute('data-sez','parla');}catch(_){}</script>
+<nav id="barra" aria-label="Sezioni di Sentiero">
+  <a href="#parla"  data-sez="parla"  aria-current="page"><span class="ico" aria-hidden="true">◍</span>Parla</a>
+  <a href="#oggi"   data-sez="oggi"><span class="ico" aria-hidden="true">◔</span>Oggi</a>
+  <a href="#diario" data-sez="diario"><span class="ico" aria-hidden="true">▤</span>Diario</a>
+  <a href="#altro"  data-sez="altro"><span class="ico" aria-hidden="true">⋯</span>Altro</a>
+</nav>
 </body>
 </html>
