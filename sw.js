@@ -1,4 +1,4 @@
-const CACHE = 'sentiero-v60s-270-2';
+const CACHE = 'sentiero-v60s-271';
 /* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
    blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
    sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui
@@ -44,7 +44,7 @@ self.addEventListener('activate', e => {
 /* v269.8 — «CHI STA SERVENDO QUESTA PAGINA?»
    Una domanda sola, una risposta sola, nessun protocollo. La pagina chiede la
    generazione di chi la serve; il worker la ricava dal nome della propria cache
-   (sentiero-v60s-270-1 -> 270002). Serve a distinguere, nel nastro, una sessione
+   (sentiero-v60s-270-1 -> 271000). Serve a distinguere, nel nastro, una sessione
    servita dalla generazione nuova da una servita da quella vecchia rimasta al
    comando. Un worker di prima di questa versione non risponde: nel nastro resta
    zero, e anche quello dice qualcosa. */

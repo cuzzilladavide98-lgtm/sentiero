@@ -1,0 +1,57 @@
+{
+ "formato": 2,
+ "versione": "v60S.271 · 2026-08-20",
+ "generazione": 271000,
+ "cache": "sentiero-v60s-271",
+ "ragione": "quattro funzioni: la pagina letta, la ricerca nel diario, gli anni che tornano, le quest che si sbloccano",
+ "file": {
+  "index.html": {
+   "byte": 1245810,
+   "sha256": "eed172f13d59f727b8d4a7542bdada4fae7b33c524e396b74e3764d5e429cd04",
+   "cambiato": true,
+   "motivo": "la Chiamata a terra diventa lettura di una pagina (OCR); ricerca generale nel Diario; eventi annuali con richiamo interno a 14 giorni; quest sbloccabili; tre campi nuovi nel contratto di stato"
+  },
+  "sw.js": {
+   "byte": 4562,
+   "sha256": "d53424c48197ba0d788ed632659bf4ee6132274497aab1f37bd818370988a0a1",
+   "cambiato": true,
+   "motivo": "nome della cache e numero di generazione"
+  },
+  "manifest.json": {
+   "byte": 598,
+   "sha256": "ee31e80c07af0b3b02804875b933377a649e593e2318da4a914193bf26106064",
+   "cambiato": false,
+   "motivo": "invariato"
+  },
+  "privacy.html": {
+   "byte": 17198,
+   "sha256": "65ff11814186799ce6a77929f5233225a30e929ba30a36dbac9df2164bda87db",
+   "cambiato": true,
+   "motivo": "la foto di una pagina: cosa esce e cosa no; e cio che resta locale"
+  },
+  "guida.html": {
+   "byte": 28847,
+   "sha256": "840c02fed7ce2467c705919aa151aa16d040600a2e37824c791f038956c93da9",
+   "cambiato": true,
+   "motivo": "quattro capitoli nuovi; la vecchia Chiamata a terra non si spiega piu"
+  },
+  "inizia.html": {
+   "byte": 13833,
+   "sha256": "e97325259400315f6d782b338b3b439f6d1defb0612ebe315e36159d5ce9fcf4",
+   "cambiato": false,
+   "motivo": "invariato"
+  },
+  "lingue/base-it.json": {
+   "byte": 13188,
+   "sha256": "987e2f7fff27ae50a60c2c424f8bfb2b1ede05fc6950bb00e92c831b7d7ff1d2",
+   "cambiato": true,
+   "motivo": "solo per_versione"
+  },
+  "lingue/en.json": {
+   "byte": 21032,
+   "sha256": "004893604704999849f6e2a0764a46d7029aa83ee45df71b81e97b630b1856f3",
+   "cambiato": false,
+   "motivo": "invariato"
+  }
+ }
+}

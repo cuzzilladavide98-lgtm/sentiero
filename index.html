@@ -2219,6 +2219,96 @@ body.theme-carta .item{overflow:visible}
   pointer-events:none;                /* e una didascalia: non ruba il dito a nessuno */
 }
 #mic{ border-radius:50% }             /* la superficie e il disco che si vede */
+
+/* ══ v271 — LA PAGINA LETTA ════════════════════════════════════════════════
+   Bersagli da 52 punti: sopra il pavimento di 44, e comodi con una mano sola
+   su un SE. Niente hover: tutto quello che si vede si tocca. */
+#ocr-scelta{display:flex;flex-direction:column;gap:10px;margin:4px 0 2px}
+.ocr-via{display:flex;align-items:center;justify-content:flex-start;gap:12px;
+  width:100%;min-height:52px;padding:0 16px;border-radius:14px;
+  background:rgba(245,242,234,.06);border:.5px solid rgba(245,242,234,.16);
+  color:var(--t1);font:500 15px/1.2 var(--sans,system-ui);text-align:left}
+.ocr-via svg{flex:0 0 auto;opacity:.85}
+.ocr-via.ocr-mano{background:none;border-style:dashed;color:var(--t2)}
+body.theme-carta .ocr-via{background:rgba(23,21,18,.05);border-color:rgba(23,21,18,.22)}
+#ocr-attesa{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 0}
+#ocr-attesa.hidden{display:none}
+.ocr-spin{width:26px;height:26px;border-radius:50%;
+  border:2px solid rgba(245,242,234,.18);border-top-color:hsl(var(--terra-h) 80% 66%);
+  animation:ocr-gira .9s linear infinite}
+@keyframes ocr-gira{to{transform:rotate(360deg)}}
+body:not(.anima-sempre) .ocr-spin{animation-duration:1.8s}
+@media (prefers-reduced-motion:reduce){body:not(.anima-sempre) .ocr-spin{animation:none;border-top-color:hsl(var(--terra-h) 80% 66%)}}
+#ocr-stop{min-height:44px;padding:0 18px;border-radius:12px;background:none;
+  border:.5px solid rgba(245,242,234,.2);color:var(--t2);font:500 14px var(--sans,system-ui)}
+body.theme-carta #ocr-stop{border-color:rgba(23,21,18,.3)}
+.ocr-nota{margin:6px 2px 0;font:400 12.5px/1.45 var(--sans,system-ui);color:var(--t3)}
+.ocr-nota:empty{display:none}
+#ocr-rifai{min-height:44px}
+#terra.ocr-scelta-on #terra-txt,#terra.ocr-scelta-on #ocr-avviso{display:none}
+#terra.ocr-attesa-on #terra-txt,#terra.ocr-attesa-on #ocr-scelta,#terra.ocr-attesa-on #terra-piede{display:none}
+#terra.ocr-testo-on #ocr-scelta{display:none}
+#terra:not(.ocr-testo-on) #ocr-rifai{display:none}
+/* la voce del diario che viene da una pagina fotografata si riconosce */
+.entry.ocr .ed-meta::after{content:' · dalla pagina';opacity:.75}
+
+/* ══ v271 — LA RICERCA NEL DIARIO ══════════════════════════════════════════
+   Alta 44 punti, larga quanto la colonna, raggiungibile col pollice. La × sta
+   dentro il campo e ha la sua area di 44: cancellare una ricerca e un gesto
+   che si fa spesso e di fretta. */
+#d-cerca-riga{display:flex;align-items:center;gap:8px;margin-top:12px;
+  padding:0 6px 0 12px;min-height:44px;border-radius:12px;
+  background:rgba(245,242,234,.05);border:.5px solid rgba(245,242,234,.13)}
+#d-cerca-riga:focus-within{border-color:rgba(245,242,234,.28)}
+.d-lente{flex:0 0 auto;color:var(--t3)}
+#d-cerca{flex:1 1 auto;min-width:0;background:none;border:0;outline:none;color:var(--t1);
+  font:400 15px/1.3 var(--sans,system-ui);padding:10px 0;-webkit-appearance:none}
+#d-cerca::placeholder{color:var(--t3)}
+#d-cerca::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+#d-cerca-x{flex:0 0 auto;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--t2);border-radius:10px}
+#d-cerca-x.hidden{display:none}
+#d-cerca-esito{margin:8px 2px 0;font:400 12.5px var(--sans,system-ui);color:var(--t3)}
+#d-cerca-esito:empty{display:none}
+body.theme-carta #d-cerca-riga{background:rgba(23,21,18,.05);border-color:rgba(23,21,18,.2)}
+/* cercando, i capitoli tacciono: raggruppano il tempo, e una ricerca non e un tempo */
+body.d-cercando #capitoli{display:none}
+
+/* ══ v271 — IL RICHIAMO A QUATTORDICI GIORNI ═══════════════════════════════
+   Deve farsi notare senza mettere ansia: un filo caldo a sinistra, niente
+   rosso, niente punto esclamativo, e una × da 44 punti per farlo tacere. */
+#prom-lista{display:flex;flex-direction:column;gap:8px;margin:12px 0 2px}
+#prom-lista.hidden{display:none}
+.prom-riga{display:flex;align-items:center;gap:8px;min-height:44px;
+  padding:6px 4px 6px 12px;border-radius:12px;
+  background:rgba(232,168,76,.09);border-left:2px solid rgba(232,168,76,.55)}
+.prom-txt{flex:1 1 auto;min-width:0;color:var(--t1);
+  font:500 14px/1.35 var(--sans,system-ui);overflow-wrap:anywhere}
+.prom-x{flex:0 0 auto;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--t2);border-radius:10px}
+body.theme-carta .prom-riga{background:rgba(122,86,18,.08);border-left-color:rgba(122,86,18,.5)}
+
+/* v271: il tasto calendario nelle righe delle impostazioni, come nelle quest */
+#list-sched .item .cal{flex:0 0 auto;width:44px;height:44px;display:flex;align-items:center;
+  justify-content:center;background:none;border:0;color:var(--t3);border-radius:10px}
+
+/* ══ v271 — LE QUEST SBLOCCABILI, nelle impostazioni ═══════════════════════ */
+#unlock-req{max-height:230px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.unl-req{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 10px;
+  border-radius:11px;background:none;border:.5px solid rgba(245,242,234,.10);
+  color:var(--t2);font:400 14px/1.3 var(--sans,system-ui);text-align:left;width:100%;margin-bottom:6px}
+.unl-req.on{border-color:hsl(var(--terra-h) 70% 55%);color:var(--t1);background:rgba(232,168,76,.09)}
+.unl-req .unl-box{flex:0 0 auto;width:19px;height:19px;border-radius:6px;
+  border:1.5px solid rgba(245,242,234,.3);display:flex;align-items:center;justify-content:center}
+.unl-req.on .unl-box{border-color:hsl(var(--terra-h) 70% 55%);background:hsl(var(--terra-h) 70% 55%)}
+.unl-req .unl-box svg{opacity:0;color:#0b0f0d}
+.unl-req.on .unl-box svg{opacity:1}
+.unl-req .unl-kind{margin-left:auto;flex:0 0 auto;font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--t3)}
+.unl-req .unl-t{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.unl-manca{color:var(--ceralacca,#c8442f)}
+body.theme-carta .unl-req{border-color:rgba(23,21,18,.18)}
+body.theme-carta .unl-req .unl-box{border-color:rgba(23,21,18,.32)}
 </style>
 </head>
 <body>
@@ -2433,6 +2523,9 @@ body.theme-carta .item{overflow:visible}
         <span id="day-line"></span>
       </div>
       <div id="patto" class="hidden"></div>
+      <!-- v271: i richiami a quattordici giorni. Vivono in Oggi perche e il
+           luogo di cio che sta arrivando; sono righe, non un pannello. -->
+      <div id="prom-lista" class="hidden"></div>
 
       <section id="sec-task">
         <div class="sec-head">Oggi</div>
@@ -2475,6 +2568,16 @@ body.theme-carta .item{overflow:visible}
           Altro
         </button>
       </div>
+      <!-- v271: la ricerca. Sta subito sotto la testata perche e la prima cosa
+           che si cerca quando si ha in mente una parola e non una data. -->
+      <div id="d-cerca-riga">
+        <svg class="d-lente" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="d-cerca" placeholder="cerca nel diario" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" aria-label="Cerca nel diario">
+        <button id="d-cerca-x" class="hidden" aria-label="Cancella la ricerca">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p class="note" id="d-cerca-esito"></p>
       <section style="margin-top:14px">
         <div id="capitoli"></div>
         <div id="list-diario" class="diary-font"></div>
@@ -2628,9 +2731,34 @@ body.theme-carta .item{overflow:visible}
         </div>
         <div id="task-data" class="hidden">
           <input type="date" id="new-task-date">
+          <!-- v271: la ricorrenza dell'evento a data precisa. Due scelte sole,
+               perche due sono i casi veri: una scadenza, e un anniversario. -->
+          <div class="seg" id="task-repeat" style="margin-top:10px">
+            <button data-rep="none" class="on">Una volta</button><button data-rep="yearly">Ogni anno</button>
+          </div>
         </div>
         <input type="time" id="new-task-time">
         <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi</button><button class="act hidden" id="btn-annulla-mod">Lascia stare</button></div>
+      </section>
+
+      <section>
+        <!-- ══ v271 — QUEST SBLOCCABILI ═══════════════════════════════════════
+             Sta subito dopo «le cose che si ripetono» perche i prerequisiti si
+             scelgono soprattutto li: chi ha appena creato un rituale e a un
+             dito di distanza dal costruirci sopra una condizione. -->
+        <div class="sec-head">Quest sbloccabili</div>
+        <p class="note">Una cosa che non si vede finché non hai fatto altre cose. Scegli fino a tre prerequisiti: quando li hai completati tutti, compare.</p>
+        <div class="group" id="list-unlock"></div>
+        <input type="text" id="unlock-txt" placeholder="es. il capitolo che aspetta da mesi">
+        <p class="note" style="margin-top:12px">Compare quando ho fatto:</p>
+        <div class="group" id="unlock-req"></div>
+        <div class="seg" id="unlock-modo" style="margin-top:12px">
+          <button data-modo="una-volta" class="on">Una volta</button><button data-modo="ogni-giorno">Ogni giorno</button>
+        </div>
+        <div class="btn-row">
+          <button class="act primary" id="btn-add-unlock">Aggiungi</button>
+          <button class="act hidden" id="btn-annulla-unlock">Lascia stare</button>
+        </div>
       </section>
 
       <section>
@@ -2661,7 +2789,7 @@ body.theme-carta .item{overflow:visible}
 <canvas id="fx"></canvas>
 <div id="flash"></div>
 <div id="word-stage"></div>
-<button id="terra-luce" aria-label="Chiamata a terra: scrivi invece di parlare"><span class="nucleo"></span></button>
+<button id="terra-luce" aria-label="Fotografa una pagina scritta e salvala nel diario"><span class="nucleo"></span></button>
 <div class="terra-scia"></div><div class="terra-scia"></div><div class="terra-scia"></div>
 <!-- v198: la seconda luce. Piu grande, piu lenta, viola. Compare alle 19 e resta
      fino alle 4:20, che e l'alba di Sentiero: esiste esattamente per la sera e la
@@ -2676,14 +2804,36 @@ body.theme-carta .item{overflow:visible}
      che la v180 ha riparato per la Chiamata a terra. L'ho scritto nel codice e non
      l'ho applicato alla porta accanto. -->
 <div id="frutto-soglia" class="hidden"><div id="frutto-corpo"></div></div>
-<div id="terra" class="hidden" role="dialog" aria-label="Chiamata a terra">
+<div id="terra" class="hidden" role="dialog" aria-label="Una pagina: da foto a testo">
   <div id="terra-foglio"><div id="terra-carta">
     <div id="terra-testa"></div>
+    <!-- v271: la luce resta, la porta resta, cio che c e dietro cambia del tutto.
+         Tre stati dentro lo stesso foglio: si sceglie, si aspetta, si corregge. -->
     <div id="terra-dom"></div>
-    <textarea id="terra-txt" rows="5" placeholder="scrivi qui, come viene" enterkeyhint="done"></textarea>
+    <div id="ocr-scelta">
+      <button class="ocr-via" id="ocr-scatta">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Scatta una foto</button>
+      <button class="ocr-via" id="ocr-scegli">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Scegli dalle foto</button>
+      <button class="ocr-via ocr-mano" id="ocr-mano">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        Scrivi a mano qui</button>
+      <input type="file" id="ocr-file-cam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="ocr-file-lib" accept="image/*" hidden>
+    </div>
+    <div id="ocr-attesa" class="hidden">
+      <div class="ocr-spin" aria-hidden="true"></div>
+      <p class="ocr-nota">sto leggendo la pagina</p>
+      <button id="ocr-stop">Lascia stare</button>
+    </div>
+    <textarea id="terra-txt" rows="5" placeholder="il testo della pagina comparira qui, e potrai correggerlo" enterkeyhint="done"></textarea>
+    <p class="ocr-nota" id="ocr-avviso"></p>
     <div id="terra-piede">
       <button id="terra-no">Chiudi</button>
-      <button id="terra-ok" class="primo">Raccogli</button>
+      <button id="ocr-rifai" class="hidden">Rifai</button>
+      <button id="terra-ok" class="primo">Salva nel diario</button>
     </div>
   </div></div>
 </div>
@@ -2756,6 +2906,64 @@ function questSortKey(q){ return (q.fatto?'1':'0')+String(q.prio||3)+(q.quando||
 function sortQuests(qs){ return [...qs].sort((a,b)=>{const x=questSortKey(a),y=questSortKey(b);return x<y?-1:x>y?1:0;}); }
 function activeQuests(state,tk){ return state.quests.filter(q=>!q.quando||q.quando<=tk); }
 function futureQuests(state,tk){ return state.quests.filter(q=>q.quando&&q.quando>tk); }
+/* ══ v271 — LE REGOLE DELLE QUEST SBLOCCABILI ══════════════════════════════
+   Una regola dice: quando QUESTI prerequisiti sono soddisfatti, nasce QUELLA
+   quest. I prerequisiti sono RIFERIMENTI - tipo + id - non copie: se domani
+   cambi il titolo del rituale, la regola continua a parlare della stessa cosa.
+   E se il rituale viene cancellato, il riferimento resta e diventa visibilmente
+   mancante, invece di sbloccare per sbaglio qualcosa. */
+function sanitizeUnlockRules(arr){
+  if(!Array.isArray(arr)) return [];
+  const out=[],seen=new Set();
+  for(const r of arr){
+    if(!r||typeof r!=='object') continue;
+    const titolo=clampStr(r.titolo,LIMITS.TITLE).trim();
+    if(!titolo) continue;
+    let id=clampStr(r.id,24)||coreUid();
+    while(seen.has(id)) id=coreUid();
+    seen.add(id);
+    const req=(Array.isArray(r.req)?r.req:[])
+      .filter(x=>x&&typeof x==='object'&&(x.tipo==='task'||x.tipo==='quest')&&typeof x.id==='string'&&x.id)
+      .map(x=>({tipo:x.tipo,id:clampStr(x.id,24)}))
+      .slice(0,3);
+    if(!req.length) continue;                       /* una regola senza requisiti sbloccherebbe sempre */
+    const modo=(r.modo==='ogni-giorno')?'ogni-giorno':'una-volta';
+    const note=clampStr(r.note,LIMITS.NOTE);
+    const prio=([1,2,3].includes(Number(r.prio)))?Number(r.prio):2;
+    out.push({id,titolo,req,modo,note,prio,nata:(typeof r.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(r.nata))?r.nata:''});
+    if(out.length>=40) break;
+  }
+  return out;
+}
+/* IL REGISTRO DELLE OCCORRENZE GIA NATE. Non e un dettaglio di comodo: e cio
+   che rende impossibile il duplicato. La chiave e «idRegola» per le regole una
+   volta, «idRegola|giorno» per quelle giornaliere - quindi due valutazioni
+   della stessa regola nello stesso giorno logico trovano la stessa chiave e la
+   seconda non fa niente. Render ripetuti, riaperture, doppi tocchi, reload e
+   save() non possono generare una seconda quest, perche non e la fortuna a
+   impedirlo: e la chiave. */
+function sanitizeUnlockDone(o){
+  const out={};
+  if(!o||typeof o!=='object'||Array.isArray(o)) return out;
+  Object.keys(o).slice(0,4000).forEach(k=>{
+    const kk=clampStr(k,60); const v=clampStr(o[k],10);
+    if(kk&&/^\d{4}-\d{2}-\d{2}$/.test(v)) out[kk]=v;
+  });
+  return out;
+}
+/* I PROMEMORIA GIA VISTI. Chiave «idEvento|AAAA-MM-GG dell'occorrenza»: chiuso
+   il richiamo del compleanno di quest'anno, quello dell'anno prossimo ha una
+   chiave diversa e torna da solo. Senza toccare una riga. */
+function sanitizePromVisti(o){
+  const out={};
+  if(!o||typeof o!=='object'||Array.isArray(o)) return out;
+  Object.keys(o).slice(0,2000).forEach(k=>{
+    const kk=clampStr(k,60);
+    if(kk&&o[k]===true) out[kk]=true;
+  });
+  return out;
+}
+
 function sanitizeScheduled(arr){
   if(!Array.isArray(arr)) return [];
   const out=[],seen=new Set();
@@ -2782,7 +2990,16 @@ function sanitizeScheduled(arr){
        tornava proprio nel caso che la v199 voleva correggere - il rituale nato oggi
        e mai ancora spuntato - dove non c'e' niente da dedurre. */
     const nata=(typeof t.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t.nata))?t.nata:'';
-    out.push({id,titolo,days,time,date,nata});
+    /* v271 — LA RICORRENZA ANNUALE.
+       «date» resta una data esatta e non viene MAI riscritta: e la data di
+       origine dell'evento, il 17 marzo in cui Marco e nato. Cio che cambia ogni
+       anno e la PROSSIMA OCCORRENZA, che si calcola quando serve. Riscrivere
+       «date» ogni anno vorrebbe dire perdere l'origine e far crescere lo stato
+       a ogni apertura: due difetti in una riga.
+       Un evento vecchio non ha «repeat»: arriva undefined e diventa 'none', che
+       e esattamente «una volta». La migrazione non ha bisogno di codice. */
+    const repeat=(t.repeat==='yearly'&&date)?'yearly':'none';
+    out.push({id,titolo,days,time,date,nata,repeat});
     if(out.length>=LIMITS.SMAX) break;
   }
   return out;
@@ -2820,6 +3037,10 @@ function sanitizeDiary(arr){
        Nel documento risultava «non ancora usata»: era usata e si spegneva da sola. */
     if(e.lascito===true) v.lascito=true;
     if(e.peso===true) v.peso=true;                    /* v201: il marchio del peso, che deve durare */
+    /* v271: da dove viene la voce. Serve al Diario per vestirla e a chi la
+       rilegge per sapere che quel testo l'ha letto una macchina da una sua
+       pagina. Vale solo 'ocr': qualunque altra cosa non entra. */
+    if(e.fonte==='ocr') v.fonte='ocr';
     out.push(v);
     if(out.length>=LIMITS.DMAX) break;
   }
@@ -3174,6 +3395,17 @@ function sanitizeState(raw,def){
        telefono, Sentiero non ricomincia a raccontare le stesse cose da capo. */
     obsDetti:Array.isArray(raw.obsDetti)?raw.obsDetti.filter(x=>x&&typeof x==='object'&&typeof x.cosa==='string').slice(-24):[],
     obsZitto:typeof raw.obsZitto==='string'?raw.obsZitto:'',   /* v268.2: il giorno in cui si e scelto di tacere */
+    /* ══ v271 — TRE CAMPI NUOVI, E LA LEZIONE GIA IMPARATA TRE VOLTE ═════════
+       «dom» (v197), «nata» dei rituali (v199), «vistoVersione» (v242): tutti e
+       tre erano salvati correttamente e tutti e tre sparivano al riavvio, perche
+       sanitizeState ricostruisce lo stato con una LISTA FISSA e un campo che non
+       e in lista non da errore - sparisce e basta.
+       Un backup della v270.2 non ha nessuno di questi tre: arriva undefined, e
+       il ripiego e il vuoto giusto. La migrazione e quindi implicita e non
+       distruttiva, ed e il banco a provarlo. */
+    unlockRules:sanitizeUnlockRules(raw.unlockRules),
+    unlockDone:sanitizeUnlockDone(raw.unlockDone),
+    promVisti:sanitizePromVisti(raw.promVisti),
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
       voice:!!(raw.settings&&raw.settings.voice===true),
@@ -3218,7 +3450,149 @@ function sanitizeState(raw,def){
   while(keys.length>60) delete st.checks[keys.shift()];
   return st;
 }
-function scheduledFor(state,dow,tk){ const rip=(state.riposi&&state.riposi[tk])||[]; const fer=state.ferie||{}; return state.scheduled.filter(t=>(((t.days&&t.days.includes(dow))||(t.date&&t.date===tk))&&rip.indexOf(t.id)<0&&!(fer[t.id]&&tk<fer[t.id]))); }   /* in ferie: sparisce e non conta, torna da solo il giorno scelto */
+/* ══ v271 — LE OCCORRENZE DI UN EVENTO A DATA PRECISA ══════════════════════
+   «date» e l'ORIGINE e non si riscrive mai: il 17 marzo in cui Marco e nato
+   resta il 17 marzo in cui Marco e nato. Cio che cambia ogni anno e la prossima
+   occorrenza, che si CALCOLA quando serve. Riscrivere «date» ogni anno
+   costerebbe due cose insieme: l'origine, e la garanzia che lo stato non
+   cresca a ogni apertura.
+
+   Il 29 febbraio. Un compleanno del 29 febbraio non ha una data in tre anni su
+   quattro, e ogni scelta e arbitraria: qui si sceglie il 28 febbraio, dichiarato
+   una volta e sempre uguale. Deterministico e non sorprendente: chi e nato il
+   29 lo festeggia il 28, non il primo marzo, perche il mese e quello. */
+function _dataOk(t){ return typeof t==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t); }
+function _chiaveData(y,m,d){
+  const p=n=>String(n).padStart(2,'0');
+  if(m===2&&d===29){ const bis=(y%4===0&&y%100!==0)||y%400===0; if(!bis) d=28; }
+  return y+'-'+p(m)+'-'+p(d);
+}
+/* la prossima occorrenza a partire da un giorno (compreso). Per un evento «una
+   volta» e la sua data, se non e passata; per uno annuale e il suo mese/giorno
+   in questo anno, o nel prossimo se questo e gia passato. */
+function prossimaOccorrenza(t,daTk){
+  if(!t||!_dataOk(t.date)) return '';
+  const da=_dataOk(daTk)?daTk:todayKey();
+  if(t.repeat!=='yearly') return (t.date>=da)?t.date:'';
+  const m=+t.date.slice(5,7), d=+t.date.slice(8,10);
+  const y=+da.slice(0,4);
+  const q=_chiaveData(y,m,d);
+  return (q>=da)?q:_chiaveData(y+1,m,d);
+}
+/* cade oggi? Per l'annuale si confrontano mese e giorno, non la data intera:
+   e la sola domanda che l'anno non deve poter cambiare. */
+function cadeOggi(t,tk){
+  if(!t||!_dataOk(t.date)) return false;
+  tk=_dataOk(tk)?tk:todayKey();
+  if(t.repeat!=='yearly') return t.date===tk;
+  return prossimaOccorrenza(t,tk)===tk;
+}
+/* ══ v271 — LE QUEST SBLOCCABILI ═══════════════════════════════════════════
+   Una regola dice: quando questi prerequisiti sono soddisfatti, nasce quella
+   quest. Niente modello, niente punteggi, niente livelli: una condizione e una
+   cosa che compare.
+
+   TRE PROMESSE, e ognuna e scritta nel codice invece che sperata:
+
+   1. PRIMA DELLO SBLOCCO LA QUEST NON ESISTE. Non e nascosta con un flag: non
+      e nell'array. Quindi non puo pesare sul cerchio, sul progresso, sui conti
+      della giornata o sull'osservatrice, perche non c'e niente da contare.
+   2. DOPO LO SBLOCCO E UNA QUEST NORMALE. Nasce con la stessa forma di tutte,
+      passa dallo stesso sanitizzatore, dallo stesso ordinamento, dallo stesso
+      salvataggio e dallo stesso rendering. Nessuna seconda classe di oggetti.
+      E se domani annulli per sbaglio uno dei prerequisiti, lei resta: lo sblocco
+      e un fatto avvenuto, non uno stato da mantenere. Monotono, per occorrenza.
+   3. IL DUPLICATO E IMPOSSIBILE, non improbabile. Ogni occorrenza ha una CHIAVE
+      - «idRegola» se la regola vale una volta, «idRegola|giorno» se vale ogni
+      giorno - e la chiave sta in S.unlockDone. Due valutazioni nello stesso
+      giorno logico calcolano la stessa chiave, e la seconda non fa niente.
+      Render ripetuti, riaperture, doppi tocchi, reload e save() non possono
+      generarne una seconda. */
+function _reqFatto(state,r,tk){
+  if(!r||!r.id) return false;
+  if(r.tipo==='task'){
+    /* per una ricorrente vale la spunta del GIORNO LOGICO corrente: e la sola
+       lettura che abbia senso per una cosa che si rifa ogni giorno. */
+    if(!((state.scheduled||[]).some(t=>t&&t.id===r.id))) return false;   /* prerequisito sparito */
+    return !!(state.checks&&state.checks[tk]&&state.checks[tk][r.id]===true);
+  }
+  if(r.tipo==='quest'){
+    const q=(state.quests||[]).find(x=>x&&x.id===r.id);
+    if(!q) return false;                                                  /* prerequisito sparito */
+    return q.fatto===true;
+  }
+  return false;
+}
+/* un prerequisito che non esiste piu non e «non fatto»: e MANCANTE, e la
+   differenza conta - una regola con un requisito mancante non deve sbloccare
+   niente, ma deve restare modificabile e dirlo. */
+function reqMancante(state,r){
+  if(!r||!r.id) return true;
+  if(r.tipo==='task') return !((state.scheduled||[]).some(t=>t&&t.id===r.id));
+  if(r.tipo==='quest') return !((state.quests||[]).some(q=>q&&q.id===r.id));
+  return true;
+}
+function reqNome(state,r){
+  if(!r||!r.id) return '(tolto)';
+  const l=(r.tipo==='task')?(state.scheduled||[]):(state.quests||[]);
+  const o=l.find(x=>x&&x.id===r.id);
+  return o?String(o.titolo||''):'(tolto)';
+}
+function chiaveSblocco(rule,tk){
+  return (rule.modo==='ogni-giorno')?(rule.id+'|'+tk):rule.id;
+}
+/* IL CUORE. Restituisce i titoli nati, cosi chi chiama puo dirlo alla persona.
+   Non salva e non ridisegna: quello lo fa il chiamante, una volta sola, cosi
+   questa funzione resta chiamabile ovunque senza effetti a sorpresa. */
+function valutaSblocchi(state,tk){
+  tk=_dataOk(tk)?tk:todayKey();
+  const nati=[];
+  if(!Array.isArray(state.unlockRules)||!state.unlockRules.length) return nati;
+  if(!state.unlockDone||typeof state.unlockDone!=='object') state.unlockDone={};
+  if(!Array.isArray(state.quests)) state.quests=[];
+  state.unlockRules.forEach(rule=>{
+    if(!rule||!Array.isArray(rule.req)||!rule.req.length) return;
+    const k=chiaveSblocco(rule,tk);
+    if(state.unlockDone[k]) return;                       /* gia nata: la chiave e la garanzia */
+    if(rule.req.some(r=>reqMancante(state,r))) return;    /* un requisito tolto non sblocca niente */
+    if(!rule.req.every(r=>_reqFatto(state,r,tk))) return; /* TUTTI, sempre: 1, 2 o 3 */
+    state.unlockDone[k]=tk;
+    state.quests.push({id:coreUid(),titolo:clampStr(rule.titolo,LIMITS.TITLE),
+      note:clampStr(rule.note||'',LIMITS.NOTE),quando:tk,ora:'',
+      prio:([1,2,3].includes(Number(rule.prio)))?Number(rule.prio):2,
+      fatto:false,nata:tk,monte:''});
+    nati.push(rule.titolo);
+  });
+  if(nati.length){
+    try{ state.quests=sortQuests(state.quests); }catch(_){}
+    /* la memoria delle occorrenze non cresce all'infinito */
+    try{ const ks=Object.keys(state.unlockDone);
+      if(ks.length>3000){ ks.sort((a,b)=>String(state.unlockDone[a]).localeCompare(String(state.unlockDone[b])));
+        ks.slice(0,ks.length-3000).forEach(k=>delete state.unlockDone[k]); } }catch(_){}
+  }
+  return nati;
+}
+/* L'AGGANCIO UNICO. Chiamata dopo una spunta, dopo il completamento di una
+   quest, dopo il caricamento dello stato e all'inizio di un giorno nuovo.
+   Nessun polling: si guarda solo quando qualcosa e cambiato davvero. */
+function sbloccaOra(perche){
+  try{
+    const nati=valutaSblocchi(S,todayKey());
+    if(!nati.length) return 0;
+    save();
+    try{ render(); }catch(_){}
+    try{ updateRing(); }catch(_){}
+    try{ regCantiere('sblocco',{msg:clampStr(nati.join(' · '),160)+' ('+(perche||'')+')'}); }catch(_){}
+    try{ haptic(); }catch(_){}
+    try{ toast(nati.length===1?('E comparsa: '+nati[0]):(nati.length+' cose sono comparse')); }catch(_){}
+    return nati.length;
+  }catch(_){ return 0; }
+}
+
+function scheduledFor(state,dow,tk){ const rip=(state.riposi&&state.riposi[tk])||[]; const fer=state.ferie||{}; /* v271: «t.date===tk» diceva soltanto «e proprio oggi». Per un evento annuale
+     la domanda giusta e «cade oggi», che confronta mese e giorno. cadeOggi
+     risponde a tutti e due i casi, quindi qui non c'e piu un ramo speciale. */
+  return state.scheduled.filter(t=>(((t.days&&t.days.includes(dow))||cadeOggi(t,tk))&&rip.indexOf(t.id)<0&&!(fer[t.id]&&tk<fer[t.id]))); }   /* in ferie: sparisce e non conta, torna da solo il giorno scelto */
 function computeProgress(state,tk,dow){
   const sched=scheduledFor(state,dow,tk);
   const checks=state.checks[tk]||{};
@@ -3530,7 +3904,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.270.2 · 2026-08-20';
+const APP_VERSION='v60S.271 · 2026-08-20';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3976,6 +4350,13 @@ const defaultState={
      sulla vita, e questo file e stato ripulito di conseguenza.
      Adesso si parte vuoti, e la prima domanda la fa l'app. */
   scheduled:[],
+  /* v271 — I TRE CAMPI NUOVI. Stanno QUI e nel sanitizzatore: in questo
+     progetto e gia successo tre volte che un campo venisse scritto bene e poi
+     mangiato al riavvio, e ogni volta la causa era la stessa - il campo c'era
+     dappertutto tranne che nel sanitizzatore. */
+  unlockRules:[],      /* le regole delle quest sbloccabili */
+  unlockDone:{},       /* le occorrenze gia sbloccate: chiave -> giorno */
+  promVisti:{},        /* i promemoria a 14 giorni gia visti, per occorrenza */
   checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],frutti:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   settings:{sound:true,voice:false,notif:false,uiTheme:'classico'}
 };
@@ -9774,6 +10155,15 @@ async function callAnthropic(opt){
       }
     }
     const _chiudiAttesa=function(){ if(timer)clearTimeout(timer); if(_scollega){ _scollega(); _scollega=null; } };
+    /* ══ v271 — LA VISTA, DENTRO LO STESSO MOTORE ═════════════════════════════
+       L'OCR ha bisogno di mandare un'immagine. Poteva diventare un secondo
+       sistema di rete - e sarebbe stato un secondo timeout, un secondo retry,
+       un secondo modo di sbagliare, e nessuno dei banchi che gia proteggono
+       questo motore. Invece: se «user» e una stringa resta esattamente cio che
+       era, e tutti i chiamanti testuali non si accorgono di niente; se e un
+       ARRAY, e gia il contenuto strutturato dell'API e passa cosi com'e.
+       Una riga, e la vista eredita tetto, catena dei modelli, ritenta, segnale
+       di annullamento e classificazione degli errori. */
     const messages=[{role:'user',content:opt.user}];
     if(opt.assistantPrefix) messages.push({role:'assistant',content:opt.assistantPrefix});
     /* v139: il sistema lungo viaggia con cache_control - dal secondo battito in poi
@@ -10154,6 +10544,87 @@ function buildLinePackage(id,title){
    risposta, pensiero compreso. Sta qui, da solo, perche in calibratura si muove UNA cosa per volta
    e deve essere una riga sola da cambiare - e finisce nel registro, se no non e misurabile. */
 const SUSSURRO_EFFORT='high';
+/* ══ v271 — LA LETTURA DI UNA PAGINA ═══════════════════════════════════════
+   Il compito e TRASCRIVERE, non capire. E una distinzione che il modello non fa
+   da solo: se gli mostri una foto, il suo istinto e descriverla o riassumerla.
+   Qui gli si dice, in modo che non resti spazio: sei una macchina da scrivere
+   che guarda. */
+const OCR_SYS =
+'Trascrivi il testo che vedi in questa immagine. E una pagina scritta - a mano o stampata - e il tuo unico compito e riportarla come e.\n'+
+'FAI:\n'+
+'- trascrivi ESATTAMENTE le parole che vedi, nell ordine in cui stanno;\n'+
+'- conserva gli a capo, i paragrafi e le righe vuote;\n'+
+'- conserva la punteggiatura, le maiuscole e gli errori di chi ha scritto;\n'+
+'- conserva elenchi, trattini, numerazioni e date come sono scritti.\n'+
+'NON FARE:\n'+
+'- non riassumere, mai, nemmeno se il testo e lungo;\n'+
+'- non migliorare lo stile, non riformulare, non rendere piu bello;\n'+
+'- non correggere l ortografia, la grammatica o la punteggiatura;\n'+
+'- non commentare, non introdurre, non concludere;\n'+
+'- non descrivere l immagine, la carta, la calligrafia o il contesto;\n'+
+'- non inventare parole per riempire un buco.\n'+
+'SE UNA PAROLA E DAVVERO ILLEGGIBILE: scrivila come [?] e basta. Un segno minimo, che chi legge possa cancellare in un tocco. Non tirare a indovinare una frase intera.\n'+
+'SE NELL IMMAGINE NON C E NESSUN TESTO: rispondi soltanto con la parola VUOTO.\n'+
+'Rispondi SOLO con la trascrizione. Nessuna virgoletta attorno, nessuna intestazione, nessuna spiegazione.';
+
+async function leggiPagina(dataUrl,segnale){
+  const m=/^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/.exec(String(dataUrl||''));
+  if(!m) return {err:'immagine'};
+  const res=await callAnthropic({
+    system:OCR_SYS,
+    user:[{type:'image',source:{type:'base64',media_type:m[1],data:m[2]}},
+          {type:'text',text:'Trascrivi questa pagina.'}],
+    max_tokens:4000, temperature:0, timeout:60000, signal:segnale||undefined});
+  if(res&&res.err) return res;
+  let t=String((res&&res.text)||'').trim();
+  if(/^vuoto\.?$/i.test(t)) t='';
+  return {testo:clampStr(t,LIMITS.DIARY), model:res&&res.model, tin:res&&res.tin, tout:res&&res.tout};
+}
+
+/* ══ PREPARARE LA FOTO ══════════════════════════════════════════════════════
+   Tre cose da fare bene, e una da non fare.
+   · l orientamento: una foto scattata col telefono in mano porta l orientamento
+     nei metadati, e un canvas che non lo rispetta produce una pagina coricata -
+     illeggibile per il modello quanto per una persona. createImageBitmap con
+     imageOrientation:'from-image' lo risolve dove c e; dove non c e, i browser
+     recenti gia raddrizzano da soli disegnando su canvas.
+   · la misura: 1600 punti sul lato lungo. Sotto, la scrittura a mano piccola
+     comincia a perdersi; sopra, si pagano token per pixel che non aggiungono
+     una lettera.
+   · la compressione: JPEG 0.82. Gli artefatti a questa qualita non toccano il
+     tratto, e il peso scende di un ordine di grandezza.
+   E la cosa da non fare: tenersi copie. Il bitmap si chiude, il canvas si
+   azzera, l URL oggetto si revoca. Sentiero salva una nota, non un archivio
+   fotografico. */
+const OCR_LATO=1600, OCR_Q=0.82;
+async function preparaFoto(file){
+  let bmp=null,url=null,cv=null;
+  try{
+    try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
+    catch(_){ try{ bmp=await createImageBitmap(file); }catch(__){ bmp=null; } }
+    let w,h,src;
+    if(bmp){ w=bmp.width; h=bmp.height; src=bmp; }
+    else{
+      url=URL.createObjectURL(file);
+      src=await new Promise((ris,rif)=>{ const im=new Image();
+        im.onload=()=>ris(im); im.onerror=()=>rif(new Error('immagine')); im.src=url; });
+      w=src.naturalWidth; h=src.naturalHeight;
+    }
+    if(!w||!h) throw new Error('immagine');
+    const k=Math.min(1,OCR_LATO/Math.max(w,h));
+    cv=document.createElement('canvas');
+    cv.width=Math.max(1,Math.round(w*k)); cv.height=Math.max(1,Math.round(h*k));
+    const cx=cv.getContext('2d');
+    cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height);   /* i PNG trasparenti non diventano pagine nere */
+    cx.drawImage(src,0,0,cv.width,cv.height);
+    return cv.toDataURL('image/jpeg',OCR_Q);
+  } finally {
+    try{ if(bmp&&bmp.close) bmp.close(); }catch(_){}
+    try{ if(url) URL.revokeObjectURL(url); }catch(_){}
+    try{ if(cv){ cv.width=1; cv.height=1; } }catch(_){}
+  }
+}
+
 async function askObserverLine(pkg,segnale){
   /* v270.2 — il tetto era settantacinque secondi. Non e stato quello a bloccare
      Sentiero (era la brace tenuta accesa a vuoto per tutto quel tempo, ed e
@@ -13079,6 +13550,11 @@ function updateRing(){
    ====================================================================== */
 let renderedDay=todayKey();
 function initDay(){ if(rolloverDay(S,todayKey())) save(); try{ nota('avv'); }catch(_){}
+  /* v271: al caricamento e a ogni giorno nuovo si recupera una condizione
+     raggiunta prima di un riavvio, e nascono le occorrenze del giorno. E qui
+     che «se l'app era chiusa» smette di essere un buco. */
+  try{ sbloccaOra('giorno'); }catch(_){}
+  try{ mostraPromemoria(); }catch(_){}
   try{ navVai('parla','avvio'); }catch(_){} }
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible'){ try{ save(); }catch(_){}  try{FX.pause();}catch(_){} try{ATHEME.pause();}catch(_){} try{MUSIC.stop();}catch(_){} return; }
@@ -13176,6 +13652,8 @@ function buildTaskRow(t,checks){
     S.checks[tk]=S.checks[tk]||{};
     const now=!(S.checks[tk][t.id]===true);   /* stato LIVE: non ricostruiamo più la riga, quindi 'done' catturato sarebbe vecchio */
     S.checks[tk][t.id]=now; save();
+    /* v271: una spunta puo essere l'ultimo pezzo di una condizione */
+    if(now) try{ sbloccaOra('spunta'); }catch(_){}
     if(now){ div.classList.add('done'); onComplete(div); setTimeout(()=>{ div.classList.remove('justdone'); delete div.dataset.busy; },650); }   /* mirato: aggiorna la riga, non l'intera lista */
     else { div.classList.remove('done'); sUndo(); delete div.dataset.busy; updateRing(); }
   };
@@ -13231,17 +13709,26 @@ function icsStamp(){ return new Date().toISOString().replace(/[-:]/g,'').replace
 function buildICS(q){
   const uid='sentiero-'+(q.id||Math.random().toString(36).slice(2))+'@sentiero.app';
   const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Sentiero//Diario//IT','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+icsStamp()];
+  /* v271: la ricorrenza annuale e l'avviso lungo viaggiano anche nel calendario
+     del telefono. RRULE la capiscono tutti i calendari; il secondo VALARM a
+     -P14D e lo stesso richiamo che Sentiero mostra da solo, cosi chi vive nel
+     calendario lo trova li e chi vive in Sentiero lo trova qui. */
+  const _annuale=(q.repeat==='yearly');
   if(q.ora){
     const start=new Date(q.quando+'T'+q.ora+':00');
     const end=new Date(start.getTime()+60*60000); /* durata 1h di cortesia */
     L.push('DTSTART:'+icsFmtLocal(start),'DTEND:'+icsFmtLocal(end));
+    if(_annuale) L.push('RRULE:FREQ=YEARLY');
     L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(q.titolo),'TRIGGER:-PT30M','END:VALARM'); /* avviso 30 min prima */
+    L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(q.titolo),'TRIGGER:-P14D','END:VALARM');
   } else {
     const d0=q.quando.replace(/-/g,'');
     const nd=new Date(q.quando+'T12:00:00'); nd.setDate(nd.getDate()+1);
     const p=n=>String(n).padStart(2,'0'); const d1=''+nd.getFullYear()+p(nd.getMonth()+1)+p(nd.getDate());
     L.push('DTSTART;VALUE=DATE:'+d0,'DTEND;VALUE=DATE:'+d1);
+    if(_annuale) L.push('RRULE:FREQ=YEARLY');
     L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(q.titolo),'TRIGGER:PT9H','END:VALARM'); /* mattina del giorno, ~9:00 */
+    L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(q.titolo),'TRIGGER:-P14D','END:VALARM');
   }
   L.push('SUMMARY:'+icsEscape(q.titolo));
   if(q.note) L.push('DESCRIPTION:'+icsEscape(q.note));
@@ -13312,6 +13799,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     if(q.fatto){
       /* registra l'azione: così la Mente Osservatrice sa che l'hai DAVVERO compiuta */
       try{ if(!Array.isArray(S.questLog)) S.questLog=[]; S.questLog.push({titolo:q.titolo,day:todayKey(),nata:q.nata||''}); if(S.questLog.length>300) S.questLog=S.questLog.slice(-300); }catch(_){}
+      try{ sbloccaOra('quest'); }catch(_){}   /* v271 */
       try{
         if(q.monte&&S.desiderio&&S.desiderio.id===q.monte){
           S.desiderio.pietre.push({titolo:clampStr(q.titolo,160),giorno:todayKey()});
@@ -13745,7 +14233,17 @@ async function askDomandaTerra(){
 }
 
 let _terraPreparo = false;
+/* ══ v271 — QUESTO MOTORE E SPENTO ═════════════════════════════════════════
+   Preparava in anticipo la domanda della Chiamata a terra, a ogni avvio e dopo
+   ogni raccolta: una chiamata ad Anthropic con effort e pensiero, per produrre
+   una domanda che dalla v271 nessuno puo piu vedere, perche dietro quella porta
+   adesso c'e la lettura di una pagina.
+   Non l'ho cancellato - TERRA_SYS, il vivaio e i ripieghi sono lavoro buono e
+   documentato, e la porta potrebbe un giorno tornare a due ante. L'ho STACCATO:
+   esce subito, non spende niente, non tocca lo stato. Codice che continua a
+   girare per nessuno non e prudenza, e un costo pagato a ogni apertura. */
 async function preparaDomandaTerra(forza){
+  return;
   if(_terraPreparo) return;
   if(!forza && S.domPronta && S.domPronta.testo) return;   /* ce n'e gia una in attesa */
   if(!S.apiKey || !S.apiKey.startsWith('sk-ant-')) return;  /* senza chiave resta il vivaio */
@@ -13972,34 +14470,113 @@ function scriviTerraDomanda(testo){
     d.appendChild(sp); d.appendChild(document.createTextNode(' '));
   });
 }
+/* ══ v271 — LA PAGINA LETTA (era la Chiamata a terra) ══════════════════════
+   La luce, l'orbita, il volo e il fiore restano: sono l'identita visiva di
+   Sentiero e non c'era nessuna ragione di buttarli. Cambia cosa c'e dietro la
+   porta. Prima era una domanda che l'app faceva; adesso e una pagina che la
+   persona ha gia scritto a mano, altrove, e vuole tenere qui.
+   Il vecchio motore - TERRA_SYS, il vivaio, i ripieghi, la preparazione
+   anticipata - non e stato lasciato acceso a girare per nessuno: e stato
+   spento. Codice che produce cose che nessuno puo piu vedere non e prudenza,
+   e un costo che si paga a ogni avvio. */
+let _ocrStato='scelta';        /* scelta · attesa · testo */
+let _ocrAbort=null;
+let _ocrAuto='';               /* la trascrizione come e arrivata: entra in raw */
+function _ocrFase(f){
+  _ocrStato=f;
+  const el=document.querySelector('#terra'); if(!el) return;
+  el.classList.remove('ocr-scelta-on','ocr-attesa-on','ocr-testo-on');
+  el.classList.add('ocr-'+f+'-on');
+  const at=document.querySelector('#ocr-attesa'); if(at) at.classList.toggle('hidden',f!=='attesa');
+  const ok=document.querySelector('#terra-ok');
+  if(ok) ok.classList.toggle('hidden',f!=='testo');
+  if(f==='testo'){ const t=document.querySelector('#terra-txt');
+    if(ok&&t) ok.disabled=t.value.trim().length<1; }
+}
+function _ocrPulisci(){
+  /* NIENTE COPIE. Il data URL di una foto da 1600 punti pesa qualche centinaio
+     di kilobyte: tenerlo appeso a una variabile finche l'app vive e' il modo
+     piu' silenzioso di buttare memoria. Qui si lascia andare tutto. */
+  try{ if(_ocrAbort){ _ocrAbort.abort(); } }catch(_){}
+  _ocrAbort=null; _ocrAuto='';
+  try{ const a=document.querySelector('#ocr-file-cam'); if(a) a.value=''; }catch(_){}
+  try{ const b=document.querySelector('#ocr-file-lib'); if(b) b.value=''; }catch(_){}
+}
+function _ocrAvviso(t){ const el=document.querySelector('#ocr-avviso'); if(el) el.textContent=t||''; }
+
+async function _ocrLeggi(file){
+  if(!file) return;
+  _ocrFase('attesa'); _ocrAvviso('');
+  let dataUrl='';
+  const ctrl=('AbortController' in window)?new AbortController():null;
+  _ocrAbort=ctrl;
+  try{
+    dataUrl=await preparaFoto(file);
+    if(!ctrl||!ctrl.signal.aborted){
+      const r=await leggiPagina(dataUrl,ctrl?ctrl.signal:null);
+      dataUrl='';                                   /* letta: la foto non serve piu a nessuno */
+      if(ctrl&&ctrl.signal.aborted){ _ocrFase('scelta'); return; }
+      if(r&&r.err){
+        _ocrFase('scelta');
+        _ocrAvviso(r.err==='annullata'?'':(_ocrMsgErrore(r.err)));
+        return;
+      }
+      const t=String((r&&r.testo)||'');
+      _ocrAuto=t;
+      const txt=document.querySelector('#terra-txt');
+      if(txt) txt.value=t;
+      _ocrFase('testo');
+      _ocrAvviso(t?'Correggi quello che serve, poi salva. Il testo e tuo, non suo.'
+                  :'Non ho trovato testo in questa foto. Puoi riprovare o scrivere a mano.');
+      try{ regCantiere('ocr',{msg:'letta una pagina',model:(r&&r.model)||'',tin:r&&r.tin,tout:r&&r.tout}); }catch(_){}
+    }
+  }catch(e){
+    _ocrFase('scelta');
+    _ocrAvviso('Non sono riuscito ad aprire questa immagine.');
+    try{ regCantiere('errore',{msg:'ocr: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){}
+  } finally {
+    dataUrl='';                                     /* anche sulla strada dell'errore */
+    if(_ocrAbort===ctrl) _ocrAbort=null;
+  }
+}
+function _ocrMsgErrore(err){
+  if(err==='chiave') return 'Per leggere una foto serve la versione Generativa. Puoi comunque scrivere la pagina a mano.';
+  if(err==='offline'||err==='rete') return 'Senza rete non posso leggere la foto. Riprova, o scrivila a mano.';
+  if(err==='timeout') return 'La lettura ci ha messo troppo. Riprova con una foto piu nitida.';
+  if(err==='credito'||err==='limite') return 'Il tuo accesso ad Anthropic non risponde adesso. Riprova piu tardi.';
+  if(err==='immagine') return 'Questo file non e un immagine che so leggere.';
+  return 'Non sono riuscito a leggere la pagina. Puoi riprovare o scriverla a mano.';
+}
+
 function apriTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
-  _terraSeme=terraDomanda();
-  /* v260 — L'ULTIMA RETE. Se per qualunque strada quello che arriva qui non e
-     una domanda - un vivaio finito, un pacchetto lingua che non ha caricato, un
-     ramo che nessuno aveva previsto - la porta chiede lo stesso. Una chiamata a
-     terra senza domanda non e una porta: e un foglio bianco, e chi lo trova
-     pensa che l'app sia rotta. E ha ragione. */
-  try{
-    const t=String((_terraSeme&&_terraSeme.testo)||'').trim();
-    if(!t||!/\?$/.test(t)) _terraSeme={id:'',testo:_terraUltimaRete(),volante:true,rete:true};
-  }catch(_){ _terraSeme={id:'',testo:_terraUltimaRete(),volante:true,rete:true}; }
-  el.querySelector('#terra-testa').textContent='chiamata a terra';
-  scriviTerraDomanda(_terraSeme.testo);
-  const txt=el.querySelector('#terra-txt');
-  txt.value='';
-  const ok=el.querySelector('#terra-ok');
-  ok.disabled=true;
-  txt.oninput=()=>{ ok.disabled=txt.value.trim().length<2; };
+  _ocrPulisci();
+  el.querySelector('#terra-testa').textContent='una pagina';
+  const dom=el.querySelector('#terra-dom');
+  if(dom) dom.textContent='Fotografa una pagina scritta e la ritrovi qui, come testo.';
+  const txt=el.querySelector('#terra-txt'); if(txt) txt.value='';
+  const ok=el.querySelector('#terra-ok'); if(ok) ok.disabled=true;
+  if(txt&&ok) txt.oninput=()=>{ ok.disabled=txt.value.trim().length<1; };
+  _ocrFase('scelta');
+  /* SENZA CHIAVE NON SI MANDA NIENTE DA NESSUNA PARTE, e si dice prima invece
+     che dopo: proporre «scatta una foto» a chi non puo leggerla sarebbe una
+     porta che si apre sul muro. Scrivere a mano resta possibile sempre. */
+  const gen=(function(){ try{ return generativa(); }catch(_){ return false; } })();
+  ['#ocr-scatta','#ocr-scegli'].forEach(sel=>{ const b=el.querySelector(sel);
+    if(b){ b.disabled=!gen; b.style.opacity=gen?'':'.45'; } });
+  _ocrAvviso(gen?'':'La lettura automatica della foto e nella versione Generativa. Senza chiave la foto non viene inviata da nessuna parte: puoi scrivere la pagina a mano e salvarla lo stesso.');
   el.classList.remove('hidden','via','chiudendo');
-  /* niente fuoco automatico sul campo: la tastiera coprirebbe l'apertura e su
-     iOS, fuori dal gesto, non si alzerebbe comunque. Prima leggi, poi tocchi. */
   if(window._terraLuce&&window._terraLuce.apri) window._terraLuce.apri();
   else { el.classList.add('acceso','aperto'); }   /* mai una porta che non si apre */
 }
 function chiudiTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
-  try{ const t=el.querySelector('#terra-txt'); if(t) t.blur(); }catch(_){}
+  /* chiudere non deve MAI lasciare uno stato appeso: una lettura in corso si
+     annulla, i campi dei file si svuotano, il testo automatico si lascia
+     andare. Riaprendo si riparte dalla scelta, sempre. */
+  try{ _ocrPulisci(); }catch(_){}
+  try{ _ocrFase('scelta'); }catch(_){}
+  try{ const t=el.querySelector('#terra-txt'); if(t){ t.value=''; t.blur(); } }catch(_){}
   if(window._terraLuce&&window._terraLuce.chiudi) window._terraLuce.chiudi();
   else { el.classList.add('via'); setTimeout(()=>{ try{ el.classList.add('hidden'); }catch(_){} },340); }
 }
@@ -14258,41 +14835,39 @@ async function raccogliTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
   const txt=el.querySelector('#terra-txt');
   const testo=String(txt.value||'').trim();
-  if(testo.length<2) return;
+  if(testo.length<1) return;
   const ok=el.querySelector('#terra-ok');
-  ok.disabled=true; ok.textContent='Raccolgo…';
-  /* v197: la domanda viaggia con lo scritto. Senza, nel diario resta una nota
-     sospesa a cui manca la meta - «sembra una nota presa a cavolo», dal campo. */
-  const _dom = (_terraSeme && _terraSeme.testo) ? String(_terraSeme.testo).trim() : '';
-  /* il seme diventa la domanda a cui questo scritto risponde: la raccolta lo sa gia leggere */
-  if(_terraSeme&&_terraSeme.id) window._semeAttivo={id:_terraSeme.id,testo:_terraSeme.testo};
-  else if(_terraSeme&&_terraSeme.testo) window._semeAttivo={id:'',testo:_terraSeme.testo};
-  /* La raccolta della sera e intrecciata con la sua interfaccia (le letture da confermare, il
-     prompt delle priorita, la nascita animata della quest). Non la rifattorizzo per non mettere
-     a rischio un rito che gira ogni giorno: lo scritto applica cio che sa applicare DA SOLO -
-     il diario ripulito, le quest nuove con la stessa regola di fusione, i rituali con la stessa
-     guardia sui doppioni, e il Motore Maestria. Restano fuori le letture da confermare e la
-     domanda sulle priorita: quelle chiedono un'interfaccia, e la loro casa e la sera. */
-  /* v198: questo blocco stava scritto qui dentro. Ora vive in scrittoNelDiario,
-     perche la stanza della sera fa la stessa identica cosa: duplicarlo voleva dire
-     due posti dove correggere lo stesso guasto. */
-  const _r = await scrittoNelDiario(testo, _dom);
-  const fatto = _r.fatto, nuove = _r.nuove;
-  try{ if(_terraSeme&&_terraSeme.id){ const s=(S.semi||[]).find(x=>x&&x.id===_terraSeme.id); if(s) s.stato='risposto'; } }catch(_){}
-  window._semeAttivo=null;
-  /* la domanda risposta entra in memoria e il cassetto si svuota; poi se ne
-     prepara subito un'altra, cosi la prossima volta la porta e gia pronta */
-  try{ terraRegistra(_dom); }catch(_){}
-  if(S.domPronta && _dom && S.domPronta.testo===_dom) S.domPronta=null;
-  save();
-  try{ const _pd=preparaDomandaTerra(true);
-       if(_pd&&_pd.catch) _pd.catch(function(e){ try{ regCantiere('errore',{msg:'preparaDomandaTerra: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} }); }catch(_){}
-  try{ regCantiere('terra',{msg:(fatto?'raccolta':'salvata a mano')+' \u00b7 '+testo.length+' caratteri \u00b7 quest nuove '+nuove}); }catch(_){}
-  ok.textContent='Raccogli';
+  ok.disabled=true; ok.textContent='Salvo…';
+  /* LA VERSIONE CORRETTA E QUELLA CHE VALE.
+     «testo» e cio che la persona ha davanti dopo aver corretto: e quella che
+     entra nel Diario, che si cerca, che finisce nei backup. La trascrizione
+     come e arrivata resta in «raw» - lo stesso posto in cui il Diario tiene da
+     sempre il parlato grezzo accanto al testo ripulito - e serve solo a poter
+     dire, un anno dopo, cosa aveva letto la macchina e cosa hai cambiato tu.
+     Se non e cambiato niente, raw resta vuoto: non si conservano due copie
+     identiche della stessa frase. */
+  const auto=String(_ocrAuto||'').trim();
+  const daFoto=!!auto;
+  const grezzo=(daFoto&&auto!==testo)?auto:'';
+  try{
+    addDiary(testo,[],[],grezzo,'','' );
+    /* addDiary costruisce la voce: il segno d'origine si mette sulla voce
+       appena nata, ed e sanitizeDiary a garantirgli di sopravvivere al
+       riavvio - la lezione di «dom», imparata alla v200. */
+    if(daFoto&&S.diary&&S.diary[0]) S.diary[0].fonte='ocr';
+    salvaSubito();
+  }catch(e){
+    ok.disabled=false; ok.textContent='Salva nel diario';
+    _ocrAvviso('Non sono riuscito a salvare. Riprova.');
+    try{ regCantiere('errore',{msg:'ocr salva: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){}
+    return;
+  }
+  try{ regCantiere('ocr',{msg:(daFoto?'pagina salvata':'scritta a mano')+' · '+testo.length+' caratteri'}); }catch(_){}
+  ok.textContent='Salva nel diario';
   chiudiTerra();
-  try{ render(); renderDiary(); }catch(_){}
+  try{ render(); renderDiary(true); }catch(_){}
   try{ haptic(); }catch(_){}
-  try{ toast(fatto?(nuove?('Raccolto \u00b7 '+nuove+(nuove===1?' cosa nuova':' cose nuove')):'Raccolto nel diario'):'Salvato nel diario'); }catch(_){}
+  try{ toast(daFoto?'La pagina e nel diario':'Salvato nel diario'); }catch(_){}
 }
 let _seminaBusy=false;
 async function maybeSemina(){
@@ -14530,8 +15105,51 @@ function condividiLascito(testo){
    il modo classico di guadagnare velocita e perdere fiducia.
    Chi ha bisogno di ridisegnare comunque chiama renderDiary(true). */
 let _diarioFirma=null;
+/* ══ v271 — LA RICERCA NEL DIARIO ══════════════════════════════════════════
+   Locale, immediata, senza rete e senza modello. Tre proprieta, e ognuna ha una
+   ragione precisa:
+
+   · E UNA VISTA, NON UNA TRASFORMAZIONE. S.diary non viene toccato mai: si
+     filtra al momento di disegnare. Una ricerca che modificasse l'array
+     sarebbe un modo eccellente di perdere il diario di qualcuno la prima volta
+     che save() parte mentre il filtro e attivo.
+   · NORMALIZZA GLI ACCENTI. «perche» deve trovare «perche'» e «perché», e
+     viceversa: chi cerca di fretta sulla tastiera di un telefono non mette gli
+     accenti. NFD spezza la lettera dal segno, e si buttano i segni.
+   · CERCA SU TUTTE LE VOCI, non su quelle disegnate: il Diario disegna tutto
+     comunque, ma il testo su cui si cerca comprende anche «raw» - il parlato
+     grezzo e la trascrizione automatica di una pagina - perche una parola che
+     hai detto e poi corretto resta una parola che hai detto. */
+let _qDiario='';
+function _normQ(t){
+  try{ return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+  catch(_){ return String(t||'').toLowerCase(); }
+}
+function _testoCercabile(e){
+  if(!e) return '';
+  return _normQ([e.testo,e.raw,e.dom,(e.born||[]).join(' '),(e.done||[]).join(' ')].filter(Boolean).join('\n'));
+}
+/* UN AUTORE SOLO per la query: il campo, la ×, lo stato vuoto e la chiusura
+   passano tutti di qui. Senza, «cancella» avrebbe tre implementazioni e due di
+   loro si dimenticherebbero di ridisegnare. */
+function diarioCerca(q){
+  _qDiario=String(q==null?'':q).slice(0,120);
+  try{ const inp=document.querySelector('#d-cerca'); if(inp&&inp.value!==_qDiario) inp.value=_qDiario; }catch(_){}
+  try{ const x=document.querySelector('#d-cerca-x'); if(x) x.classList.toggle('hidden',!_qDiario.trim()); }catch(_){}
+  try{ renderDiary(); }catch(_){}
+}
+function diarioFiltrato(){
+  const q=_normQ(_qDiario).trim();
+  if(!q) return S.diary||[];
+  return (S.diary||[]).filter(e=>_testoCercabile(e).indexOf(q)>=0);
+}
 function _firmaDiario(){
-  try{ return JSON.stringify([S.diary,S.capitoli,S.semi,S.settings,todayKey()]); }catch(_){ return null; }
+  /* la query ENTRA nella firma. Senza, l'ottimizzazione della v258 - che evita
+     di ricostruire il Diario quando i dati non sono cambiati - vedrebbe gli
+     stessi dati e si rifiuterebbe di ridisegnare: si digiterebbe nel campo e
+     non succederebbe niente. L'ottimizzazione resta intatta, e adesso sa che
+     anche «cosa sto guardando» fa parte di cosa c'e da disegnare. */
+  try{ return JSON.stringify([S.diary,S.capitoli,S.semi,S.settings,todayKey(),_qDiario]); }catch(_){ return null; }
 }
 function renderDiary(forza){
   const el0=document.querySelector('#list-diario');
@@ -14542,8 +15160,23 @@ function renderDiary(forza){
     return;
   }
   _diarioFirma=firma;
-  try{ renderCapitoli(); }catch(_){}
+  const _q=String(_qDiario||'').trim();
+  const _voci=diarioFiltrato();
+  try{ document.body.classList.toggle('d-cercando',!!_q); }catch(_){}
+  try{ const es=document.querySelector('#d-cerca-esito');
+    if(es) es.textContent=_q?(_voci.length?(_voci.length+(_voci.length===1?' voce':' voci')+' con «'+_q+'»'):''):''; }catch(_){}
+  if(!_q){ try{ renderCapitoli(); }catch(_){} }
   const el=document.querySelector('#list-diario');
+  if(_q&&!_voci.length){
+    /* non si passa da setEmpty: quello nasconde l'azione dopo il primo giorno
+       di cammino, ed e giusto per gli inviti - ma «cancella la ricerca» non e
+       un invito, e la via d'uscita da un vicolo cieco, e deve esserci sempre. */
+    el.innerHTML='<p class="empty">Nessuna voce contiene \u00ab'+escapeHtml(_q)+
+      '\u00bb.<button class="empty-go" id="d-cerca-vuoto">Cancella la ricerca</button></p>';
+    const b=el.querySelector('#d-cerca-vuoto');
+    if(b) b.onclick=()=>{ try{ diarioCerca(''); }catch(_){} };
+    return;
+  }
   if(!S.diary.length){
     /* qui «parla» resta vero anche senza chiave: la nota si salva comunque, ed e
        proprio quello che il diario fa. La stanza della sera e l'altra porta. */
@@ -14554,6 +15187,7 @@ function renderDiary(forza){
      di ricevute invece che di giornate. Ora la data si dice una volta sola, in
      testa al gruppo, e resta appiccicata in alto mentre scorri quel giorno. */
   let _giornoIn=null, _nEntry=0;
+  /* da qui in giu si disegna _voci, che senza ricerca E S.diary */
   const _chiaveGiorno=e=>{ try{ return localDayKey(new Date(e.iso)); }catch(_){ return e.data||''; } };
   /* la giornata di Sentiero comincia all'alba (ALBA_MS), non a mezzanotte: quello
      che scrivi alle due di notte sta sotto il giorno prima, ed e giusto. Ma senza
@@ -14566,7 +15200,7 @@ function renderDiary(forza){
                                          con la chiave del gruppo ne mancava due su
                                          nove e non sapevo dire perche. */
   }catch(_){ return false; } };
-  S.diary.forEach(e=>{
+  _voci.forEach(e=>{
     const _k=_chiaveGiorno(e);
     if(_k&&_k!==_giornoIn){
       _giornoIn=_k;
@@ -14681,6 +15315,123 @@ function renderDiary(forza){
    ====================================================================== */
 let newDays=[0,1,2,3,4,5,6];
 let _ricMod=null;   /* v258: quale cosa ricorrente si sta cambiando */
+/* ══ v271 — LE QUEST SBLOCCABILI: il pannello ══════════════════════════════ */
+let _unlMod=null;        /* quale regola si sta cambiando */
+let _unlReq=[];          /* i prerequisiti scelti: {tipo,id}, da uno a tre */
+let _unlModo='una-volta';
+function _unlChiave(r){ return r.tipo+':'+r.id; }
+function _unlHa(t,id){ return _unlReq.some(r=>r.tipo===t&&r.id===id); }
+function _unlToggle(t,id){
+  const i=_unlReq.findIndex(r=>r.tipo===t&&r.id===id);
+  if(i>=0){ _unlReq.splice(i,1); }
+  else{
+    if(_unlReq.length>=3){ try{ toast('Al massimo tre prerequisiti'); }catch(_){} return; }
+    _unlReq.push({tipo:t,id:id});
+  }
+  renderUnlock();
+}
+function _unlModoVai(m){
+  _unlModo=(m==='ogni-giorno')?'ogni-giorno':'una-volta';
+  try{ document.querySelectorAll('#unlock-modo button').forEach(b=>
+    b.classList.toggle('on',b.dataset.modo===_unlModo)); }catch(_){}
+}
+function _unlFine(){
+  _unlMod=null; _unlReq=[]; _unlModoVai('una-volta');
+  try{ document.querySelector('#unlock-txt').value=''; }catch(_){}
+  renderUnlock();
+}
+function renderUnlock(){
+  try{
+    /* la regola che si stava cambiando puo essere sparita: stessa guardia dei
+       rituali, stessa ragione - un id che non esiste piu lascia il pannello in
+       uno stato che non si riesce piu a chiudere. */
+    if(_unlMod&&!(S.unlockRules||[]).some(r=>r&&r.id===_unlMod)) _unlMod=null;
+    const lista=document.querySelector('#list-unlock');
+    if(lista){
+      lista.innerHTML='';
+      const rr=S.unlockRules||[];
+      if(!rr.length){
+        lista.innerHTML='<p class="note" style="margin:0">Nessuna ancora.</p>';
+      } else rr.forEach(r=>{
+        const div=document.createElement('div');
+        div.className='item imp'+(_unlMod===r.id?' in-modifica':'');
+        const pezzi=(r.req||[]).map(q=>{
+          const manca=reqMancante(S,q);
+          return '<span class="'+(manca?'unl-manca':'')+'">'+escapeHtml(reqNome(S,q))+(manca?' (tolto)':'')+'</span>';
+        }).join(' + ');
+        const modo=(r.modo==='ogni-giorno')?'ogni giorno':'una volta';
+        div.innerHTML='<span class="txt">'+escapeHtml(r.titolo)+
+          '<span class="meta">'+pezzi+' · '+modo+(_unlMod===r.id?' · la stai cambiando':'')+
+          '</span></span><button class="del" aria-label="Elimina">&#215;</button>';
+        div.querySelector('.txt').onclick=()=>{ if(_unlMod===r.id) _unlFine(); else _unlModifica(r.id); };
+        div.querySelector('.del').onclick=()=>{
+          const prima=(S.unlockRules||[]).slice();
+          if(_unlMod===r.id) _unlMod=null;
+          S.unlockRules=(S.unlockRules||[]).filter(x=>x!==r); save(); renderUnlock();
+          try{ toastAnnulla('Eliminata','Rimettila',()=>{ S.unlockRules=sanitizeUnlockRules(prima); save(); renderUnlock(); }); }catch(_){}
+        };
+        lista.appendChild(div);
+      });
+    }
+    /* I PREREQUISITI SCEGLIBILI: le cose che si ripetono, e le quest aperte.
+       Sono le sole cose spuntabili di Sentiero, quindi sono le sole che possono
+       essere una condizione. Si salvano per RIFERIMENTO - tipo e id - non per
+       copia: cambiare domani il titolo del rituale non rompe la regola. */
+    const box=document.querySelector('#unlock-req');
+    if(box){
+      box.innerHTML='';
+      const voci=[]
+        .concat(((S.scheduled||[]).map(t=>({tipo:'task',id:t.id,titolo:t.titolo}))))
+        .concat(((S.quests||[]).filter(q=>q&&!q.fatto).map(q=>({tipo:'quest',id:q.id,titolo:q.titolo}))));
+      if(!voci.length){
+        box.innerHTML='<p class="note" style="margin:0">Prima crea qualcosa di spuntabile: una cosa che si ripete, o una quest.</p>';
+      } else voci.forEach(v=>{
+        const b=document.createElement('button');
+        b.type='button';
+        b.className='unl-req'+(_unlHa(v.tipo,v.id)?' on':'');
+        b.innerHTML='<span class="unl-box"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>'+
+          '<span class="unl-t"></span><span class="unl-kind">'+(v.tipo==='task'?'si ripete':'quest')+'</span>';
+        b.querySelector('.unl-t').textContent=v.titolo||'';
+        b.onclick=()=>_unlToggle(v.tipo,v.id);
+        box.appendChild(b);
+      });
+    }
+    const ba=document.querySelector('#btn-add-unlock');
+    if(ba) ba.textContent=_unlMod?'Salva le modifiche':'Aggiungi';
+    const an=document.querySelector('#btn-annulla-unlock');
+    if(an) an.classList.toggle('hidden',!_unlMod);
+  }catch(_){}
+}
+function _unlModifica(id){
+  const r=(S.unlockRules||[]).find(x=>x&&x.id===id); if(!r) return;
+  _unlMod=id;
+  _unlReq=(r.req||[]).map(q=>({tipo:q.tipo,id:q.id}));
+  _unlModoVai(r.modo);
+  try{ document.querySelector('#unlock-txt').value=r.titolo||''; }catch(_){}
+  renderUnlock();
+  try{ haptic(); }catch(_){}
+  try{ document.querySelector('#unlock-txt').scrollIntoView({block:'center',behavior:'smooth'}); }catch(_){}
+}
+function _unlSalva(){
+  const inp=document.querySelector('#unlock-txt');
+  const txt=String((inp&&inp.value)||'').trim();
+  if(!txt) return toast('Scrivi il titolo della quest');
+  if(!_unlReq.length) return toast('Scegli almeno un prerequisito');
+  const base={titolo:txt,req:_unlReq.slice(0,3),modo:_unlModo,prio:2};
+  if(_unlMod){
+    S.unlockRules=sanitizeUnlockRules((S.unlockRules||[]).map(x=>
+      x&&x.id===_unlMod?Object.assign({},x,base):x));
+  } else {
+    S.unlockRules=sanitizeUnlockRules([...(S.unlockRules||[]),
+      Object.assign({id:uid(),nata:todayKey()},base)]);
+  }
+  const eraMod=_unlMod;
+  _unlFine();
+  save();
+  /* cambiata la regola, la condizione potrebbe essere gia vera adesso */
+  try{ sbloccaOra('regola'); }catch(_){}
+  toast(eraMod?'Cambiata':'Regola aggiunta');
+}
 function renderSettings(){
   try{ if(_ricMod&&!(S.scheduled||[]).some(x=>x&&x.id===_ricMod)) _ricMod=null; }catch(_){}
   /* v253 — non si ricostruisce un pannello che nessuno sta guardando.
@@ -14757,6 +15508,7 @@ function renderSettings(){
        modifica compare il modo di tirarsi indietro. */
     const ba=document.querySelector('#btn-addtask');
     if(ba) ba.textContent=_ricMod?'Salva le modifiche':'Aggiungi';
+    try{ renderUnlock(); }catch(_){}   /* v271 */
     const an=document.querySelector('#btn-annulla-mod');
     if(an) an.classList.toggle('hidden',!_ricMod); }
   const el=document.querySelector('#list-sched');
@@ -14773,12 +15525,21 @@ function renderSettings(){
       let quando;
       if(t.date){
         const d=new Date(t.date+'T12:00:00');
-        quando=d.toLocaleDateString(locale(),{day:'numeric',month:'long',year:'numeric'});
+        quando=(t.repeat==='yearly')
+          ? ('ogni anno · '+d.toLocaleDateString(locale(),{day:'numeric',month:'long'}))
+          : d.toLocaleDateString(locale(),{day:'numeric',month:'long',year:'numeric'});
       } else {
         quando=t.days.length===7?'ogni giorno':t.days.map(i=>DAYS_IT[i]).join(' ');
       }
-      div.innerHTML='<span class="txt">'+escapeHtml(t.titolo)+'<span class="meta">'+quando+(t.time?' · '+t.time:'')+(_ricMod===t.id?' · la stai cambiando':'')+'</span></span><button class="del" aria-label="Elimina">&#215;</button>';
+      const _calT=t.date?'<button class="cal" aria-label="Aggiungi al calendario"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>':'';
+      div.innerHTML='<span class="txt">'+escapeHtml(t.titolo)+'<span class="meta">'+quando+(t.time?' · '+t.time:'')+(_ricMod===t.id?' · la stai cambiando':'')+'</span></span>'+_calT+'<button class="del" aria-label="Elimina">&#215;</button>';
       div.querySelector('.txt').onclick=()=>{ if(_ricMod===t.id) fineModifica(); else modificaRicorrente(t.id); };
+      { const _cb=div.querySelector('.cal');
+        if(_cb) _cb.onclick=e=>{ e.stopPropagation();
+          /* la prossima occorrenza, non l'origine: nel calendario si mette la
+             data che sta per arrivare, e RRULE ci mette sopra tutti gli anni. */
+          addToCalendar({id:t.id,titolo:t.titolo,quando:prossimaOccorrenza(t,todayKey())||t.date,
+                         ora:t.time||'',repeat:t.repeat==='yearly'?'yearly':'none'}); }; }
       div.querySelector('.del').onclick=()=>{
         const prima=[...S.scheduled];
         if(_ricMod===t.id) _ricMod=null;
@@ -14816,8 +15577,49 @@ document.querySelectorAll('#seg-model button').forEach(b=>{
   };
 });
 { const sa=document.querySelector('#terra-luce'); if(sa) sa.onclick=(e)=>{ e.stopPropagation(); apriTerra(); };
+  /* ══ v271 — LA RICERCA: aggancio ═══════════════════════════════════════
+     «input» e non «keyup»: prende anche l'incolla, il dettato e la × nativa.
+     Nessun debounce: il filtro e un indexOf su un array in memoria, e su
+     migliaia di voci resta sotto il millisecondo. Un ritardo qui sarebbe
+     lentezza aggiunta a mano. */
+  const _dc=document.querySelector('#d-cerca');
+  if(_dc) _dc.addEventListener('input',()=>diarioCerca(_dc.value));
+  if(_dc) _dc.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); diarioCerca(''); _dc.blur(); } });
+  const _dx=document.querySelector('#d-cerca-x');
+  if(_dx) _dx.onclick=()=>{ diarioCerca(''); try{ const i=document.querySelector('#d-cerca'); if(i) i.focus(); }catch(_){} };
   const tn=document.querySelector('#terra-no'); if(tn) tn.onclick=chiudiTerra;
-  const to=document.querySelector('#terra-ok'); if(to) to.onclick=()=>{ raccogliTerra(); };
+  const to=document.querySelector('#terra-ok'); if(to) to.onclick=()=>{
+    const r=raccogliTerra();
+    if(r&&r.catch) r.catch(function(e){ try{ regCantiere('errore',{msg:'raccogliTerra: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} });
+  };
+  /* ══ v271 — LE TRE VIE DELLA PAGINA ══════════════════════════════════════
+     I due <input type=file> sono nascosti e vengono aperti dal tocco su un
+     bottone vero: e il modo in cui iOS apre la fotocamera e la libreria in
+     modo nativo, e - punto che conta - NESSUN PERMESSO viene chiesto prima.
+     La fotocamera entra in gioco solo dopo il gesto esplicito. */
+  const _cam=document.querySelector('#ocr-file-cam'), _lib=document.querySelector('#ocr-file-lib');
+  const _apriFile=inp=>{ try{ if(inp){ inp.value=''; inp.click(); } }catch(_){} };
+  const _bs=document.querySelector('#ocr-scatta'); if(_bs) _bs.onclick=()=>_apriFile(_cam);
+  const _bg=document.querySelector('#ocr-scegli'); if(_bg) _bg.onclick=()=>_apriFile(_lib);
+  [_cam,_lib].forEach(inp=>{ if(!inp) return;
+    inp.onchange=()=>{ const f=inp.files&&inp.files[0];
+      inp.value='';                                  /* il file non resta appeso all'input */
+      if(f){ const r=_ocrLeggi(f); if(r&&r.catch) r.catch(()=>{}); } };
+  });
+  const _bm=document.querySelector('#ocr-mano'); if(_bm) _bm.onclick=()=>{
+    _ocrAuto=''; _ocrFase('testo'); _ocrAvviso('');
+    try{ const t=document.querySelector('#terra-txt'); if(t){ t.value=''; t.focus(); } }catch(_){}
+  };
+  const _br=document.querySelector('#ocr-rifai'); if(_br) _br.onclick=()=>{
+    _ocrPulisci(); _ocrAvviso('');
+    try{ const t=document.querySelector('#terra-txt'); if(t) t.value=''; }catch(_){}
+    _ocrFase('scelta');
+  };
+  const _bst=document.querySelector('#ocr-stop'); if(_bst) _bst.onclick=()=>{
+    /* annullare durante la lettura non deve lasciare niente in piedi: la
+       richiesta si ferma davvero, e si torna alla scelta. */
+    _ocrPulisci(); _ocrAvviso(''); _ocrFase('scelta');
+  };
   const bb=document.querySelector('#btn-banco'); if(bb) bb.onclick=()=>{ eseguiBanco(); }; }
 document.querySelectorAll('#seg-genere button').forEach(b=>{
   b.onclick=()=>{ S.settings.genere=b.dataset.genere; save(); renderSettings(); haptic();
@@ -15166,19 +15968,26 @@ document.querySelectorAll('#task-mode button').forEach(b=>{ b.onclick=()=>vaiMod
    quelli: e la stessa cosa, detta meglio, non una cosa nuova.
    (la variabile e dichiarata sopra, accanto a renderSettings: qui sarebbe piu
    in basso di chi la legge, e una let letta prima della sua riga esplode) */
+let newRepeat='none';   /* v271: la ricorrenza scelta per l'evento a data precisa */
+function vaiModoRepeat(r){
+  newRepeat=(r==='yearly')?'yearly':'none';
+  try{ document.querySelectorAll('#task-repeat button').forEach(b=>
+    b.classList.toggle('on',b.dataset.rep===newRepeat)); }catch(_){}
+}
 function modificaRicorrente(id){
   const t=(S.scheduled||[]).find(x=>x&&x.id===id); if(!t) return;
   _ricMod=id;
   document.querySelector('#new-task-txt').value=t.titolo||'';
   document.querySelector('#new-task-time').value=t.time||'';
-  if(t.date){ vaiModoTask('data'); document.querySelector('#new-task-date').value=t.date; newDays=[]; }
-  else { vaiModoTask('ric'); newDays=[...(t.days||[])]; }
+  if(t.date){ vaiModoTask('data'); document.querySelector('#new-task-date').value=t.date; newDays=[];
+    vaiModoRepeat(t.repeat==='yearly'?'yearly':'none'); }
+  else { vaiModoTask('ric'); newDays=[...(t.days||[])]; vaiModoRepeat('none'); }
   renderSettings();
   try{ haptic(); }catch(_){}
   try{ document.querySelector('#new-task-txt').scrollIntoView({block:'center',behavior:'smooth'}); }catch(_){}
 }
 function fineModifica(){
-  _ricMod=null; newDays=[];
+  _ricMod=null; newDays=[]; vaiModoRepeat('none');
   document.querySelector('#new-task-txt').value='';
   document.querySelector('#new-task-time').value='';
   document.querySelector('#new-task-date').value='';
@@ -15295,6 +16104,12 @@ document.querySelector('#nascita-ok').onclick=nasciAMano;
 document.querySelector('#nascita-txt').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); nasciAMano(); } });
 
 { const an=document.querySelector('#btn-annulla-mod'); if(an) an.onclick=()=>fineModifica(); }
+try{ document.querySelectorAll('#task-repeat button').forEach(b=>
+  b.onclick=()=>vaiModoRepeat(b.dataset.rep)); }catch(_){}
+try{ document.querySelectorAll('#unlock-modo button').forEach(b=>
+  b.onclick=()=>_unlModoVai(b.dataset.modo)); }catch(_){}
+{ const b=document.querySelector('#btn-add-unlock'); if(b) b.onclick=()=>_unlSalva();
+  const a=document.querySelector('#btn-annulla-unlock'); if(a) a.onclick=()=>_unlFine(); }
 document.querySelector('#btn-addtask').onclick=()=>{
   const txt=document.querySelector('#new-task-txt').value.trim();
   if(!txt) return toast('Scrivi il testo della task');
@@ -15311,20 +16126,99 @@ document.querySelector('#btn-addtask').onclick=()=>{
        mancate riparte dall'inizio del cammino. E' esattamente il guasto che la
        v199 doveva chiudere, rimasto aperto sul lato che si usa di piu - e l'unico
        che esiste per chi non ha la chiave, dove i rituali si fanno solo a mano. */
-    if(_ricMod){ S.scheduled=sanitizeScheduled(S.scheduled.map(x=>x&&x.id===_ricMod?Object.assign({},x,{titolo:txt,days:[],date,time}):x)); }
-    else S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[],date,time,nata:todayKey()}]);
-    document.querySelector('#new-task-date').value='';
+    const rep=(newRepeat==='yearly')?'yearly':'none';
+    if(_ricMod){ S.scheduled=sanitizeScheduled(S.scheduled.map(x=>x&&x.id===_ricMod?Object.assign({},x,{titolo:txt,days:[],date,time,repeat:rep}):x)); }
+    else S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:[],date,time,repeat:rep,nata:todayKey()}]);
+    document.querySelector('#new-task-date').value=''; vaiModoRepeat('none');
   } else {
     if(!newDays.length) return toast('Scegli almeno un giorno');
     const gg=[...newDays].sort((a,b)=>a-b);
-    if(_ricMod){ S.scheduled=sanitizeScheduled(S.scheduled.map(x=>x&&x.id===_ricMod?Object.assign({},x,{titolo:txt,days:gg,date:'',time}):x)); }
+    if(_ricMod){ S.scheduled=sanitizeScheduled(S.scheduled.map(x=>x&&x.id===_ricMod?Object.assign({},x,{titolo:txt,days:gg,date:'',time,repeat:'none'}):x)); }
     else S.scheduled=sanitizeScheduled([...S.scheduled,{id:uid(),titolo:txt,days:gg,time,nata:todayKey()}]);
   }
   const eraMod=_ricMod; _ricMod=null; newDays=eraMod?[]:newDays;
   document.querySelector('#new-task-txt').value=''; document.querySelector('#new-task-time').value='';
   save(); renderSettings(); renderTasks(); updateRing(); scheduleReminders();
+  try{ mostraPromemoria(); }catch(_){}
   toast(eraMod?'Cambiata':'Task aggiunta');
 };
+
+/* ══ v271 — IL PROMEMORIA A QUATTORDICI GIORNI ═════════════════════════════
+   L'architettura dei promemoria di Sentiero crea timer soltanto per cio che
+   cade entro ventidue ore: e una scelta giusta, perche un setTimeout di due
+   settimane non sopravvive alla chiusura dell'app e prometterebbe una cosa che
+   non puo mantenere. Quindi qui NON si programma niente.
+
+   Si CALCOLA. La fonte di verita e lo stato locale piu la data di oggi: a ogni
+   apertura si chiede «quali eventi cadono entro quattordici giorni e non li ho
+   ancora mostrati per QUESTA occorrenza». Se l'app resta chiusa per dieci
+   giorni, il richiamo non e perso: alla prima apertura utile e ancora dovuto,
+   perche la condizione non e «e oggi il T-14» ma «siamo dentro la finestra».
+
+   La chiave di memoria e «id|data-occorrenza». Chiuso il compleanno di
+   quest'anno, quello dell'anno prossimo ha una chiave diversa e torna da solo,
+   senza una riga di codice che lo faccia tornare. */
+const PROM_GIORNI=14;
+function _giorniFra(a,b){
+  try{ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }catch(_){ return 9999; }
+}
+function promemoriaDovuti(state,tk){
+  tk=_dataOk(tk)?tk:todayKey();
+  const visti=(state&&state.promVisti)||{};
+  const out=[];
+  ((state&&state.scheduled)||[]).forEach(t=>{
+    if(!t||!_dataOk(t.date)) return;
+    const occ=prossimaOccorrenza(t,tk);
+    if(!occ) return;                                  /* una volta, gia passato */
+    const g=_giorniFra(tk,occ);
+    if(g<0||g>PROM_GIORNI) return;                    /* fuori dalla finestra */
+    if(visti[t.id+'|'+occ]===true) return;            /* gia visto per QUESTA occorrenza */
+    out.push({id:t.id,titolo:t.titolo,occ:occ,giorni:g});
+  });
+  out.sort((a,b)=>a.giorni-b.giorni||String(a.titolo).localeCompare(String(b.titolo)));
+  return out;
+}
+function promemoriaVisto(state,id,occ){
+  if(!state.promVisti||typeof state.promVisti!=='object') state.promVisti={};
+  state.promVisti[id+'|'+occ]=true;
+  /* la memoria non cresce all'infinito: le occorrenze passate non servono piu.
+     Si tiene tutto cio che riguarda date da oggi in poi, piu un margine. */
+  try{
+    const tk=todayKey();
+    Object.keys(state.promVisti).forEach(k=>{
+      const d=k.slice(k.indexOf('|')+1);
+      if(_dataOk(d)&&_giorniFra(tk,d)< -40) delete state.promVisti[k];
+    });
+  }catch(_){}
+}
+function _promFrase(p){
+  if(p.giorni<=0) return 'Oggi · '+p.titolo;
+  if(p.giorni===1) return 'Domani · '+p.titolo;
+  return 'Tra '+p.giorni+' giorni · '+p.titolo;
+}
+/* IL RICHIAMO. Visibile ma non aggressivo: non ruba il fuoco, non copre niente,
+   non chiede di decidere. Si chiude con un tocco, e quel tocco vale per quella
+   occorrenza e basta. */
+function mostraPromemoria(){
+  try{
+    const box=document.getElementById('prom-lista'); if(!box) return;
+    const da=promemoriaDovuti(S,todayKey());
+    box.innerHTML='';
+    box.classList.toggle('hidden',!da.length);
+    da.slice(0,4).forEach(p=>{
+      const d=document.createElement('div'); d.className='prom-riga';
+      d.innerHTML='<span class="prom-txt"></span><button class="prom-x" aria-label="Ho visto">'+
+        '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+      d.querySelector('.prom-txt').textContent=_promFrase(p);
+      d.querySelector('.prom-x').onclick=()=>{
+        promemoriaVisto(S,p.id,p.occ); save();
+        try{ mostraPromemoria(); }catch(_){}
+        try{ haptic(); }catch(_){}
+      };
+      box.appendChild(d);
+    });
+  }catch(_){}
+}
 
 /* ======================================================================
    PROMEMORIA
@@ -15489,6 +16383,8 @@ try{ const _p=maybeChiudiCapitolo(); if(_p&&_p.catch) _p.catch(function(e){ try{
    (Chi ha gia dei dati non la vede: maybeOnboard se ne accorge da sola e passa oltre.) */
 /* v197: la domanda della Chiamata a terra si prepara adesso, in sottofondo, cosi
    quando lui aprira la porta e gia nel cassetto e non deve aspettare nessuno. */
+/* v271: la preparazione anticipata della domanda non parte piu all'avvio.
+   La riga resta, disinnescata a monte, cosi il ramo e visibile a chi legge. */
 try{ const _pt=preparaDomandaTerra();
      if(_pt&&_pt.catch) _pt.catch(function(e){ try{ regCantiere('errore',{msg:'preparaDomandaTerra: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} }); }catch(_){}
 /* v218: accendiLingua e async, e un try/catch attorno alla chiamata non puo
