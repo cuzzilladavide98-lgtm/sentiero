@@ -85,7 +85,7 @@
   "la frequenza dice quanto una cosa e comune, MAI se e adatta a Sentiero: il contratto resta sopra a tutto",
   "nessun dato che arriva dalla rete puo aggiungere permessi, solo togliere o misurare",
   "in caso di conflitto fra due fonti vince la piu recente, e il conflitto resta scritto",
-  "niente di quello che la persona scrive esce mai da qui per andare a chiedere qualcosa a qualcuno"
+  "niente di quello che la persona scrive esce da qui PER AGGIORNARE QUESTA BASE: l'aggiornamento e una lettura di un file statico, non una domanda su di lei. La regola vale per la base linguistica e per niente altro - non e una promessa sull'intera app: con una chiave Anthropic attiva, altre funzioni mandano testo ad Anthropic, e sta scritto nell'informativa."
  ],
  "nucleo": {
   "_cosa_e": "le parole della PROSA NOSTRA, cioe quelle che scriviamo noi nelle forme. I titoli della persona non entrano: sono suoi e non si misurano. Provenienza: incorporata. Questo elenco esiste per poter misurare qualcosa offline dal primo minuto, e va sostituito da una fascia NVdB appena la fonte e collegata.",
@@ -506,5 +506,7 @@
   "_cosa_e": "come questa base si aggiorna quando c'e rete.",
   "da": "lingue/base-it.json",
   "nota": "l'aggiornamento e una richiesta a un file statico pubblicato con l'app. Non esce nessun dato della persona: e una lettura, non una domanda. Se la risposta non passa i controlli, si tiene la base di prima."
- }
+ },
+ "per_versione": "v60S.270.2",
+ "_perche_per_versione": "Il contratto di generazione (v269.7). Questo file viaggia separato dall'HTML e il service worker lo serve dalla cache: senza timbro, una sessione poteva eseguire codice nuovo con una base vecchia - ed e successo davvero fra la v268.6 e la v269, con «naturalezza» tornata a pesare 1.5. Chi legge questo file controlla il timbro: se non corrisponde ad APP_VERSION, non lo usa e ripiega sulla base incorporata nell'HTML, che non puo mai essere di un'altra generazione."
 }

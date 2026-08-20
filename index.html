@@ -170,7 +170,9 @@ body[data-sez="altro"] #tab-impostazioni{display:block}
 @media (prefers-reduced-motion: no-preference){ #barra a{transition:color .18s ease} }
 
 
-
+#btn-altro-mondo{position:fixed;top:calc(var(--safe-top) + 10px);right:14px;z-index:11;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;border:none;border-radius:22px;
+  background:rgba(7,10,9,0.55);color:var(--t2)}
 /* punto 2 (lente Canali #59): i testi del mondo parlano solo quando il mondo e il layer attivo.
    A mezzo/pieno quei dati vivono gia nel foglio (day-line, liste): un canale solo. */
 
@@ -228,19 +230,7 @@ header{padding:14px 28px 0}
    Due righe: i figli non si stringono piu, e se proprio non ci stanno la
    colonna scorre invece di impilarsi addosso. */
 #mic-wrap > *{flex:0 0 auto}
-/* ══ v270.1 — DUE MESTIERI, DUE ELEMENTI ══════════════════════════════════
-   Alla v270 questa riga dichiarava lo scroll di Parla, e settecento caratteri
-   dopo una regola con la stessa specificita lo annullava mettendo lo shorthand
-   «overflow:visible» su #mic-wrap: sorgente successiva, vince l'ultima. La
-   proprieta scritta nel commento non era garantita da niente.
-   Il contenitore che POSSIEDE il contenuto e l'unico che scorre, e non deve
-   mai dover sbordare. La decorazione che deve sbordare vive su #mic - che sta
-   dentro - e su #cielo e #enso-fx, che sono livelli fissi a se, fuori da
-   questo scroll e quindi non toccati.
-   overflow-x:hidden e voluto: per la specifica «overflow-x:visible» insieme a
-   «overflow-y:auto» viene comunque calcolato come auto, quindi li dentro
-   «visible» era gia una parola che non voleva dire niente. */
-#mic-wrap{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#mic-wrap{overflow-y:auto;overflow-x:visible;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 .mist,.ripple,#seal-dot{display:none}   /* via tutti gli orpelli intorno */
 #mic{width:310px;height:310px;border:none;background:transparent;position:relative;touch-action:none}
@@ -249,7 +239,14 @@ header{padding:14px 28px 0}
    /* niente transition: la pittura la guida il rAF, frame per frame */
 #enso-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1}
 #cielo{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
-#mic{overflow:visible}   /* v270.1: solo il cerchio sborda; il contenitore scorre */
+/* v270.1 — LA CASCATA TOGLIEVA A PARLA CIO CHE IL COMMENTO GLI PROMETTEVA.
+   Questa riga diceva «#mic e #mic-wrap sbordano»: uno shorthand, quindi
+   overflow-x E overflow-y insieme, e settecento caratteri piu in basso della
+   regola che dava a #mic-wrap lo scroll. Stessa specificita, sorgente
+   successiva: vinceva questa, e Parla non scorreva. A sbordare deve essere
+   solo il cerchio; il contenitore scorre. */
+#mic{overflow:visible}
+#mic-wrap{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 #firma{fill:var(--ceralacca);opacity:0;transform-origin:14px 60px}
 #mic.sealed #firma{opacity:1;animation:timbroensa .7s cubic-bezier(.2,1.5,.4,1) both}
@@ -766,7 +763,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:14px 22px 0}
   #dateline{font-size:27px}
   #mic{width:212px;height:212px}
-  
+  #mic-wrap{top:calc(32% - 106px)}
   .entry p{font-size:17px}
   .item .txt{font-size:17px}
 }
@@ -776,7 +773,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 18px 0}
   #dateline{font-size:25px}
   #mic{width:196px;height:196px}
-  
+  #mic-wrap{top:calc(32% - 98px)}
   #mic-label{font-size:16px;margin-top:18px}
   .ed-num{font-size:30px}
 }
@@ -786,7 +783,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 16px 0}
   #dateline{font-size:23px}
   #mic{width:184px;height:184px}
-  
+  #mic-wrap{top:calc(32% - 92px)}
   .days{gap:5px}
   .days button{font-size:15px}
   button.act{padding:12px 20px;font-size:16.5px}
@@ -802,7 +799,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 20px 0}
   #dateline{font-size:26px}
   #mic{width:200px;height:200px}
-  
+  #mic-wrap{padding:30px 0 22px}
   #mic-label{font-size:16px;margin-top:18px}
   .item .txt{font-size:17px}
   .ed-num{font-size:30px}
@@ -815,7 +812,7 @@ body.shake,body.shake-big{animation:none}  /* via lo shake: stona col minimalism
   header{padding:12px 16px 0}
   #dateline{font-size:24px}
   #mic{width:184px;height:184px}
-  
+  #mic-wrap{top:calc(32% - 92px)}
   .days{gap:5px}
   .days button{max-width:34px;font-size:15px}
   .seg{gap:14px}
@@ -854,12 +851,14 @@ body.theme-carta #btn-pin svg.share{stroke:#3F3B34;opacity:.8}
 
 /* testata Diario con accesso ad Altro */
 .diario-head{display:flex;align-items:center;justify-content:space-between;padding-top:4px}
-
+.altro-link{display:inline-flex;align-items:center;gap:6px;border:none;background:none;
+  color:var(--t2);font-size:15px;font-weight:500;padding:8px 4px;transition:color .2s}
 .altro-link:active{color:var(--accent)}
 .altro-link svg{display:block}
 
 /* back dal Altro al Diario */
-
+.back-link{display:inline-flex;align-items:center;gap:4px;border:none;background:none;
+  color:var(--accent);font-size:16px;font-weight:500;padding:6px 0 12px;margin-top:2px}
 .back-link svg{display:block}
 .back-link:active{opacity:.6}
 /* "il pensiero che si forma": streaming + cursore che respira — la firma di Claude, qui di casa */
@@ -1012,7 +1011,7 @@ body.theme-carta #terra-piede button{border:.5px solid rgba(23,21,18,0.34)}
    quaderno la sera - mentre un cielo di giorno sarebbe un'altra app, e la
    mappa delle stelle la' dietro e disegnata sul serio. */
 body.theme-carta #flow:not(:empty),body.theme-carta #live.show{background:rgba(244,241,232,.90)}
-body.theme-carta 
+body.theme-carta #btn-altro-mondo{background:rgba(244,241,232,.72)}
 body.theme-carta #mic-wrap #confirm-row:not(.hidden),
 body.theme-carta #mic-wrap #prio-row:not(.hidden){background:rgba(247,245,239,.94)}
 body.theme-carta #tour-box{background:rgba(247,245,239,.98)}
@@ -2169,6 +2168,57 @@ body.theme-carta .item{overflow:visible}
    Tolte contando le graffe UNA PER UNA e verificando che il conto tornasse,
    non con una ricerca a occhio: e' esattamente il modo in cui questa app e
    morta per quattro versioni. */
+
+/* ══ v270.2 — IL MONDO E UNA COMPOSIZIONE A FULCRO ═════════════════════════
+   Regola d'ordine: queste righe stanno IN FONDO di proposito. Le misure del
+   vecchio mondo (top: calc(32% - 106px) e simili) vivono dentro @media, che
+   NON aggiunge specificita: a parita di specificita vince la sorgente
+   successiva, quindi vincono queste. E' la stessa cascata che alla v270 aveva
+   tolto a Parla lo scroll; qui si usa nella direzione giusta, e il banco
+   della cascata la verifica invece di darla per scontata.
+
+   DECORAZIONE ≠ SUPERFICIE INTERATTIVA:
+   · il cielo (#cielo, z-index -2), l'enso dipinto (#enso-fx, z-index -1) e la
+     tela della brace (z-index 69) hanno tutti pointer-events:none e non sono
+     dentro #mic-wrap: non possono coprire il gesto, e non lo potevano nemmeno
+     prima. Restano decorazione, e restano dove sono.
+   · l'unica superficie che riceve il dito e il disco di #mic. Ha border-radius
+     al 50%: quello che si vede E quello che si tocca, senza angoli vivi
+     invisibili. Duecento punti di diametro sul SE - il nostro pavimento e
+     quarantaquattro.
+   · la didascalia non riceve niente (pointer-events:none): e testo, e sopra
+     una zona che deve poter scorrere.
+   Nessuna soppressione di gesto sul contenitore: touch-action:none resta solo
+   su #mic, dove il gesto della voce ha bisogno di tenersi il dito. Le due zone
+   scorrono normalmente. */
+#mic-wrap{
+  top:calc(var(--safe-top) + 8px);
+  padding:0 20px;
+  gap:0;
+  justify-content:stretch;
+  overflow:hidden;                    /* non scorre piu lui: scorrono le due zone */
+}
+/* due id: batte senza ambiguita «#mic-wrap > *{flex:0 0 auto}» della v266,
+   che serviva ai riquadri e non deve valere per le zone elastiche. */
+#mic-wrap>#mondo-su,#mic-wrap>#mondo-giu{
+  flex:1 1 0; min-height:0; width:100%;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+}
+#mic-wrap>#mondo-su{ justify-content:flex-end; padding-bottom:14px }
+#mic-wrap>#mondo-giu{ justify-content:flex-start; padding-top:64px }
+#mondo-su>*,#mondo-giu>*{ flex:0 0 auto; width:100%; max-width:100% }
+#mic-wrap>#mondo-voce{
+  flex:0 0 auto; position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center;
+}
+#voce-coda{
+  position:absolute; top:100%; left:0; right:0;
+  display:flex; flex-direction:column; align-items:center;
+  pointer-events:none;                /* e una didascalia: non ruba il dito a nessuno */
+}
+#mic{ border-radius:50% }             /* la superficie e il disco che si vede */
 </style>
 </head>
 <body>
@@ -2209,6 +2259,25 @@ body.theme-carta .item{overflow:visible}
     <button type="button" id="btn-fermo" class="hidden" aria-label="Lascia il microfono aperto">resta aperto</button>
         <div class="mist" id="mist-a"></div>
         <div class="mist" id="mist-b"></div>
+        <!-- ══ v270.2 — LA VOCE E IL FULCRO DEL MONDO ═══════════════════════════
+             Il cerchio era il primo figlio di una colonna che scorre, ancorata
+             in alto. Da li in poi la sua posizione era una CONSEGUENZA: di
+             quanto contenuto c'era sopra, di quanto la colonna era stata
+             scorsa, di quale riquadro era comparso quel giorno. Un comando che
+             si muove per ragioni che non riguardano lui non e un comando
+             centrale: e un satellite, ed e esattamente cosi che si sentiva.
+
+             Adesso il Mondo e una composizione a fulcro. Due zone elastiche
+             identiche - una sopra, una sotto - si dividono tutto lo spazio che
+             avanza e scorrono per conto loro. In mezzo, senza elasticita, c'e
+             la voce. Il contenuto puo crescere quanto vuole in entrambe le
+             direzioni: non puo spostare il centro, perche le due zone crescono
+             insieme. E la stessa promessa detta in una riga di CSS:
+             il centro della composizione E il punto del gesto. -->
+        <div id="mondo-su">
+          <div id="flow" class="flow"></div>
+        </div>
+        <div id="mondo-voce">
         <button id="mic" aria-label="Avvia o ferma la dettatura">
           <div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>
           <svg viewBox="0 0 200 200" aria-hidden="true">
@@ -2218,9 +2287,16 @@ body.theme-carta .item{overflow:visible}
           </svg>
           <div id="seal-dot"></div>
         </button>
-        <div id="mic-label">Tieni premuto il cerchio per parlare</div>
-        <div id="ring-count"></div>
-        <div id="flow" class="flow"></div>
+        <!-- La didascalia e appesa al cerchio, non impilata sotto di lui: se
+             occupasse spazio nel fulcro sposterebbe il cerchio verso l'alto
+             della meta della propria altezza, e il centro non sarebbe piu il
+             centro. Appesa, il conto torna esatto. -->
+        <div id="voce-coda">
+          <div id="mic-label">Tieni premuto il cerchio per parlare</div>
+          <div id="ring-count"></div>
+        </div>
+        </div>
+        <div id="mondo-giu">
         <div id="letture" class="hidden"></div>
         <div id="lascito" class="hidden"></div>
         <div id="rivelazione" class="hidden"></div>
@@ -2235,8 +2311,11 @@ body.theme-carta .item{overflow:visible}
           <button class="act" id="btn-prio-no">Tutte normali</button>
           <button class="act primary" id="btn-prio-yes">Tieni le priorità</button>
         </div>
+        </div>
       </div>
-
+<button id="btn-altro-mondo" aria-label="Apri Altro">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+</button>
 <div id="onboard" class="hidden">
   <div class="ob-inner">
     <svg class="ob-enso" viewBox="0 0 200 200" aria-hidden="true">
@@ -2391,7 +2470,10 @@ body.theme-carta .item{overflow:visible}
     <div id="tab-diario">
       <div class="diario-head">
         <div class="sec-head" style="margin:0">Diario</div>
-        
+        <button id="open-altro" class="altro-link" aria-label="Apri Altro">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+          Altro
+        </button>
       </div>
       <section style="margin-top:14px">
         <div id="capitoli"></div>
@@ -2402,7 +2484,10 @@ body.theme-carta .item{overflow:visible}
 
     <!-- ===== ALTRO (nascosto, aperto dal Diario) ===== -->
     <div id="tab-impostazioni">
-      
+      <button id="close-altro" class="back-link" aria-label="Torna dove eri">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Indietro
+      </button>
       <section>
         <div class="sec-head">Esperienza</div>
         <div class="group">
@@ -2503,7 +2588,6 @@ body.theme-carta .item{overflow:visible}
         <p class="note">Distinguiamo tre cose diverse. <b>Quello che Sentiero manda</b>: le tue parole escono per volontà dell'app in un caso solo, e lo decidi tu — è la chiave qui sotto. <b>Quello che fa il telefono</b>: la dettatura non è nostra, ed è il browser o il sistema a trasformare la voce in testo, qui dentro o sui propri server. <b>Quello che l'app scarica</b>: programmi e modelli, che sono file in arrivo, non tue parole in partenza.</p>
         <p class="note">Cosa esce comunque, e non sono tue parole: quando apri l'indirizzo, GitHub — che ospita l'app — vede il tuo indirizzo IP come farebbe qualunque sito. Una volta installata, l'app funziona senza rete. Quando parli, è la dettatura del tuo browser a trasformare la voce in testo, e a seconda del telefono può farlo lì o sui server di chi l'ha fatta: Sentiero riceve solo il testo. Se accendi la posizione, resta nel diario qui e non va da nessuna parte.</p>
         <p class="note">Cosa scarica, e solo se lo accendi tu: «Una voce dentro il telefono» e «Intelligenza locale» prendono due programmi da <b>esm.run</b>, e quei programmi si scaricano poi da soli il modello che serve — circa quattrocento mega il primo, ventitré il secondo. Sono file che arrivano, non dati che partono: da lì non esce niente di tuo, e dopo funzionano senza rete. Se non li accendi, non viene scaricato niente.</p>
-        <p class="note">Gli indirizzi che compaiono nel codice di questa versione sono quattro, e fanno cose diverse: <b>api.anthropic.com</b> è la sola richiesta che porta fuori parole tue, e solo con la chiave; <b>esm.run</b> è la sola richiesta che scarica programmi, e solo se accendi le due funzioni qui sopra; <b>maps.google.com</b> non è una richiesta, è un collegamento che si apre soltanto se lo tocchi tu; <b>www.w3.org</b> non è un indirizzo a cui si chiede niente, è un nome tecnico dentro i disegni.</p>
         <p class="note">E infine la sola cosa tua che può uscire per volontà di Sentiero: se metti la chiave qui sotto, da quel momento il testo che serve a rispondere viene mandato ad Anthropic, con il tuo account. Togli la chiave e smette.</p>
         <p class="note">Senza chiave, <b>Sentiero non manda quello che scrivi né ad Anthropic né a un proprio server</b> — un proprio server non ce l'ha. Un confine che però non è nostro e va detto: se usi la voce, la dettatura la fa il browser o il telefono, e a seconda del modello può trascriverla qui dentro oppure sui server di chi l'ha fatta. Sentiero riceve solo il testo che torna indietro. Su quel pezzo non possiamo prometterti niente, perché non è nostro: possiamo solo dirti che c'è.</p>
         <p class="note">Copia di tutto te la fai da qui, quando vuoi. Cancellare l'app cancella tutto: non ne esiste una copia altrove da chiedere indietro.</p>
@@ -3446,7 +3530,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.270.1 · 2026-08-19';
+const APP_VERSION='v60S.270.2 · 2026-08-20';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -3473,9 +3557,6 @@ const NOVITA=[
     che nessuno legge ma che qualcosa riscrive e una trappola che aspetta.
     Le voci stanno in ordine: la prima e la piu recente. Basta quello.
     Chi aggiunge una versione aggiunge un blocco IN CIMA. */
- {righe:[
-   'Altro adesso si apre davvero: prima la barra diceva di esserci arrivata e il contenuto restava nascosto. E in Parla, se le cose non ci stanno, la pagina scorre: prima lo diceva un commento e non lo faceva nessuno.'
- ]},
  {righe:[
    'Sentiero ha quattro luoghi, in fondo allo schermo: Parla, Oggi, Diario, Altro. Tocchi dove vuoi andare e ci sei. Il cassetto che si tirava su e gi\u00f9 non c\u2019\u00e8 pi\u00f9: si richiudeva da solo e ti toglieva met\u00e0 dell\u2019app.',
    'Ogni luogo si ricorda dove eri: torni al Diario e ritrovi la riga che stavi leggendo. E adesso puoi ingrandire il testo, cosa che prima l\u2019app ti impediva.'
@@ -5334,9 +5415,50 @@ const SCATOLA_VOCI={
   mko:'chiusura anomala (n1: 1 start, 2 permesso, 3 riavvio)',
   msv:'parole salvate dopo la chiusura anomala (n1=1 se c\'era del testo)',
   err:'errore JS (n1: tipo, n2: riga)',
+  /* ══ v270.2 — LE FASI DEL SUSSURRO ═════════════════════════════════════════
+     Undici momenti piu tre della brace e uno del guardiano. Sono NUMERI e
+     basta: la privacy qui non e una promessa, e la forma. Non esiste un campo
+     dove potrebbe finire una parola sua, quindi non ci puo finire. */
+  sug:'sussurro: generazione richiesta',
+  spr:'sussurro: preparazione conclusa (n1=byte del pacchetto)',
+  sre:'sussurro: richiesta di rete partita',
+  sri:'sussurro: risposta ricevuta (n1=ms, n2: 0 niente, 1 riga, 2 errore)',
+  spa:'sussurro: parsing concluso (n1=1 riga tenuta, 0 scartata dal giudice)',
+  sps:'sussurro: persistenza conclusa',
+  srn:'sussurro: rendering iniziato',
+  srf:'sussurro: rendering concluso',
+  san:'sussurro: animazione iniziata',
+  saf:'sussurro: animazione conclusa',
+  sfi:'sussurro: generazione conclusa (n1: 0 silenzio, 1 riga, 2 veto, 3 sorpassata, 4 errore, 5 uscita senza esito; n2=ms)',
+  sab:'sussurro: interrotto (n1: 1 errore, 2 annullato da una spunta piu recente)',
+  sbc:'brace: accompagnamento troncato, la richiesta e piu lunga (n1=ms)',
+  sbn:'brace: spenta perche la pagina e andata in secondo piano',
+  sgu:'il ciclo degli eventi si e fermato (n1=ms di ritardo)',
   prm:'promessa rifiutata (n1: tipo)'
 };
 const SCATOLA_ERR={TypeError:1,ReferenceError:2,RangeError:3,SyntaxError:4,DOMException:5,Error:6};
+/* ══ v270.2 — IL GUARDIANO. ═══════════════════════════════════════════════════
+   Un blocco non lascia traccia: non e un errore, non e un'eccezione, e
+   semplicemente del tempo in cui non e successo niente. Nel nastro appariva
+   come un buco, e un buco puo essere anche una persona che ha posato il
+   telefono. Questo guardiano batte un colpo al secondo e misura quanto e in
+   ritardo: se il ciclo degli eventi e stato fermo, il ritardo lo dice.
+   Costa un confronto al secondo, e non tocca niente di suo.
+   Il primo battito dopo un ritorno in primo piano non si conta: iOS rallenta i
+   timer in secondo piano, e quel ritardo non e uno stallo - e una tasca. */
+let _guTeso=0,_guSalta=true,_guUlt=0;
+try{
+  addEventListener('visibilitychange',function(){ _guSalta=true; });
+  setInterval(function(){
+    try{
+      const ora=performance.now();
+      const rit=_guTeso?(ora-_guTeso-1000):0;
+      _guTeso=ora;
+      if(_guSalta){ _guSalta=false; return; }
+      if(rit>250&&ora-_guUlt>2000){ _guUlt=ora; nota('sgu',Math.min(60000,rit)); }
+    }catch(_){}
+  },1000);
+}catch(_){}
 /* ══ v269.8 — CHI HA PRODOTTO QUESTO EVENTO? ════════════════════════════════
    Il nastro sopravvive agli aggiornamenti: puo contenere una sessione fatta
    dalla generazione N-1 seguita da una fatta da N. Alla v269.7 non c'era modo
@@ -5723,7 +5845,14 @@ function mioGesto(nome,e){
 const NAV_SEZIONI=['parla','oggi','diario','altro'];
 const NAV={corrente:'parla',scroll:{parla:0,oggi:0,diario:0,altro:0}};
 function _navCorpo(sez){
-  if(sez==='parla') return document.getElementById('mic-wrap');
+  /* v270.2 — il corpo che scorre di Parla non e piu #mic-wrap: da quando il
+     Mondo e una composizione a fulcro, #mic-wrap tiene ferma la voce e sono le
+     due zone a scorrere. Quella che porta il contenuto lungo - Lascito,
+     Rivelazione, letture, trascritto - e #mondo-giu, e quindi e la sua la
+     posizione che vale la pena ritrovare tornando. Il ripiego resta #mic-wrap:
+     se un domani le zone non ci fossero piu, si torna a scorrere il
+     contenitore invece di perdere silenziosamente la funzione. */
+  if(sez==='parla') return document.getElementById('mondo-giu')||document.getElementById('mic-wrap');
   return document.querySelector('#app>main');
 }
 function navVai(sez,perche){
@@ -5745,10 +5874,13 @@ function navVai(sez,perche){
     /* e si rimette quello di dove si sta andando */
     try{ const cn=_navCorpo(sez); if(cn) cn.scrollTop=NAV.scroll[sez]||0; }catch(_){}
     try{ nota('nav',NAV_SEZIONI.indexOf(sez)); }catch(_){}
-    /* v270.1: entrando in Altro il pannello si aggiorna. Fuori da Altro non si
-       ricostruisce niente: il criterio vive in renderSettings, una porta sola. */
-    try{ if(sez==='altro'&&typeof renderSettings==='function') renderSettings(); }catch(_){}
     /* v270: quale delle due pile si vede lo decide data-sez, in CSS. */
+    /* v270.1 — ENTRANDO IN ALTRO, IL PANNELLO SI RICOSTRUISCE.
+       Finche Altro era un pannello nascosto, qualcun altro lo ridisegnava
+       prima di scoprirlo. Adesso e una destinazione: chi ci porta e navVai,
+       e quindi tocca a navVai chiedere il contenuto. Senza questa riga Altro
+       si raggiunge e si trova vuoto - che e peggio di non raggiungerlo. */
+    try{ if(sez==='altro'&&typeof renderSettings==='function') renderSettings(); }catch(_){}
   }catch(_){}
 }
 /* Oggi e Diario vivono impilati dentro lo stesso <main>: qui si dice quale dei
@@ -5793,7 +5925,10 @@ function segnaMondo(){
      tutto il resto -> oggi                                                */
 function showPane(name){
   const dest = (name==='quest')?'parla':(name==='impostazioni')?'altro':(name==='diario')?'diario':'oggi';
-  
+  if(name==='impostazioni'){
+    try{ const m0=document.querySelector('#app>main');
+      window._primaDiAltro={sez:NAV.corrente,st:m0?m0.scrollTop:0}; }catch(_){}
+  }
   navVai(dest,'showPane');
 }
 
@@ -5801,8 +5936,8 @@ document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>showPane(b.dataset.tab);
 });
 /* Altro è nascosto: si apre dal Diario e si torna indietro */
-
-
+document.querySelector('#open-altro').onclick=()=>showPane('impostazioni');
+{ const ba=document.querySelector('#btn-altro-mondo'); if(ba) ba.onclick=()=>showPane('impostazioni'); }
 { const ph=document.querySelector('#prog-head'); if(ph) ph.onclick=()=>{
   const sec=document.querySelector('#sec-programma');
   const apre=sec.classList.contains('collapsed');   /* sta per aprirsi */
@@ -5869,13 +6004,16 @@ setTimeout(()=>{ try{
   }
 }catch(_){} },1600);
 
-/* v270.1 — I TRE INGRESSI RIDONDANTI SONO SPARITI.
-   «open-altro» nel Diario, «close-altro» dentro Altro, «btn-altro-mondo» nel
-   mondo: tre porte per una destinazione che adesso e nella barra, sempre, in
-   quarta posizione. Il Back interno esisteva solo perche Altro era un pannello
-   temporaneo: una destinazione top-level non torna indietro, si lascia.
-   Con loro se ne va _primaDiAltro, che ricordava «dove eri prima di aprire il
-   pannello»: adesso ogni luogo ricorda il proprio scroll da se. */
+document.querySelector('#close-altro').onclick=()=>{
+  const r=window._primaDiAltro; window._primaDiAltro=null;
+  /* v270: si torna alla DESTINAZIONE da cui si era entrati, non a una posizione */
+  navVai((r&&r.sez&&r.sez!=='altro')?r.sez:'oggi','chiudi-altro');   /* rimonta Oggi+Diario impilati (mezzo di default) */
+  try{
+    if(r){ /* v270: si torna alla destinazione, non a una posizione */
+      const m=document.querySelector('main');
+      if(m) m.scrollTop=(r.det==='pieno')?r.st:0; }
+  }catch(_){}
+};
 
 /* ======================================================================
    DETTATURA
@@ -9623,6 +9761,19 @@ async function callAnthropic(opt){
     if(opt.assistantPrefix&&reg==='sempre-fisso'){ salti.push(_nomeModello(model)+':no-prefill'); continue; }   /* pensiero non spegnibile + prefill: incompatibili, si passa oltre senza bruciare una chiamata */
     const ctrl=('AbortController' in window)?new AbortController():null;
     const timer=ctrl?setTimeout(()=>ctrl.abort(),to):null;
+    /* v270.2 — UN SEGNALE DA FUORI. Il tetto interno protegge dalla rete che
+       non risponde; questo protegge dal fatto che la risposta non serva PIU a
+       nessuno. Chi chiama puo dire «lascia perdere», e la chiamata smette
+       davvero invece di correre fino al proprio tetto. */
+    let _scollega=null;
+    if(opt.signal){
+      if(opt.signal.aborted){ if(timer)clearTimeout(timer); return {err:'annullata'}; }
+      if(ctrl){
+        const _giu=function(){ try{ ctrl.abort(); }catch(_){} };
+        try{ opt.signal.addEventListener('abort',_giu); _scollega=function(){ try{ opt.signal.removeEventListener('abort',_giu); }catch(_){} }; }catch(_){}
+      }
+    }
+    const _chiudiAttesa=function(){ if(timer)clearTimeout(timer); if(_scollega){ _scollega(); _scollega=null; } };
     const messages=[{role:'user',content:opt.user}];
     if(opt.assistantPrefix) messages.push({role:'assistant',content:opt.assistantPrefix});
     /* v139: il sistema lungo viaggia con cache_control - dal secondo battito in poi
@@ -9655,11 +9806,13 @@ async function callAnthropic(opt){
       r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ctrl?ctrl.signal:undefined,
         headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body:JSON.stringify(body)});
-    }catch(e){ if(timer)clearTimeout(timer);
-      if(e&&e.name==='AbortError') return {err:'timeout'};
-      if(!reteRetried){ reteRetried=true; await new Promise(s=>setTimeout(s,1500)); mi--; continue; }   /* la rete mobile ha il singhiozzo: un secondo respiro, stesso modello */
+    }catch(e){ _chiudiAttesa();
+      if(e&&e.name==='AbortError') return {err:(opt.signal&&opt.signal.aborted)?'annullata':'timeout'};
+      if(!reteRetried){ reteRetried=true; await new Promise(s=>setTimeout(s,1500));
+        if(opt.signal&&opt.signal.aborted) return {err:'annullata'};
+        mi--; continue; }   /* la rete mobile ha il singhiozzo: un secondo respiro, stesso modello */
       return {err:'rete'}; }
-    if(timer) clearTimeout(timer);
+    _chiudiAttesa();
     if(r.ok){
       let data; try{ data=await r.json(); }catch(_){ return {err:'rete'}; }
       const text=((data.content||[]).map(c=>c.text||'').join('')||'').trim();
@@ -9679,11 +9832,15 @@ async function callAnthropic(opt){
     if(r.status===429){
       if(!rateRetried){ rateRetried=true;
         const ra=parseInt((r.headers&&r.headers.get&&r.headers.get('retry-after'))||'2',10);
-        await new Promise(s=>setTimeout(s,Math.min(isNaN(ra)?2:ra,8)*1000)); mi--; continue; }   /* il limite respira: un'attesa onesta, poi riprova */
+        await new Promise(s=>setTimeout(s,Math.min(isNaN(ra)?2:ra,8)*1000));
+        if(opt.signal&&opt.signal.aborted) return {err:'annullata'};
+        mi--; continue; }   /* il limite respira: un'attesa onesta, poi riprova */
       return {err:'limite'};
     }
     if(r.status===529||/overloaded/i.test(detail)){
-      if(!overloadRetried){ overloadRetried=true; await new Promise(s=>setTimeout(s,1200)); mi--; continue; }   /* un solo retry, stesso modello */
+      if(!overloadRetried){ overloadRetried=true; await new Promise(s=>setTimeout(s,1200));
+        if(opt.signal&&opt.signal.aborted) return {err:'annullata'};
+        mi--; continue; }   /* un solo retry, stesso modello */
       return {err:'occupato'};
     }
     return {err:'http '+r.status};
@@ -9997,8 +10154,14 @@ function buildLinePackage(id,title){
    risposta, pensiero compreso. Sta qui, da solo, perche in calibratura si muove UNA cosa per volta
    e deve essere una riga sola da cambiare - e finisce nel registro, se no non e misurabile. */
 const SUSSURRO_EFFORT='high';
-async function askObserverLine(pkg){
-  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:2800,thinking:2000,effort:SUSSURRO_EFFORT,timeout:75000});
+async function askObserverLine(pkg,segnale){
+  /* v270.2 — il tetto era settantacinque secondi. Non e stato quello a bloccare
+     Sentiero (era la brace tenuta accesa a vuoto per tutto quel tempo, ed e
+     corretta a parte), ma settantacinque secondi restano piu di qualunque
+     attesa onesta per una riga di sei parole: e una DECISIONE, non una
+     scoperta. Quarantacinque bastano alla catena piu lenta con il pensiero
+     acceso, e il segnale permette di smettere prima se la riga non serve piu. */
+  const res=await callAnthropic({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),max_tokens:2800,thinking:2000,effort:SUSSURRO_EFFORT,timeout:45000,signal:segnale||undefined});
   const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined,stop:(res&&res.stop)||undefined,effort:SUSSURRO_EFFORT};
   const line=(res&&res.text)?clampStr(res.text,600).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* il silenzio scelto si rispetta - ma anche il silenzio ha un costo, e ora si vede */
@@ -10075,9 +10238,65 @@ async function askObserverLine(pkg){
   }
   let phase='idle',raf=0,pT0=0,last=0,from=null,home=null,ctrl=null,prev=null;
   let egg=false,frozen=null,pending=null,moteT=0,starT=0;
-  function setPhase(p){ phase=p; pT0=performance.now(); prev=null; }
+  /* ══ v270.2 — LA BRACE NON PUO POSSEDERE LA MACCHINA ═══════════════════════
+     La fase «attesa» esisteva per accompagnare la richiesta al modello: la
+     brace atterrava e respirava finche la riga non arrivava. Ma la richiesta
+     del Sussurro parte con effort alto e pensiero esteso, e il suo tetto era
+     settantacinque secondi. Per tutto quel tempo questo ciclo girava a sessanta
+     fotogrammi al secondo ripulendo e ricomponendo l'INTERA finestra in
+     modalita «lighter», a dpr 2. Su un SE e circa un milione di pixel per
+     fotogramma, per un minuto, mentre il resto dell'app deve continuare a
+     vivere. Non era un blocco logico - non c'era nessun lucchetto - era il
+     motore tenuto al massimo dei giri a vuoto: l'interfaccia diventava
+     inservibile e iOS finiva per chiudere la pagina in primo piano.
+
+     Tre limiti, e nessuno di loro e un tappo sul sintomo:
+
+     1. ATTESA_MAX - l'accompagnamento e un ornamento, non un dovere. Dopo
+        pochi secondi la brace esala e si spegne. Il Sussurro non si perde:
+        _braceEsito con phase 'idle' mostra la riga subito, ed e gia cosi che
+        si comporta quando le animazioni sono ridotte.
+     2. ATTESA_MS - durante l'attesa il respiro non ha bisogno di sessanta
+        fotogrammi: ne bastano venti.
+     3. la zona sporca - durante l'attesa si dipinge solo intorno a «casa»,
+        quindi si ripulisce solo li. Da un milione di pixel a una decina di
+        migliaia. */
+  const ATTESA_MAX=5200;        /* quanto puo durare l'accompagnamento */
+  const ATTESA_MS=50;           /* e con che passo: venti fotogrammi al secondo */
+  const ATTESA_R=170;           /* il raggio entro cui l'attesa dipinge davvero */
+  let attesaT0=0,attesaUlt=0;
+  function zonaAttesa(){
+    return {x:home.x-ATTESA_R,y:home.y-ATTESA_R,w:ATTESA_R*2,h:ATTESA_R*2};
+  }
+  function setPhase(p){
+    /* lasciando l'attesa si ripulisce tutto: durante l'attesa si ripuliva solo
+       la zona di casa, e senza questa riga l'ultimo respiro resterebbe
+       stampato fuori da quella zona per sempre. */
+    if(phase==='attesa'&&p!=='attesa'&&ctx){ try{ ctx.clearRect(0,0,innerWidth,innerHeight); }catch(_){} }
+    /* l'inizio e la fine dell'animazione hanno un autore solo: chi cambia fase.
+       Cosi non c'e modo di aggiungere una strada nuova e dimenticarsi di dirlo. */
+    try{ if(phase==='idle'&&p!=='idle') nota('san'); else if(phase!=='idle'&&p==='idle') nota('saf'); }catch(_){}
+    phase=p; pT0=performance.now(); prev=null;
+  }
   function loopStart(){ cancelAnimationFrame(raf); last=0; raf=requestAnimationFrame(loop); }
-  function spegni(){ phase='idle'; P.length=0; pending=null; if(ctx) ctx.clearRect(0,0,innerWidth,innerHeight); }
+  function spegni(){
+    /* v270.2 — spegnere la brace non e mai una ragione per perdere la riga.
+       Prima «pending=null» buttava via il sussurro che stava aspettando
+       l'atterraggio: se la pagina andava in secondo piano un attimo, quella
+       riga non appariva piu, e nessuno poteva sapere perche. */
+    const f=pending; pending=null;
+    try{ if(phase!=='idle') nota('saf'); }catch(_){}
+    phase='idle'; P.length=0; raf&&cancelAnimationFrame(raf); raf=0;
+    if(ctx) ctx.clearRect(0,0,innerWidth,innerHeight);
+    if(f){ try{ f(); }catch(_){} }
+  }
+  /* IL SECONDO PIANO FERMA LA BRACE. Su iOS il rAF si sospende da solo quando
+     la pagina non si vede, ma al ritorno riprendeva da dove era: una brace
+     partita prima di un'ora di tasca tornava a girare per una riga che non
+     sarebbe mai arrivata. Adesso si spegne, e il sussurro - se c'era - lo
+     mostra subito. */
+  addEventListener('visibilitychange',function(){ if(document.hidden&&phase!=='idle'){ try{ nota('sbn'); }catch(_){} spegni(); } });
+  addEventListener('pagehide',function(){ if(phase!=='idle') spegni(); });
   function posAt(t){
     const u=1-t;
     const x=u*u*from.x+2*u*t*ctrl.x+t*t*home.x, y=u*u*from.y+2*u*t*ctrl.y+t*t*home.y;
@@ -10087,8 +10306,20 @@ async function askObserverLine(pkg){
     return {x:x-dy/L*wb, y:y+dx/L*wb, tx:dx/L, ty:dy/L};
   }
   function loop(now){
+    /* L'ATTESA COSTA QUANTO UN RESPIRO, NON QUANTO UN VOLO.
+       Si esce presto e senza dipingere: il fotogramma successivo e gia
+       prenotato, ma questo non tocca la tela. */
+    if(phase==='attesa'){
+      if(now-attesaT0>ATTESA_MAX){                      /* l'accompagnamento e finito: la riga arrivera da sola */
+        try{ nota('sbc',Math.round(now-attesaT0)); }catch(_){}
+        setPhase('esala'); last=0;
+      }else if(now-attesaUlt<ATTESA_MS){
+        raf=requestAnimationFrame(loop); return;
+      }else attesaUlt=now;
+    }
     const dt=last?Math.min(50,now-last):16; last=now;
-    ctx.clearRect(0,0,innerWidth,innerHeight);
+    if(phase==='attesa'){ const z=zonaAttesa(); ctx.clearRect(z.x,z.y,z.w,z.h); }
+    else ctx.clearRect(0,0,innerWidth,innerHeight);
     ctx.globalCompositeOperation='lighter';
     const ph=now-pT0;
     if(phase==='condensa') condensa(now,ph);
@@ -10187,7 +10418,8 @@ async function askObserverLine(pkg){
     ctx.beginPath(); ctx.arc(home.x,home.y,3+k*16,0,7);
     ctx.strokeStyle='rgba('+ORO+','+(1-k)*.5+')'; ctx.lineWidth=1.3; ctx.stroke();
     nucleo(home.x,home.y,0,0,3.3-k*.7,now);
-    if(k>=1){ setPhase('attesa'); if(pending){ const f=pending; pending=null; f(); } }
+    if(k>=1){ setPhase('attesa'); attesaT0=performance.now(); attesaUlt=0;
+      if(pending){ const f=pending; pending=null; f(); } }
   }
   function attesa(now){
     const b=Math.sin(now/380);
@@ -11045,7 +11277,7 @@ function _stanzaApri(){
   });
 })();
 
-let _lineTimer=null,_lineToken=0;
+let _lineTimer=null,_lineToken=0,_lineAbort=null;
 /* ══ IL SUSSURRO DI CASA (v210) ═════════════════════════════════════════════
    La riga che nasce quando spunti una cosa. E il momento piu toccato dell'app,
    e senza chiave non c'era: observerLineFor usciva subito, in silenzio.
@@ -11342,32 +11574,80 @@ function observerLineFor(el){
     try{ const c0=(el.querySelector&&el.querySelector('.chk'))||el; const rr=c0.getBoundingClientRect();
       if(rr.width||rr.height) rct={x:rr.left+rr.width/2,y:rr.top+rr.height/2}; }catch(_){}
     const token=++_lineToken; clearTimeout(_lineTimer);
-    _lineTimer=setTimeout(async()=>{                                   /* debounce: in un combo veloce parla solo dell'ultima spunta */
-      try{ window._braceParte(el,rct); }catch(_){}                     /* la brace parte: il pensiero e in volo */
-      const t0Linea=Date.now();
+    /* v270.2 — la spunta precedente non interessa piu a nessuno: la sua
+       richiesta smette invece di correre fino al proprio tetto. */
+    try{ if(_lineAbort){ _lineAbort.abort(); try{ nota('sab',2); }catch(_){} } }catch(_){}
+    _lineAbort=null;
+    _lineTimer=setTimeout(function(){                                  /* debounce: in un combo veloce parla solo dell'ultima spunta */
+     const t0Linea=Date.now();
+     const ctrlA=('AbortController' in window)?new AbortController():null;
+     _lineAbort=ctrlA;
+     /* ══ v270.2 — UNA SOLA USCITA, E SEMPRE UNA. ══════════════════════════════
+        Qui dentro c'era un corpo async con UN SOLO try, che copriva la partenza
+        della brace e nient'altro. Tutto il resto - la costruzione del
+        pacchetto, la richiesta, il giudice, il salvataggio, il registro - era
+        scoperto. Se una qualunque di quelle righe lanciava, la funzione
+        rifiutava in silenzio e _braceEsito NON VENIVA MAI CHIAMATA: la brace
+        restava in «attesa» per sempre, cioe - prima della correzione di sopra -
+        a ridipingere l'intera finestra a sessanta fotogrammi al secondo finche
+        iOS non chiudeva la pagina. Anche il sorpasso usciva con un «return»
+        nudo, senza dire niente alla brace.
+        La promessa che rende impossibile tutta la famiglia: PER OGNI STRADA
+        CHE ESCE DA QUI, LA BRACE RICEVE IL SUO ESITO ESATTAMENTE UNA VOLTA. */
+     let esitoDato=false;
+     function chiudi(fn,cod,ms){
+       if(esitoDato) return; esitoDato=true;
+       if(_lineAbort===ctrlA) _lineAbort=null;
+       try{ nota('sfi',cod,Math.min(120000,ms|0)); }catch(_){}
+       try{ window._braceEsito(fn||null); }catch(_){ if(fn){ try{ fn(); }catch(__){} } }
+     }
+     try{ nota('sug'); }catch(_){}
+     try{ window._braceParte(el,rct); }catch(_){}                      /* la brace parte: il pensiero e in volo */
+     (async function(){
+      try{
       const pkgL=buildLinePackage(id,title);                            /* v151: il pacchetto si tiene: e la prova a carico della riga */
-      const resL=await askObserverLine(pkgL);
+      try{ nota('spr',Math.min(60000,JSON.stringify(pkgL).length)); }catch(_){}
+      try{ nota('sre'); }catch(_){}
+      const resL=await askObserverLine(pkgL,ctrlA?ctrlA.signal:null);
       const msLinea=Date.now()-t0Linea;
-      if(token!==_lineToken){ return; }                                /* superata da una spunta piu recente: la brace ormai vola per lei */
+      try{ nota('sri',Math.min(120000,msLinea),(resL&&resL.riga)?1:((resL&&resL.err)?2:0)); }catch(_){}
+      if(token!==_lineToken){ chiudi(null,3,msLinea); return; }        /* superata da una spunta piu recente: adesso lo dice anche alla brace */
       if(resL&&resL.riga){
         /* v213: il giudice davanti anche al modello. Si ripara quello che si puo
            riparare, e si butta solo cio che il contratto vieta davvero. */
         const line=raffinaRiga(resL.riga);
         const male=rigaDaButtare(line);
+        try{ nota('spa',male?0:1); }catch(_){}
         if(male){
-          try{ window._braceEsito(null); }catch(_){}
           try{ regCantiere('silenzio',{task:title,msg:'veto: '+male,riga:String(resL.riga).slice(0,200)}); }catch(_){}
+          chiudi(null,2,msLinea);
           return;
         }
         S.obsLines=(S.obsLines||[]).concat([{iso:new Date().toISOString(),task:clampStr(title,120),riga:line}]).slice(-12);
         save();   /* la memoria del sussurro sopravvive alla sessione: e cio che le impedisce di ripetersi */
         regCantiere('sussurro',{task:title,riga:line,ms:msLinea,model:resL.model,tin:resL.tin,tout:resL.tout,salti:resL.salti,stop:resL.stop,effort:resL.effort,pkg:pkgL});
+        try{ nota('sps'); }catch(_){}
         window._verdettoRef={riga:String(line),aperto:false};   /* v147: il registro e scritto, la riga puo ricevere il verdetto */
-        try{ window._braceEsito(()=>{ _whisper(line); }); }catch(_){ _whisper(line); }   /* il sussurro nasce dove la brace atterra */
+        chiudi(function(){ try{ nota('srn'); }catch(_){} _whisper(line); try{ nota('srf'); }catch(_){} },1,msLinea);   /* il sussurro nasce dove la brace atterra */
       }else{
-        try{ window._braceEsito(null); }catch(_){}                       /* silenzio scelto o errore: la brace esala */
         regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti,stop:resL&&resL.stop,effort:resL&&resL.effort,pkg:pkgL});   /* anche il silenzio ha un pacchetto: taceva a ragione o non aveva materiale? */
+        chiudi(null,0,msLinea);                                          /* silenzio scelto o errore: la brace esala */
       }
+      }catch(err){
+        /* v270.2 — questo ramo NON ESISTEVA. Una riga che lanciava qui dentro
+           diventava una promessa rifiutata e basta, e la brace restava accesa. */
+        try{ nota('sab',1); }catch(_){}
+        try{ regCantiere('errore',{msg:'sussurro: '+String((err&&err.message)||err||'').slice(0,140)}); }catch(_){}
+        chiudi(null,4,Date.now()-t0Linea);
+      }finally{
+        /* la rete sotto la rete: se nessuna delle strade di sopra ha chiuso -
+           un «return» aggiunto per distrazione fra un anno, per esempio - si
+           chiude qui. chiudi() e idempotente, quindi non toglie niente a
+           nessuno: e solo la garanzia che «esattamente una volta» resti vera
+           anche a codice cambiato. */
+        chiudi(null,5,Date.now()-t0Linea);
+      }
+     })();
     },800);
   }catch(_){}
 }
@@ -14406,18 +14686,10 @@ function renderSettings(){
   /* v253 — non si ricostruisce un pannello che nessuno sta guardando.
      renderSettings rifa la lingua, i segmenti, gli interruttori, i rituali e i
      suoni: otto cicli. Girava a ogni spunta, anche col pannello chiuso. */
-  /* ══ v270.1 — IL CRITERIO E SEMANTICO, NON UNA CLASSE ═══════════════════
-     Qui c'era: «se il pannello ha ancora la classe hidden, non ricostruirlo».
-     Era giusto quando Altro ERA un pannello nascosto. Nella v270 Altro e una
-     destinazione e la classe non serve piu: se la togli dal markup questo
-     criterio diventa falso per sempre e Altro si ricostruisce a ogni spunta;
-     se la lasci, e vero per sempre e Altro non si ricostruisce MAI - compare,
-     e dentro c'e quello che c'era prima.
-     La domanda giusta non e «questo div ha una classe»: e «la destinazione
-     corrente e Altro?». */
-  try{
-    if(typeof NAV!=='undefined'&&NAV&&NAV.corrente!=='altro'&&!_forzaSettings) return;
-  }catch(_){}
+  /* v270.1 — leggere la classe del vecchio pannello era vero-per-sempre o
+     falso-per-sempre: tolta la classe, il cancello restava aperto. La domanda
+     giusta non e «che classe porti», e «sono li dentro?»: lo sa la navigazione. */
+  try{ if(typeof NAV!=='undefined'&&NAV&&NAV.corrente!=='altro'&&!_forzaSettings) return; }catch(_){}
   /* v207 — I DUE LIVELLI, CHIAMATI PER NOME.
      Il livello base non si chiama «Sentiero Free» ne «Sentiero Lite»: si chiama
      Sentiero. E l'altra ad essere una variante, non questa ad essere una
@@ -15404,7 +15676,7 @@ const MANO_PASSI=[
   {sel:'#mic',        txt:'Tieni premuto qui e di’ quello che ti passa per la testa. Quando lasci, resta scritto.'},
   {sel:'#sec-today-quests', txt:'Le cose che dici di voler fare finiscono qui sotto da sole. Nessuno te le cancella se passa una settimana.'},
   {sel:'#nascita-apri', txt:'Se preferisci scriverle a mano invece che dirle, si aggiungono da qui.'},
-  {sel:'#barra a[data-sez="altro"]', txt:'E qui dentro c’è tutto il resto: come si usa, i tuoi dati, e da dove porti via tutto quando vuoi.'}
+  {sel:'#open-altro', txt:'E qui dentro c’è tutto il resto: come si usa, i tuoi dati, e da dove porti via tutto quando vuoi.'}
 ];
 let _manoI=0;
 function manoFinita(){
