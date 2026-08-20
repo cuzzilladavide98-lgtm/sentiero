@@ -2309,6 +2309,83 @@ body.theme-carta .prom-riga{background:rgba(122,86,18,.08);border-left-color:rgb
 .unl-manca{color:var(--ceralacca,#c8442f)}
 body.theme-carta .unl-req{border-color:rgba(23,21,18,.18)}
 body.theme-carta .unl-req .unl-box{border-color:rgba(23,21,18,.32)}
+
+/* ══ v271.1 — LA STANZA HA I SUOI COLORI, E NON LI EREDITA ═════════════════
+   BUG REALE osservato sull'SE con tema Carta: la Stanza resta una superficie
+   notturna, ma i suoi controlli ereditavano i colori di primo piano del tema
+   Carta - scuri, perche pensati per la carta chiara - e finivano scuro su
+   scuro. Non era poco contrasto: era invisibile, e si andava a tentoni.
+   La causa e strutturale, quindi la correzione lo e: la Stanza dichiara le
+   proprie variabili sul proprio contenitore, e da li in giu nessuno eredita
+   piu niente dal tema. Con «!important» sulle poche proprieta che il tema
+   Carta forza esplicitamente, perche li la specificita non basta.
+   Il viola resta l'identita della Stanza; l'azzurro e l'accento semantico del
+   modo «da una foto» - lo stesso azzurro del satellite, che di quel mestiere
+   era la porta. */
+#stanza{
+  --st-t1:#F2EFE6;                 /* il testo principale */
+  --st-t2:rgba(242,239,230,.72);   /* il secondario, ancora ben leggibile */
+  --st-t3:rgba(242,239,230,.52);   /* placeholder e note */
+  --st-linea:rgba(242,239,230,.20);
+  --st-sup:rgba(242,239,230,.07);
+  --st-viola:#B79CE8;
+  --st-blu:#8FC4F0;
+}
+#stanza,#stanza *{color:var(--st-t1)}
+body.theme-carta #stanza,body.theme-carta #stanza *{color:var(--st-t1) !important}
+#stanza-txt{color:var(--st-t1) !important;-webkit-text-fill-color:var(--st-t1)}
+#stanza-txt::placeholder{color:var(--st-t3) !important;-webkit-text-fill-color:var(--st-t3)}
+.st-nota{margin:8px 2px 0;font:400 12.5px/1.45 var(--sans,system-ui);
+  color:var(--st-t3) !important;text-align:center}
+.st-nota:empty{display:none}
+
+/* il selettore dei due modi */
+.st-seg{display:flex;gap:6px;padding:4px;margin:0 0 12px;border-radius:13px;
+  background:var(--st-sup);border:.5px solid var(--st-linea)}
+.st-seg button{flex:1 1 0;min-height:44px;border:0;border-radius:10px;background:none;
+  color:var(--st-t2) !important;font:500 14.5px/1.2 var(--sans,system-ui)}
+.st-seg button.on{background:rgba(183,156,232,.20);color:var(--st-t1) !important;
+  box-shadow:inset 0 0 0 1px rgba(183,156,232,.45)}
+#stanza[data-modo="foto"] .st-seg button.on{background:rgba(143,196,240,.20);
+  box-shadow:inset 0 0 0 1px rgba(143,196,240,.5)}
+
+/* le due vie della foto: grandi, evidenti, e senza bisogno di indovinare */
+#st-foto-scelta{display:none;flex-direction:column;gap:10px;padding:6px 0}
+.st-via{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;
+  padding:0 18px;border-radius:14px;text-align:left;
+  background:rgba(143,196,240,.11);
+  border:1px solid rgba(143,196,240,.42);
+  color:var(--st-t1) !important;font:500 15.5px/1.2 var(--sans,system-ui)}
+.st-via svg{flex:0 0 auto;color:var(--st-blu) !important;opacity:1}
+.st-via:active{background:rgba(143,196,240,.2)}
+.st-via[disabled]{opacity:.42}
+
+/* l'attesa */
+#st-foto-attesa{display:none;flex-direction:column;align-items:center;gap:14px;padding:26px 0}
+.st-spin{width:28px;height:28px;border-radius:50%;
+  border:2px solid rgba(242,239,230,.16);border-top-color:var(--st-blu);
+  animation:st-gira .9s linear infinite}
+@keyframes st-gira{to{transform:rotate(360deg)}}
+body:not(.anima-sempre) .st-spin{animation-duration:2s}
+@media (prefers-reduced-motion:reduce){body:not(.anima-sempre) .st-spin{animation:none}}
+.st-annulla{min-height:44px;padding:0 20px;border-radius:12px;background:none;
+  border:1px solid var(--st-linea);color:var(--st-t2) !important;
+  font:500 14px var(--sans,system-ui)}
+
+/* i tre stati, governati da due soli attributi sulla Stanza */
+#stanza[data-modo="foto"][data-fase="scelta"] #st-foto-scelta{display:flex}
+#stanza[data-modo="foto"][data-fase="attesa"] #st-foto-attesa{display:flex}
+#stanza[data-modo="foto"][data-fase="scelta"] #stanza-txt,
+#stanza[data-modo="foto"][data-fase="attesa"] #stanza-txt{display:none}
+#stanza[data-modo="foto"][data-fase="attesa"] #stanza-piede{display:none}
+#stanza[data-modo="foto"][data-fase="testo"] #st-letto{display:block}
+#st-letto{display:none;color:var(--st-blu) !important}
+#st-rifai{display:none}
+#stanza[data-modo="foto"][data-fase="testo"] #st-rifai{display:inline-flex;align-items:center;justify-content:center;min-height:44px}
+#stanza-piede button{color:var(--st-t2) !important}
+#stanza-piede button.primo{color:var(--st-t1) !important}
+body.theme-carta #stanza-piede button{color:var(--st-t2) !important}
+body.theme-carta #stanza-piede button.primo{color:var(--st-t1) !important}
 </style>
 </head>
 <body>
@@ -2789,13 +2866,13 @@ body.theme-carta .unl-req .unl-box{border-color:rgba(23,21,18,.32)}
 <canvas id="fx"></canvas>
 <div id="flash"></div>
 <div id="word-stage"></div>
-<button id="terra-luce" aria-label="Fotografa una pagina scritta e salvala nel diario"><span class="nucleo"></span></button>
+<button id="terra-luce" aria-label="Condividi dove sono"><span class="nucleo"></span></button>
 <div class="terra-scia"></div><div class="terra-scia"></div><div class="terra-scia"></div>
 <!-- v198: la seconda luce. Piu grande, piu lenta, viola. Compare alle 19 e resta
      fino alle 4:20, che e l'alba di Sentiero: esiste esattamente per la sera e la
      notte. Sta qui, al livello del body, per la stessa ragione della porta del
      frutto: #app ha un transform e si porterebbe dietro i position:fixed. -->
-<button id="notte-luce" class="hidden" aria-label="La stanza: scrivi a lungo"><span class="nucleo"></span></button>
+<button id="notte-luce" class="hidden" aria-label="La stanza: scrivi, o leggi una pagina da una foto"><span class="nucleo"></span></button>
 <div class="notte-scia"></div><div class="notte-scia"></div><div class="notte-scia"></div>
 <!-- v196: la porta del frutto sta QUI, al livello del body, e non piu dentro #app.
      #app ha un transform, e un antenato trasformato diventa il riferimento dei figli
@@ -2804,39 +2881,8 @@ body.theme-carta .unl-req .unl-box{border-color:rgba(23,21,18,.32)}
      che la v180 ha riparato per la Chiamata a terra. L'ho scritto nel codice e non
      l'ho applicato alla porta accanto. -->
 <div id="frutto-soglia" class="hidden"><div id="frutto-corpo"></div></div>
-<div id="terra" class="hidden" role="dialog" aria-label="Una pagina: da foto a testo">
-  <div id="terra-foglio"><div id="terra-carta">
-    <div id="terra-testa"></div>
-    <!-- v271: la luce resta, la porta resta, cio che c e dietro cambia del tutto.
-         Tre stati dentro lo stesso foglio: si sceglie, si aspetta, si corregge. -->
-    <div id="terra-dom"></div>
-    <div id="ocr-scelta">
-      <button class="ocr-via" id="ocr-scatta">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Scatta una foto</button>
-      <button class="ocr-via" id="ocr-scegli">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        Scegli dalle foto</button>
-      <button class="ocr-via ocr-mano" id="ocr-mano">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-        Scrivi a mano qui</button>
-      <input type="file" id="ocr-file-cam" accept="image/*" capture="environment" hidden>
-      <input type="file" id="ocr-file-lib" accept="image/*" hidden>
-    </div>
-    <div id="ocr-attesa" class="hidden">
-      <div class="ocr-spin" aria-hidden="true"></div>
-      <p class="ocr-nota">sto leggendo la pagina</p>
-      <button id="ocr-stop">Lascia stare</button>
-    </div>
-    <textarea id="terra-txt" rows="5" placeholder="il testo della pagina comparira qui, e potrai correggerlo" enterkeyhint="done"></textarea>
-    <p class="ocr-nota" id="ocr-avviso"></p>
-    <div id="terra-piede">
-      <button id="terra-no">Chiudi</button>
-      <button id="ocr-rifai" class="hidden">Rifai</button>
-      <button id="terra-ok" class="primo">Salva nel diario</button>
-    </div>
-  </div></div>
-</div>
+<!-- v271.1: qui viveva il pannello della vecchia porta azzurra. La Stanza
+     ha preso il suo posto, e il satellite azzurro adesso dice dove sei. -->
 <div id="terra-fiore"></div>
 <!-- v198: LA STANZA. A schermo pieno, non un foglio che sale: e un altro luogo,
      non un pannello sopra questo. Dentro non c'e nient'altro. -->
@@ -2844,9 +2890,35 @@ body.theme-carta .unl-req .unl-box{border-color:rgba(23,21,18,.32)}
   <div id="stanza-grana" aria-hidden="true"></div>
   <div id="stanza-carta">
     <div id="stanza-testa">la stanza</div>
+    <!-- ══ v271.1 — DUE MODI, UNA STANZA ═══════════════════════════════════
+         Non un pannello dentro un pannello: la stessa carta, due mestieri.
+         «Scrivi» resta il modo di partenza, cosi il gesto storico - tocco il
+         viola e comincio a scrivere - non cambia di una virgola. -->
+    <div class="st-seg" id="stanza-modo" role="tablist">
+      <button data-modo="scrivi" class="on" role="tab" aria-selected="true">Scrivi</button><button data-modo="foto" role="tab" aria-selected="false">Da una foto</button>
+    </div>
+    <div id="st-foto-scelta">
+      <button class="st-via" id="st-scatta">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Scatta una foto</button>
+      <button class="st-via" id="st-scegli">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Scegli dalle foto</button>
+      <p class="st-nota">scrittura a mano o testo stampato</p>
+      <p class="st-nota" id="st-senza-chiave"></p>
+      <input type="file" id="st-file-cam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="st-file-lib" accept="image/*" hidden>
+    </div>
+    <div id="st-foto-attesa">
+      <div class="st-spin" aria-hidden="true"></div>
+      <p class="st-nota">sto leggendo la pagina…</p>
+      <button class="st-annulla" id="st-stop">Annulla</button>
+    </div>
     <textarea id="stanza-txt" placeholder="qui si scrive a lungo" enterkeyhint="return"></textarea>
+    <p class="st-nota" id="st-letto">testo letto dalla foto · correggilo se serve</p>
     <div id="stanza-piede">
       <button id="stanza-no">Chiudi</button>
+      <button id="st-rifai">Rifai foto</button>
       <button id="stanza-ok" class="primo">Raccogli</button>
     </div>
   </div>
@@ -3904,7 +3976,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.271 · 2026-08-20';
+const APP_VERSION='v60S.271.1 · 2026-08-20';
 
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
@@ -5566,7 +5638,16 @@ function mapsUrl(p){ return 'https://maps.google.com/?q='+p.lat+','+p.lon; }
    Adesso: se la posizione c'e gia (capturePos la tiene fresca mezz'ora) si
    condivide SUBITO, dentro il tocco. Se non c'e, si chiede - e si dice alla
    persona di toccare di nuovo, invece di far finta di niente. */
-document.querySelector('#btn-pin').onclick=()=>{
+/* ══ v271.1 — UNA SOLA AUTORITA PER «DOVE SONO» ════════════════════════════
+   Il satellite azzurro cambia mestiere e adesso fa questa stessa cosa. La
+   tentazione era scrivere la condivisione una seconda volta accanto a lui: e
+   il modo piu rapido di perdere, sul secondo esemplare, la correzione iOS che
+   e costata cara: «se la posizione e gia fresca, navigator.share parte DENTRO
+   il tocco, senza nessun await davanti». Un await, un setTimeout o un click
+   programmato prima della share e Safari la rifiuta in silenzio.
+   Quindi la logica resta una, e i due comandi la chiamano.
+   DEVE restare sincrona fino a navigator.share(): non trasformarla in async. */
+function condividiPosizione(){
   if(!('geolocation' in navigator)){ toast('La posizione non \u00e8 disponibile su questo telefono'); return; }
 
   const manda=(pos)=>{
@@ -5593,13 +5674,15 @@ document.querySelector('#btn-pin').onclick=()=>{
   navigator.geolocation.getCurrentPosition(p=>{
     lastPos={lat:Math.round(p.coords.latitude*1e5)/1e5,lon:Math.round(p.coords.longitude*1e5)/1e5,ts:Date.now()};
     /* NON si condivide da qui: il tocco e' scaduto e iOS rifiuterebbe in
-       silenzio. Si dice alla persona che adesso si puo. */
-    toast('Trovato. Tocca di nuovo \u00abdove sono\u00bb per mandarlo');
+       silenzio. Si dice alla persona che adesso si puo. Il messaggio non nomina
+       piu il bottone, perche adesso le porte sono due. */
+    toast('Trovato. Tocca di nuovo per condividere dove sei.');
   },err=>{
     if(err&&err.code===1) toast('Permesso negato: Impostazioni \u203a Safari \u203a Posizione');
     else toast('Non riesco a trovare dove sei: riprova fra un momento');
   },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
-};
+}
+document.querySelector('#btn-pin').onclick=()=>condividiPosizione();
 
 /* ======================================================================
    HEADER / TABS
@@ -14073,7 +14156,22 @@ let _terraSeme=null;
 /* ══ LA RACCOLTA CONDIVISA (v198) ══════════════════════════════════════════
    La Chiamata a terra e la stanza della sera scrivono nello stesso diario e
    fanno nascere le stesse quest. Una funzione sola, due porte. ═══════════ */
-async function scrittoNelDiario(testo, dom){
+/* ══ v271.1 — L'UNICA AUTORITA DELLA RACCOLTA ══════════════════════════════
+   «da questo testo possono nascere quest, rituali e una voce del Diario»: una
+   domanda sola, una risposta sola. Il microfono, la Stanza che scrive e la
+   Stanza che legge una foto arrivano tutti e tre qui.
+   Il terzo parametro e nuovo e OPZIONALE, quindi i due chiamanti che c'erano
+   prima non cambiano di una virgola: serve solo a dire da dove viene il testo
+   e cosa aveva letto la macchina, quando viene da una pagina fotografata. */
+async function scrittoNelDiario(testo, dom, orig){
+  const _fonte=(orig&&orig.fonte==='ocr')?'ocr':'';
+  /* LA MATERIA ORIGINALE NON SI PERDE MAI.
+     Per il parlato, «raw» e gia il trascritto grezzo e «testo» la forma che il
+     Diario mostra. Per una pagina fotografata la stessa distinzione ha lo
+     stesso significato: raw e cio che ha letto la macchina, e cio che la
+     persona ha corretto e la verita. Se non ha corretto niente, non si
+     conservano due copie identiche della stessa frase. */
+  const _raw=(_fonte==='ocr'&&orig.raw&&String(orig.raw).trim()!==String(testo).trim())?String(orig.raw):testo;
   let fatto=false, nuove=0;
   try{
     if(S.apiKey&&S.apiKey.startsWith('sk-ant-')){
@@ -14102,7 +14200,10 @@ async function scrittoNelDiario(testo, dom){
           S.scheduled.push(r);
         }
         try{ processMastery(out.motore); }catch(_){}
-        addDiary(out.diario||testo,nati,[],testo,'',dom,pesa);
+        /* out.diario e la forma che la raccolta propone; il quarto argomento e
+           «raw», la materia da cui e nata. Nessuna delle due cancella l'altra. */
+        addDiary(out.diario||testo,nati,[],_raw,'',dom,pesa);
+        if(_fonte&&S.diary&&S.diary[0]) S.diary[0].fonte=_fonte;
         fatto=true;
       }
     }
@@ -14113,7 +14214,8 @@ async function scrittoNelDiario(testo, dom){
        rilevatore inciampasse li dentro, il testo sparirebbe senza un errore e
        senza un avviso. Un di piu che non deve mai costare un di meno. */
     let _p=false; try{ _p=pesoLocale(testo); }catch(_){}
-    try{ addDiary(testo,[],[],testo,'',dom,_p); }catch(_){}
+    try{ addDiary(testo,[],[],_raw,'',dom,_p); }catch(_){}
+    try{ if(_fonte&&S.diary&&S.diary[0]) S.diary[0].fonte=_fonte; }catch(_){}
     try{ salvaSubito(); }catch(_){}   /* v252: la stanza della sera scrive subito */
     try{ iaRipensaUltima(); }catch(_){}
   }
@@ -14134,11 +14236,102 @@ function stanzaOra(quando){
   return m>=STANZA_DA || m<STANZA_A;
 }
 
+/* ══ v271.1 — LA STANZA HA DUE MODI ═══════════════════════════════════════
+   Non due finestre: due mestieri della stessa carta. Lo stato vive in due
+   attributi sulla Stanza - data-modo e data-fase - e il CSS ci si appende:
+   cosi non esiste un secondo posto dove lo stato possa divergere da cio che
+   si vede. */
+let _stModo='scrivi', _stFase='scelta', _stAuto='', _stAbort=null;
+function stanzaModo(m){
+  _stModo=(m==='foto')?'foto':'scrivi';
+  const el=document.getElementById('stanza'); if(!el) return;
+  el.setAttribute('data-modo',_stModo);
+  try{ el.querySelectorAll('#stanza-modo button').forEach(b=>{
+    const on=b.dataset.modo===_stModo;
+    b.classList.toggle('on',on); b.setAttribute('aria-selected',on?'true':'false'); }); }catch(_){}
+  const txt=el.querySelector('#stanza-txt');
+  if(_stModo==='foto'){
+    stanzaFase('scelta');
+    /* SENZA CHIAVE LA PORTA NON DEVE SEMBRARE APERTA. I due tasti restano
+       visibili - nascondere una funzione non la spiega - ma sono spenti, e
+       accanto c'e il perche. «Scrivi» continua a funzionare interamente. */
+    const gen=(function(){ try{ return generativa(); }catch(_){ return false; } })();
+    ['#st-scatta','#st-scegli'].forEach(sel=>{ const b=el.querySelector(sel); if(b) b.disabled=!gen; });
+    const av=el.querySelector('#st-senza-chiave');
+    if(av) av.textContent=gen?'':'Per leggere una foto serve la versione Generativa. La foto non viene inviata da nessuna parte.';
+  } else {
+    _stOcrPulisci();
+    stanzaFase('testo');
+    try{ if(txt) txt.focus(); }catch(_){}
+  }
+  _stAggiornaOk();
+}
+function stanzaFase(f){
+  _stFase=f;
+  const el=document.getElementById('stanza'); if(el) el.setAttribute('data-fase',f);
+  _stAggiornaOk();
+}
+function _stAggiornaOk(){
+  try{
+    const el=document.getElementById('stanza'); if(!el) return;
+    const txt=el.querySelector('#stanza-txt'), ok=el.querySelector('#stanza-ok');
+    if(!txt||!ok) return;
+    const visibile=(_stModo==='scrivi')||(_stFase==='testo');
+    ok.disabled=!visibile||txt.value.trim().length<2;
+  }catch(_){}
+}
+function _stOcrPulisci(){
+  /* niente resta appeso: la richiesta si annulla, la trascrizione si lascia
+     andare, i campi dei file si svuotano. La fotografia non sopravvive al
+     flusso, ed e la ragione per cui non puo finire nello stato. */
+  try{ if(_stAbort) _stAbort.abort(); }catch(_){}
+  _stAbort=null; _stAuto='';
+  ['#st-file-cam','#st-file-lib'].forEach(sel=>{ try{ const i=document.querySelector(sel); if(i) i.value=''; }catch(_){} });
+}
+async function _stLeggi(file){
+  if(!file) return;
+  stanzaFase('attesa');
+  let dataUrl='';
+  const ctrl=('AbortController' in window)?new AbortController():null;
+  _stAbort=ctrl;
+  try{
+    dataUrl=await preparaFoto(file);
+    if(ctrl&&ctrl.signal.aborted){ stanzaFase('scelta'); return; }
+    const r=await leggiPagina(dataUrl,ctrl?ctrl.signal:null);
+    dataUrl='';                                    /* letta: non serve piu a nessuno */
+    if(ctrl&&ctrl.signal.aborted){ stanzaFase('scelta'); return; }
+    const el=document.getElementById('stanza');
+    const av=el&&el.querySelector('#st-senza-chiave');
+    if(r&&r.err){
+      stanzaFase('scelta');
+      if(av) av.textContent=(r.err==='annullata')?'':_ocrMsgErrore(r.err);
+      return;
+    }
+    const t=String((r&&r.testo)||'');
+    _stAuto=t;
+    const txt=el&&el.querySelector('#stanza-txt');
+    if(txt) txt.value=t;
+    if(av) av.textContent='';
+    stanzaFase('testo');
+    try{ regCantiere('ocr',{msg:'letta una pagina',model:(r&&r.model)||'',tin:r&&r.tin,tout:r&&r.tout}); }catch(_){}
+  }catch(e){
+    stanzaFase('scelta');
+    try{ const av=document.querySelector('#st-senza-chiave');
+      if(av) av.textContent='Non sono riuscito ad aprire questa immagine.'; }catch(_){}
+    try{ regCantiere('errore',{msg:'ocr: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){}
+  } finally {
+    dataUrl='';
+    if(_stAbort===ctrl) _stAbort=null;
+  }
+}
+
 function apriStanza(){
   const el=document.getElementById('stanza'); if(!el) return;
   const txt=el.querySelector('#stanza-txt'), ok=el.querySelector('#stanza-ok');
   txt.value=''; ok.disabled=true;
-  txt.oninput=()=>{ ok.disabled=txt.value.trim().length<2; };
+  txt.oninput=()=>{ _stAggiornaOk(); };
+  _stOcrPulisci();
+  stanzaModo('scrivi');            /* il gesto storico non cambia: tocco il viola e scrivo */
   el.classList.remove('hidden');
   /* due fotogrammi: senza, la transizione parte da uno stato che il browser non
      ha ancora visto e la stanza compare di scatto invece di accendersi */
@@ -14147,6 +14340,7 @@ function apriStanza(){
 }
 function chiudiStanza(){
   const el=document.getElementById('stanza'); if(!el) return;
+  try{ _stOcrPulisci(); }catch(_){}
   el.classList.remove('aperta');
   try{ const t=el.querySelector('#stanza-txt'); if(t) t.blur(); }catch(_){}
   setTimeout(()=>{ el.classList.add('hidden'); }, 440);
@@ -14161,14 +14355,24 @@ async function raccogliStanza(){
   _stanzaRaccolgo=true;
   const ok=el.querySelector('#stanza-ok');
   ok.disabled=true; ok.textContent='Raccolgo…';
+  /* ══ v271.1 — QUI STA IL PUNTO DELLA PATCH ══════════════════════════════
+     Nella v271 la pagina fotografata finiva dritta nel Diario con addDiary, e
+     il testo non veniva mai interpretato: una fotografia era digitalizzazione
+     passiva, e basta. Adesso passa da scrittoNelDiario esattamente come cio
+     che si scrive a mano e come cio che si dice al microfono. Se nella pagina
+     c'e scritto «chiamare il dentista», da li puo nascere la cosa da fare,
+     come nascerebbe se l'avessi detta.
+     Cambia il mezzo con cui il testo entra. Non cambia cosa significa. */
+  const daFoto=(_stModo==='foto');
+  const orig=daFoto?{fonte:'ocr',raw:String(_stAuto||'')}:null;
   let esito={fatto:false,nuove:0};
-  try{ esito = await scrittoNelDiario(testo,''); }
+  try{ esito = await scrittoNelDiario(testo,'',orig); }
   finally{
     _stanzaRaccolgo=false;
     ok.textContent='Raccogli';
   }
   save();
-  try{ regCantiere('stanza',{msg:(esito.fatto?'raccolta':'salvata a mano')+' · '+testo.length+' caratteri · quest nuove '+esito.nuove}); }catch(_){}
+  try{ regCantiere('stanza',{msg:(daFoto?'pagina · ':'')+(esito.fatto?'raccolta':'salvata a mano')+' · '+testo.length+' caratteri · quest nuove '+esito.nuove}); }catch(_){}
   chiudiStanza();
   try{ render(); renderDiary(); }catch(_){}
   try{ haptic(); }catch(_){}
@@ -14548,26 +14752,19 @@ function _ocrMsgErrore(err){
   return 'Non sono riuscito a leggere la pagina. Puoi riprovare o scriverla a mano.';
 }
 
+/* ══ v271.1 — LA VECCHIA PORTA E CHIUSA ═══════════════════════════════════
+   Alla v271 il satellite azzurro apriva qui una seconda esperienza di
+   scrittura, col suo pannello, i suoi tre stati e il suo salvataggio. Adesso
+   la Stanza fa quel mestiere - meglio, e con la raccolta vera dietro - e il
+   satellite dice dove sei. Due porte per la stessa cosa sono due posti dove
+   correggere lo stesso guasto, e uno dei due si dimentica sempre.
+   La funzione resta come muro, non come porta: se qualcosa la chiamasse per
+   una strada che non ho visto, non si apre niente e resta agli atti.
+   Il MOTORE dell'OCR - preparaFoto, leggiPagina, OCR_SYS, _ocrMsgErrore - non
+   e stato toccato: lo usa la Stanza, ed e lo stesso che funzionava. */
 function apriTerra(){
-  const el=document.querySelector('#terra'); if(!el) return;
-  _ocrPulisci();
-  el.querySelector('#terra-testa').textContent='una pagina';
-  const dom=el.querySelector('#terra-dom');
-  if(dom) dom.textContent='Fotografa una pagina scritta e la ritrovi qui, come testo.';
-  const txt=el.querySelector('#terra-txt'); if(txt) txt.value='';
-  const ok=el.querySelector('#terra-ok'); if(ok) ok.disabled=true;
-  if(txt&&ok) txt.oninput=()=>{ ok.disabled=txt.value.trim().length<1; };
-  _ocrFase('scelta');
-  /* SENZA CHIAVE NON SI MANDA NIENTE DA NESSUNA PARTE, e si dice prima invece
-     che dopo: proporre «scatta una foto» a chi non puo leggerla sarebbe una
-     porta che si apre sul muro. Scrivere a mano resta possibile sempre. */
-  const gen=(function(){ try{ return generativa(); }catch(_){ return false; } })();
-  ['#ocr-scatta','#ocr-scegli'].forEach(sel=>{ const b=el.querySelector(sel);
-    if(b){ b.disabled=!gen; b.style.opacity=gen?'':'.45'; } });
-  _ocrAvviso(gen?'':'La lettura automatica della foto e nella versione Generativa. Senza chiave la foto non viene inviata da nessuna parte: puoi scrivere la pagina a mano e salvarla lo stesso.');
-  el.classList.remove('hidden','via','chiudendo');
-  if(window._terraLuce&&window._terraLuce.apri) window._terraLuce.apri();
-  else { el.classList.add('acceso','aperto'); }   /* mai una porta che non si apre */
+  try{ regCantiere('terra',{msg:'porta vecchia: non si apre piu, la Stanza ha preso il suo posto'}); }catch(_){}
+  return;
 }
 function chiudiTerra(){
   const el=document.querySelector('#terra'); if(!el) return;
@@ -14588,10 +14785,18 @@ function chiudiTerra(){
 (function(){
   const luce=document.getElementById('terra-luce'); if(!luce) return;
   const scie=[].slice.call(document.querySelectorAll('.terra-scia'));
+  /* ══ v271.1 — LA LUCE ORBITA, E BASTA ═════════════════════════════════════
+     Questa guardia chiedeva anche il pannello e la sua carta, perche la luce
+     doveva ATTERRARCI sopra. Adesso il satellite condivide dove sei: non
+     atterra piu da nessuna parte, e pretendere un pannello che non esiste piu
+     avrebbe spento l'orbita insieme al pannello - cioe avrebbe fatto sparire
+     dal cielo una cosa che deve restare identica.
+     L'identita non si tocca: colore, nucleo, alone, scie, moto, bersaglio,
+     ottimizzazione e riduzione del movimento sono quelli di prima. */
   const el=document.getElementById('terra');
   const fiore=document.getElementById('terra-fiore');
   const carta=document.getElementById('terra-carta');
-  if(!el||!fiore||!carta) return;
+  if(!fiore) return;
   const GIRO=26000, VOLO=440;
   let CX=0, CY=0, RR=120, ang=-Math.PI/2, t0=performance.now(), stato='orbita', volo=null;
   const STORIA=[];
@@ -14653,8 +14858,8 @@ function chiudiTerra(){
   requestAnimationFrame(frame);
 
   function sboccia(x,y){
-    try{ carta.style.transformOrigin=((x/(innerWidth||1))*100).toFixed(1)+'% 0%'; }catch(_){}
-    if(calmo()){ el.classList.add('aperto'); return; }
+    try{ if(carta) carta.style.transformOrigin=((x/(innerWidth||1))*100).toFixed(1)+'% 0%'; }catch(_){}
+    if(calmo()){ if(el) el.classList.add('aperto'); return; }
     fiore.style.transition='none';
     fiore.style.transform='translate3d('+x+'px,'+y+'px,0) scale(1)';
     fiore.style.opacity='0';
@@ -14666,11 +14871,12 @@ function chiudiTerra(){
         fiore.style.transform='translate3d('+x+'px,'+y+'px,0) scale(22,.6)';
         fiore.style.opacity='0'; },180);
     });
-    setTimeout(()=>el.classList.add('aperto'),150);
+    setTimeout(()=>{ if(el) el.classList.add('aperto'); },150);
   }
 
   window._terraLuce={
     apri(){
+      if(!el||!carta) return;              /* v271.1: non c'e piu niente da aprire */
       el.classList.add('acceso');
       misura();
       let alt=0; try{ alt=carta.getBoundingClientRect().height; }catch(_){}
@@ -14684,6 +14890,7 @@ function chiudiTerra(){
       stato='volo';
     },
     chiudi(){
+      if(!el) return;
       el.classList.add('chiudendo'); el.classList.remove('aperto','acceso');
       setTimeout(()=>{
         el.classList.remove('chiudendo'); el.classList.add('hidden');
@@ -14722,8 +14929,15 @@ function chiudiTerra(){
     txt.addEventListener('focus',()=>setTimeout(tastiera,60));
     txt.addEventListener('blur',()=>{ txt.rows=5; setTimeout(tastiera,80); });
   }
-  /* il velo si tocca e si chiude: ma solo il velo, non la carta */
-  el.addEventListener('click',e=>{ if(e.target===el) chiudiTerra(); });
+  /* il velo si tocca e si chiude: ma solo il velo, non la carta.
+     v271.1: il velo non esiste piu - il pannello azzurro e stato smontato e la
+     Stanza ha preso il suo posto. Senza questa guardia la riga lanciava un
+     TypeError proprio durante l'aggancio degli ascoltatori, e TUTTO cio che
+     veniva agganciato dopo - il tocco del satellite, il selettore dei due modi
+     della Stanza - non veniva agganciato affatto. Un errore muto in coda a un
+     blocco che ne spegne un altro: e la classe di guasto peggiore, perche non
+     assomiglia alla sua causa. L'ha trovato la sonda, non io. */
+  if(el) el.addEventListener('click',e=>{ if(e.target===el) chiudiTerra(); });
 })();
 
 /* ══ IL SATELLITE DELLA SERA (v198) ════════════════════════════════════════
@@ -14825,50 +15039,37 @@ function chiudiTerra(){
   }
   const no=document.getElementById('stanza-no'), ok=document.getElementById('stanza-ok');
   if(no) no.addEventListener('click',()=>{ try{ chiudiStanza(); }catch(_){} });
+  /* ══ v271.1 — i due modi, e le tre vie della foto ═══════════════════════ */
+  try{ document.querySelectorAll('#stanza-modo button').forEach(b=>
+    b.addEventListener('click',()=>{ try{ stanzaModo(b.dataset.modo); }catch(_){} })); }catch(_){}
+  {
+    const cam=document.getElementById('st-file-cam'), lib=document.getElementById('st-file-lib');
+    /* i due input restano nascosti e si aprono dal tocco su un tasto vero: e
+       cosi che iOS apre fotocamera e libreria in modo nativo, e - punto che
+       conta - nessun permesso viene chiesto prima del gesto esplicito. */
+    const via=inp=>{ try{ if(inp){ inp.value=''; inp.click(); } }catch(_){} };
+    const bs=document.getElementById('st-scatta'); if(bs) bs.addEventListener('click',()=>via(cam));
+    const bg=document.getElementById('st-scegli'); if(bg) bg.addEventListener('click',()=>via(lib));
+    [cam,lib].forEach(inp=>{ if(!inp) return;
+      inp.addEventListener('change',()=>{ const f=inp.files&&inp.files[0]; inp.value='';
+        if(f){ const r=_stLeggi(f); if(r&&r.catch) r.catch(()=>{}); } }); });
+    const st=document.getElementById('st-stop');
+    if(st) st.addEventListener('click',()=>{ try{ _stOcrPulisci(); stanzaFase('scelta'); }catch(_){} });
+    const rf=document.getElementById('st-rifai');
+    if(rf) rf.addEventListener('click',()=>{ try{ _stOcrPulisci();
+      const t=document.getElementById('stanza-txt'); if(t) t.value='';
+      stanzaFase('scelta'); }catch(_){} });
+  }
   if(ok) ok.addEventListener('click',()=>{
     try{ const p=raccogliStanza();
       if(p&&p.catch) p.catch(function(e){ try{ regCantiere('errore',{msg:'raccogliStanza: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){} });
     }catch(_){}
   });
 })();
-async function raccogliTerra(){
-  const el=document.querySelector('#terra'); if(!el) return;
-  const txt=el.querySelector('#terra-txt');
-  const testo=String(txt.value||'').trim();
-  if(testo.length<1) return;
-  const ok=el.querySelector('#terra-ok');
-  ok.disabled=true; ok.textContent='Salvo…';
-  /* LA VERSIONE CORRETTA E QUELLA CHE VALE.
-     «testo» e cio che la persona ha davanti dopo aver corretto: e quella che
-     entra nel Diario, che si cerca, che finisce nei backup. La trascrizione
-     come e arrivata resta in «raw» - lo stesso posto in cui il Diario tiene da
-     sempre il parlato grezzo accanto al testo ripulito - e serve solo a poter
-     dire, un anno dopo, cosa aveva letto la macchina e cosa hai cambiato tu.
-     Se non e cambiato niente, raw resta vuoto: non si conservano due copie
-     identiche della stessa frase. */
-  const auto=String(_ocrAuto||'').trim();
-  const daFoto=!!auto;
-  const grezzo=(daFoto&&auto!==testo)?auto:'';
-  try{
-    addDiary(testo,[],[],grezzo,'','' );
-    /* addDiary costruisce la voce: il segno d'origine si mette sulla voce
-       appena nata, ed e sanitizeDiary a garantirgli di sopravvivere al
-       riavvio - la lezione di «dom», imparata alla v200. */
-    if(daFoto&&S.diary&&S.diary[0]) S.diary[0].fonte='ocr';
-    salvaSubito();
-  }catch(e){
-    ok.disabled=false; ok.textContent='Salva nel diario';
-    _ocrAvviso('Non sono riuscito a salvare. Riprova.');
-    try{ regCantiere('errore',{msg:'ocr salva: '+String((e&&e.message)||e).slice(0,120)}); }catch(_){}
-    return;
-  }
-  try{ regCantiere('ocr',{msg:(daFoto?'pagina salvata':'scritta a mano')+' · '+testo.length+' caratteri'}); }catch(_){}
-  ok.textContent='Salva nel diario';
-  chiudiTerra();
-  try{ render(); renderDiary(true); }catch(_){}
-  try{ haptic(); }catch(_){}
-  try{ toast(daFoto?'La pagina e nel diario':'Salvato nel diario'); }catch(_){}
-}
+/* v271.1 — raccogliTerra salvava il testo dritto nel Diario, saltando la
+   raccolta: era giusto per la missione della v271 e non lo e piu. Il suo
+   lavoro adesso lo fa raccogliStanza, che passa da scrittoNelDiario. */
+async function raccogliTerra(){ return; }
 let _seminaBusy=false;
 async function maybeSemina(){
   return;   /* LA SEMINA E CONGELATA (decisione dal campo, 2026-07-20: cinque semi, cinque esalati, zero risposte).
@@ -15576,7 +15777,9 @@ document.querySelectorAll('#seg-model button').forEach(b=>{
     toast(b.dataset.model==='max'?'Motore IA: Opus 5':b.dataset.model==='fast'?'Motore IA: Haiku 4.5':'Motore IA: Sonnet 5');
   };
 });
-{ const sa=document.querySelector('#terra-luce'); if(sa) sa.onclick=(e)=>{ e.stopPropagation(); apriTerra(); };
+/* v271.1 — il satellite azzurro non apre piu una scrittura: dice dove sei.
+   Stessa funzione del bottone «dove sono», non una seconda copia. */
+{ const sa=document.querySelector('#terra-luce'); if(sa) sa.onclick=(e)=>{ e.stopPropagation(); condividiPosizione(); };
   /* ══ v271 — LA RICERCA: aggancio ═══════════════════════════════════════
      «input» e non «keyup»: prende anche l'incolla, il dettato e la × nativa.
      Nessun debounce: il filtro e un indexOf su un array in memoria, e su

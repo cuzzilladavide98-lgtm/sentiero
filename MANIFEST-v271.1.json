@@ -1,0 +1,57 @@
+{
+ "formato": 2,
+ "versione": "v60S.271.1 · 2026-08-20",
+ "generazione": 271001,
+ "cache": "sentiero-v60s-271-1",
+ "ragione": "blu e viola cambiano mestiere: il blu dice dove sei, il viola e l'unica porta della Stanza, e la Stanza raccoglie come il microfono",
+ "file": {
+  "index.html": {
+   "byte": 1258422,
+   "sha256": "9c9959de681c111ed756b4a928c48c49ee94ad8d75a1ff3e19d9e26949edce11",
+   "cambiato": true,
+   "motivo": "il satellite azzurro dice dove sei e riusa la stessa funzione del tasto «dove sono»; il Bagliore Viola e l'unica porta della Stanza; la Stanza assorbe l'OCR con due modi, palette propria e bersagli da 52; Raccogli passa dalla raccolta, quindi da una pagina fotografata possono nascere le cose da fare"
+  },
+  "sw.js": {
+   "byte": 4564,
+   "sha256": "54198a70577ef78e40f84f529510ca3a859f56d47f21a45b68fcf4917b04af3b",
+   "cambiato": true,
+   "motivo": "nome della cache e numero di generazione"
+  },
+  "manifest.json": {
+   "byte": 598,
+   "sha256": "ee31e80c07af0b3b02804875b933377a649e593e2318da4a914193bf26106064",
+   "cambiato": false,
+   "motivo": "invariato"
+  },
+  "privacy.html": {
+   "byte": 18185,
+   "sha256": "2e587d3db02fabaccaeeb215be897d8a5c840e682b21fd75b47fe170c10952ab",
+   "cambiato": true,
+   "motivo": "la foto vive nella stanza; la luce azzurra e la posizione, non un inseguimento"
+  },
+  "guida.html": {
+   "byte": 29530,
+   "sha256": "d6a6d269a53e93b60e3fb7baf3b7cfdefeadf27342d2bdab0a61734a247283e6",
+   "cambiato": true,
+   "motivo": "la luce azzurra non e piu la porta della foto; la stanza ha due modi e Raccogli fa nascere le cose da fare"
+  },
+  "inizia.html": {
+   "byte": 13833,
+   "sha256": "e97325259400315f6d782b338b3b439f6d1defb0612ebe315e36159d5ce9fcf4",
+   "cambiato": false,
+   "motivo": "invariato"
+  },
+  "lingue/base-it.json": {
+   "byte": 13190,
+   "sha256": "702afe9a4d377a4d11c9cc8c3ec4d166b3c97e15ea214c04bd7fcad05717f05a",
+   "cambiato": true,
+   "motivo": "solo per_versione"
+  },
+  "lingue/en.json": {
+   "byte": 21032,
+   "sha256": "004893604704999849f6e2a0764a46d7029aa83ee45df71b81e97b630b1856f3",
+   "cambiato": false,
+   "motivo": "invariato"
+  }
+ }
+}
