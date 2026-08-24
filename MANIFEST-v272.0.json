@@ -9,7 +9,7 @@
   "rate_governor_background": "HTTP 429 dell OCR background entra nello stesso cooldown per-modello del percorso foreground",
   "ui_produzione": "banchi di laboratorio rimossi; Diagnostica mantenuta come strumento di assistenza",
   "aggiornamenti": "la prima scheda dopo update dichiara esplicitamente Major release e riassume i cambiamenti percepibili",
-  "aggiornamenti_scroll": "su viewport basse (incluso iPhone SE 375×647) titolo e Ho letto restano fissi nel foglio; scorrono solo le righe della major release"
+  "aggiornamenti_scroll": "hotfix SE-2: la scheda Major release vive dentro tab-oggi e usa lo stesso #app>main scorrevole; eliminato lo scroll annidato che Safari/iPhone SE non consegnava"
  },
  "file": {
   "LICENSE-Lora-OFL.txt": {
@@ -43,10 +43,10 @@
    "motivo": "asset PWA ripristinato dal ramo verificato"
   },
   "index.html": {
-   "byte": 1311586,
-   "sha256": "f360b8881092ccce5a278929ad5798ad49233b6989771051282c018cfb21bd98",
+   "byte": 1311812,
+   "sha256": "59c252209be3bbc2841b3ae9931fc5b57cbb7358f8b592aa3f28883e5f75400a",
    "cambiato": true,
-   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto, Major release e foglio aggiornamenti scroll-safe su iPhone SE"
+   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto, Major release; hotfix SE-2 sposta aggiornamenti dentro lo scroll nativo di Oggi"
   },
   "inizia.html": {
    "byte": 14541,
@@ -103,10 +103,10 @@
    "motivo": "splash PWA ripristinata dal ramo verificato"
   },
   "sw.js": {
-   "byte": 4957,
-   "sha256": "122df7bf98aa37dcf576f254190a38a23aecf28f5893080a31b76fcd05318be8",
+   "byte": 4997,
+   "sha256": "dca9922138c24199983f1d788ad3423b85c7cad75d20d44286cb5642351e4ad8",
    "cambiato": true,
-   "motivo": "service worker produzione con cache isolata, Gemini bypass e byte di release-fix per propagare il foglio aggiornamenti scroll-safe"
+   "motivo": "service worker produzione con cache isolata e Gemini bypass; byte hotfix SE-2 per propagare lo spostamento aggiornamenti nello scroll nativo di Oggi"
   },
   "lingue/base-it.json": {
    "byte": 15373,

@@ -614,21 +614,19 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
    striscia fissa in cima coprirebbe l'anello e cambierebbe l'app a tutti per
    avvisare alcuni. Occupa una riga sola, si legge, e non chiede di essere chiusa
    perche l'unico modo di chiuderla e fare la cosa che salva il diario. */
-/* v272.0 release fix — il foglio aggiornamenti puo essere molto piu alto
-   di un iPhone SE. Prima era un figlio flex non riducibile FUORI dal main che
-   scorre: con una major release lunga il tasto «Ho letto» finiva sotto la
-   viewport e nessun gesto su Oggi poteva raggiungerlo. Il foglio ora ha una
-   propria altezza massima; scorrono SOLO le righe, mentre titolo e tasto
-   restano sempre raggiungibili. */
-#novita{margin:10px 14px 0;padding:14px 16px;border-radius:14px;
-  background:rgba(232,168,76,.07);border:.5px solid rgba(232,168,76,.30);
-  display:flex;flex-direction:column;min-height:0;max-height:min(72dvh,460px)}
+/* v272.0 hotfix SE-2 — il foglio aggiornamenti vive DENTRO #tab-oggi,
+   quindi usa lo stesso #app>main che gia scorre su Safari/iPhone. Il primo
+   hotfix aveva creato un secondo overflow annidato sulle sole righe: corretto
+   sulla carta, ma il video reale dell'iPhone SE ha mostrato che quel gesto non
+   veniva consegnato come scroll. Qui non c'e piu uno scroll dentro lo scroll. */
+#novita{margin:10px 0 14px;padding:14px 16px;border-radius:14px;
+  background:rgba(232,168,76,.07);border:.5px solid rgba(232,168,76,.30)}
 #novita.hidden{display:none}
-#novita .nov-testa{font-family:var(--serif);font-size:17px;color:var(--t1);margin-bottom:9px;flex:0 0 auto}
-#novita ul{margin:0;padding:0 4px 0 18px;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#novita .nov-testa{font-family:var(--serif);font-size:17px;color:var(--t1);margin-bottom:9px}
+#novita ul{margin:0;padding:0 4px 0 18px;overflow:visible}
 #novita li{font-size:14.5px;line-height:1.5;color:var(--t2);margin:0 0 6px}
-#novita button{margin-top:8px;min-height:44px;padding:0 16px;border:none;background:none;
-  color:var(--accent);font:500 15px/1 inherit;flex:0 0 auto}
+#novita button{display:block;width:100%;margin-top:8px;min-height:48px;padding:0 16px;border:none;background:none;
+  color:var(--accent);font:500 15px/1 inherit}
 body.theme-carta #novita{background:rgba(122,86,18,.07);border-color:rgba(122,86,18,.40)}
 #riavvia{display:flex;align-items:center;gap:10px;
   margin:8px 14px 0;padding:9px 12px;border-radius:12px;
@@ -2771,11 +2769,6 @@ body.theme-lcd #mic.pieno svg{animation:none !important;filter:none !important}
        dire niente. Qui, dopo un aggiornamento, compare una volta sola cosa e
        cambiato - in italiano, senza numeri di versione e senza parole da
        programmatori - e sparisce appena la persona dice che ha letto. -->
-  <div id="novita" class="hidden">
-    <div class="nov-testa">Cosa è cambiato</div>
-    <ul id="nov-righe"></ul>
-    <button type="button" id="nov-ok">Ho letto</button>
-  </div>
   <div id="riavvia" class="hidden" role="status">
     <span>C'è una versione nuova. Chiudi e riapri Sentiero: è più sicuro.</span>
   </div>
@@ -2799,6 +2792,16 @@ body.theme-lcd #mic.pieno svg{animation:none !important;filter:none !important}
   <main>
     <!-- ===== OGGI ===== -->
     <div id="tab-oggi">
+      <!-- v272.0 hotfix SE-2 — gli aggiornamenti appartengono a Oggi e devono
+           scorrere CON Oggi. Tenerli come fratello di <main> li sottraeva al
+           solo scroll verticale affidabile dell'app: su iPhone SE il foglio
+           restava immobile e «Ho letto» era irraggiungibile. Nessun secondo
+           contenitore di scroll: una pagina, un solo gesto verticale. -->
+      <div id="novita" class="hidden">
+        <div class="nov-testa">Cosa è cambiato</div>
+        <ul id="nov-righe"></ul>
+        <button type="button" id="nov-ok">Ho letto</button>
+      </div>
       <div id="giorno-bar">
         <span id="day-line"></span>
       </div>
