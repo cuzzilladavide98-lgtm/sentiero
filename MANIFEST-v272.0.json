@@ -9,7 +9,8 @@
   "rate_governor_background": "HTTP 429 dell OCR background entra nello stesso cooldown per-modello del percorso foreground",
   "ui_produzione": "banchi di laboratorio rimossi; Diagnostica mantenuta come strumento di assistenza",
   "aggiornamenti": "la prima scheda dopo update dichiara esplicitamente Major release e riassume i cambiamenti percepibili",
-  "aggiornamenti_scroll": "hotfix SE-2: la scheda Major release vive dentro tab-oggi e usa lo stesso #app>main scorrevole; eliminato lo scroll annidato che Safari/iPhone SE non consegnava"
+  "aggiornamenti_scroll": "hotfix SE-2: la scheda Major release vive dentro tab-oggi e usa lo stesso #app>main scorrevole; eliminato lo scroll annidato che Safari/iPhone SE non consegnava",
+  "gemini_connessione_hotfix": "hotfix 24/08: endpoint Interactions riallineato a /v1beta/interactions; Prova connessione usa il modello a bassa latenza gemini-3.5-flash-lite con 30 s e distingue timeout da rete; base linguistica online usa cache-buster v6 e no-store"
  },
  "file": {
   "LICENSE-Lora-OFL.txt": {
@@ -43,10 +44,10 @@
    "motivo": "asset PWA ripristinato dal ramo verificato"
   },
   "index.html": {
-   "byte": 1311812,
-   "sha256": "59c252209be3bbc2841b3ae9931fc5b57cbb7358f8b592aa3f28883e5f75400a",
+   "byte": 1312078,
+   "sha256": "f6e48557356e2c48fb157583e4ea45f228b86d57bd9066795c6d1ba183939a83",
    "cambiato": true,
-   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto, Major release; hotfix SE-2 sposta aggiornamenti dentro lo scroll nativo di Oggi"
+   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto, Major release; hotfix SE-2 sposta aggiornamenti dentro lo scroll nativo di Oggi; hotfix Gemini: endpoint v1beta, test connessione Flash-Lite 30s, messaggio timeout corretto, refresh base linguistica v6"
   },
   "inizia.html": {
    "byte": 14541,
@@ -103,16 +104,16 @@
    "motivo": "splash PWA ripristinata dal ramo verificato"
   },
   "sw.js": {
-   "byte": 4997,
-   "sha256": "dca9922138c24199983f1d788ad3423b85c7cad75d20d44286cb5642351e4ad8",
+   "byte": 5165,
+   "sha256": "636d6d6e3a286782104b6b163cad65cd8f3925ab90c37bb486cc880b99fe74f3",
    "cambiato": true,
-   "motivo": "service worker produzione con cache isolata e Gemini bypass; byte hotfix SE-2 per propagare lo spostamento aggiornamenti nello scroll nativo di Oggi"
+   "motivo": "service worker produzione con cache isolata e Gemini bypass; byte hotfix SE-2 per propagare lo spostamento aggiornamenti nello scroll nativo di Oggi; byte hotfix Gemini per propagare endpoint/test/base aggiornati"
   },
   "lingue/base-it.json": {
    "byte": 15373,
    "sha256": "c83c184ffe0cd29c9571e487d36e11b38e8a19744935873c6e3e790e024ecc27",
    "cambiato": true,
-   "motivo": "base linguistica v6 allineata a v60S.272.0, provider Gemini e policy di voce condivisa"
+   "motivo": "base linguistica v6 allineata a v60S.272.0, provider Gemini e policy di voce condivisa; incluso esplicitamente nel hotfix per sostituire eventuale copia pubblicata con timbro precedente"
   },
   "lingue/en.json": {
    "byte": 22093,

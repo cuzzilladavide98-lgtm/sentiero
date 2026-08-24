@@ -9849,6 +9849,7 @@ function _baseValida(b){
    La base valida si tiene nello stato, quindi finisce nei backup: chi cambia
    telefono non riparte da zero culturalmente. */
 const BASE_ORIGINE='lingue/base-it.json';
+const BASE_CACHE_TAG='v6-2026-08-24-production-gemini-release';
 const BASE_OGNI_MS=1000*60*60*24*7;     /* una volta a settimana basta e avanza */
 let _BASE_ULTIMO_ESITO={esito:'non provata',canale:'',quando:0};
 async function aggiornaBaseLinguistica(forza){
@@ -9862,8 +9863,8 @@ async function aggiornaBaseLinguistica(forza){
        arrivare dalla cache dell'app shell. Online usiamo invece un URL timbrato
        per non mescolare una generazione vecchia con HTML nuovo. */
     const online=!(typeof navigator!=='undefined'&&navigator&&navigator.onLine===false);
-    const url=online?(BASE_ORIGINE+'?g='+encodeURIComponent(_baseGenerazione())):BASE_ORIGINE;
-    const r=await fetch(url,{cache:online?'reload':'force-cache'});
+    const url=online?(BASE_ORIGINE+'?g='+encodeURIComponent(_baseGenerazione())+'&b='+encodeURIComponent(BASE_CACHE_TAG)):BASE_ORIGINE;
+    const r=await fetch(url,{cache:online?'no-store':'force-cache'});
     if(!r||!r.ok){ _BASE_ULTIMO_ESITO={esito:'non raggiungibile',canale:online?'rete':'cache-shell',quando:Date.now()}; return {esito:'non raggiungibile'}; }
     const j=await r.json();
     const b={
@@ -10586,7 +10587,7 @@ function streamInto(el,text,opt){
    sono deprecati. Il ragionamento si esprime soltanto come `thinking_level`.
    3.7 Flash non accetta `minimal`: l'adapter lo promuove a `low` se diventa
    fallback di un task economico. */
-const GEMINI_ENDPOINT='https://generativelanguage.googleapis.com/v1/interactions';
+const GEMINI_ENDPOINT='https://generativelanguage.googleapis.com/v1beta/interactions';
 const GEMINI_MEDIA_ENDPOINT='https://generativelanguage.googleapis.com/v1beta/interactions';
 const AI_MAX_CONCURRENCY=2;
 let _aiQueue=[],_aiActive=0,_aiSeq=0;
@@ -16919,13 +16920,14 @@ document.querySelector('#btn-testkey').onclick=async()=>{
   if(field!==GEMINI_KEY) setGeminiKey(field);
   if(!GEMINI_KEY){ out.textContent='Nessuna chiave Gemini salvata: incollala qui sopra.'; return; }
   out.textContent='Provo la connessione…';
-  const r=await aiCall({task:'connection-test',user:'Rispondi soltanto: ok',maxOutputTokens:8,reasoning:'minimal',timeout:15000,priority:60});
+  const r=await aiCall({task:'connection-test',models:['gemini-3.5-flash-lite'],user:'Rispondi soltanto: ok',maxOutputTokens:8,reasoning:'minimal',timeout:30000,priority:60});
   if(!r.err){ out.textContent='✓ Connessione attiva · '+r.model; try{ sAppear(0); }catch(_){} }
   else if(r.err==='chiave') out.textContent='✗ La chiave non è accettata dal progetto Gemini. Ricopiala da Google AI Studio e riprova.';
   else if(r.err==='quota') out.textContent='✗ Quota giornaliera del progetto esaurita. Sentiero Base continua a funzionare.';
   else if(r.err==='limite') out.textContent='✗ Limite temporaneo di richieste. Riprova più tardi: Sentiero Base continua a funzionare.';
   else if(r.err==='modello') out.textContent='✗ I modelli configurati non risultano disponibili per questo progetto.';
-  else if(r.err==='offline'||r.err==='rete'||r.err==='timeout') out.textContent='✗ Gemini non è raggiungibile dalla rete in questo momento.';
+  else if(r.err==='offline'||r.err==='rete') out.textContent='✗ Gemini non è raggiungibile dalla rete in questo momento.';
+  else if(r.err==='timeout') out.textContent='✗ Gemini non ha risposto entro 30 secondi. La chiave può essere valida: riprova tra poco.';
   else if(r.err==='occupato') out.textContent='✗ Gemini è momentaneamente indisponibile. Riprova più tardi.';
   else out.textContent='✗ Connessione non riuscita ('+r.err+').';
   renderSettings();
