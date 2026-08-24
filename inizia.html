@@ -168,9 +168,8 @@ a{color:var(--accent)}
                 stroke-dasharray="132" stroke-dashoffset="95" transform="rotate(-90 26 26)" stroke-linecap="round"/>
         <path d="M26 19v9M22 24.5a4 4 0 0 0 8 0" stroke="rgba(245,242,234,.8)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
       </svg>
-      <div><strong>Tieni premuto il cerchio e parla.</strong><br>
-      Non toccarlo e basta: tieni giù il dito mentre parli, e alzalo quando hai
-      finito. Se preferisci scrivere, sotto c'è dove.</div>
+      <div><strong>Tocca il cerchio e parla. Toccalo di nuovo per fermare.</strong><br>
+      Non devi tenere il dito sullo schermo. Finché ascolta compare anche <strong>ferma</strong>. Se preferisci scrivere, sotto c'è dove.</div>
     </div>
     <div class="primo-riga">
       <svg class="primo-dis" width="46" height="46" viewBox="0 0 52 52" aria-hidden="true">
@@ -199,25 +198,27 @@ a{color:var(--accent)}
   quattro passaggi, indicandoti i tasti uno per uno. Si può saltare.</p>
 
   <a class="via secondaria" href="./guida.html">Come si usa, per intero</a>
-  <p class="calmo" style="text-align:center;font-size:15px">Otto capitoli brevi.
+  <p class="calmo" style="text-align:center;font-size:15px">Tredici capitoli brevi.
   Puoi mandarlo a chi ti chiede aiuto, invece di spiegarlo tu.</p>
 
-  <h2>Se hai una chiave</h2>
-  <p class="calmo">C'è una seconda marcia, e si chiama <em>Sentiero &mdash; versione
-  Generativa</em>. Con una chiave di Anthropic incollata nelle impostazioni, le
-  cose da fare nascono da sole mentre parli, con il giorno e l'ora; la domanda
-  della sera te la scrive un modello sui tuoi ultimi giorni; al mattino trovi una
-  lettura più larga.</p>
-  <p class="calmo">C'è una cosa che solo quella versione sa fare, ed è giusto
-  dirla: la <em>distillazione del periodo</em>. Dopo settimane di tracce scrive
-  una pagina sola che tiene insieme un mese e ne tira un senso. Le altre voci
-  nominano un fatto in due frasi, e quello Sentiero lo fa da sé; un mese intero
-  in un paragrafo, no.</p>
-
-  <p class="calmo">Il consumo lo paghi tu, direttamente ad Anthropic: noi non
-  vediamo la chiave e non ci passa in mezzo niente. Ed è una scelta, non un
-  seguito obbligato: <strong>senza chiave l'app si chiama Sentiero e funziona per
-  intero.</strong></p>
+  <h2>Se vuoi la versione Generativa</h2>
+  <p class="calmo"><em>Sentiero &mdash; Generativa</em> è una seconda marcia opzionale.
+  Con una chiave Gemini personale, le cose da fare possono nascere dal parlato con
+  giorno e ora; il Frutto, il Sussurro e le altre voci possono usare Gemini; nella
+  Stanza puoi anche fotografare una pagina, correggere la trascrizione e raccoglierla.</p>
+  <p class="calmo"><strong>La Gemini API richiede almeno 18 anni.</strong></p>
+  <p class="calmo">Per creare la chiave apri <strong>Google AI Studio</strong>, entra in
+  <strong>API Keys</strong>, crea una nuova chiave nel tuo progetto e copiala in
+  <strong>Altro → La versione Generativa</strong>. Le nuove chiavi create oggi in AI Studio
+  sono auth key. Non mettere mai la chiave in GitHub, in chat o dentro un backup.</p>
+  <a class="via secondaria" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Apri Google AI Studio</a>
+  <p class="calmo">La chiave resta sul dispositivo e non entra nel backup, ma questa è
+  comunque una PWA client-side: non offre la protezione di un segreto dietro un server.
+  <strong>Senza chiave Sentiero Base continua a funzionare.</strong></p>
+  <p class="calmo"><strong>Se arrivavi dalla precedente versione Generativa:</strong> la vecchia chiave non viene convertita in una chiave Gemini. Inseriscine una nuova qui sopra; i tuoi dati e i backup restano indipendenti dalla chiave.</p>
+  <p class="calmo">Se la funzione Generativa viene resa disponibile ad altri utenti,
+  controlla prima i termini Gemini applicabili. Nello SEE Google richiede Paid Services
+  per gli API Client messi a disposizione degli utenti.</p>
 
   <h2>Due parole oneste</h2>
   <p class="calmo">Sentiero legge quello che scrivi e ti risponde, ma non è un

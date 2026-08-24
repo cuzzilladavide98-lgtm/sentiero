@@ -1,4 +1,5 @@
-const CACHE = 'sentiero-v60s-271-1';
+const CACHE = 'sentiero-v60s-272-0';
+const PROD_CACHE_PREFIX = 'sentiero-v60s-';
 /* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
    blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
    sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui
@@ -14,7 +15,8 @@ const ASSETS = ['./', './index.html', './manifest.json',
   './lingue/en.json',
   './lingue/base-it.json',   /* v267: la base linguistica viaggia con l'app. Offline si usa questa; con la rete si aggiorna da qui. */    /* v218: i pacchetti delle lingue viaggiano con l'app: offline dal primo avvio */
   './privacy.html',
-  './guida.html'];     /* v221: l'informativa viaggia con l'app. Senza, chi la apre
+  './guida.html',
+  './inizia.html'];     /* v221: l'informativa viaggia con l'app. Senza, chi la apre
                             offline si vedrebbe servire index.html al posto suo dal
                             ripiego qui sotto - e un'informativa che non si apre non
                             e un'informativa. */
@@ -36,7 +38,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith(PROD_CACHE_PREFIX) && k !== CACHE).map(k => caches.delete(k))))
   );
   self.clients.claim();
 });
@@ -44,7 +46,7 @@ self.addEventListener('activate', e => {
 /* v269.8 — «CHI STA SERVENDO QUESTA PAGINA?»
    Una domanda sola, una risposta sola, nessun protocollo. La pagina chiede la
    generazione di chi la serve; il worker la ricava dal nome della propria cache
-   (sentiero-v60s-270-1 -> 271001). Serve a distinguere, nel nastro, una sessione
+   (sentiero-v60s-272-0 -> 272000). Serve a distinguere, nel nastro, una sessione
    servita dalla generazione nuova da una servita da quella vecchia rimasta al
    comando. Un worker di prima di questa versione non risponde: nel nastro resta
    zero, e anche quello dice qualcosa. */
@@ -62,7 +64,10 @@ self.addEventListener('message', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  if (url.includes('api.anthropic.com')) return; // l'IA va sempre in rete
+  try {
+    const u = new URL(url);
+    if (u.hostname === 'generativelanguage.googleapis.com') return; // l'IA non entra mai nella cache PWA
+  } catch (_) {}
 
   // App shell: network-first, così le nuove versioni arrivano da sole; offline si usa la cache.
   if (e.request.mode === 'navigate' || url.endsWith('index.html')) {
@@ -71,14 +76,14 @@ self.addEventListener('fetch', e => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
         return res;
-      }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+      }).catch(() => caches.open(CACHE).then(c => c.match(e.request).then(r => r || c.match('./index.html'))))
     );
     return;
   }
 
   // Risorse statiche: cache-first con aggiornamento in background.
   e.respondWith(
-    caches.match(e.request).then(cached => {
+    caches.open(CACHE).then(c => c.match(e.request)).then(cached => {
       const net = fetch(e.request).then(res => {
         if (res.ok && e.request.method === 'GET') {
           const copy = res.clone();

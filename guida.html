@@ -7,14 +7,10 @@
 <meta name="description" content="Come si usa Sentiero, un pezzo alla volta, con le parole che si leggono davvero sullo schermo.">
 <meta name="theme-color" content="#070a09">
 <link rel="icon" href="./icon-192.png">
-<!-- v227 — RISCRITTA SULL'INTERFACCIA VERA.
-     La prima versione di questa pagina descriveva un'app che non esiste: un
-     cerchio da tenere premuto in mezzo allo schermo, un tasto «Altro», una lista
-     con i pallini. Sentiero non e fatto cosi. Sopra c'e un cielo, sotto c'e un
-     foglio che si tira su e giu, il microfono e il grumo di luci nel cielo, le
-     impostazioni stanno dietro i tre puntini in alto.
-     Ogni parola qui dentro e presa da una schermata vera. Se una frase non si
-     legge sullo schermo, non deve stare qui. -->
+<!-- v274 — QUATTRO LUOGHI, UNA SOLA NAVIGAZIONE.
+     Parla, Oggi, Diario e Altro sono le quattro destinazioni persistenti in
+     basso. Non esistono piu scorciatoie duplicate alle impostazioni e il
+     microfono non richiede gesture: tocco per iniziare, tocco per fermare. -->
 <style>
 :root{
   --bg:#070a09; --t1:#F5F2EA; --t2:rgba(245,242,234,.62); --t3:rgba(245,242,234,.46);
@@ -113,27 +109,24 @@ a{color:var(--accent)}
   <!-- ═══ 1 ═══ -->
   <h2 id="uno"><span class="n">CAPITOLO 1</span>Com’è fatto lo schermo</h2>
 
-  <p>Sentiero non è una lista con dei menù. È <strong>un cielo</strong>, e sotto
-  <strong>un foglio</strong> che si tira su e giù con il dito.</p>
+  <p>Sentiero ha <strong>quattro luoghi</strong>, sempre nello stesso ordine
+  nella barra in basso: <strong>Parla, Oggi, Diario, Altro</strong>.</p>
 
   <div class="schermo">
     <div class="sch-cielo"><b></b></div>
     <div class="sch-foglio">
-      <div class="sch-grip"></div>
-      <div class="sch-eyebrow">Mercoledì</div>
-      <div class="sch-data">12 <i>agosto</i></div>
+      <div class="sch-eyebrow">PARLA · OGGI · DIARIO · ALTRO</div>
+      <div class="sch-data">un tocco <i>e sei dove vuoi</i></div>
     </div>
-    <div class="sch-nota">sopra il cielo · sotto il foglio · la linguetta grigia si trascina</div>
+    <div class="sch-nota">la barra in basso è l’unica navigazione principale</div>
   </div>
 
   <ul>
-    <li><strong>Il cielo</strong>, in alto. In mezzo c’è un <strong>grumo di
-    luci</strong>: quello è il microfono.</li>
-    <li><strong>Il foglio</strong>, sotto. Si tira su per vedere tutto, si spinge
-    giù per lasciare spazio al cielo. La linguetta grigia in cima si trascina.</li>
-    <li><strong>I tre puntini</strong> <span class="tasto">•••</span> in alto a
-    destra: da lì si aprono le impostazioni. Li trovi anche accanto alla scritta
-    <em>Diario</em>, dove dicono <span class="tasto">••• Altro</span>.</li>
+    <li><strong>Parla</strong>: il cielo e il cerchio del microfono.</li>
+    <li><strong>Oggi</strong>: le cose di oggi e quelle in programma.</li>
+    <li><strong>Diario</strong>: quello che hai scritto o detto, con la ricerca.</li>
+    <li><strong>Altro</strong>: impostazioni, dati, versione Generativa e guida.
+    Non ci sono altri tasti nascosti per arrivarci.</li>
   </ul>
 
   <p class="calmo">Sotto la data c’è una riga come <em>«1 / 18 · il cerchio si
@@ -142,14 +135,14 @@ a{color:var(--accent)}
   <!-- ═══ 2 ═══ -->
   <h2 id="due"><span class="n">CAPITOLO 2</span>Parlare, o scrivere</h2>
 
-  <p><strong>Tieni premuto il grumo di luci</strong> in mezzo al cielo e parla.
-  Non toccarlo e basta: tieni giù il dito mentre parli, e alzalo quando hai
-  finito. Quello che hai detto diventa la voce di oggi.</p>
+  <p><strong>Tocca il grumo di luci</strong> in mezzo al cielo e parla.
+  <strong>Toccalo di nuovo quando hai finito.</strong> Quello che hai detto diventa la voce di oggi.</p>
 
-  <p class="calmo">Mentre il foglio è abbassato, sopra il cielo compare una riga
-  che ti dice cosa potresti dire — per esempio <em>«se qualcosa ti è costato,
-  nominalo»</em>. Non è un ordine: è un appiglio per le sere in cui non sai da
-  dove cominciare.</p>
+  <p class="calmo">Non devi tenere premuto e non devi fare swipe. Un tocco apre il microfono e puoi togliere subito il dito; un altro tocco lo ferma. Dopo compaiono <span class="tasto">Butta</span> e <span class="tasto">Tieni</span>. Durante la registrazione resta visibile anche <span class="tasto">ferma</span> come controllo esplicito.</p>
+
+  <p class="calmo">Nella schermata <strong>Parla</strong> può comparire una riga
+  che ti suggerisce da dove cominciare — per esempio <em>«se qualcosa ti è costato,
+  nominalo»</em>. Non è un ordine: è solo un appiglio.</p>
 
   <p>Se preferisci scrivere, si scrive: vale esattamente uguale. Su alcuni
   telefoni la dettatura non c’è proprio, e l’app te lo dice da sola.</p>
@@ -240,7 +233,7 @@ a{color:var(--accent)}
 
   <h3>Aggiungerne, toglierne</h3>
   <ul>
-    <li>Tre puntini <span class="tasto">•••</span> → scendi fino a
+    <li><strong>Altro</strong> nella barra in basso → scendi fino a
     <strong>Le cose che si ripetono</strong>.</li>
     <li>Scrivi nel campo, scegli <span class="tasto">Ricorrente</span> e i giorni
     (i cerchietti <strong>L M M G V S D</strong>), oppure
@@ -451,8 +444,6 @@ a{color:var(--accent)}
     cosa, l’orario spesso no.</li>
     <li><strong>La riga della sera la scrive un modello</strong> invece del
     motore di casa.</li>
-    <li><strong>La domanda della sera</strong> è scritta sui tuoi ultimi giorni,
-    invece che scelta fra quelle pronte.</li>
     <li><strong>Il desiderio</strong> esiste solo qui (capitolo 9).</li>
     <li><strong>La distillazione del periodo</strong>: nel diario compare
     <em>«Gli ultimi giorni hanno lasciato qualcosa. Vuoi che li rilegga e ne
@@ -461,19 +452,38 @@ a{color:var(--accent)}
     nemmeno.</li>
   </ul>
 
-  <h3>Quanto costa, e come si mette</h3>
-  <p class="calmo">Il consumo lo paghi tu, direttamente ad Anthropic, con un tuo
-  account. La chiave resta sul tuo telefono e nessun altro la vede. Si toglie
-  quando vuoi e non perdi niente di quello che hai scritto.</p>
-  <ul>
-    <li>Tre puntini <span class="tasto">•••</span> → <strong>La versione Generativa</strong>.</li>
-    <li>Incolla la chiave (comincia per <em>sk-ant-</em>).</li>
-    <li><span class="tasto">Salva chiave</span>, poi <span class="tasto">Prova connessione</span>.</li>
-  </ul>
-  <p class="calmo">In fondo alle impostazioni c’è scritto quale delle due stai
-  usando: <em>Sentiero</em> oppure <em>Sentiero — versione Generativa</em>.</p>
+  <h3>Come si mette</h3>
+  <p class="calmo"><strong>Per usare Gemini API devi avere almeno 18 anni.</strong> La chiave si crea in <strong>Google AI Studio</strong> e si incolla
+  soltanto dentro Sentiero. Non mandarla a nessuno, non incollarla in chat e non
+  salvarla nel repository. La chiave resta separata dal diario e non entra nel backup:
+  su un telefono nuovo la inserisci di nuovo.</p>
+  <ol>
+    <li>Apri <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio → API Keys</a>.</li>
+    <li>Se serve, importa o crea il progetto Google Cloud che vuoi usare. Per un API Client reso disponibile a utenti nello SEE, i termini Google richiedono un progetto con <strong>fatturazione attiva</strong> / Paid Services.</li>
+    <li>Premi <strong>Create API key</strong>. Le nuove chiavi create in AI Studio sono auth key; evita vecchie Standard key non migrate.</li>
+    <li>In Sentiero apri <strong>Altro → La versione Generativa</strong>.</li>
+    <li>Incolla la chiave → <span class="tasto">Salva chiave</span> → <span class="tasto">Prova connessione</span>.</li>
+  </ol>
+  <p class="calmo">Quando la connessione è attiva, in fondo alle impostazioni leggi
+  <em>Sentiero — Generativa</em>. Togliendo la chiave torni immediatamente a Sentiero Base.</p>
+  <p class="calmo"><strong>Se stai aggiornando dalla vecchia Generativa:</strong> la chiave della precedente versione Generativa non viene riutilizzata né esportata. Crea o inserisci una chiave Gemini; il diario e gli altri dati restano nello stesso stato di Sentiero.</p>
+  <p class="calmo"><strong>Massimo, Bilanciato, Veloce.</strong> Massimo privilegia la qualità e per le foto difficili può lasciare proseguire Gemini in background; Bilanciato è l'impostazione consigliata per l'uso quotidiano; Veloce riduce ragionamento e risoluzione per abbassare attesa e consumo.</p>
+  <div class="avviso">
+    <strong>Una chiave in una PWA non è un segreto server-side</strong>
+    <p>Sentiero non la scrive nel codice e non la mette nei backup, ma il browser deve comunque poterla leggere per chiamare Gemini. Google raccomanda un backend/proxy per una distribuzione di produzione. Il fatto che ogni persona usi la propria chiave evita di distribuire una chiave centrale di Sentiero, ma non equivale alla protezione di un backend.</p>
+  </div>
+
+  <div class="avviso">
+    <strong>OLED e LCD non sono chiaro e scuro</strong>
+    <p>OLED usa la luce del display come parte del paesaggio. LCD parte dalla stessa struttura ma sottrae l’emissione: niente pagina bianca, niente bloom o vetri luminosi. Il supporto è grafite opaca; stelle, cerchio e giardino diventano segni e pigmento. LCD quindi non è una modalità chiara: è una simulazione riflettente scura.</p>
+  </div>
 
   <!-- ═══ 11 ═══ -->
+  <div class="avviso">
+    <strong>L’ensō del mese si conserva da solo</strong>
+    <p>Quando un mese si chiude, il suo ensō compare nel capitolo mensile e viene archiviato sul dispositivo. Non devi fare doppi tocchi né ricordarti un pulsante.</p>
+  </div>
+
   <h2 id="undici"><span class="n">CAPITOLO 11</span>Portare via tutto</h2>
 
   <p>Quello che scrivi sta solo sul tuo telefono. Nessun server, nessun account.
@@ -481,7 +491,7 @@ a{color:var(--accent)}
   quella che ti fai tu.</strong></p>
 
   <ul>
-    <li>Tre puntini <span class="tasto">•••</span> → in fondo, <strong>Dati</strong>.</li>
+    <li><strong>Altro</strong> nella barra in basso → in fondo, <strong>Dati</strong>.</li>
     <li><span class="tasto">Esporta backup</span> salva un file tuo.</li>
     <li>Sul telefono nuovo, <span class="tasto">Importa</span> lo rimette dentro.</li>
   </ul>
@@ -498,7 +508,7 @@ a{color:var(--accent)}
 
   <h3>Una voce meccanica dice «Fatto» quando spunto una cosa</h3>
   <p class="calmo">È la voce del telefono, e <strong>di default è spenta</strong>.
-  Se ti parla, qualcuno l’ha accesa: tre puntini <span class="tasto">•••</span> →
+  Se ti parla, qualcuno l’ha accesa: <strong>Altro</strong> nella barra in basso →
   <strong>La voce che legge ad alta voce</strong>, e spegnila.</p>
 
   <h3>Il giardino non si apre</h3>
@@ -515,8 +525,8 @@ a{color:var(--accent)}
   Tocca di nuovo dove sono per mandarlo»</em>. Tocca una seconda volta.</p>
 
   <h3>Non trovo le impostazioni</h3>
-  <p class="calmo">I <strong>tre puntini</strong> in alto a destra, oppure
-  <span class="tasto">••• Altro</span> accanto a <em>Diario</em>.</p>
+  <p class="calmo">Tocca <strong>Altro</strong>, la quarta voce della barra in basso.
+  È l’unico ingresso alle impostazioni.</p>
 
   <h3>Non capisce quello che dico</h3>
   <p class="calmo">Senza chiave l’app ragiona con delle regole e non capisce

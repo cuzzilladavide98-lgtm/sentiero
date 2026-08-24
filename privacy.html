@@ -91,8 +91,9 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
     <li>Non c'è pubblicità, non ci sono statistiche, non c'è nessun cookie di terzi.</li>
     <li>Se cancelli l'app, o cancelli i dati del sito dalle impostazioni del
     browser, non resta niente da nessuna parte. Non c'è una copia altrove da chiedere indietro.</li>
-    <li>Dalle impostazioni di Sentiero puoi salvare tutto in un file tuo, quando vuoi.</li>
+    <li>Dalle impostazioni di Sentiero puoi salvare in un file tuo i dati canonici del diario, quando vuoi. La chiave Gemini resta esclusa apposta.</li>
   </ul>
+  <p class="nota">A fine mese Sentiero conserva anche una copia grafica dell’ensō nella memoria locale dell’app. È un’immagine derivata dai dati del capitolo mensile: non entra nel backup perché può essere ricreata automaticamente dagli stessi dati dopo un’importazione.</p>
   <p class="nota">Quella memoria serve a far funzionare l'app che hai aperto tu:
   senza, un diario non potrebbe ricordare niente. Per questo non trovi la
   finestrella dei cookie &mdash; non perché ce la siamo dimenticata.</p>
@@ -132,22 +133,25 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   </div>
 
   <h2>Se usi la versione Generativa</h2>
-  <p>C'è una seconda marcia che si accende <strong>solo</strong> se incolli nelle
-  impostazioni una chiave di Anthropic che hai preso tu, con un tuo account.
-  Da quel momento, per le funzioni che la usano, il testo che serve a rispondere
-  &mdash; le tue righe di diario, le cose da fare &mdash; viene mandato a
-  <strong>api.anthropic.com</strong> e la risposta torna indietro.</p>
+  <p>La seconda marcia si accende <strong>solo</strong> se incolli nelle
+  impostazioni una chiave Gemini che hai creato tu nel tuo progetto Google.
+  Quando una funzione generativa serve davvero, Sentiero invia direttamente a
+  <strong>generativelanguage.googleapis.com</strong> soltanto il contenuto
+  necessario a quella funzione e riceve la risposta. Non c'è un server di
+  Sentiero nel mezzo.</p>
   <ul>
-    <li>La chiave non è mai precompilata e non parte da qui: la incolli tu.</li>
-    <li>La chiave resta sul tuo telefono, e non esce nemmeno quando esporti i tuoi dati: il file di backup la lascia vuota apposta, perché è il file che poi si sposta altrove.</p>
-        <p>Se accendi la voce dentro il telefono C'è un'altra strada, e non ha bisogno di nessuna chiave: puoi far scaricare a Sentiero una voce che vive dentro il telefono. La prima volta, e solo quella, l'app va a prendere due cose: il programma che la fa funzionare da <b>esm.run</b> e la voce vera e propria da <b>huggingface.co</b>. Sono due indirizzi che vedono che qualcuno sta scaricando, come farebbe qualunque sito da cui scarichi qualcosa: non ricevono nulla di tuo, perché in quel momento non è ancora successo niente. Da lì in avanti la voce resta nel telefono e funziona anche in aereo, e <b>quello che scrivi non esce mai</b>: le tue parole non vengono mandate da nessuna parte, nemmeno la prima volta. Se la spegni, quelle due chiamate non si fanno più. Io non la vedo, non passa da me.</li>
-    <li>Quel passaggio è fra te e Anthropic, sul tuo account e alle condizioni
-    che hai accettato con loro. Anthropic ha sede negli Stati Uniti.</li>
-    <li>Se togli la chiave, quel passaggio smette. <strong>Senza chiave, Sentiero
-    funziona per intero</strong> e non esce niente.</li>
+    <li>La chiave non è precompilata e non viene mai chiesta in chat: la inserisci tu nell'app. Google AI Studio crea oggi nuove chiavi come <em>auth key</em>; le vecchie Standard key devono essere migrate secondo le scadenze indicate da Google.</li>
+    <li>La chiave è conservata separatamente dallo stato del diario sul dispositivo. Non entra nei backup, negli export o nel registro diagnostico. Esportare o importare i dati sullo stesso dispositivo non la cancella e non la sostituisce.</li>
+    <li>Resta comunque una chiave in un'app client-side: non ha la protezione di un backend. Chi controlla il dispositivo o riesce a eseguire codice nella stessa pagina potrebbe leggerla. Google raccomanda di non esporre chiavi in applicazioni client-side di produzione e di usare un backend/proxy per custodire i segreti.</li>
+    <li>Se togli la chiave, le chiamate Gemini smettono. <strong>La modalità Base continua a funzionare</strong> con il motore deterministico locale.</li>
+    <li><strong>OCR in modalità Massimo:</strong> se Gemini 3.7 impiega più del normale, Sentiero usa l'esecuzione in background di Google. Il background richiede un'interazione memorizzata (<code>store=true</code>); Sentiero chiede di eliminarla appena recupera il risultato e, se annulli, chiede prima la cancellazione dell'esecuzione e poi l'eliminazione del record. Se l'eliminazione non riuscisse, valgono le finestre di conservazione del progetto documentate da Google: 1 giorno sul Free Tier e 55 giorni sul Paid Tier, configurabili in alcuni casi sul Paid Tier. Le altre chiamate di Sentiero impostano <code>store=false</code>.</li>
+    <li><strong>Italia / SEE:</strong> i termini Gemini API efficaci dal 23 marzo 2026 dicono che, quando un API Client viene messo a disposizione di utenti nello SEE, Svizzera o Regno Unito, si possono usare soltanto Paid Services; per Gemini API ciò significa un progetto Cloud con fatturazione attiva. Gli stessi termini descrivono Google AI Studio e Gemini API come servizi per sviluppatori che costruiscono per scopi professionali o aziendali, non per uso consumer. Prima di distribuire la funzione Generativa a terzi, verifica che il tuo caso d'uso rientri nei termini applicabili.</li>
+    <li>Per gli utenti nello SEE, Svizzera e Regno Unito, i termini Google applicano le condizioni sul trattamento dei dati dei Paid Services anche ai servizi offerti senza costo: Google dichiara di non usare prompt e risposte per migliorare i propri prodotti in quel regime. Google conserva comunque dati tecnici e i log necessari a sicurezza, affidabilità e obblighi legali secondo i propri termini.</li>
   </ul>
-  <p class="nota">Le condizioni di Anthropic:
-  <a href="https://www.anthropic.com/legal/privacy" rel="noopener">anthropic.com/legal/privacy</a></p>
+  <p class="nota">Riferimenti Google:
+  <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">Gemini API Terms</a> ·
+  <a href="https://ai.google.dev/gemini-api/docs/api-key" rel="noopener">sicurezza delle chiavi API</a> ·
+  <a href="https://ai.google.dev/gemini-api/docs/pricing" rel="noopener">prezzi e Free Tier</a>.</p>
 
   <h2>La foto di una pagina</h2>
   <p>Puoi fotografare una pagina scritta a mano &mdash; un quaderno, un foglio,
@@ -160,7 +164,7 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
     tue foto: si apre la fotocamera, o la libreria, solo dopo che hai toccato
     il tasto.</li>
     <li><strong>Solo</strong> se hai la versione Generativa, quella singola
-    immagine viene mandata a <strong>api.anthropic.com</strong> per essere
+    immagine viene mandata a <strong>Google Gemini API</strong> per essere
     trascritta, e torna indietro il testo. Senza chiave <strong>la foto non
     parte, e non va da nessuna parte</strong>: puoi comunque scrivere la
     pagina a mano e salvarla.</li>
@@ -172,12 +176,13 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
     diario, non entra nel backup, non resta sul telefono dentro Sentiero: viene
     ridimensionata, mandata, e lasciata andare. Quello che resta &egrave; il
     testo.</li>
+    <li>Se scegli <strong>Massimo</strong> e la lettura richiede più tempo, l'immagine può restare temporaneamente nell'interazione Gemini in background fino al completamento. Sentiero elimina quell'interazione subito dopo aver recuperato la trascrizione; questa eccezione serve esclusivamente a superare i timeout delle connessioni HTTP lunghe.</li>
     <li>Quando premi <strong>Raccogli</strong>, quel testo &mdash; il tuo, dopo
     le correzioni &mdash; viene trattato come quello che dici al microfono: se
     hai la versione Generativa viene elaborato come sempre, per farne nascere il
     diario e le cose da fare. &Egrave; il testo a viaggiare, non l'immagine.</li>
     <li>Non c'&egrave; nessun altro servizio di mezzo: nessun lettore esterno,
-    nessun server mio, nessuno che non sia Anthropic.</li>
+    nessun server mio: per quella funzione la richiesta va direttamente a Google Gemini API.</li>
   </ul>
 
   <h2>La luce azzurra: dove sei</h2>
@@ -232,15 +237,14 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   scrivi qualcosa di pesante fa un passo indietro: non ne ricava compiti e non ti
   dice come stai andando. Se stai attraversando qualcosa di grosso, un'app non
   basta: parlane con qualcuno.</p>
-  <p><strong>Non è pensato per i bambini.</strong> È fatto per persone adulte che
-  tengono un diario.</p>
+  <p><strong>Solo maggiorenni per la Generativa.</strong> I termini Gemini API richiedono almeno 18 anni e vietano di offrire l'API in servizi diretti o probabilmente accessibili a minori di 18 anni. Sentiero Base non usa Gemini.</p>
 
   <h2>Se questa pagina cambia</h2>
   <p class="calmo">La riscrivo qui, con la data nuova in fondo. Non ho modo di
   avvisarti per email, perché la tua email non ce l'ho.</p>
 
   <footer>
-    Ultimo aggiornamento: 10 agosto 2026<br>
+    Ultimo aggiornamento: 24 agosto 2026<br>
     Titolare del trattamento: Davide Cuzzilla &mdash;
     <a href="mailto:cuzzilladavide98@gmail.com">cuzzilladavide98@gmail.com</a><br><br>
     <a href="./inizia.html">Torna a Sentiero</a> &nbsp;·&nbsp;
@@ -271,7 +275,8 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   and the API key if you chose to paste one. No account, no email, no password.
   No advertising, no analytics, no third-party cookies. Delete the app and
   nothing remains anywhere &mdash; there is no copy elsewhere to ask back for.
-  You can export everything to your own file from the settings, any time.</p>
+  You can export the canonical diary data to your own file from the settings; the Gemini key is deliberately excluded.</p>
+  <p class="nota">At month close Sentiero also keeps a graphical copy of that month's ensō in local app storage. It is derived from the monthly chapter data and is not put in the backup because it can be regenerated automatically after import.</p>
   <p class="nota">That storage is what makes the app you opened work: a diary
   that cannot remember is not a diary. That is why there is no cookie banner.</p>
 
@@ -301,13 +306,21 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   </div>
 
   <h2>If you use the Generative version</h2>
-  <p>It turns on <strong>only</strong> if you paste an Anthropic API key you
-  obtained yourself, on your own account. From then on, for the functions that
-  use it, the text needed to answer is sent to <strong>api.anthropic.com</strong>.
-  The key is never pre-filled, never leaves your phone toward me, and I never see
-  it. That exchange is between you and Anthropic (a US company), under the terms
-  you accepted with them. Remove the key and it stops: <strong>without a key
-  Sentiero works in full</strong> and nothing leaves.</p>
+  <p>It turns on <strong>only</strong> if you paste a Gemini API key created in
+  your own Google project. When a generative feature is needed, the content
+  required for that feature is sent directly to the Google Gemini API; Sentiero
+  has no backend in the middle. The key is stored separately from diary state
+  and is excluded from backups, exports and diagnostics. It is still a secret
+  kept in a client-side app, not protected like a backend secret; Google
+  recommends a backend/proxy for production client applications. New keys made
+  in Google AI Studio are auth keys. Remove the key and Gemini calls stop; Base
+  mode keeps working. In <strong>Max</strong> OCR only, long-running Gemini 3.7 reads
+  use background execution, which requires <code>store=true</code>; Sentiero requests
+  deletion as soon as the result is retrieved. Google's current terms require
+  Paid Services when API Clients are made available to users in the EEA,
+  Switzerland or the UK, and describe the developer services as intended for
+  professional or business purposes rather than consumer use. Check the current
+  terms before making the Generative feature available to other users.</p>
 
   <h2>How long, and your rights</h2>
   <p>As long as you want: no expiry, no automatic cleanup. Under the GDPR you
@@ -323,10 +336,10 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   write and answers, but it is not treating you. On a heavy day it steps back: it
   draws no tasks from it and does not tell you how you are doing. If you are
   going through something big, an app is not enough &mdash; talk to someone.</p>
-  <p><strong>Not made for children.</strong> It is for adults keeping a diary.</p>
+  <p><strong>Generative mode is for adults only.</strong> Gemini API terms require users to be at least 18 and prohibit offering the API as part of services directed to or likely to be accessed by people under 18. Sentiero Base does not use Gemini.</p>
 
   <footer>
-    Last updated: 10 August 2026<br>
+    Last updated: 24 August 2026<br>
     Data controller: Davide Cuzzilla &mdash;
     <a href="mailto:cuzzilladavide98@gmail.com">cuzzilladavide98@gmail.com</a><br><br>
     <a href="./inizia.html">Back to Sentiero</a>

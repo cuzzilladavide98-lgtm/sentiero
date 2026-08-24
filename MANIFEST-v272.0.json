@@ -1,0 +1,123 @@
+{
+ "formato": 2,
+ "versione": "v60S.272.0 · 2026-08-24",
+ "generazione": 272000,
+ "cache": "sentiero-v60s-272-0",
+ "ragione": "major release ufficiale: migrazione della Generativa a Google Gemini, consolidamento Lab 25 e correzioni blocker emerse nella review finale prima del deploy",
+ "review_finale": {
+  "stati_interactions": "solo completed è consegnabile; incomplete/failed/cancelled non vengono presentati come successo",
+  "rate_governor_background": "HTTP 429 dell OCR background entra nello stesso cooldown per-modello del percorso foreground",
+  "ui_produzione": "banchi di laboratorio rimossi; Diagnostica mantenuta come strumento di assistenza",
+  "aggiornamenti": "la prima scheda dopo update dichiara esplicitamente Major release e riassume i cambiamenti percepibili"
+ },
+ "file": {
+  "LICENSE-Lora-OFL.txt": {
+   "byte": 4563,
+   "sha256": "948aed765160f7b974105606c21994715a171f89fca48e57bf1e0a23aca0bef1",
+   "cambiato": false,
+   "motivo": "licenza font invariata"
+  },
+  "guida.html": {
+   "byte": 31502,
+   "sha256": "fa01bd545287a2fd7fdeb190b410e656c84d1d7f5c7a9db9c607d025e374c3c0",
+   "cambiato": true,
+   "motivo": "guida produzione aggiornata per Stanza/OCR, temi OLED/LCD, migrazione Gemini, Google AI Studio, requisiti e comportamento reale della release"
+  },
+  "icon-180.png": {
+   "byte": 26585,
+   "sha256": "259c0011f3246ea87673286db747662a328650dbc7cc732bc2b8b08c4812933f",
+   "cambiato": true,
+   "motivo": "asset PWA ripristinato dal ramo verificato"
+  },
+  "icon-192.png": {
+   "byte": 29674,
+   "sha256": "c00616a553124e53b17ead7be8537972a71fb313fb31504159f65ca35f9a428f",
+   "cambiato": true,
+   "motivo": "asset PWA ripristinato dal ramo verificato"
+  },
+  "icon-512.png": {
+   "byte": 210463,
+   "sha256": "aac9a1b9c260ac71cf72e1b959a29d09547105dd5f3eba2d01d5ddbeb46c02ae",
+   "cambiato": true,
+   "motivo": "asset PWA ripristinato dal ramo verificato"
+  },
+  "index.html": {
+   "byte": 1310968,
+   "sha256": "8b9bfd4845d031e6b95b04249a014db471820ed6b1e8f6fde674e3ded2ea7589",
+   "cambiato": true,
+   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione, con controlli Lab rimossi; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto e scheda aggiornamenti esplicitamente Major release"
+  },
+  "inizia.html": {
+   "byte": 14541,
+   "sha256": "4884f27f2e267e37fea8cf23344b6016f0748a087ea3e8f43534d5413b08ef28",
+   "cambiato": true,
+   "motivo": "onboarding produzione aggiornato alla Generativa Gemini, creazione/inserimento chiave e requisiti applicabili"
+  },
+  "manifest.json": {
+   "byte": 730,
+   "sha256": "841aee2efb6b3d630711404ddf20925cc214931ff7ac9e9277d9fe91cd651966",
+   "cambiato": true,
+   "motivo": "identità di produzione Sentiero, descrizione aggiornata e icone PWA ripristinate"
+  },
+  "privacy.html": {
+   "byte": 21617,
+   "sha256": "c10adc857e4e255f6f4336fedd4b2091c4e7d07be1c5a2688ade8ac6287cf409",
+   "cambiato": true,
+   "motivo": "informativa aggiornata al 24/08 per Gemini BYOK, OCR/background, retention Interactions, limiti della chiave client-side e condizioni applicabili"
+  },
+  "splash-1125x2436.png": {
+   "byte": 169939,
+   "sha256": "97f20c3c955757f18075c5e759fd8e18f68e87c3ef16633ea145c17073d26ac2",
+   "cambiato": true,
+   "motivo": "splash PWA ripristinata dal ramo verificato"
+  },
+  "splash-1170x2532.png": {
+   "byte": 174006,
+   "sha256": "2330b7b61c50e6f5fb807dee4344ed188d7fb86ccd79f9f47473978ddb22b8b6",
+   "cambiato": true,
+   "motivo": "splash PWA ripristinata dal ramo verificato"
+  },
+  "splash-1179x2556.png": {
+   "byte": 173708,
+   "sha256": "53d88ad2e8bbdbe5c3f40034b9eb487907b6bd70840c87562d22ab8dfb0dfd36",
+   "cambiato": true,
+   "motivo": "splash PWA ripristinata dal ramo verificato"
+  },
+  "splash-1290x2796.png": {
+   "byte": 187983,
+   "sha256": "0ca598a6fedb9951e8c20864d77e38995337999038a34f60ef8c7aef1e472393",
+   "cambiato": true,
+   "motivo": "splash PWA ripristinata dal ramo verificato"
+  },
+  "splash-750x1334.png": {
+   "byte": 104787,
+   "sha256": "25665200d6517fa87e62de038a00746b2348c196788dd2e57babd88d765d7740",
+   "cambiato": true,
+   "motivo": "splash PWA ripristinata dal ramo verificato"
+  },
+  "splash-828x1792.png": {
+   "byte": 139435,
+   "sha256": "19b649e1f63a6f4d3ac565f93dd52b93bc1eff3abc819ff7a173834e147a226c",
+   "cambiato": true,
+   "motivo": "splash PWA ripristinata dal ramo verificato"
+  },
+  "sw.js": {
+   "byte": 4791,
+   "sha256": "5a5a9d28d6ea59aafe5d9679291c0a63e4b4e2af5698cc70a613e840595e1f29",
+   "cambiato": true,
+   "motivo": "cache di produzione v272.0, isolamento dalle cache non Sentiero, bypass Gemini, precache anche di inizia.html e base linguistica"
+  },
+  "lingue/base-it.json": {
+   "byte": 15373,
+   "sha256": "c83c184ffe0cd29c9571e487d36e11b38e8a19744935873c6e3e790e024ecc27",
+   "cambiato": true,
+   "motivo": "base linguistica v6 allineata a v60S.272.0, provider Gemini e policy di voce condivisa"
+  },
+  "lingue/en.json": {
+   "byte": 22093,
+   "sha256": "2301784cd755f99fbde7cb9c397ae6187050ce9f8e313bc854fdd0617ecd8587",
+   "cambiato": true,
+   "motivo": "pacchetto lingua allineato alla produzione e ripulito dai residui delle voci di laboratorio non più esposte"
+  }
+ }
+}
