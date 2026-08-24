@@ -8,7 +8,8 @@
   "stati_interactions": "solo completed è consegnabile; incomplete/failed/cancelled non vengono presentati come successo",
   "rate_governor_background": "HTTP 429 dell OCR background entra nello stesso cooldown per-modello del percorso foreground",
   "ui_produzione": "banchi di laboratorio rimossi; Diagnostica mantenuta come strumento di assistenza",
-  "aggiornamenti": "la prima scheda dopo update dichiara esplicitamente Major release e riassume i cambiamenti percepibili"
+  "aggiornamenti": "la prima scheda dopo update dichiara esplicitamente Major release e riassume i cambiamenti percepibili",
+  "aggiornamenti_scroll": "su viewport basse (incluso iPhone SE 375×647) titolo e Ho letto restano fissi nel foglio; scorrono solo le righe della major release"
  },
  "file": {
   "LICENSE-Lora-OFL.txt": {
@@ -42,10 +43,10 @@
    "motivo": "asset PWA ripristinato dal ramo verificato"
   },
   "index.html": {
-   "byte": 1310968,
-   "sha256": "8b9bfd4845d031e6b95b04249a014db471820ed6b1e8f6fde674e3ded2ea7589",
+   "byte": 1311586,
+   "sha256": "f360b8881092ccce5a278929ad5798ad49233b6989771051282c018cfb21bd98",
    "cambiato": true,
-   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione, con controlli Lab rimossi; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto e scheda aggiornamenti esplicitamente Major release"
+   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto, Major release e foglio aggiornamenti scroll-safe su iPhone SE"
   },
   "inizia.html": {
    "byte": 14541,
@@ -102,10 +103,10 @@
    "motivo": "splash PWA ripristinata dal ramo verificato"
   },
   "sw.js": {
-   "byte": 4791,
-   "sha256": "5a5a9d28d6ea59aafe5d9679291c0a63e4b4e2af5698cc70a613e840595e1f29",
+   "byte": 4957,
+   "sha256": "122df7bf98aa37dcf576f254190a38a23aecf28f5893080a31b76fcd05318be8",
    "cambiato": true,
-   "motivo": "cache di produzione v272.0, isolamento dalle cache non Sentiero, bypass Gemini, precache anche di inizia.html e base linguistica"
+   "motivo": "service worker produzione con cache isolata, Gemini bypass e byte di release-fix per propagare il foglio aggiornamenti scroll-safe"
   },
   "lingue/base-it.json": {
    "byte": 15373,
