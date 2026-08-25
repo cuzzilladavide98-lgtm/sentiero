@@ -97,7 +97,7 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
     <li>Non c'è pubblicità, non ci sono statistiche, non c'è nessun cookie di terzi.</li>
     <li>Se cancelli l'app, o cancelli i dati del sito dalle impostazioni del
     browser, non resta niente da nessuna parte. Non c'è una copia altrove da chiedere indietro.</li>
-    <li>Dalle impostazioni di Sentiero puoi salvare in un file tuo i dati canonici del diario, quando vuoi. La chiave Gemini resta esclusa apposta.</li>
+    <li>Dalle impostazioni puoi creare un <strong>Backup completo</strong>, che include anche la chiave Gemini per permettere un vero ripristino, oppure un <strong>Backup senza chiave</strong>. Il Backup completo va custodito come una password.</li>
   </ul>
   <p class="nota">A fine mese Sentiero conserva anche una copia grafica dell’ensō nella memoria locale dell’app. È un’immagine derivata dai dati del capitolo mensile: non entra nel backup perché può essere ricreata automaticamente dagli stessi dati dopo un’importazione.</p>
   <p class="nota">Quella memoria serve a far funzionare l'app che hai aperto tu:
@@ -147,7 +147,7 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <ul>
     <li>La chiave non è precompilata e non viene mai chiesta in chat: la inserisci tu nell'app. Google AI Studio crea oggi nuove chiavi come <em>auth key</em>; le vecchie Standard key devono essere migrate secondo le scadenze indicate da Google.</li>
     <li><strong>Prova connessione</strong> usa Flash‑Lite per verificare rapidamente che chiave, rete e API rispondano. Non cambia il profilo scelto: con <strong>Massimo</strong>, le funzioni che lo richiedono continuano a usare Gemini 3.7 Flash.</li>
-    <li>La chiave è conservata separatamente dallo stato del diario sul dispositivo. Non entra nei backup, negli export o nel registro diagnostico. Esportare o importare i dati sullo stesso dispositivo non la cancella e non la sostituisce.</li>
+    <li>La chiave è conservata separatamente dallo stato del diario sul dispositivo. Entra soltanto nel <strong>Backup completo</strong> scelto esplicitamente; resta fuori dal Backup senza chiave e dal registro diagnostico. Un import senza chiave conserva quella già presente sul dispositivo.</li>
     <li>Resta comunque una chiave in un'app client-side: non ha la protezione di un backend. Chi controlla il dispositivo o riesce a eseguire codice nella stessa pagina potrebbe leggerla. Google raccomanda di non esporre chiavi in applicazioni client-side di produzione e di usare un backend/proxy per custodire i segreti.</li>
     <li>Se togli la chiave, le chiamate Gemini smettono. <strong>La modalità Base continua a funzionare</strong> con il motore deterministico locale.</li>
     <li><strong>OCR in modalità Massimo:</strong> se Gemini 3.7 impiega più del normale, Sentiero usa l'esecuzione in background di Google. Il background richiede un'interazione memorizzata (<code>store=true</code>); Sentiero chiede di eliminarla appena recupera il risultato e, se annulli, chiede prima la cancellazione dell'esecuzione e poi l'eliminazione del record. Se l'eliminazione non riuscisse, valgono le finestre di conservazione del progetto documentate da Google: 1 giorno sul Free Tier e 55 giorni sul Paid Tier, configurabili in alcuni casi sul Paid Tier. Le altre chiamate di Sentiero impostano <code>store=false</code>.</li>
@@ -282,7 +282,7 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   and the API key if you chose to paste one. No account, no email, no password.
   No advertising, no analytics, no third-party cookies. Delete the app and
   nothing remains anywhere &mdash; there is no copy elsewhere to ask back for.
-  You can export the canonical diary data to your own file from the settings; the Gemini key is deliberately excluded.</p>
+  From settings you can create a complete backup that also contains the Gemini key for full restoration, or a backup without the key. Treat the complete backup like a password.</p>
   <p class="nota">At month close Sentiero also keeps a graphical copy of that month's ensō in local app storage. It is derived from the monthly chapter data and is not put in the backup because it can be regenerated automatically after import.</p>
   <p class="nota">That storage is what makes the app you opened work: a diary
   that cannot remember is not a diary. That is why there is no cookie banner.</p>

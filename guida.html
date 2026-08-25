@@ -479,8 +479,8 @@ a{color:var(--accent)}
   <h3>Come si mette</h3>
   <p class="calmo"><strong>Per usare Gemini API devi avere almeno 18 anni.</strong> La chiave si crea in <strong>Google AI Studio</strong> e si incolla
   soltanto dentro Sentiero. Non mandarla a nessuno, non incollarla in chat e non
-  salvarla nel repository. La chiave resta separata dal diario e non entra nel backup:
-  su un telefono nuovo la inserisci di nuovo.</p>
+  salvarla nel repository. La chiave resta separata dal diario: entra soltanto nel
+  <strong>Backup completo</strong> quando lo scegli esplicitamente; il Backup senza chiave la esclude.</p>
   <ol>
     <li>Apri <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio → API Keys</a>.</li>
     <li>Se serve, importa o crea il progetto Google Cloud che vuoi usare. Per un API Client reso disponibile a utenti nello SEE, i termini Google richiedono un progetto con <strong>fatturazione attiva</strong> / Paid Services.</li>
@@ -493,10 +493,11 @@ a{color:var(--accent)}
   <p class="calmo"><strong>Se stai aggiornando dalla vecchia Generativa:</strong> la chiave della precedente versione Generativa non viene riutilizzata né esportata. Crea o inserisci una chiave Gemini; il diario e gli altri dati restano nello stesso stato di Sentiero.</p>
   <p class="calmo"><strong>Massimo, Bilanciato, Veloce.</strong> Massimo privilegia la qualità e usa Gemini 3.7 Flash quando il mestiere lo richiede; per le foto difficili può lasciare proseguire Gemini in background. Bilanciato è l'impostazione consigliata per l'uso quotidiano; Veloce riduce ragionamento e risoluzione per abbassare attesa e consumo.</p>
   <p class="calmo"><strong>«Prova connessione» non sceglie il modello di Sentiero.</strong> Per controllare rapidamente che chiave, rete e API rispondano usa Flash‑Lite. Se nelle impostazioni hai scelto Massimo, il lavoro reale continua a usare Gemini 3.7 Flash dove previsto. Vedere 3.5 nel risultato della prova significa quindi soltanto che il test rapido è riuscito.</p>
+  <p class="calmo"><strong>La Distillazione fa eccezione.</strong> Trasformare una voce in diario e cose da fare è estrazione strutturata in tempo reale: usa Flash‑Lite anche con Massimo, perché qui contano velocità e affidabilità. Massimo continua a usare 3.7 nei mestieri in cui il ragionamento più lungo porta davvero valore.</p>
   <p class="calmo">Il consumo e gli eventuali costi della Generativa appartengono al <strong>tuo progetto Google</strong>, non a Sentiero.</p>
   <div class="avviso">
     <strong>Una chiave in una PWA non è un segreto server-side</strong>
-    <p>Sentiero non la scrive nel codice e non la mette nei backup, ma il browser deve comunque poterla leggere per chiamare Gemini. Google raccomanda un backend/proxy per una distribuzione di produzione. Il fatto che ogni persona usi la propria chiave evita di distribuire una chiave centrale di Sentiero, ma non equivale alla protezione di un backend.</p>
+    <p>Sentiero non la scrive nel codice e la mette soltanto nel Backup completo scelto esplicitamente; il browser deve comunque poterla leggere per chiamare Gemini. Google raccomanda un backend/proxy per una distribuzione di produzione. Il fatto che ogni persona usi la propria chiave evita di distribuire una chiave centrale di Sentiero, ma non equivale alla protezione di un backend.</p>
   </div>
 
   <div class="avviso">
@@ -512,6 +513,8 @@ a{color:var(--accent)}
 
   <h2 id="undici"><span class="n">CAPITOLO 11</span>Portare via tutto</h2>
 
+  <p><strong>Backup completo.</strong> In Dati è la scelta principale per un vero ripristino: include anche la chiave Gemini, così dopo un cambio o una reinstallazione non devi reinserirla. Se devi condividere o archiviare un file senza credenziali, scegli <strong>Backup senza chiave</strong>.</p>
+
   <p>Lo <strong>stato di Sentiero</strong> — diario, cose da fare, ricorrenti,
   capitoli e impostazioni — vive sul tuo dispositivo. Sentiero non ha un account
   né un server personale che ne conservi una seconda copia. Se usi la Generativa,
@@ -521,7 +524,7 @@ a{color:var(--accent)}
 
   <ul>
     <li><strong>Altro</strong> nella barra in basso → in fondo, <strong>Dati</strong>.</li>
-    <li><span class="tasto">Esporta backup</span> salva un file tuo.</li>
+    <li><span class="tasto">Backup completo</span> salva dati e chiave; <span class="tasto">Backup senza chiave</span> salva soltanto i dati.</li>
     <li>Sul telefono nuovo, <span class="tasto">Importa</span> lo rimette dentro.</li>
   </ul>
 
@@ -586,8 +589,9 @@ a{color:var(--accent)}
   nello stato locale.</p>
 
   <h3>La tua chiave</h3>
-  <p class="calmo">La chiave Gemini resta separata dal diario. Non entra nei
-  backup, negli export o nella Diagnostica. È però una chiave dentro una PWA:
+  <p class="calmo">La chiave Gemini resta separata dal diario. Entra soltanto nel
+  <strong>Backup completo</strong> quando lo scegli esplicitamente; resta fuori dal
+  Backup senza chiave e dalla Diagnostica. È però una chiave dentro una PWA:
   il browser deve poterla leggere per fare la richiesta, quindi non ha la stessa
   protezione di un segreto custodito dietro un backend. Non pubblicarla, non
   incollarla in chat e non metterla su GitHub.</p>

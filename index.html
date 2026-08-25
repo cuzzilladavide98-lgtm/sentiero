@@ -179,19 +179,15 @@ body[data-sez="altro"] #tab-impostazioni{display:block}
 #flow:not(:empty){background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.10);border-radius:16px;padding:14px 16px}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
 /* Scarta/Distilla: pillola ancorata al fondo del mondo - nessun contenuto puo piu spingerla sotto il foglio, su nessun viewport */
-/* v272.1 — RILETTURA AUDIO: uno stato esplicito, non una coincidenza CSS.
-   Sul SE potevano essere visibili Butta/Tieni mentre il trascritto restava dietro
-   al fulcro del mondo. `reviewing` viene acceso dallo stesso punto che mostra i
-   due tasti: testo e decisione diventano quindi una sola proprietà. */
-#mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:28px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:6}
-#mic-wrap.reviewing #mondo-su,#mic-wrap.reviewing #mondo-voce{visibility:hidden;pointer-events:none}
-#mic-wrap.reviewing #mondo-giu{overflow:visible;padding-top:0}
-#mic-wrap.reviewing #live.show{position:absolute;z-index:5;left:16px;right:16px;top:18px;bottom:112px;width:auto;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box;text-align:left}
-/* la nascita della quest: i caratteri si accendono, l'aura si spegne piano */
-@keyframes q-pc{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-@keyframes q-aura{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
-#mic-wrap.reviewing #flow{display:none}
-#mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:94px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:7}   /* la priorita sta sopra la pillola, mai nel mucchio */
+/* v272.2 — RILETTURA SENZA SPOSTARE IL MONDO.
+   La v272.1 nascondeva interi blocchi flex per mostrare il testo. Ora la
+   composizione del Mondo resta immobile: la rilettura e solo un livello assoluto. */
+#mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:44px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:6}
+#mic-wrap:has(#confirm-row:not(.hidden)) #live.show,#mic-wrap.reviewing #live.show{position:absolute;z-index:5;left:16px;right:16px;top:14px;bottom:176px;width:auto;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box;text-align:left}
+#mic-wrap:has(#confirm-row:not(.hidden)) #mic-label,#mic-wrap:has(#confirm-row:not(.hidden)) #ring-count,#mic-wrap:has(#confirm-row:not(.hidden)) #flow,
+#mic-wrap.reviewing #mic-label,#mic-wrap.reviewing #ring-count,#mic-wrap.reviewing #flow{visibility:hidden}
+#mic-wrap:has(#confirm-row:not(.hidden)) #flow,#mic-wrap.reviewing #flow{display:none}
+#mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:106px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:7}   /* la priorita sta sopra la pillola, mai nel mucchio */
 /* punto 3 riscritto (v60S.93): morphing continuo guidato da --fp (0=aperto, 1=picco).
    Solo transform/opacity, il layout non si muove mai: capolettera 84->46 (scala .548),
    anello 84->52 (scala .619) che sale al posto del "dove sono" mentre svanisce. */
@@ -2980,7 +2976,7 @@ body.theme-lcd #mic.pieno svg{animation:none !important;filter:none !important}
         <p class="note">Una differenza che è giusto tu sappia prima di scegliere: quando in una giornata scrivi qualcosa di pesante, la versione Generativa lo <em>capisce</em> e cambia registro; senza chiave l'app riconosce solo le frasi che non si possono fraintendere, e ne coglie circa la metà.</p>
         <div class="btn-row"><button class="act primary" id="btn-savekey">Salva chiave</button><button class="act" id="btn-testkey">Prova connessione</button></div>
         <p class="note" id="test-result"></p>
-        <p class="note"><strong>Per creare la chiave:</strong> apri Google AI Studio → API Keys → crea una nuova chiave nel tuo progetto → copiala qui. Le nuove chiavi create in AI Studio sono chiavi di autorizzazione (auth key). Non incollarla in chat, GitHub o file di backup.</p>
+        <p class="note"><strong>Per creare la chiave:</strong> apri Google AI Studio → API Keys → crea una nuova chiave nel tuo progetto → copiala qui. Le nuove chiavi create in AI Studio sono chiavi di autorizzazione (auth key). Non incollarla in chat o GitHub. Se scegli il Backup completo, Sentiero la include intenzionalmente nel file: custodiscilo come una password.</p>
         <div class="btn-row"><a class="act" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Apri Google AI Studio</a><a class="act" href="./guida.html#dieci">Guida</a></div>
         <p class="note">Sentiero è una PWA client-side: la chiave resta sul dispositivo ma non è protetta come un segreto dietro un server. Se rendi l'app disponibile ad altri utenti nello SEE, verifica i termini Gemini applicabili e usa un progetto con fatturazione attiva quando richiesto.</p>
         <div class="switchrow" style="margin-top:6px"><span>Qualità e velocità</span>
@@ -3048,11 +3044,12 @@ body.theme-lcd #mic.pieno svg{animation:none !important;filter:none !important}
       <section>
         <div class="sec-head">Dati</div>
         <div class="btn-row">
-          <button class="act" id="btn-export">Esporta backup</button>
+          <button class="act primary" id="btn-export-full">Backup completo</button>
+          <button class="act" id="btn-export">Backup senza chiave</button>
           <button class="act" id="btn-diagnostica">Diagnostica</button>
           <button class="act" id="btn-import">Importa</button>
         </div>
-        <p class="note">Il <b>backup</b> è la tua vita: tienilo per te. La chiave Gemini non entra mai nel file: esportare o importare su questo telefono non la cancella e non la sposta. L’ensō del mese si conserva da solo sul dispositivo quando il capitolo si chiude: non c’è un pulsante da ricordare. La <b>diagnostica</b> contiene solo ingranaggi — versione, telefono, quello che è successo all'app — e nessuna delle tue parole: quella la puoi mandare a chi ripara.</p>
+        <p class="note"><b>Backup completo</b> è quello da usare per un vero ripristino: include anche la chiave Gemini, così non devi reinserirla. Trattalo come una password e non condividerlo. <b>Backup senza chiave</b> serve quando vuoi un file più sicuro da spostare o mostrare. La <b>diagnostica</b> non contiene mai la chiave né le tue parole: quella la puoi mandare a chi ripara.</p>
         <input type="file" id="import-file" accept="application/json" class="hidden">
         <p class="note" id="version-line" style="text-align:center;margin-top:18px;opacity:.6"></p>
       </section>
@@ -4178,13 +4175,11 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.272.1 · 2026-08-25';
+const APP_VERSION='v60S.272.2 · 2026-08-25';
 
-/* Lab 15: la distillazione multi-campo e stata validata su iPhone con 3.7 diretto.
-   Il Seme distingue ora un output vuoto da un errore e lascia che la produzione
-   usi il vivaio locale. Il laboratorio puo inoltre provare un Desiderio REALE
-   scritto dalla persona senza salvarlo, attraverso la stessa chiamata strutturata
-   della produzione; Pietra resta subordinata a un vero desiderio attivo. */
+/* v272.2: la Distillazione multi-campo usa Flash-Lite come corsia interattiva dedicata.
+   I mestieri riflessivi possono ancora usare 3.7; la voce, invece, deve essere rapida
+   e la nota e gia persistita prima della rete. */
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
    Si scrive QUI, a ogni versione, e si scrive per chi usa l'app - non per chi
@@ -4205,11 +4200,11 @@ const APP_VERSION='v60S.272.1 · 2026-08-25';
    da qualcuno. Gli esempi, se servono, si inventano. */
 const NOVITA=[
  {titolo:'Correzioni importanti · Cosa è cambiato',righe:[
-   'Il Frutto non viene più considerato saltato se la rete è lenta. Dopo un’attesa lunga Sentiero entra comunque, te lo dice chiaramente e lascia il Frutto disponibile per una riapertura successiva.',
-   'Dopo una registrazione il testo da rileggere ha adesso uno spazio proprio e resta davanti a Butta e Tieni anche sugli schermi corti.',
-   'La base italiana viaggia con una nuova generazione della PWA: Sentiero può verificare finalmente che il vocabolario pubblicato appartenga davvero alla stessa versione che stai usando.',
-   'Il Sussurro conserva i suoi filtri, ma il silenzio non è più la risposta predefinita quando un filo concreto ha già superato il primo controllo. La Diagnostica distingue inoltre il silenzio scelto da un errore Gemini.',
-   'Fatto e Cerchio del giorno restano invariati in questa correzione: la loro apparizione verrà riprogettata come un’unica esperienza, invece di ricevere una toppa.'
+   'Quando tocchi Tieni, la nota viene salvata sul telefono prima che parta Gemini: una rete lenta non può più tenere in ostaggio quello che hai appena detto.',
+   'La Distillazione usa una strada rapida dedicata e, se la prima risposta non arriva, fa un solo secondo tentativo breve prima di affidarsi al motore locale.',
+   'Microfono, ensō e satelliti condividono adesso lo stesso centro: la rilettura del testo non deve più spostare il mondo della voce.',
+   'In Dati trovi Backup completo e Backup senza chiave. Il primo può ripristinare anche la chiave Gemini; trattalo come una password.',
+   'La base italiana usa un file proprio di questa versione, così una copia vecchia non può più essere scambiata per quella corrente.'
  ]},
  /* v245 — IL CAMPO «da» E STATO TOLTO, e per una ragione che vale come lezione:
     conteneva un numero di versione, e il comando che alza la versione a ogni
@@ -4586,7 +4581,7 @@ window.manoAlLavoro=manoAlLavoro;
      · localStorage['sentiero-v1']  lo stato: diario, cose da fare e impostazioni.
        La chiave Gemini NON sta qui.
      · localStorage['sentiero-gemini-key']  la chiave Gemini BYOK, separata
-       dallo stato apposta per non finire in backup/import/export. Resta comunque
+       dallo stato per non mescolarla ai dati del diario. Entra soltanto nel Backup completo quando lo scegli esplicitamente. Resta comunque
        in chiaro nello storage del browser: separata non significa cifrata.
      · dodici chiavi 'sentiero-*'   roba di interfaccia: se l'accoglienza e gia
        stata vista, l'ultima posizione del cielo, il meteo in cache, i flag.
@@ -4603,7 +4598,7 @@ window.manoAlLavoro=manoAlLavoro;
      · in incognito lo stato esiste finche la finestra e aperta, poi sparisce.
      · niente e cifrato: chi ha accesso al profilo del browser o a un backup completo
        del dispositivo puo leggere anche la chiave Gemini nello storage del browser.
-       Il backup JSON creato da Sentiero, invece, la esclude sempre.
+       Il Backup senza chiave la esclude; il Backup completo la include soltanto dopo conferma esplicita.
      · cancellare i dati del sito cancella tutto, e l'unico recupero e l'export
        che la persona si e fatta da sola.
 
@@ -4620,15 +4615,23 @@ const GEMINI_KEY_LS='sentiero-gemini-key';
 let GEMINI_KEY='';
 try{ GEMINI_KEY=String(localStorage.getItem(GEMINI_KEY_LS)||'').trim(); }catch(_){}
 function setGeminiKey(v){
-  GEMINI_KEY=String(v||'').trim().slice(0,500);
-  try{ if(GEMINI_KEY) localStorage.setItem(GEMINI_KEY_LS,GEMINI_KEY); else localStorage.removeItem(GEMINI_KEY_LS); }catch(_){}
+  const voluta=String(v||'').trim().slice(0,500);
+  try{
+    if(voluta) localStorage.setItem(GEMINI_KEY_LS,voluta); else localStorage.removeItem(GEMINI_KEY_LS);
+    const letta=String(localStorage.getItem(GEMINI_KEY_LS)||'').trim();
+    GEMINI_KEY=letta;
+    return letta===voluta;
+  }catch(_){
+    try{ GEMINI_KEY=String(localStorage.getItem(GEMINI_KEY_LS)||'').trim(); }catch(__){ GEMINI_KEY=''; }
+    return false;
+  }
 }
 /* Gemini — EXPORT SENZA SEGRETI, DI DEFAULT.
    La chiave vive gia fuori da S, quindi esportare o importare dati sullo stesso
    dispositivo NON la tocca. Questo filtro e una seconda cintura di sicurezza:
    se un vecchio backup o una futura migrazione reintroducesse per errore un campo
    chiave nello stato, qualunque JSON di backup che passa da qui lo salta. */
-const EXPORT_SECRET_FIELDS=new Set(['apikey','geminikey','anthropickey','aikey','providerkey']);
+const EXPORT_SECRET_FIELDS=new Set(['apikey','geminikey','sentierochiavegemini','anthropickey','aikey','providerkey']);
 function jsonExportSenzaSegreti(value,spazi){
   return JSON.stringify(value,function(k,v){
     const n=String(k||'').toLowerCase().replace(/[^a-z]/g,'');
@@ -4639,6 +4642,14 @@ function jsonExportSenzaSegreti(value,spazi){
 const DAYS_IT=['L','M','M','G','V','S','D'];
 const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Maestria','Pieno','Tao'];
 const todayKey=()=>localDayKey(new Date());
+/* v272.2 — UNA SOLA GEOMETRIA DELLA VOCE. */
+function geometriaVoce(){
+  try{ const m=document.getElementById('mic'); if(m){ const r=m.getBoundingClientRect();
+    if(r.width>0&&r.height>0) return {x:r.left+r.width/2,y:r.top+r.height/2,w:r.width,h:r.height,R:r.width/2,ringR:(79/200)*r.width}; } }catch(_){}
+  const w=innerWidth||375,h=innerHeight||647,d=Math.min(310,w*.83);
+  return {x:w/2,y:h*.30,w:d,h:d,R:d/2,ringR:(79/200)*d};
+}
+window._geometriaVoce=geometriaVoce;
 /* ══ GLI ESEMPI IN QUESTO FILE SONO INVENTATI ════════════════════════════════
    L'ELENCO DICHIARATO, e provaChiunque non ne ammette altri con dentro un numero:
      «10 000 passi» · «Niente schermi dopo le 22:00» · «Fare 300 €»
@@ -6293,6 +6304,7 @@ function diagnosticaSicura(){
       ricorrenti:((S&&S.scheduled)||[]).length,
       osservazioni:((S&&S.observerNotes)||[]).length,
       conChiave:GEMINI_KEY?1:0,
+      chiaveInStorage:(function(){ try{ return String(localStorage.getItem(GEMINI_KEY_LS)||'').trim()?1:0; }catch(_){ return -1; } })(),
       baseLinguistica:(S&&S.baseLing)?1:0
     };
   }catch(_){}
@@ -6306,9 +6318,17 @@ function diagnosticaSicura(){
       prescrizioni:Array.isArray(_b&&_b.prescrizione)?_b.prescrizione.length:0,
       gergo:Array.isArray(_b&&_b.gergo)?_b.gergo.length:0,
       ultimoEsito:String((_BASE_ULTIMO_ESITO&&_BASE_ULTIMO_ESITO.esito)||'').slice(0,32),
-      canale:String((_BASE_ULTIMO_ESITO&&_BASE_ULTIMO_ESITO.canale)||'').slice(0,20)
+      canale:String((_BASE_ULTIMO_ESITO&&_BASE_ULTIMO_ESITO.canale)||'').slice(0,20),
+      ricevutoPerVersione:String((_BASE_ULTIMO_ESITO&&_BASE_ULTIMO_ESITO.per_versione)||'').slice(0,40),
+      ricevutoVersione:Number((_BASE_ULTIMO_ESITO&&_BASE_ULTIMO_ESITO.versione)||0),
+      ricevutoImpronta:String((_BASE_ULTIMO_ESITO&&_BASE_ULTIMO_ESITO.impronta)||'').slice(0,80)
     };
   try{ d.frontAI=_frontAIWiring(); }catch(_){}
+  }catch(_){}
+  try{
+    const g=geometriaVoce(), e=window._ensoView||null;
+    d.geometriaVoce={mic:[Math.round(g.x),Math.round(g.y),Math.round(g.w)],enso:e?[Math.round(e.cx),Math.round(e.cy)]:null,
+      deltaEnsoPx:e?Math.round(Math.hypot(g.x-e.cx,g.y-e.cy)*10)/10:null};
   }catch(_){}
   /* Solo contatori tecnici del giorno: nessun prompt, risposta o contenuto. */
   try{
@@ -7086,6 +7106,10 @@ document.querySelector('#btn-save').onclick=async()=>{
     }catch(_){}
   },140);
   const beforeMap=new Map(S.quests.map(q=>[q.id,q]));
+  let _propLocale=[]; try{ _propLocale=distillaLocale(transcript,todayKey()); }catch(_){ _propLocale=[]; }
+  const voceDiario=diarioProvvisorio(transcript);
+  if(!salvaSubito()){ try{ S.diary=S.diary.filter(x=>x!==voceDiario); }catch(_){} throw new Error('PERSIST'); }
+  micLabel.textContent=GEMINI_KEY?'Nota al sicuro · distillo…':'Nota al sicuro';
   try{
     if(GEMINI_KEY){
       const t0Dist=Date.now();
@@ -7132,7 +7156,7 @@ document.querySelector('#btn-save').onclick=async()=>{
         const bornIds=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.id);
         const bornTitles=S.quests.filter(q=>!beforeMap.has(q.id)).map(q=>q.titolo);
         const doneTitles=S.quests.filter(q=>{const b=beforeMap.get(q.id);return b&&!b.fatto&&q.fatto;}).map(q=>q.titolo);
-        addDiary(out.diario||transcript,bornTitles.concat(bornRit.map(t=>'Rituale: '+t)),doneTitles,transcript,'','',pesa);
+        completaDiario(voceDiario,out.diario||transcript,bornTitles.concat(bornRit.map(t=>'Rituale: '+t)),doneTitles,pesa);
         save(); render(bornIds);
         bornIds.forEach((_,i)=>sAppear(i));
         setTimeout(()=>{ /* scintille su ogni quest appena nata, a cascata */
@@ -7164,14 +7188,10 @@ document.querySelector('#btn-save').onclick=async()=>{
       /* v206: senza chiave nessuno ha letto questo testo. La rete a maglie larghe
          non fara nascere ne bloccare niente: serve solo perche stasera
          l'osservatrice e domattina il frutto sappiano come parlare. */
-      addDiary(transcript,[],[],'','','',pesoLocale(transcript));
-      salvaSubito(); render();   /* v252: le parole di una persona non aspettano */
-      /* v212: la nota e salva, e adesso l'estrattore di casa guarda cosa c'era
-         dentro. Quello che trova si PROPONE: non entra da solo nella lista. */
-      let _prop=[];
-      try{ _prop=distillaLocale(transcript,todayKey()); }catch(_){ _prop=[]; }
+      completaDiario(voceDiario,transcript,[],[],pesoLocale(transcript));
+      salvaSubito(); render();
       let _aperto=false;
-      try{ _aperto=apriProposte(_prop); }catch(_){ _aperto=false; }
+      try{ _aperto=apriProposte(_propLocale); }catch(_){ _aperto=false; }
       toast(_aperto?'Nota salvata. Ho sentito qualcosa da fare.':'Nota salvata nel diario');
       try{ semeRaccolto(); }catch(_){}
       resetCapture();
@@ -7180,7 +7200,7 @@ document.querySelector('#btn-save').onclick=async()=>{
       return;
     }
   }catch(err){
-    addDiary(transcript,[],[],'','','',pesoLocale(transcript)); salvaSubito(); render(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}   /* v206: la rete e la stessa anche quando e la rete a cadere */
+    completaDiario(voceDiario,transcript,[],[],pesoLocale(transcript)); salvaSubito(); render(); resetCapture(); foglioDopoVoce(); try{ semeRaccolto(); }catch(_){}
     const code=(err&&err.message)||'';
     let msg='IA non raggiungibile'+(code&&code!=='bad'?' ['+code.slice(0,90)+']':'')+': trascritto salvato comunque';
     if(code==='bad') msg='L\u2019IA ha risposto in un formato non leggibile: riprova. Trascritto salvato.';
@@ -7189,6 +7209,7 @@ document.querySelector('#btn-save').onclick=async()=>{
     else if(code==='MODEL') msg='Modello IA non disponibile: serve aggiornare l\u2019app. Trascritto salvato.';
     else if(code==='BUSY') msg='Server IA sovraccarichi: riprova tra poco. Trascritto salvato.';
     else if(err&&err.name==='AbortError') msg='IA troppo lenta (timeout): riprova. Trascritto salvato.';
+    else if(code==='PERSIST') msg='Non riesco a mettere la nota al sicuro sul dispositivo.';
     else if(err instanceof TypeError) msg='Rete assente o bloccata: controlla la connessione. Trascritto salvato.';
     /* v212 — LA RETE GENERATIVA CHE CADE SENZA SAPERLO. Visto in prova: si detta una nota
        e quella finisce solo nel diario: momento perso, e
@@ -7196,10 +7217,8 @@ document.querySelector('#btn-save').onclick=async()=>{
        doveva rispondere e non ce l'ha fatta - per qualunque ragione - subentra
        l'estrattore di casa e propone quello che ha sentito. La nota non basta:
        serve che le cose da fare escano comunque. */
-    let _propE=[];
-    try{ _propE=distillaLocale(transcript,todayKey()); }catch(_){ _propE=[]; }
     let _apertoE=false;
-    try{ _apertoE=apriProposte(_propE); }catch(_){ _apertoE=false; }
+    try{ _apertoE=apriProposte(_propLocale); }catch(_){ _apertoE=false; }
     if(_apertoE) msg=msg.replace(/Trascritto salvato\.?/,'Intanto le cerco io.');
     toast(msg);
   }finally{
@@ -7757,6 +7776,16 @@ function addDiary(testo,born,done,raw,seme,dom,peso){
   S.diary.unshift(v);
   if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX;
 }
+/* v272.2 — Tieni mette la nota al sicuro PRIMA della rete. */
+function diarioProvvisorio(testo){
+  const v={data:todayKey(),iso:new Date().toISOString(),testo:clampStr(testo,LIMITS.DIARY),raw:clampStr(testo,LIMITS.RAW),born:[],done:[],pos:freshPos(),seme:'',dom:''};
+  S.diary.unshift(v); if(S.diary.length>LIMITS.DMAX) S.diary.length=LIMITS.DMAX; return v;
+}
+function completaDiario(v,testo,born,done,peso){
+  if(!v) return; const lst=a=>Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,20).map(x=>x.slice(0,200)):[];
+  v.testo=clampStr(testo,LIMITS.DIARY); v.born=lst(born); v.done=lst(done);
+  if(peso===true) v.peso=true; else try{ delete v.peso; }catch(_){}
+}
 
 /* ══ GEMINI — MODEL ROUTING + CONTRATTI ═════════════════════════════════
    Il dominio non conosce Google. Il profilo decide modello, profondita di
@@ -7764,16 +7793,19 @@ function addDiary(testo,born,done,raw,seme,dom,peso){
    parte dal Flash-Lite gia validato su iPhone e conserva 3.7 come fallback,
    Veloce usa una sola strada economica. */
 const AI_CHAINS={
-  /* Lab 8 — TRE PROFILI, TRE COMPORTAMENTI REALI.
-     Massimo privilegia 3.7; Bilanciato parte dal Flash-Lite che ha gia superato
-     distillazione e OCR su iPhone reale, con 3.7 come rete di qualita; Veloce
-     non apre una seconda strada: usa soltanto Flash-Lite e riduce il pensiero. */
+  /* TRE PROFILI, con una eccezione di mestiere: Distillazione usa sempre Flash-Lite.
+     Massimo privilegia 3.7 nei lavori riflessivi; Bilanciato parte da Flash-Lite
+     e conserva 3.7 come rete di qualita; Veloce usa soltanto Flash-Lite. */
   max:{heavy:['gemini-3.7-flash','gemini-3.5-flash-lite'],cheap:['gemini-3.7-flash','gemini-3.5-flash-lite']},
   balanced:{heavy:['gemini-3.5-flash-lite','gemini-3.7-flash'],cheap:['gemini-3.5-flash-lite','gemini-3.7-flash']},
   fast:{heavy:['gemini-3.5-flash-lite'],cheap:['gemini-3.5-flash-lite']}
 };
 const AI_HEAVY_TASKS=new Set(['distill','observer','fruit','ocr','observer-distill']);
 function aiModels(task){
+  /* v272.2 — la Distillazione e estrazione strutturata in tempo reale, non un
+     mestiere creativo. Flash-Lite e la strada operativa; Massimo resta 3.7 per
+     i mestieri dove il ragionamento lungo porta valore. */
+  if(task==='distill'||task==='distill-recovery') return ['gemini-3.5-flash-lite'];
   const mode=(S.settings&&S.settings.aiModel)||'balanced';
   const set=AI_CHAINS[mode]||AI_CHAINS.balanced;
   return (AI_HEAVY_TASKS.has(task)?set.heavy:set.cheap).slice();
@@ -7826,13 +7858,15 @@ async function askDistill(transcript){
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
 '{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"peso":false,"non_eseguibile":""}';
   const distUser=(window._semeAttivo?'DOMANDA SEMINATA (il racconto risponde a questa):\n'+window._semeAttivo.testo+'\n\n':'')+'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript;
-  let res=await aiCall({system:sys,user:distUser,task:'distill',schema:AI_SCHEMAS.distill,maxOutputTokens:1800,reasoning:'medium',timeout:45000,priority:40});
-  /* Un solo recupero mirato dopo HTTP 200 + schema/incomplete su Flash-Lite. */
-  if(res&&res.err==='schema'&&res.model==='gemini-3.5-flash-lite'){
+  let res=await aiCall({system:sys,user:distUser,task:'distill',models:['gemini-3.5-flash-lite'],schema:AI_SCHEMAS.distill,maxOutputTokens:1800,reasoning:'minimal',timeout:10000,priority:40});
+  /* v272.2 — un solo retry breve. Auth/quota non si ritentano; timeout, rete,
+     server e schema possono essere transitori. Il tetto di rete e ~20 secondi. */
+  if(res&&['timeout','rete','occupato','schema','incomplete','modello','http'].includes(res.err)){
     const first=res;
-    const rec=await aiCall({system:sys,user:distUser,task:'distill-recovery',models:['gemini-3.5-flash-lite'],schema:AI_SCHEMAS.distill,maxOutputTokens:3200,reasoning:'minimal',timeout:50000,priority:39});
-    if(rec&&!rec.err){ rec.salti=['schema-recovery',first.salti||'',rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
-    else if(rec){ rec.salti=['schema-recovery-fail',first.salti||'',rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
+    try{ if(typeof micLabel!=='undefined'&&micLabel) micLabel.textContent='Nota al sicuro · riprovo Gemini…'; }catch(_){}
+    const rec=await aiCall({system:sys,user:distUser,task:'distill-recovery',models:['gemini-3.5-flash-lite'],schema:AI_SCHEMAS.distill,maxOutputTokens:2200,reasoning:'minimal',timeout:10000,priority:39});
+    if(rec&&!rec.err){ rec.salti=['retry-fast',first.err||'',first.salti||'',rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
+    else if(rec){ rec.salti=['retry-fast-fail',first.err||'',first.salti||'',rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
   }
   if(res.err){ const e=res.err;
     if(e==='chiave') throw new Error('AUTH');
@@ -9874,10 +9908,10 @@ function _baseValida(b){
 
    La base valida si tiene nello stato, quindi finisce nei backup: chi cambia
    telefono non riparte da zero culturalmente. */
-const BASE_ORIGINE='lingue/base-it.json';
-const BASE_CACHE_TAG='v7-2026-08-25-production-sentiero-272-1';
+const BASE_ORIGINE='lingue/base-it-v272.2.json';
+const BASE_CACHE_TAG='v8-2026-08-25-production-sentiero-272-2';
 const BASE_OGNI_MS=1000*60*60*24*7;     /* una volta a settimana basta e avanza */
-let _BASE_ULTIMO_ESITO={esito:'non provata',canale:'',quando:0};
+let _BASE_ULTIMO_ESITO={esito:'non provata',canale:'',quando:0,per_versione:'',versione:0,impronta:''};
 async function aggiornaBaseLinguistica(forza){
   try{
     if(!forza){
@@ -9907,11 +9941,12 @@ async function aggiornaBaseLinguistica(forza){
       deissi:(j&&j.trappole_di_ambiguita&&j.trappole_di_ambiguita.deissi)||[],
       pesi:(j&&j.pesi_della_giuria)||{}
     };
-    if(!_baseValida(b)){ _BASE_ULTIMO_ESITO={esito:'scartata',canale:online?'rete':'cache-shell',quando:Date.now()}; return {esito:'scartata: non ha passato i controlli'}; }
-    if(b.versione<=((S&&S.baseLing&&S.baseLing.versione)|0)&&!forza){ _BASE_ULTIMO_ESITO={esito:'gia aggiornata',canale:online?'rete':'cache-shell',quando:Date.now()}; return {esito:'gia aggiornata'}; }
+    const bm={per_versione:b.per_versione,versione:b.versione,impronta:b.impronta};
+    if(!_baseValida(b)){ _BASE_ULTIMO_ESITO=Object.assign({esito:'scartata',canale:online?'rete':'cache-shell',quando:Date.now()},bm); return {esito:'scartata: non ha passato i controlli'}; }
+    if(b.versione<=((S&&S.baseLing&&S.baseLing.versione)|0)&&!forza){ _BASE_ULTIMO_ESITO=Object.assign({esito:'gia aggiornata',canale:online?'rete':'cache-shell',quando:Date.now()},bm); return {esito:'gia aggiornata'}; }
     S.baseLing=b; S.baseLingQuando=Date.now(); _BASE_CACHE.v=null;
     try{ save(); }catch(_){}
-    _BASE_ULTIMO_ESITO={esito:'aggiornata',canale:online?'rete':'cache-shell',quando:Date.now()};
+    _BASE_ULTIMO_ESITO=Object.assign({esito:'aggiornata',canale:online?'rete':'cache-shell',quando:Date.now()},bm);
     try{ regCantiere('base-linguistica',{msg:'versione '+b.versione+' · '+b.nucleo.length+' parole · '+_BASE_ULTIMO_ESITO.canale+' · impronta '+b.impronta}); }catch(_){}
     return {esito:'aggiornata',versione:b.versione,parole:b.nucleo.length,canale:_BASE_ULTIMO_ESITO.canale};
   }catch(e){ _BASE_ULTIMO_ESITO={esito:'errore',canale:'',quando:Date.now()}; return {esito:'errore'}; }
@@ -10742,7 +10777,7 @@ function _aiProfileReasoning(task,requested){
        Lab 11 3.7 ha speso pensiero extra e ha lasciato affiorare una frase-meta.
        La profondita ora segue il mestiere. */
     const perTask={
-      'ocr':'medium','distill':'high','observer':'low','observer-line':'low',
+      'ocr':'medium','distill':'minimal','observer':'low','observer-line':'low',
       'observer-distill':'medium','fruit':'medium','desiderio':'medium','pietra':'low',
       'sfida':'low','seme':'low','terra':'low','capitolo':'low'
     };
@@ -10763,7 +10798,7 @@ function _aiThinkingFor(model,requested){
 function _aiThinkingForTask(model,task,requested){
   let r=_aiProfileReasoning(task,requested);
   if(task==='desiderio') r=(model==='gemini-3.5-flash-lite')?'minimal':'low';
-  else if(task==='distill'&&model==='gemini-3.5-flash-lite') r='medium';
+  else if(task==='distill'&&model==='gemini-3.5-flash-lite') r='minimal';
   else if(task==='distill-recovery'&&model==='gemini-3.5-flash-lite') r='minimal';
   return _aiThinkingFor(model,r);
 }
@@ -10863,6 +10898,13 @@ function aiCall(opt){
   if(!GEMINI_KEY) return Promise.resolve({err:'chiave'});
   if(('onLine' in navigator)&&navigator.onLine===false) return Promise.resolve({err:'offline'});
   if(opt.signal&&opt.signal.aborted) return Promise.resolve({err:'annullata'});
+  /* v272.2 — LA VOCE NON FA LA CODA. Distillare una registrazione è un gesto
+     interattivo: non deve aspettare che Frutto, OCR o Osservatrice liberino i
+     due posti della coda generale. Usa lo stesso adapter/rate governor, ma la
+     richiesta parte subito. Al massimo c'è UNA distillazione, protetta da
+     `distilling` nel chiamante. */
+  if(opt.task==='distill'||opt.task==='distill-recovery')
+    return _geminiRun(opt).catch(()=>({err:'rete'}));
   return new Promise(resolve=>{
     _aiQueue.push({id:++_aiSeq,opt:opt,resolve:resolve,p:_aiPriority(opt)});
     _aiQueue.sort((a,b)=>b.p-a.p||a.id-b.id);
@@ -10998,6 +11040,7 @@ async function _geminiRun(opt){
       if(ctrl){ timer=setTimeout(()=>{ timed=true; try{ ctrl.abort(); }catch(_){} },to); }
       if(opt.signal&&ctrl){ const stop=()=>{ try{ ctrl.abort(); }catch(_){} }; try{ opt.signal.addEventListener('abort',stop,{once:true}); unlink=()=>opt.signal.removeEventListener('abort',stop); }catch(_){} }
       const body=_geminiBody(opt,model,task,false);
+      const noSameModelRetry=(task==='distill'||task==='distill-recovery');
       let r=null,data=null;
       try{
         apiAttempts++;
@@ -11008,13 +11051,29 @@ async function _geminiRun(opt){
         if(timer) clearTimeout(timer); try{ if(unlink) unlink(); }catch(_){}
         if(e&&e.name==='AbortError'){
           const err=(opt.signal&&opt.signal.aborted)?'annullata':(timed?'timeout':'rete');
-          const z={err:err,model:model,retries:retries,durationMs:Date.now()-started}; z.attempts=apiAttempts; _geminiLog(task,z); return z;
+          if(err!=='annullata'&&mi<chain.length-1){ salti.push(model+':'+err); break; }
+          const z={err:err,model:model,retries:retries,durationMs:Date.now()-started,salti:salti.join(' ')}; z.attempts=apiAttempts; _geminiLog(task,z); return z;
         }
-        if(attempt<1){ attempt++; retries++; try{ await _aiSleep(_aiRetryDelay(null,attempt),opt.signal); }catch(_){ return {err:'annullata'}; } continue; }
-        const z={err:'rete',model:model,retries:retries,durationMs:Date.now()-started}; z.attempts=apiAttempts; _geminiLog(task,z); return z;
+        if(!noSameModelRetry&&attempt<1){ attempt++; retries++; try{ await _aiSleep(_aiRetryDelay(null,attempt),opt.signal); }catch(_){ return {err:'annullata'}; } continue; }
+        if(mi<chain.length-1){ salti.push(model+':rete'); break; }
+        const z={err:'rete',model:model,retries:retries,durationMs:Date.now()-started,salti:salti.join(' ')}; z.attempts=apiAttempts; _geminiLog(task,z); return z;
+      }
+      /* v272.2 — il timeout copre TUTTA la risposta, non soltanto gli header.
+         `fetch()` può risolversi quando arrivano gli header mentre il body continua
+         a scaricarsi: spegnere qui il timer lasciava `r.json()` senza alcun tetto. */
+      try{
+        data=await r.json();
+      }catch(e){
+        if(timed||(e&&e.name==='AbortError')){
+          if(timer) clearTimeout(timer); try{ if(unlink) unlink(); }catch(_){}
+          const err=(opt.signal&&opt.signal.aborted)?'annullata':'timeout';
+          if(err!=='annullata'&&mi<chain.length-1){ salti.push(model+':'+err+'-body'); break; }
+          const z={err:err,model:model,retries:retries,durationMs:Date.now()-started,salti:[salti.join(' '),'body'].filter(Boolean).join(' ')};
+          z.attempts=apiAttempts; _geminiLog(task,z); return z;
+        }
+        data=null;
       }
       if(timer) clearTimeout(timer); try{ if(unlink) unlink(); }catch(_){}
-      try{ data=await r.json(); }catch(_){ data=null; }
       if(r.ok){
         const lifecycle=String((data&&data.status)||'');
         if(lifecycle!=='completed'){
@@ -11071,7 +11130,7 @@ async function _geminiRun(opt){
         z.attempts=apiAttempts; _geminiLog(task,z); return z;
       }
       if(r.status>=500){
-        if(attempt<1){ attempt++; retries++; try{ await _aiSleep(_aiRetryDelay(r,attempt),opt.signal); }catch(_){ return {err:'annullata'}; } continue; }
+        if(!noSameModelRetry&&attempt<1){ attempt++; retries++; try{ await _aiSleep(_aiRetryDelay(r,attempt),opt.signal); }catch(_){ return {err:'annullata'}; } continue; }
         const z={err:'occupato',http:r.status,model:model,retries:retries,durationMs:Date.now()-started}; z.attempts=apiAttempts; _geminiLog(task,z); return z;
       }
       const z={err:'http',http:r.status,model:model,retries:retries,durationMs:Date.now()-started}; z.attempts=apiAttempts; _geminiLog(task,z); return z;
@@ -13244,8 +13303,7 @@ function applyTheme(){ try{
   function disegnaAnelloLCD(ts){
     const dt=Math.min(3,(ts-last)/16.7||1); last=ts;
     const mic=document.getElementById('mic');
-    if(mic){ const rb=mic.getBoundingClientRect();
-      if(rb.width>0){ FCX=rb.left+rb.width/2; FCY=rb.top+rb.height/2; FK=rb.width/200; } }
+    { const gv=geometriaVoce(); FCX=gv.x; FCY=gv.y; FK=gv.w/200; }
     window._ensoView={cx:FCX,cy:FCY,k:FK,dpr:DPR};
     const rec=mic&&mic.classList.contains('rec');
     const sealed=mic&&mic.classList.contains('sealed');
@@ -13310,8 +13368,7 @@ function applyTheme(){ try{
   function frameInterno(ts){
     const dt=Math.min(3,(ts-last)/16.7||1); last=ts;
     const mic=document.getElementById('mic');
-    if(mic){ const rb=mic.getBoundingClientRect();
-      if(rb.width>0){ FCX=rb.left+rb.width/2; FCY=rb.top+rb.height/2; FK=rb.width/200; } }
+    { const gv=geometriaVoce(); FCX=gv.x; FCY=gv.y; FK=gv.w/200; }
     window._ensoView={cx:FCX,cy:FCY,k:FK,dpr:DPR};
     const rec=mic&&mic.classList.contains('rec');
     const sealed=mic&&mic.classList.contains('sealed');
@@ -13534,7 +13591,7 @@ function applyTheme(){ try{
     /* ── LA VIA LATTEA v3 — copia del render approvato: velo gaussiano a due strati,
        nuvole di latte, corsie scure, ~3800 stelle-sprite in quattro popoli. ── */
     /* il nucleo della galassia E il cerchio vocale: la banda nasce da li */
-    const CM0=(function(){ try{ const m=document.getElementById('mic'); if(m){ const r=m.getBoundingClientRect(); if(r.width) return {x:r.left+r.width/2,y:r.top+r.height/2}; } }catch(_){} return {x:W*0.5,y:H2*0.30}; })();
+    const CM0=(function(){ const g=geometriaVoce(); return {x:g.x,y:g.y}; })();
     const AX=CM0.x, AY=CM0.y, ANG=-0.56, ca=Math.cos(ANG), sa=Math.sin(ANG), L=Math.hypot(W,H2);
     ANCR.x=Math.max(0,Math.round(AX*DPR)); ANCR.y=Math.max(0,Math.round(AY*DPR));
     ctx.save(); ctx.translate(AX,AY); ctx.rotate(ANG);
@@ -13636,12 +13693,7 @@ function applyTheme(){ try{
     else modo='quiete';
   };
   window._cieloParola=function(){ if(PULSES.length<4) PULSES.push(Date.now()); };
-  function centroMic(W,H2){
-    try{ const m=document.getElementById('mic');
-      if(m){ const r=m.getBoundingClientRect(); if(r.width) return {x:r.left+r.width/2,y:r.top+r.height/2,R:r.width/2}; }
-    }catch(_){}
-    return {x:W*0.5,y:H2*0.30,R:Math.min(W,H2)*0.28};
-  }
+  function centroMic(W,H2){ const g=geometriaVoce(); return {x:g.x,y:g.y,R:g.R}; }
   const CAB=Math.cos(-0.56), SAB=Math.sin(-0.56);
   function nasce(p,W,H2,CM){
     const L=Math.hypot(W,H2), dove=Math.random();
@@ -15619,13 +15671,7 @@ function chiudiTerra(){
   }
   /* il centro VERO del cerchio: si misura il bottone, non la scatola che lo contiene.
      r=79 su un viewBox 200 e il raggio del tracciato: la luce corre sull'anello. */
-  function misura(){
-    try{ const m=document.getElementById('mic');
-      if(m){ const r=m.getBoundingClientRect();
-        if(r.width){ CX=r.left+r.width/2; CY=r.top+r.height/2; RR=(79/200)*r.width; return; } }
-    }catch(_){}
-    CX=innerWidth/2; CY=innerHeight*0.3; RR=Math.min(innerWidth,innerHeight)*0.28;
-  }
+  function misura(){ const g=geometriaVoce(); CX=g.x; CY=g.y; RR=g.ringR; }
   misura();
   addEventListener('resize',lavoroPesante(misura)); addEventListener('orientationchange',lavoroPesante(misura));
   try{ const m=document.getElementById('mic'); if(m&&window.ResizeObserver) new ResizeObserver(misura).observe(m); }catch(_){}
@@ -15643,6 +15689,7 @@ function chiudiTerra(){
     if(stato==='orbita'&&document.body.getAttribute('data-mondo')==='coperto') return;   /* coperta: zero lavoro */
     let x,y,k=1,op=1;
     if(stato==='orbita'){
+      misura();
       ang=((now-t0)/GIRO)*Math.PI*2 - Math.PI/2;
       const p=punto(ang); x=p.x; y=p.y;
       k=1+Math.sin(now/1400)*0.10;         /* il respiro, appena percettibile */
@@ -15768,12 +15815,7 @@ function chiudiTerra(){
   const STORIA=[];
   function calmo(){ try{ if(S.settings&&S.settings.anim==='sempre') return false;
     return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(_){ return false; } }
-  function misura(){
-    try{ const m=document.getElementById('mic');
-      if(m){ const r=m.getBoundingClientRect();
-        if(r.width){ CX=r.left+r.width/2; CY=r.top+r.height/2; RR=(79/200)*r.width; return; } } }catch(_){}
-    CX=innerWidth/2; CY=innerHeight*0.3; RR=Math.min(innerWidth,innerHeight)*0.28;
-  }
+  function misura(){ const g=geometriaVoce(); CX=g.x; CY=g.y; RR=g.ringR; }
   misura(); addEventListener('resize',lavoroPesante(misura)); addEventListener('orientationchange',lavoroPesante(misura));
   try{ const m=document.getElementById('mic'); if(m&&window.ResizeObserver) new ResizeObserver(misura).observe(m); }catch(_){}
   function poni(e,x,y,op){ e.style.transform='translate3d('+x.toFixed(2)+'px,'+y.toFixed(2)+'px,0)';
@@ -15798,6 +15840,7 @@ function chiudiTerra(){
     if(!acceso) return;                                   /* fuori orario: zero lavoro */
     if(document.body.getAttribute('data-mondo')==='coperto') return;
     if(el.classList.contains('aperta')) return;           /* stanza aperta: la copre */
+    misura();
     ang=((now-t0)/GIRO)*Math.PI*2 + Math.PI/2;
     const x=CX+Math.cos(ang)*RR, y=CY+Math.sin(ang)*RR;
     const k=1+Math.sin(now/1700)*0.13;                    /* respira piu ampio dell'azzurro */
@@ -16941,8 +16984,8 @@ document.querySelector('#sw-notif').onclick=async()=>{
 { const b=document.querySelector('#btn-guida');
   if(b) b.onclick=()=>{ try{ window.open('./guida.html','_blank','noopener'); }catch(_){ location.href='./guida.html'; } }; }
 document.querySelector('#btn-savekey').onclick=()=>{
-  setGeminiKey(document.querySelector('#gemini-key').value);
-  toast(GEMINI_KEY?'Chiave Gemini salvata sul dispositivo':'Chiave rimossa'); renderSettings();
+  const ok=setGeminiKey(document.querySelector('#gemini-key').value);
+  toast(ok?(GEMINI_KEY?'Chiave Gemini salvata e verificata sul dispositivo':'Chiave rimossa'):'Non riesco a salvare la chiave su questo dispositivo'); renderSettings();
 };
 document.querySelector('#btn-testkey').onclick=async()=>{
   const out=document.querySelector('#test-result');
@@ -17274,56 +17317,49 @@ function renderLingua(){
 }
 
 { const _bd=document.querySelector('#btn-diagnostica'); if(_bd) _bd.onclick=scaricaDiagnostica; }
-document.querySelector('#btn-export').onclick=()=>{
+function scaricaBackup(includeKey){
   try{
-    /* la diagnosi di cantiere viaggia nel backup: chi legge il file sa dispositivo, versione e forma dello stato.
-       All'import viene ignorata: sanitizeState costruisce solo i campi che conosce. */
     const diag={ver:APP_VERSION,quando:new Date().toISOString(),
       dispositivo:{ua:String(navigator.userAgent||'').slice(0,160),vw:innerWidth,vh:innerHeight,dpr:devicePixelRatio||1,
-        riduciMoto:!!matchMedia('(prefers-reduced-motion: reduce)').matches,
-        standalone:!!((navigator.standalone)||matchMedia('(display-mode: standalone)').matches)},
+        riduciMoto:(function(){try{return !!matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(_){return false;}})(),
+        standalone:(function(){try{return !!(navigator.standalone||matchMedia('(display-mode: standalone)').matches);}catch(_){return false;}})()},
       statoByte:JSON.stringify(S).length,
       conteggi:{quests:(S.quests||[]).length,diario:(S.diary||[]).length,rituali:(S.scheduled||[]).length,
         semi:(S.semi||[]).length,capitoli:(S.capitoli||[]).length,foto:Object.keys(S.foto||{}).length,
         patti:(S.patti||[]).length,registro:(S.registro||[]).length},
       impostazioni:S.settings};
-    /* PRODUZIONE — LA CHIAVE GEMINI NON ESCE NEL BACKUP E NON VIENE TOCCATA.
-   Il backup e l'unico file fatto apposta per essere spostato altrove: per
-   posta, su un altro telefono, in una cartella condivisa. La chiave Gemini vive
-   in una chiave localStorage separata da S: esportare o importare un backup su
-   QUESTO dispositivo la lascia esattamente dov'e. Nel JSON non entra proprio.
-   Su un dispositivo nuovo va inserita una volta, proprio perche il backup non
-   trasporta segreti. jsonExportSenzaSegreti e la cintura di sicurezza anche per
-   vecchi campi apiKey/geminiKey eventualmente presenti in dati legacy. */
-    /* v269.10 — LA SCATOLA VIAGGIA ANCHE COL BACKUP, MA IL BACKUP NON E
-     CONDIVISIBILE. Il commento della v269.5 diceva che da qui si poteva mandare
-     tutto a chi ripara: era vero della scatola, falso del file che la contiene.
-     Il backup e la vita della persona. Per chi ripara c'e diagnosticaSicura(),
-     costruita per lista bianca. La scatola resta anche qui perche a chi si
-     porta via i propri dati fa comodo avere tutto in un posto. */
-  let _sn=null; try{ scatolaScrivi(); _sn={voci:SCATOLA_VOCI,sessione:_scatolaSes,nastro:_scatola.slice(-SCATOLA_TETTO)}; }catch(_){}
-  const payloadBackup=Object.assign({},S,{_cantiere:diag,_scatola:_sn});
-  const blob=new Blob([jsonExportSenzaSegreti(payloadBackup,2)],{type:'application/json'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download='sentiero-backup-'+todayKey()+'.json'; a.rel='noopener';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-    toast('Backup pronto. La chiave Gemini resta qui e non entra nel file');
+    let _sn=null; try{ scatolaScrivi(); _sn={voci:SCATOLA_VOCI,sessione:_scatolaSes,nastro:_scatola.slice(-SCATOLA_TETTO)}; }catch(_){}
+    const payload=Object.assign({},S,{_cantiere:diag,_scatola:_sn});
+    let txt='';
+    if(includeKey){
+      if(!confirm('Creare un BACKUP COMPLETO?\n\nConterrà anche la chiave Gemini. Custodiscilo come una password.')) return;
+      payload._sentieroChiaveGemini=GEMINI_KEY||'';
+      txt=JSON.stringify(payload,null,2);
+    }else txt=jsonExportSenzaSegreti(payload,2);
+    const blob=new Blob([txt],{type:'application/json'}),a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='sentiero-backup-'+(includeKey?'completo-':'')+todayKey()+'.json'; a.rel='noopener';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast(includeKey?'Backup completo pronto: contiene anche la chiave Gemini':'Backup pronto. La chiave Gemini non è nel file');
   }catch(_){ toast('Esportazione non riuscita'); }
-};
+}
+document.querySelector('#btn-export').onclick=()=>scaricaBackup(false);
+{ const b=document.querySelector('#btn-export-full'); if(b) b.onclick=()=>scaricaBackup(true); }
 document.querySelector('#btn-import').onclick=()=>document.querySelector('#import-file').click();
 document.querySelector('#import-file').onchange=e=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=()=>{
-    let prima=null, mutato=false;
+    /* v272.2 — la fotografia della chiave vive FUORI dal try: se l'import
+       fallisce dopo aver toccato lo stato, il rollback deve poterla rimettere. */
+    let prima=null, mutato=false, chiavePrima=String(GEMINI_KEY||'');
     try{
       const parsed=JSON.parse(r.result);
       if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)) throw new Error('shape');
+      const chiaveBackup=typeof parsed._sentieroChiaveGemini==='string'?String(parsed._sentieroChiaveGemini).trim().slice(0,500):null;
       const nq=Array.isArray(parsed.quests)?parsed.quests.length:0;
       const nd=Array.isArray(parsed.diary)?parsed.diary.length:0;
       const when=parsed.lastSealed||parsed.lastDayInit||'';
-      const ok=confirm('Importare questo backup?\n\n'+nq+' quest · '+nd+' voci di diario'+(when?('\nUltimo giorno: '+when):'')+'\n\nSostituirà TUTTI i dati attuali su questo telefono.');
+      const ok=confirm('Importare questo backup?\n\n'+nq+' quest · '+nd+' voci di diario'+(when?('\nUltimo giorno: '+when):'')+(chiaveBackup!==null?'\nChiave Gemini: inclusa':'\nChiave Gemini: quella attuale resta')+'\n\nSostituirà TUTTI i dati attuali su questo telefono.');
       if(!ok){ toast('Import annullato: dati intatti'); return; }
 
       /* Gemini — IMPORT TRANSAZIONALE.
@@ -17339,12 +17375,15 @@ document.querySelector('#import-file').onchange=e=>{
       const verifica=safeGet(LS);
       if(!verifica) throw new Error('verify-empty');
       JSON.parse(verifica);  /* se non si rileggono i dati appena scritti, rollback */
+      if(chiaveBackup!==null){ if(!setGeminiKey(chiaveBackup)) throw new Error('key-persist'); }
+      else if(!setGeminiKey(chiavePrima)) throw new Error('key-restore');
       render();
-      toast(GEMINI_KEY?'Backup importato. La chiave Gemini è rimasta al suo posto':'Backup importato');
+      toast(chiaveBackup!==null?'Backup completo importato. Chiave Gemini ripristinata e verificata':(GEMINI_KEY?'Backup importato. La chiave Gemini è rimasta al suo posto':'Backup importato'));
     }catch(_){
       if(mutato&&prima){
         try{
           S=sanitizeState(JSON.parse(prima),defaultState);
+          try{ setGeminiKey(chiavePrima); }catch(_){}
           salvaSubito(); render();
           toast('Import non riuscito: i dati precedenti sono stati ripristinati');
           return;
