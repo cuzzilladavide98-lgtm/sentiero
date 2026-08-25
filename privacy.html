@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Sentiero — I tuoi dati</title>
-<meta name="description" content="Che cosa fa Sentiero con quello che scrivi. In breve: resta sul tuo telefono.">
+<title>Privacy di Sentiero — Dati del diario digitale e Gemini</title>
+<meta name="description" content="Privacy di Sentiero: dove restano le voci del diario digitale e cosa viene inviato quando usi rete, dettatura o Google Gemini.">
+<meta name="robots" content="index,follow,max-snippet:-1">
+<link rel="canonical" href="https://cuzzilladavide98-lgtm.github.io/sentiero/privacy.html">
 <meta name="theme-color" content="#070a09">
 <link rel="icon" href="./icon-192.png">
-<!-- Nessuna richiesta esterna: niente font remoti, niente statistiche, niente
-     di niente. Sarebbe una brutta informativa sulla privacy, quella che ti
-     traccia mentre te la leggi. -->
+<!-- Nessun font remoto, nessuna statistica, nessun tracker. La pagina è servita
+     insieme a Sentiero e non aggiunge chiamate di analisi o profilazione. -->
 <style>
 :root{
   --bg:#070a09;
@@ -27,6 +28,9 @@ body{
   font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
   padding:0 22px calc(64px + env(safe-area-inset-bottom));
 }
+body::before{content:"";position:fixed;z-index:1000;left:0;right:0;top:0;
+  height:calc(env(safe-area-inset-top) + 2px);background:var(--bg);pointer-events:none}
+html{scroll-padding-top:calc(env(safe-area-inset-top) + 12px)}
 main{max-width:34rem;margin:0 auto}
 header{padding:calc(48px + env(safe-area-inset-top)) 0 4px}
 h1{font-family:var(--serif);font-weight:400;font-size:34px;letter-spacing:.01em;line-height:1.15}
@@ -67,8 +71,10 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   </header>
 
   <div class="leggi">
-    <p>Quello che scrivi resta sul tuo telefono. Non c'è un server che lo riceve,
-    perché non c'è un server. Nessuno lo legge: nemmeno chi ha fatto l'app.</p>
+    <p>Lo stato di Sentiero resta sul tuo dispositivo. Sentiero non ha un account
+    né un server che conservi una copia del diario. Se attivi la Generativa, il
+    contenuto necessario alla singola funzione viene inviato direttamente a
+    Google Gemini API.</p>
   </div>
 
   <p class="calmo">Questa pagina è l'informativa richiesta dagli articoli 13 e 14
@@ -98,9 +104,8 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   senza, un diario non potrebbe ricordare niente. Per questo non trovi la
   finestrella dei cookie &mdash; non perché ce la siamo dimenticata.</p>
 
-  <h2>Le tre cose che escono dal telefono</h2>
-  <p class="calmo">Sono tre, e finiscono qui. Le scrivo per intero perché tacerle
-  sarebbe più comodo e meno onesto.</p>
+  <h2>Prima di Gemini: tre casi in cui entra la rete</h2>
+  <p class="calmo">Sono separati dalla Generativa e vale la pena dirli per intero.</p>
 
   <div class="esce">
     <h3>1 · Aprire la pagina</h3>
@@ -108,8 +113,8 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
     mondo, il computer che te lo consegna vede il tuo indirizzo IP, l'ora e che
     tipo di browser usi. È GitHub a vederlo, non io: io non ho accesso a quei
     registri e non ricevo nessuna statistica sulle visite.</p>
-    <p class="nota">Una volta installata, l'app funziona senza rete: non torna a
-    chiedere niente a nessuno per lavorare.</p>
+    <p class="nota">Una volta installata, il nucleo Base può lavorare offline.
+    La Generativa, naturalmente, ha bisogno della rete per raggiungere Gemini.</p>
   </div>
 
   <div class="esce">
@@ -136,11 +141,12 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <p>La seconda marcia si accende <strong>solo</strong> se incolli nelle
   impostazioni una chiave Gemini che hai creato tu nel tuo progetto Google.
   Quando una funzione generativa serve davvero, Sentiero invia direttamente a
-  <strong>generativelanguage.googleapis.com</strong> soltanto il contenuto
-  necessario a quella funzione e riceve la risposta. Non c'è un server di
-  Sentiero nel mezzo.</p>
+  <strong>generativelanguage.googleapis.com</strong> il contenuto necessario a
+  quella singola funzione e riceve la risposta. Non c'è un server di Sentiero
+  nel mezzo e Sentiero non costruisce un archivio remoto del tuo diario.</p>
   <ul>
     <li>La chiave non è precompilata e non viene mai chiesta in chat: la inserisci tu nell'app. Google AI Studio crea oggi nuove chiavi come <em>auth key</em>; le vecchie Standard key devono essere migrate secondo le scadenze indicate da Google.</li>
+    <li><strong>Prova connessione</strong> usa Flash‑Lite per verificare rapidamente che chiave, rete e API rispondano. Non cambia il profilo scelto: con <strong>Massimo</strong>, le funzioni che lo richiedono continuano a usare Gemini 3.7 Flash.</li>
     <li>La chiave è conservata separatamente dallo stato del diario sul dispositivo. Non entra nei backup, negli export o nel registro diagnostico. Esportare o importare i dati sullo stesso dispositivo non la cancella e non la sostituisce.</li>
     <li>Resta comunque una chiave in un'app client-side: non ha la protezione di un backend. Chi controlla il dispositivo o riesce a eseguire codice nella stessa pagina potrebbe leggerla. Google raccomanda di non esporre chiavi in applicazioni client-side di produzione e di usare un backend/proxy per custodire i segreti.</li>
     <li>Se togli la chiave, le chiamate Gemini smettono. <strong>La modalità Base continua a funzionare</strong> con il motore deterministico locale.</li>
@@ -151,7 +157,8 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <p class="nota">Riferimenti Google:
   <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">Gemini API Terms</a> ·
   <a href="https://ai.google.dev/gemini-api/docs/api-key" rel="noopener">sicurezza delle chiavi API</a> ·
-  <a href="https://ai.google.dev/gemini-api/docs/pricing" rel="noopener">prezzi e Free Tier</a>.</p>
+  <a href="https://ai.google.dev/gemini-api/docs/interactions-overview" rel="noopener">Interactions e conservazione</a> ·
+  <a href="https://ai.google.dev/gemini-api/docs/pricing" rel="noopener">prezzi e livelli</a>.</p>
 
   <h2>La foto di una pagina</h2>
   <p>Puoi fotografare una pagina scritta a mano &mdash; un quaderno, un foglio,
@@ -259,9 +266,9 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   </header>
 
   <div class="leggi">
-    <p>What you write stays on your phone. There is no server receiving it,
-    because there is no server. Nobody reads it &mdash; not even the person who
-    made the app.</p>
+    <p>Sentiero's own state stays on your device. Sentiero has no account or
+    server keeping a copy of your diary. If you enable Generative mode, the
+    content needed for that specific feature is sent directly to Google Gemini API.</p>
   </div>
 
   <h2>Who I am</h2>
@@ -280,13 +287,14 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <p class="nota">That storage is what makes the app you opened work: a diary
   that cannot remember is not a diary. That is why there is no cookie banner.</p>
 
-  <h2>The three things that leave your phone</h2>
+  <h2>Before Gemini: three cases where the network is involved</h2>
   <div class="esce">
     <h3>1 · Loading the page</h3>
     <p>Sentiero is hosted on <strong>GitHub Pages</strong>. Like every website,
     the machine that serves it sees your IP address, the time and your browser
     type. GitHub sees that, not me: I have no access to those logs and receive no
-    visit statistics. Once installed, the app runs offline.</p>
+    visit statistics. Once installed, the Base core can run offline; Generative
+    mode needs the network to reach Gemini.</p>
   </div>
   <div class="esce">
     <h3>2 · The microphone</h3>

@@ -1,7 +1,7 @@
 {
   "name": "Sentiero",
   "short_name": "Sentiero",
-  "description": "Diario personale offline-first con modalità Base locale e funzioni generative opzionali tramite Google Gemini.",
+  "description": "Diario digitale personale, gratuito e senza account. Scrivi o parla, ritrova pensieri e cose da fare, funziona offline-first e usa Gemini solo se lo scegli.",
   "lang": "it",
   "start_url": ".",
   "scope": ".",
@@ -28,5 +28,9 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "categories": [
+    "lifestyle",
+    "productivity"
   ]
 }

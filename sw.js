@@ -1,10 +1,16 @@
 const CACHE = 'sentiero-v60s-272-0';
 const PROD_CACHE_PREFIX = 'sentiero-v60s-';
+/* v272.0 discoverability-1: landing/guida/manifest aggiornati per descrivere
+   Sentiero come diario digitale personale in modo naturale e indicizzabile;
+   sitemap pubblica aggiunta. Nessun tracker e nessun meta-keywords. */
 /* v272.0 hotfix SE-2: gli aggiornamenti ora scorrono nel main di Oggi, non in
    un overflow annidato. Questo byte forza il controllo del worker aggiornato;
    il nome cache resta quello della release. */
 /* v272.0 hotfix Gemini-1: endpoint Interactions riallineato alla v1beta documentata,
    prova connessione su Flash-Lite e refresh esplicito della base linguistica. */
+/* v272.0 hotfix docs-1: guida/privacy riallineate alla Generativa reale; safe-area
+   iPhone corretta e vecchio capitolo dell'IA locale rimosso. Questo byte forza
+   l'installazione del worker e il refresh degli HTML precache. */
 /* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
    blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
    sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui

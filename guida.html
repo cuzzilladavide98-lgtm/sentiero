@@ -3,11 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Sentiero — Come si usa</title>
-<meta name="description" content="Come si usa Sentiero, un pezzo alla volta, con le parole che si leggono davvero sullo schermo.">
+<title>Come usare Sentiero — Guida al diario digitale personale</title>
+<meta name="description" content="Guida completa a Sentiero: scrivere o parlare, diario quotidiano, cose da fare, Frutto, Sussurro, backup, privacy e Gemini opzionale.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="https://cuzzilladavide98-lgtm.github.io/sentiero/guida.html">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="it_IT">
+<meta property="og:site_name" content="Sentiero">
+<meta property="og:title" content="Come usare Sentiero — Guida al diario digitale personale">
+<meta property="og:description" content="La guida completa di Sentiero: diario, voce, cose da fare, Frutto, Sussurro, backup, privacy e Gemini opzionale.">
+<meta property="og:url" content="https://cuzzilladavide98-lgtm.github.io/sentiero/guida.html">
+<meta property="og:image" content="https://cuzzilladavide98-lgtm.github.io/sentiero/icon-512.png">
 <meta name="theme-color" content="#070a09">
 <link rel="icon" href="./icon-192.png">
-<!-- v274 — QUATTRO LUOGHI, UNA SOLA NAVIGAZIONE.
+<!-- v272.0 — QUATTRO LUOGHI, UNA SOLA NAVIGAZIONE.
      Parla, Oggi, Diario e Altro sono le quattro destinazioni persistenti in
      basso. Non esistono piu scorciatoie duplicate alle impostazioni e il
      microfono non richiede gesture: tocco per iniziare, tocco per fermare. -->
@@ -21,6 +30,11 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--t1);font-family:var(--sans);font-size:17px;
   line-height:1.62;-webkit-font-smoothing:antialiased;padding:0 22px calc(70px + env(safe-area-inset-bottom))}
+/* In PWA iOS il contenuto scorre dietro la barra di stato. Questo velo copre
+   soltanto la safe area: il testo non passa più sotto ora, rete e batteria. */
+body::before{content:"";position:fixed;z-index:1000;left:0;right:0;top:0;
+  height:calc(env(safe-area-inset-top) + 2px);background:var(--bg);pointer-events:none}
+html{scroll-padding-top:calc(env(safe-area-inset-top) + 12px)}
 main{max-width:34rem;margin:0 auto}
 header{padding:calc(48px + env(safe-area-inset-top)) 0 6px}
 h1{font-family:var(--serif);font-weight:400;font-size:36px;line-height:1.12}
@@ -82,8 +96,8 @@ a{color:var(--accent)}
 <main>
 
   <header>
-    <h1>Come si usa</h1>
-    <p class="sotto">Un pezzo alla volta, con le parole che vedi sullo schermo.</p>
+    <h1>Come si usa Sentiero</h1>
+    <p class="sotto">Guida completa al diario digitale personale, un pezzo alla volta.</p>
   </header>
 
   <div class="leggi">
@@ -104,6 +118,7 @@ a{color:var(--accent)}
     <a href="#dieci"><span>10</span>Base e Generativa: la differenza vera</a>
     <a href="#undici"><span>11</span>Portare via tutto</a>
     <a href="#dodici"><span>12</span>Se qualcosa non torna</a>
+    <a href="#tredici"><span>13</span>Rete, privacy e chiave</a>
   </nav>
 
   <!-- ═══ 1 ═══ -->
@@ -210,8 +225,8 @@ a{color:var(--accent)}
   <em>dov’ero</em>.</p>
 
   <p>Sotto il testo, le righe dorate che cominciano con <strong>✦</strong> sono
-  <strong>le cose nate da quella voce</strong>: se hai detto «cena da TL con
-  Giorgio», lì sotto trovi <em>✦ Cena da TL con Giorgio Origlia</em>. Servono a
+  <strong>le cose nate da quella voce</strong>: se hai detto «cena con un
+  collega», lì sotto puoi trovare <em>✦ Cena con un collega</em>. Servono a
   vedere cosa l’app ha capito, e a correggerla se ha capito storto.</p>
 
   <p class="calmo">La <strong>×</strong> in alto a destra della voce la cancella.</p>
@@ -420,20 +435,19 @@ a{color:var(--accent)}
   <div class="due">
     <div class="base">
       <h4>Senza chiave — Sentiero</h4>
-      <p><strong>È meccanico, ed è giusto chiamarlo così.</strong> Riconosce le
-      cose che dici di voler fare seguendo delle regole: prende quello che è
-      scritto chiaro e sbaglia quello che è detto di traverso. Le righe della
-      sera e del mattino le costruisce mettendo insieme i tuoi giorni con delle
-      forme già pronte. Funziona sempre, anche in aereo, e non costa niente.</p>
+      <p><strong>È locale e deterministico.</strong> Riconosce le cose che dici
+      di voler fare seguendo regole già nell’app: prende bene quello che è
+      espresso in modo chiaro e può perdere ciò che è ambiguo. Diario, ricerca,
+      ricorrenti e le funzioni locali continuano a esistere anche senza Gemini.
+      Il nucleo Base può lavorare anche senza rete.</p>
     </div>
     <div class="gen">
       <h4>Con la chiave — versione Generativa</h4>
-      <p><strong>Qui l’app prende vita.</strong> Non è la stessa cosa fatta
-      meglio: è un’altra cosa. Capisce quello che hai detto invece di
-      riconoscerlo, coglie il giorno e l’ora dentro una frase storta, scrive
-      righe che parlano dei tuoi mesi e non del tuo ieri, e si accorge da sola
-      quando una giornata è pesante — dove la base coglie solo le frasi che non
-      si possono fraintendere, e ne prende circa la metà.</p>
+      <p><strong>Qui entra Gemini.</strong> Quando serve, Sentiero può capire
+      meglio una frase libera, ricavare giorno e ora, trascrivere una foto e
+      scrivere Frutto, Sussurro, distillazioni e altre voci legate alla tua
+      storia. Per farlo manda a Google il contenuto necessario a quella singola
+      funzione usando la chiave che hai inserito tu.</p>
     </div>
   </div>
 
@@ -442,8 +456,8 @@ a{color:var(--accent)}
     <li><strong>Le cose da fare nascono con giorno e ora</strong>: «giovedì alle
     tre dal meccanico» compare giovedì alle tre. Senza chiave l’app coglie la
     cosa, l’orario spesso no.</li>
-    <li><strong>La riga della sera la scrive un modello</strong> invece del
-    motore di casa.</li>
+    <li><strong>Frutto, Sussurro e altre voci</strong> possono essere scritti
+    da Gemini e poi passano comunque attraverso i controlli locali di Sentiero.</li>
     <li><strong>Il desiderio</strong> esiste solo qui (capitolo 9).</li>
     <li><strong>La distillazione del periodo</strong>: nel diario compare
     <em>«Gli ultimi giorni hanno lasciato qualcosa. Vuoi che li rilegga e ne
@@ -467,7 +481,9 @@ a{color:var(--accent)}
   <p class="calmo">Quando la connessione è attiva, in fondo alle impostazioni leggi
   <em>Sentiero — Generativa</em>. Togliendo la chiave torni immediatamente a Sentiero Base.</p>
   <p class="calmo"><strong>Se stai aggiornando dalla vecchia Generativa:</strong> la chiave della precedente versione Generativa non viene riutilizzata né esportata. Crea o inserisci una chiave Gemini; il diario e gli altri dati restano nello stesso stato di Sentiero.</p>
-  <p class="calmo"><strong>Massimo, Bilanciato, Veloce.</strong> Massimo privilegia la qualità e per le foto difficili può lasciare proseguire Gemini in background; Bilanciato è l'impostazione consigliata per l'uso quotidiano; Veloce riduce ragionamento e risoluzione per abbassare attesa e consumo.</p>
+  <p class="calmo"><strong>Massimo, Bilanciato, Veloce.</strong> Massimo privilegia la qualità e usa Gemini 3.7 Flash quando il mestiere lo richiede; per le foto difficili può lasciare proseguire Gemini in background. Bilanciato è l'impostazione consigliata per l'uso quotidiano; Veloce riduce ragionamento e risoluzione per abbassare attesa e consumo.</p>
+  <p class="calmo"><strong>«Prova connessione» non sceglie il modello di Sentiero.</strong> Per controllare rapidamente che chiave, rete e API rispondano usa Flash‑Lite. Se nelle impostazioni hai scelto Massimo, il lavoro reale continua a usare Gemini 3.7 Flash dove previsto. Vedere 3.5 nel risultato della prova significa quindi soltanto che il test rapido è riuscito.</p>
+  <p class="calmo">Il consumo e gli eventuali costi della Generativa appartengono al <strong>tuo progetto Google</strong>, non a Sentiero.</p>
   <div class="avviso">
     <strong>Una chiave in una PWA non è un segreto server-side</strong>
     <p>Sentiero non la scrive nel codice e non la mette nei backup, ma il browser deve comunque poterla leggere per chiamare Gemini. Google raccomanda un backend/proxy per una distribuzione di produzione. Il fatto che ogni persona usi la propria chiave evita di distribuire una chiave centrale di Sentiero, ma non equivale alla protezione di un backend.</p>
@@ -486,9 +502,12 @@ a{color:var(--accent)}
 
   <h2 id="undici"><span class="n">CAPITOLO 11</span>Portare via tutto</h2>
 
-  <p>Quello che scrivi sta solo sul tuo telefono. Nessun server, nessun account.
-  Il che vuol dire una cosa importante: <strong>l’unica copia che esisterà mai è
-  quella che ti fai tu.</strong></p>
+  <p>Lo <strong>stato di Sentiero</strong> — diario, cose da fare, ricorrenti,
+  capitoli e impostazioni — vive sul tuo dispositivo. Sentiero non ha un account
+  né un server personale che ne conservi una seconda copia. Se usi la Generativa,
+  le singole richieste necessarie a quella funzione vanno direttamente a Google
+  Gemini API; non diventano un archivio di Sentiero. Per questo il backup resta
+  importante: <strong>la copia sotto il tuo controllo è quella che esporti tu.</strong></p>
 
   <ul>
     <li><strong>Altro</strong> nella barra in basso → in fondo, <strong>Dati</strong>.</li>
@@ -529,50 +548,59 @@ a{color:var(--accent)}
   È l’unico ingresso alle impostazioni.</p>
 
   <h3>Non capisce quello che dico</h3>
-  <p class="calmo">Senza chiave l’app ragiona con delle regole e non capisce
-  tutto: è il capitolo 10. Se una frase esce storta, scrivilo a chi te l’ha
-  passata: quelle si aggiustano una per una.</p>
+  <p class="calmo">Senza chiave l’app usa regole locali e può perdere le frasi
+  più ambigue: è il capitolo 10. Con Gemini attivo, controlla prima
+  <strong>Altro → La versione Generativa → Prova connessione</strong>. In ogni
+  caso, nel Diario puoi vedere cosa Sentiero ha ricavato e correggere ciò che è
+  nato storto.</p>
 
-  <h2 id="tredici"><span class="n">CAPITOLO 13</span>Una voce dentro il telefono</h2>
+  <h2 id="tredici"><span class="n">CAPITOLO 13</span>Rete, privacy e chiave</h2>
 
-  <p class="calmo">Sentiero, da solo, ti scrive una riga quando chiudi una cosa.
-  Le sa dire in poche forme diverse, e dopo un po’ te ne accorgi: si somigliano.</p>
+  <p>La regola semplice è questa: <strong>Sentiero conserva il suo stato sul tuo
+  dispositivo</strong>. Non c’è un account Sentiero e non c’è un server di
+  Sentiero che riceva una copia del diario. La rete entra in gioco solo in casi
+  precisi.</p>
 
-  <p class="calmo">Nelle impostazioni c’è un interruttore, <strong>«Una voce dentro
-  il telefono»</strong>. Acceso, Sentiero scarica una piccola intelligenza
-  artificiale, e da quel momento è lei a scrivere quelle righe. Non serve nessuna
-  chiave, non serve nessun account, <strong>non costa niente</strong>, non c’è
-  nessun abbonamento.</p>
+  <h3>Senza chiave Gemini</h3>
+  <p class="calmo">Il nucleo Base usa il codice già installato: diario, ricerca,
+  cose da fare, ricorrenti, quest sbloccabili e altre funzioni locali possono
+  continuare a lavorare anche senza Gemini. La pagina, quando la apri o si
+  aggiorna, arriva da GitHub Pages. Se parli invece di scrivere, la dettatura è
+  quella del browser/telefono: Sentiero riceve il testo, non conserva l’audio.</p>
 
-  <h3>Cosa succede quando lo accendi</h3>
-  <p class="calmo">La prima volta scarica un file grosso: <strong>quasi un
-  giga</strong>. Fallo col wi‑fi, col telefono sotto carica, e lascia Sentiero
-  aperto finché non finisce — ci mette qualche minuto. Dopo, la voce
-  <strong>resta dentro il telefono</strong>: funziona anche in aereo e non
-  scarica più niente.</p>
+  <h3>Quando accendi la Generativa</h3>
+  <p class="calmo">Quando una funzione Gemini serve davvero, Sentiero invia
+  direttamente a <strong>Google Gemini API</strong> il testo — o la singola foto
+  scelta nella Stanza — necessario a quel lavoro. Non passa da un server di
+  Sentiero. La risposta torna nell’app e il risultato utile viene poi salvato
+  nello stato locale.</p>
 
-  <h3>Le tue parole non escono</h3>
-  <p class="calmo">È la differenza che conta. La voce lavora <strong>dentro il tuo
-  telefono</strong>: quello che scrivi nel diario non viene mandato a nessuno, né
-  la prima volta né mai. L’unica cosa che esce, una volta sola, è la richiesta di
-  scaricare la voce — come quando scarichi un’app.</p>
+  <h3>La tua chiave</h3>
+  <p class="calmo">La chiave Gemini resta separata dal diario. Non entra nei
+  backup, negli export o nella Diagnostica. È però una chiave dentro una PWA:
+  il browser deve poterla leggere per fare la richiesta, quindi non ha la stessa
+  protezione di un segreto custodito dietro un backend. Non pubblicarla, non
+  incollarla in chat e non metterla su GitHub.</p>
 
-  <h3>Se il tuo telefono non ce la fa</h3>
-  <p class="calmo">Può succedere: è un file grosso e non tutti i telefoni lo
-  reggono. Se non parte, Sentiero te lo dice e <strong>continua a funzionare come
-  prima</strong>, con le sue righe. Non si rompe niente, non perdi niente, e
-  l’interruttore lo puoi spegnere quando vuoi.</p>
+  <h3>Foto e lavori lunghi</h3>
+  <p class="calmo">Le richieste normali di Sentiero sono senza memoria server-side
+  (<code>store=false</code>). In <strong>Massimo</strong>, una foto difficile può
+  usare l’esecuzione in background di Gemini, che richiede temporaneamente
+  <code>store=true</code>. Sentiero chiede di eliminare l’interazione appena ha
+  recuperato il risultato o quando annulli. Se la cancellazione non riuscisse,
+  valgono i tempi di conservazione del progetto Google.</p>
 
-  <h3>Quando la voce dice una cosa storta</h3>
-  <p class="calmo">È piccola, e ogni tanto sbaglia. Per questo Sentiero
-  <strong>legge quello che scrive prima di mostrartelo</strong>: se ci trova
-  numeri, complimenti a vuoto, consigli non richiesti o conti di giorni, la butta
-  e usa la sua. Le regole di casa non cambiano — cambia solo chi tiene la penna.</p>
+  <div class="avviso">
+    <strong>Vuoi il quadro completo?</strong>
+    <p><a href="./privacy.html">I tuoi dati</a> spiega punto per punto cosa resta
+    sul dispositivo, cosa può uscire, cosa succede con microfono, posizione,
+    Gemini e OCR, e rimanda alle condizioni ufficiali Google.</p>
+  </div>
 
   <footer>
     <a href="./inizia.html">Torna all’inizio</a> &nbsp;·&nbsp;
     <a href="./privacy.html">I tuoi dati</a><br><br>
-    Pensato da Davide Cuzzilla, usato da entrambi.
+    Pensato da Davide Cuzzilla.
   </footer>
 
 </main>

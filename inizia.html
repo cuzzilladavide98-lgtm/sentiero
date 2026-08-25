@@ -3,8 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Sentiero</title>
-<meta name="description" content="Un diario che ti ascolta e tiene il filo delle cose che vuoi fare. Gratis, senza account, tutto sul tuo telefono.">
+<title>Sentiero — Diario digitale personale, gratuito e senza account</title>
+<meta name="description" content="Diario digitale personale e gratuito: scrivi o parla, ritrova pensieri e cose da fare, usa offline e aggiungi Gemini solo se vuoi. Nessun account.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://cuzzilladavide98-lgtm.github.io/sentiero/inizia.html">
+<meta name="application-name" content="Sentiero">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="it_IT">
+<meta property="og:site_name" content="Sentiero">
+<meta property="og:title" content="Sentiero — Diario digitale personale, gratuito e senza account">
+<meta property="og:description" content="Scrivi o parla, ritrova pensieri e cose da fare, usa offline e aggiungi Gemini solo se vuoi. Sentiero è gratuito e non richiede un account.">
+<meta property="og:url" content="https://cuzzilladavide98-lgtm.github.io/sentiero/inizia.html">
+<meta property="og:image" content="https://cuzzilladavide98-lgtm.github.io/sentiero/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Sentiero — Diario digitale personale">
+<meta name="twitter:description" content="Un diario personale gratuito e senza account: scrivi o parla, ritrova pensieri e cose da fare, Gemini solo se vuoi.">
+<meta name="twitter:image" content="https://cuzzilladavide98-lgtm.github.io/sentiero/icon-512.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-180.png">
 <meta name="theme-color" content="#070a09">
 <link rel="icon" href="./icon-192.png">
 <!-- Nessuna richiesta esterna: niente font remoti, niente statistiche, niente
@@ -78,7 +94,7 @@ a{color:var(--accent)}
   <header>
     <img src="./icon-192.png" alt="Sentiero">
     <h1>Sentiero</h1>
-    <p class="sotto">Un diario che tiene il filo.</p>
+    <p class="sotto">Diario digitale personale, gratuito e senza account.</p>
   </header>
 
   <!-- v219: L'AVVISO CHE VALE PIU DI TUTTA LA PAGINA.
@@ -94,9 +110,23 @@ a{color:var(--accent)}
     e scegli <strong id="apri-in">Apri in Safari</strong>. Poi torna qui.</p>
   </div>
 
-  <p>Parli, o scrivi. Sentiero tiene da parte le cose che hai detto di voler fare
-  e non te le lascia sparire. La sera ti dice una riga su come stanno andando i
-  tuoi giorni. Al mattino ce n'è un'altra, su ieri.</p>
+  <p><strong>Sentiero è un diario digitale personale e gratuito.</strong> Puoi
+  scrivere una nota o parlare, ritrovare pensieri e ricordi ordinati per giorno e
+  lasciare che le cose che hai detto di voler fare non spariscano dentro una pagina.</p>
+
+  <p class="calmo">Si apre dal web, si può installare come app e il nucleo Base,
+  dopo il primo caricamento, continua a funzionare anche offline.</p>
+
+  <h2>Un diario semplice, ma non vuoto</h2>
+  <ul>
+    <li>Scrivi note quotidiane, pensieri e ricordi in un diario personale ordinato per giorno.</li>
+    <li>Parla quando non vuoi digitare: la voce diventa testo e resta nella tua storia.</li>
+    <li>Quando dici che vuoi fare qualcosa, Sentiero può trasformarla in una cosa da ricordare e ritrovare in Oggi.</li>
+    <li>Frutto, Sussurri e capitoli mensili ti fanno rileggere quello che è successo senza punteggi o classifiche.</li>
+    <li>Puoi esportare un backup tuo e portare via i dati quando vuoi.</li>
+  </ul>
+  <p class="calmo">Puoi usarlo come diario quotidiano, quaderno personale o memoria
+  delle cose da fare. Non è un social e non cerca di trasformare la vita in una gara.</p>
 
   <p class="calmo">Non è un'app per la produttività, e si vede da cosa non ha.</p>
 
@@ -108,15 +138,23 @@ a{color:var(--accent)}
   giorno una funzione sembra chiedere una di queste cose, è la funzione a essere
   sbagliata.</p>
 
-  <h2>Non chiede niente</h2>
+  <h2>Gratis, senza account, sotto il tuo controllo</h2>
   <ul>
     <li>Nessun account, nessuna email, nessuna password.</li>
-    <li>Non costa niente, e non c'è una versione a pagamento da comprare.</li>
-    <li>Quello che scrivi resta sul tuo telefono. Non passa da nessun server, perché un server non c'è.</li>
-    <li>Nessuna pubblicità, nessuna statistica, nessuno che guarda.</li>
+    <li>Sentiero è gratuito: niente pubblicità e nessun abbonamento di Sentiero.</li>
+    <li>Il diario canonico viene salvato nella memoria del browser sul tuo dispositivo e può essere esportato in un backup tuo.</li>
+    <li>Il nucleo Base non usa Gemini e, dopo il primo caricamento, può lavorare anche senza rete.</li>
   </ul>
-  <p class="calmo">Puoi portartelo via quando vuoi: dalle impostazioni salvi tutto
-  in un file tuo, e se cancelli l'app non resta niente da nessuna parte.</p>
+  <p class="calmo">Se scegli la Generativa, il contenuto necessario alla singola
+  funzione viene inviato direttamente a Google Gemini API usando la tua chiave.
+  Sentiero non conserva una copia del diario su un proprio server. La distinzione
+  completa è spiegata in <a href="./privacy.html">I tuoi dati</a>.</p>
+
+  <h2>Un diario sul web, non un cloud obbligatorio</h2>
+  <p class="calmo">Se stai cercando un diario online, Sentiero parte da una scelta
+  diversa: lo apri dal browser e puoi installarlo come app, ma non devi creare un
+  account e le voci non vengono sincronizzate automaticamente su un cloud di Sentiero.
+  Sei tu a decidere se usare anche le funzioni Gemini che richiedono la rete.</p>
 
   <a class="via" href="./">Apri Sentiero</a>
   <p class="indirizzo">cuzzilladavide98-lgtm.github.io/sentiero</p>
@@ -228,8 +266,8 @@ a{color:var(--accent)}
   con qualcuno.</p>
 
   <footer>
-    Pensato da Davide Cuzzilla, usato da entrambi.<br>
-    Condividilo se anche tu pensi che possa aiutare qualcun altro. Grazie
+    Pensato da Davide Cuzzilla.<br>
+    Condividilo se pensi che possa servire anche a qualcun altro.
     <br><br>
     <a href="./guida.html">Come si usa</a> &nbsp;·&nbsp;
     <a href="./privacy.html">I tuoi dati</a>

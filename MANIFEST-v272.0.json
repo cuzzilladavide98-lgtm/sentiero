@@ -10,7 +10,9 @@
   "ui_produzione": "banchi di laboratorio rimossi; Diagnostica mantenuta come strumento di assistenza",
   "aggiornamenti": "la prima scheda dopo update dichiara esplicitamente Major release e riassume i cambiamenti percepibili",
   "aggiornamenti_scroll": "hotfix SE-2: la scheda Major release vive dentro tab-oggi e usa lo stesso #app>main scorrevole; eliminato lo scroll annidato che Safari/iPhone SE non consegnava",
-  "gemini_connessione_hotfix": "hotfix 24/08: endpoint Interactions riallineato a /v1beta/interactions; Prova connessione usa il modello a bassa latenza gemini-3.5-flash-lite con 30 s e distingue timeout da rete; base linguistica online usa cache-buster v6 e no-store"
+  "gemini_connessione_hotfix": "hotfix 24/08: endpoint Interactions riallineato a /v1beta/interactions; Prova connessione usa il modello a bassa latenza gemini-3.5-flash-lite con 30 s e distingue timeout da rete; base linguistica online usa cache-buster v6 e no-store",
+  "guida_privacy_hotfix": "hotfix 24/08: guida e privacy riallineate al comportamento Gemini reale, esempio personale anonimizzato, capitolo IA locale rimosso, prova connessione Flash-Lite chiarita e safe area iOS protetta",
+  "discoverability_seo": "hotfix 24/08: Inizia diventa landing indicizzabile per ricerche su diario digitale/personale; titoli e descrizioni unici, canonical e Open Graph; app shell noindex per evitare concorrenza interna; sitemap XML aggiunta; nessun meta-keywords e nessun tracker"
  },
  "file": {
   "LICENSE-Lora-OFL.txt": {
@@ -20,10 +22,10 @@
    "motivo": "licenza font invariata"
   },
   "guida.html": {
-   "byte": 31502,
-   "sha256": "fa01bd545287a2fd7fdeb190b410e656c84d1d7f5c7a9db9c607d025e374c3c0",
+   "byte": 34044,
+   "sha256": "b2683ec8749bdf8f51058360d2cfe47c34576b82c4e6d2c55f6cda0a69298fa2",
    "cambiato": true,
-   "motivo": "guida produzione aggiornata per Stanza/OCR, temi OLED/LCD, migrazione Gemini, Google AI Studio, requisiti e comportamento reale della release"
+   "motivo": "titolo, descrizione, canonical e Open Graph orientati alla guida del diario digitale personale; h1/sottotitolo più descrittivi, contenuto funzionale invariato"
   },
   "icon-180.png": {
    "byte": 26585,
@@ -44,28 +46,28 @@
    "motivo": "asset PWA ripristinato dal ramo verificato"
   },
   "index.html": {
-   "byte": 1312078,
-   "sha256": "f6e48557356e2c48fb157583e4ea45f228b86d57bd9066795c6d1ba183939a83",
+   "byte": 1312314,
+   "sha256": "b88624f55dbb12dd71aeb2015d0d47cd0c20e338bab024ec80007e4c39fc2297",
    "cambiato": true,
-   "motivo": "merge ufficiale Gemini Lab 25 nella linea di produzione; review finale: stati Interactions incompleti fail-closed con fallback, 429 background nel governor, focus chiave corretto, Major release; hotfix SE-2 sposta aggiornamenti dentro lo scroll nativo di Oggi; hotfix Gemini: endpoint v1beta, test connessione Flash-Lite 30s, messaggio timeout corretto, refresh base linguistica v6"
+   "motivo": "app shell esclusa dall indicizzazione per concentrare la ricerca sulla landing testuale Inizia; titolo/descrizione app aggiornati, runtime invariato"
   },
   "inizia.html": {
-   "byte": 14541,
-   "sha256": "4884f27f2e267e37fea8cf23344b6016f0748a087ea3e8f43534d5413b08ef28",
+   "byte": 17538,
+   "sha256": "d3b3eafd27a9f35b52d2aded1798feb90b4e4f4528581b1d30a2b3eb846bd917",
    "cambiato": true,
-   "motivo": "onboarding produzione aggiornato alla Generativa Gemini, creazione/inserimento chiave e requisiti applicabili"
+   "motivo": "landing pubblica riscritta e marcata per ricerche naturali su diario digitale, diario personale, diario quotidiano e diario online; privacy Base/Gemini chiarita; canonical/Open Graph/social metadata; firma aggiornata"
   },
   "manifest.json": {
-   "byte": 730,
-   "sha256": "841aee2efb6b3d630711404ddf20925cc214931ff7ac9e9277d9fe91cd651966",
+   "byte": 834,
+   "sha256": "f1dd5d13e422b47efcf13619364a65948ddb76307f2f1119ff2da09e6baf7a34",
    "cambiato": true,
-   "motivo": "identità di produzione Sentiero, descrizione aggiornata e icone PWA ripristinate"
+   "motivo": "descrizione PWA resa coerente con diario digitale personale; aggiunte categorie lifestyle/productivity"
   },
   "privacy.html": {
-   "byte": 21617,
-   "sha256": "c10adc857e4e255f6f4336fedd4b2091c4e7d07be1c5a2688ade8ac6287cf409",
+   "byte": 22732,
+   "sha256": "b9eb621ce7f754d114ed63b2dd85fcaed55eebe3a6a545c50415bb4268d89aa2",
    "cambiato": true,
-   "motivo": "informativa aggiornata al 24/08 per Gemini BYOK, OCR/background, retention Interactions, limiti della chiave client-side e condizioni applicabili"
+   "motivo": "titolo, descrizione e canonical specifici per privacy del diario digitale e Gemini; contenuto informativo invariato"
   },
   "splash-1125x2436.png": {
    "byte": 169939,
@@ -104,10 +106,10 @@
    "motivo": "splash PWA ripristinata dal ramo verificato"
   },
   "sw.js": {
-   "byte": 5165,
-   "sha256": "636d6d6e3a286782104b6b163cad65cd8f3925ab90c37bb486cc880b99fe74f3",
+   "byte": 5623,
+   "sha256": "f4f2e2541f739f701320dd66880131d8ba53cd9f7955ada4dd8f81175b7c5fae",
    "cambiato": true,
-   "motivo": "service worker produzione con cache isolata e Gemini bypass; byte hotfix SE-2 per propagare lo spostamento aggiornamenti nello scroll nativo di Oggi; byte hotfix Gemini per propagare endpoint/test/base aggiornati"
+   "motivo": "byte discoverability per propagare landing/guida/manifest aggiornati nella precache senza cambiare identità v272.0"
   },
   "lingue/base-it.json": {
    "byte": 15373,
@@ -120,6 +122,12 @@
    "sha256": "2301784cd755f99fbde7cb9c397ae6187050ce9f8e313bc854fdd0617ecd8587",
    "cambiato": true,
    "motivo": "pacchetto lingua allineato alla produzione e ripulito dai residui delle voci di laboratorio non più esposte"
+  },
+  "sitemap.xml": {
+   "byte": 491,
+   "sha256": "cf0a6fb3c45b68c35ced701197e68fe28311d74d09308b360f1cd313b8fb3aca",
+   "cambiato": true,
+   "motivo": "nuova sitemap XML con le pagine pubbliche indicizzabili Inizia, Guida e Privacy"
   }
  }
 }
