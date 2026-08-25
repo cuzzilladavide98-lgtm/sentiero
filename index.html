@@ -4175,11 +4175,12 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.272.2 · 2026-08-25';
+const APP_VERSION='v60S.272.3 · 2026-08-25';
 
-/* v272.2: la Distillazione multi-campo usa Flash-Lite come corsia interattiva dedicata.
-   I mestieri riflessivi possono ancora usare 3.7; la voce, invece, deve essere rapida
-   e la nota e gia persistita prima della rete. */
+/* v272.3: la Distillazione non passa piu dall'Interactions API. Usa direttamente
+   GenerateContent, lo stesso endpoint documentato da Google per l'estrazione
+   strutturata, con Flash-Lite e un fallback Flash-Lite stabile distinto. La nota
+   resta persistita prima della rete. */
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
    Si scrive QUI, a ogni versione, e si scrive per chi usa l'app - non per chi
@@ -4200,11 +4201,11 @@ const APP_VERSION='v60S.272.2 · 2026-08-25';
    da qualcuno. Gli esempi, se servono, si inventano. */
 const NOVITA=[
  {titolo:'Correzioni importanti · Cosa è cambiato',righe:[
-   'Quando tocchi Tieni, la nota viene salvata sul telefono prima che parta Gemini: una rete lenta non può più tenere in ostaggio quello che hai appena detto.',
-   'La Distillazione usa una strada rapida dedicata e, se la prima risposta non arriva, fa un solo secondo tentativo breve prima di affidarsi al motore locale.',
-   'Microfono, ensō e satelliti condividono adesso lo stesso centro: la rilettura del testo non deve più spostare il mondo della voce.',
-   'In Dati trovi Backup completo e Backup senza chiave. Il primo può ripristinare anche la chiave Gemini; trattalo come una password.',
-   'La base italiana usa un file proprio di questa versione, così una copia vecchia non può più essere scambiata per quella corrente.'
+   'La Distillazione usa adesso una strada Gemini separata e pensata proprio per l’estrazione strutturata: non aspetta più l’endpoint usato da Frutto e Osservatrice.',
+   'In Prova connessione Sentiero verifica la stessa strada usata davvero dalla Distillazione, compreso il JSON strutturato: se il test è verde, il percorso è pronto.',
+   'Quando tocchi Tieni, la nota resta salvata sul telefono prima della rete. Se entrambi i modelli rapidi non rispondono, Sentiero te lo dice e solo allora passa al motore locale.',
+   'La base italiana completa è incorporata nell’app: anche se GitHub o la cache non consegnano il file esterno, Sentiero non ricade più sulla base minima.',
+   'Microfono, ensō e satelliti continuano a condividere lo stesso centro; Backup completo può ripristinare anche la chiave Gemini.'
  ]},
  /* v245 — IL CAMPO «da» E STATO TOLTO, e per una ragione che vale come lezione:
     conteneva un numero di versione, e il comando che alza la versione a ogni
@@ -6305,13 +6306,13 @@ function diagnosticaSicura(){
       osservazioni:((S&&S.observerNotes)||[]).length,
       conChiave:GEMINI_KEY?1:0,
       chiaveInStorage:(function(){ try{ return String(localStorage.getItem(GEMINI_KEY_LS)||'').trim()?1:0; }catch(_){ return -1; } })(),
-      baseLinguistica:(S&&S.baseLing)?1:0
+      baseLinguistica:((_baseLing()&&(_baseLing().versione|0)>0)?1:0)
     };
   }catch(_){}
   try{
     const _b=_baseLing();
     d.baseLingua={
-      origine:(S&&S.baseLing)?'pubblicata-validata':'incorporata',
+      origine:(S&&S.baseLing)?'pubblicata-validata':'incorporata-completa',
       versione:(_b&&_b.versione)|0,
       impronta:String((_b&&_b.impronta)||'').slice(0,80),
       parole:Array.isArray(_b&&_b.nucleo)?_b.nucleo.length:0,
@@ -6355,7 +6356,7 @@ function diagnosticaSicura(){
        attraversano la mezzanotte e aggiungiamo un riepilogo del giorno prima. */
     const yd=new Date(tk+'T12:00:00'); yd.setDate(yd.getDate()-1); const yk=yd.toISOString().slice(0,10);
     d.geminiIeri=_sommaGemini(tutti.filter(e=>String(e.t||'').slice(0,10)===yk));
-    d.geminiUltimi=tutti.slice(-12).map(e=>({quando:String(e.t||'').slice(0,19),task:String(e.task||'').slice(0,24),model:String(e.model||'').slice(0,32),profile:String(e.profile||'').slice(0,12),resolution:String(e.resolution||'').slice(0,12),status:String(e.status||'').slice(0,16),format:String(e.format||'').slice(0,8),msg:String(e.msg||'').slice(0,32),ms:Number(e.ms)||0,tin:Number(e.tin)||0,tout:Number(e.tout)||0,think:Number(e.think)||0,http:Number(e.http)||0,api:Number(e.api)||0,background:Number(e.background)||0,poll:Number(e.poll)||0,deleted:Number(e.deleted)||0,rate:String(e.rate||'').slice(0,40),wait:Number(e.wait)||0,salti:String(e.salti||'').slice(0,120)}));
+    d.geminiUltimi=tutti.slice(-12).map(e=>({quando:String(e.t||'').slice(0,19),task:String(e.task||'').slice(0,24),model:String(e.model||'').slice(0,32),profile:String(e.profile||'').slice(0,12),provider:String(e.provider||'interactions').slice(0,20),resolution:String(e.resolution||'').slice(0,12),status:String(e.status||'').slice(0,16),format:String(e.format||'').slice(0,8),msg:String(e.msg||'').slice(0,32),ms:Number(e.ms)||0,tin:Number(e.tin)||0,tout:Number(e.tout)||0,think:Number(e.think)||0,http:Number(e.http)||0,api:Number(e.api)||0,background:Number(e.background)||0,poll:Number(e.poll)||0,deleted:Number(e.deleted)||0,rate:String(e.rate||'').slice(0,40),wait:Number(e.wait)||0,salti:String(e.salti||'').slice(0,120)}));
     const mods=[...new Set([].concat(AI_CHAINS.max.heavy,AI_CHAINS.max.cheap,AI_CHAINS.balanced.heavy,AI_CHAINS.balanced.cheap,AI_CHAINS.fast.heavy))];
     d.geminiCooldown=mods.map(m=>{ const x=_aiRateGet(m); return x?{model:m,kind:x.kind||'limite',code:x.code||'',secondi:Math.max(1,Math.ceil((x.until-Date.now())/1000))}:null; }).filter(Boolean);
   }catch(_){}
@@ -7858,15 +7859,19 @@ async function askDistill(transcript){
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
 '{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"peso":false,"non_eseguibile":""}';
   const distUser=(window._semeAttivo?'DOMANDA SEMINATA (il racconto risponde a questa):\n'+window._semeAttivo.testo+'\n\n':'')+'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript;
-  let res=await aiCall({system:sys,user:distUser,task:'distill',models:['gemini-3.5-flash-lite'],schema:AI_SCHEMAS.distill,maxOutputTokens:1800,reasoning:'minimal',timeout:10000,priority:40});
-  /* v272.2 — un solo retry breve. Auth/quota non si ritentano; timeout, rete,
-     server e schema possono essere transitori. Il tetto di rete e ~20 secondi. */
-  if(res&&['timeout','rete','occupato','schema','incomplete','modello','http'].includes(res.err)){
+  /* v272.3 — DISTILLAZIONE: ENDPOINT DEDICATO, NON INTERACTIONS.
+     Il test reale su iPhone ha mostrato due timeout consecutivi da 10 s su
+     Interactions mentre lo stesso progetto Gemini rispondeva ad altri task.
+     Per questo mestiere usiamo GenerateContent, documentato da Google per
+     structured output. Due modelli distinti: se il primo rallenta, non ripetiamo
+     lo stesso collo di bottiglia. */
+  let res=await _geminiGenerate({system:sys,user:distUser,task:'distill',model:'gemini-3.5-flash-lite',schema:AI_SCHEMAS.distill,maxOutputTokens:1800,reasoning:'minimal',timeout:18000});
+  if(res&&['timeout','rete','occupato','schema','modello','http','accesso','richiesta'].includes(res.err)){
     const first=res;
-    try{ if(typeof micLabel!=='undefined'&&micLabel) micLabel.textContent='Nota al sicuro · riprovo Gemini…'; }catch(_){}
-    const rec=await aiCall({system:sys,user:distUser,task:'distill-recovery',models:['gemini-3.5-flash-lite'],schema:AI_SCHEMAS.distill,maxOutputTokens:2200,reasoning:'minimal',timeout:10000,priority:39});
-    if(rec&&!rec.err){ rec.salti=['retry-fast',first.err||'',first.salti||'',rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
-    else if(rec){ rec.salti=['retry-fast-fail',first.err||'',first.salti||'',rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
+    try{ if(typeof micLabel!=='undefined'&&micLabel) micLabel.textContent='Nota al sicuro · provo la seconda strada Gemini…'; }catch(_){}
+    const rec=await _geminiGenerate({system:sys,user:distUser,task:'distill-recovery',model:'gemini-3.1-flash-lite',schema:AI_SCHEMAS.distill,maxOutputTokens:1800,reasoning:'minimal',timeout:12000});
+    if(rec&&!rec.err){ rec.salti=['generateContent-fallback',first.model+':'+(first.err||''),rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
+    else if(rec){ rec.salti=['generateContent-fallback-fail',first.model+':'+(first.err||''),rec.salti||''].filter(Boolean).join(' ').slice(0,120); res=rec; }
   }
   if(res.err){ const e=res.err;
     if(e==='chiave') throw new Error('AUTH');
@@ -9803,20 +9808,20 @@ function _ossScheletro(riga){
    Sentiero misura le proprie frasi. Per misurare serve un metro, e un metro
    deve dire DA DOVE VIENE, se no e un'opinione con dei numeri sopra.
 
-   Tre livelli, in ordine di preferenza:
-     1. la base scaricata e validata (S.baseLing), quando c'e stata rete
-     2. la base pubblicata accanto all'app (lingue/base-it.json)
-     3. QUESTA, incorporata qui dentro: piccola, dichiarata, e permette
-        all'app di misurare qualcosa dal primo minuto e senza rete.
+   Due livelli utili, in ordine di preferenza:
+     1. la base scaricata e validata (S.baseLing), quando c'e stata rete;
+     2. la base COMPLETA incorporata nello stesso HTML della release.
 
-   La minima NON e una misura: e un punto di partenza scritto a mano, e lo
-   dice. Il giorno in cui una fonte vera (il vocabolario di base della lingua
-   italiana, un corpus di frequenza) sara collegata, questi elenchi diventano
-   dati e questo commento va riscritto. */
+   BASE_MINIMA resta soltanto come reperto/failsafe tecnico: il runtime normale
+   non deve piu ricaderci per un errore di GitHub, CDN o cache. */
 const BASE_MINIMA={"versione":0,"impronta":"minima-incorporata","nucleo":["a","adesso","affaccia","ancora","andare","andata","anche","appello","arriva","arrivano","aspetta","avanti","aveva","avevi","avuto","basta","bianco","bel","buco","cammina","capo","che","chi","chiude","chiusa","ci","cima","come","compare","con","corsa","cosa","cosi","cui","da","dal","dalla","dava","dentro","di","dice","dicevi","dimenticatoio","dopo","dov","due","durato","e","era","erano","essere","fa","farsi","fatto","fermo","ferma","fila","finalmente","fine","foglio","fondo","fosse","fuori","galla","giornata","giorni","giorno","gia","ha","hai","in","indietro","insieme","invecchia","la","lascia","lasciato","le","li","lista","lo","ma","magro","mai","mancava","manca","messa","mezzo","mosso","mossa","mosse","movimento","muove","muta","nasce","nascere","nel","nella","nessuna","nessuno","niente","no","non","nuovo","oggi","ogni","ora","ormai","palo","parla","parole","parte","parecchio","passa","passata","passo","pezzo","piede","piedi","piena","piene","piu","poco","poi","porta","posizione","pronta","proprio","qualcosa","quanto","quasi","quel","quella","questa","queste","qui","reggeva","resta","restano","restava","rientra","riga","righe","rimane","rimasta","rispunta","ritorno","scritto","scrivi","scrivevi","segno","sempre","senza","settimana","settimane","si","sente","sotto","spalle","sparita","sta","stallo","stessa","stesso","su","tace","tanto","tempo","tiene","torna","tornata","traccia","tua","tuoi","tutte","tutto","un","una","va","vecchia","vedere","viva","voce","volta","volte","vuota","zitta"],"bigrammi":["non compare","da un","un pezzo","non si","si parla","piu da","nessuna traccia","non e","e sparita","si fa","fa viva","messa da","da parte","non torna","torna a","a nascere","non se","se ne","ne va","in lista","piu di","di una","una volta","torna sempre","sempre li","da capo","ogni volta","non si chiude","si chiude","chiude mai","e tornata","dopo un","di silenzio","aveva smesso","smesso di","di comparire","ora c","di nuovo","al palo","in movimento","a terra","in piedi","in stallo","in corsa","nel dimenticatoio","a galla","non lascia","lascia mai","mai niente","passa liscio","il segno","scivola via","a mani","mani vuote","settimana dopo","dopo settimana","la piu","piu vecchia","rimasta aperta","sta li","li da","non si muove","in cima","alle cose","cose ferme","da un pezzo","hai lasciato","lasciato una","una riga","in queste","queste settimane","le righe","righe restano","il diario","la tua","tua voce","va cosi","cosi da","i giorni","giorni pieni","il passo","passo tiene","qualcosa si","si muove","un segno","nella giornata","le giornate","giornate piene","con dentro","dentro qualcosa","quel giorno","un giorno","giorno pieno","lo stesso","ha retto","poco spazio","ci e","e entrata","in fondo","a un","non era","e passata"],"lode":["bravo","brava","bravi","brave","complimenti","ottimo","ottima","benissimo","ben fatto","grande","fantastico","fantastica","orgoglioso","orgogliosa","congratulazioni","meritato","meritata","impressionante","eccellente","perfetto"],"biasimo":["pigro","pigra","pigrizia","fallito","fallita","colpa","sbagliato","sbagliata","dovevi","avresti dovuto","peccato","purtroppo","male","peggio","scarso","deludente","inutile","vergogna"],"consolazione":["non preoccuparti","va bene cosi","non e grave","capita a tutti","non importa","tranquillo","tranquilla","su con la vita","andra meglio"],"pronomi":["lei","lui","quella","quello","ci","ne","lo","la"],"deissi":["ieri","oggi","domani","stasera","stamattina","adesso","poco fa"],"pesi":{"comprensibilita":3.0,"carico":2.0,"fedelta":4.0,"neutralita":3.0,"ambiguita":0.0,"naturalezza":0.0,"vita":0.0,"coesione":3.0},"prescrizione":["devi","dovresti","dovrai","prova a","cerca di","ricorda di","basta che","ti serve","scegli","inizia da","concentrati","fai in modo"],"gergo":["rituale","rituali","quest","quests","task","tasks","streak","streaks","arco delle","occasioni previste","distillazione","osservatrice","sussurro","sussurri","patto del mattino","pergamena","pattern","trend","plateau","giornata rara","settimana rara","giorni rari","seme piantato"]};
 /* la cache sta in un oggetto e non in una variabile sciolta: cosi il montaggio
    dei banchi la trova insieme alle altre costanti, invece di lasciarla fuori e
    far morire il motore con «_BASE is not defined». Ci ho perso due minuti. */
+/* v272.3 — BASE COMPLETA INCORPORATA. Il file esterno resta aggiornabile, ma
+   la qualita linguistica non dipende piu da GitHub/CDN/cache: l'HTML porta gia
+   la stessa base validata della release. */
+const BASE_COMPLETA={"per_versione":"v60S.272.3","versione":8,"impronta":"v9-2026-08-25-production-sentiero-272-3","nucleo":["a","adesso","affaccia","ancora","andare","andata","anche","appello","arriva","arrivano","aspetta","avanti","aveva","avevi","avuto","basta","bianco","bel","buco","cammina","capo","che","chi","chiude","chiusa","ci","cima","come","compare","con","corsa","cosa","cosi","cui","da","dal","dalla","dava","dentro","di","dice","dicevi","dimenticatoio","dopo","dov","due","durato","e","era","erano","essere","fa","farsi","fatto","fermo","ferma","fila","finalmente","fine","foglio","fondo","fosse","fuori","galla","giornata","giorni","giorno","gia","ha","hai","in","indietro","insieme","invecchia","la","lascia","lasciato","le","li","lista","lo","ma","magro","mai","mancava","manca","messa","mezzo","mosso","mossa","mosse","movimento","muove","muta","nasce","nascere","nel","nella","nessuna","nessuno","niente","no","non","nuovo","oggi","ogni","ora","ormai","palo","parla","parole","parte","parecchio","passa","passata","passo","pezzo","piede","piedi","piena","piene","piu","poco","poi","porta","posizione","pronta","proprio","qualcosa","quanto","quasi","quel","quella","questa","queste","qui","reggeva","resta","restano","restava","rientra","riga","righe","rimane","rimasta","rispunta","ritorno","scritto","scrivi","scrivevi","segno","sempre","senza","settimana","settimane","si","sente","sotto","spalle","sparita","sta","stallo","stessa","stesso","su","tace","tanto","tempo","tiene","torna","tornata","traccia","tua","tuoi","tutte","tutto","un","una","va","vecchia","vedere","viva","voce","volta","volte","vuota","zitta"],"bigrammi":["non compare","da un","un pezzo","non si","si parla","piu da","nessuna traccia","non e","e sparita","si fa","fa viva","messa da","da parte","non torna","torna a","a nascere","non se","se ne","ne va","in lista","piu di","di una","una volta","torna sempre","sempre li","da capo","ogni volta","non si chiude","si chiude","chiude mai","e tornata","dopo un","di silenzio","aveva smesso","smesso di","di comparire","ora c","di nuovo","al palo","in movimento","a terra","in piedi","in stallo","in corsa","nel dimenticatoio","a galla","non lascia","lascia mai","mai niente","passa liscio","il segno","scivola via","a mani","mani vuote","settimana dopo","dopo settimana","la piu","piu vecchia","rimasta aperta","sta li","li da","non si muove","in cima","alle cose","cose ferme","da un pezzo","hai lasciato","lasciato una","una riga","in queste","queste settimane","le righe","righe restano","il diario","la tua","tua voce","va cosi","cosi da","i giorni","giorni pieni","il passo","passo tiene","qualcosa si","si muove","un segno","nella giornata","le giornate","giornate piene","con dentro","dentro qualcosa","quel giorno","un giorno","giorno pieno","lo stesso","ha retto","poco spazio","ci e","e entrata","in fondo","a un","non era","e passata"],"lode":["bravo","brava","bravi","brave","complimenti","ottimo","ottima","benissimo","ben fatto","grande","fantastico","fantastica","orgoglioso","orgogliosa","congratulazioni","meritato","meritata","impressionante","eccellente","perfetto"],"biasimo":["pigro","pigra","pigrizia","fallito","fallita","colpa","sbagliato","sbagliata","dovevi","avresti dovuto","peccato","purtroppo","male","peggio","scarso","deludente","inutile","vergogna"],"consolazione":["non preoccuparti","va bene cosi","non e grave","capita a tutti","non importa","tranquillo","tranquilla","su con la vita","andra meglio"],"prescrizione":["devi","dovresti","dovrai","prova a","cerca di","ricorda di","basta che","ti serve","scegli","inizia da","concentrati","fai in modo"],"gergo":["rituale","rituali","quest","quests","task","tasks","streak","streaks","arco delle","occasioni previste","distillazione","osservatrice","sussurro","sussurri","patto del mattino","pergamena","pattern","trend","plateau","giornata rara","settimana rara","giorni rari","seme piantato"],"pronomi":["lei","lui","quella","quello","ci","ne","lo","la"],"deissi":["ieri","oggi","domani","stasera","stamattina","adesso","poco fa"],"pesi":{"_cosa_e":"quanto conta ogni criterio. NON sono tarati contro un giudizio umano: sono un punto di partenza dichiarato. La taratura e l'esperimento E5 e va fatta prima di credere a questi numeri.","provenienza":"incorporata, NON tarata","comprensibilita":3.0,"carico":2.0,"fedelta":4.0,"neutralita":3.0,"ambiguita":0.0,"naturalezza":0.0,"vita":0.0,"coesione":3.0,"_sospesi":"ambiguita e vita dalla v268 (nel duello alla cieca hanno indovinato 1 volta su 6 e 1 su 10). naturalezza dalla v269: il 92% dei bigrammi della lista viene dalle nostre stesse forme, quelle scritte per prime, e le famiglie nate dopo prendevano zero - misurava l'anzianita di scrittura, non la naturalezza. Restano calcolate come diagnostica. Non invertite: un'euristica sbagliata invertita e un'euristica sbagliata al contrario.","_pavimenti":"fedelta, neutralita e coesione NON entrano nel punteggio dalla v269: sono pavimenti, gia applicati dal veto e dal filtro. Misurato sulle 30 sere vere, toglierli dalla somma cambiava il vincitore in 0 sere su 29 - il 61% del peso dichiarato non spostava niente. Il peso resta scritto qui perche dice quanto contano come soglia, non come voto.","_chi_decide":"dalla v269 il punteggio lo fanno carico (misura) e comprensibilita (misura, indice Gulpease). Tutto il resto e pavimento o diagnostica."}};
 const _BASE_CACHE={v:null};
 function _baseLing(){
   if(_BASE_CACHE.v) return _BASE_CACHE.v;
@@ -9828,7 +9833,7 @@ function _baseLing(){
        _baseValida ha gia annotato il perche nella scatola nera. */
     if(s&&typeof S!=='undefined'&&S){ S.baseLing=null; S.baseLingQuando=0; try{ save(); }catch(_){} }
   }catch(_){}
-  _BASE_CACHE.v=BASE_MINIMA; return BASE_MINIMA;
+  _BASE_CACHE.v=BASE_COMPLETA; return BASE_COMPLETA;
 }
 /* UNA BASE CHE ARRIVA DA FUORI NON SI CREDE: SI CONTROLLA.
    Puo aggiungere misure, non permessi: il contratto resta scritto nel codice e
@@ -9908,8 +9913,8 @@ function _baseValida(b){
 
    La base valida si tiene nello stato, quindi finisce nei backup: chi cambia
    telefono non riparte da zero culturalmente. */
-const BASE_ORIGINE='lingue/base-it-v272.2.json';
-const BASE_CACHE_TAG='v8-2026-08-25-production-sentiero-272-2';
+const BASE_ORIGINE='lingue/base-it-v272.3.json';
+const BASE_CACHE_TAG='v9-2026-08-25-production-sentiero-272-3';
 const BASE_OGNI_MS=1000*60*60*24*7;     /* una volta a settimana basta e avanza */
 let _BASE_ULTIMO_ESITO={esito:'non provata',canale:'',quando:0,per_versione:'',versione:0,impronta:''};
 async function aggiornaBaseLinguistica(forza){
@@ -10650,6 +10655,7 @@ function streamInto(el,text,opt){
    fallback di un task economico. */
 const GEMINI_ENDPOINT='https://generativelanguage.googleapis.com/v1beta/interactions';
 const GEMINI_MEDIA_ENDPOINT='https://generativelanguage.googleapis.com/v1beta/interactions';
+const GEMINI_GENERATE_ROOT='https://generativelanguage.googleapis.com/v1beta/models/';
 const AI_MAX_CONCURRENCY=2;
 let _aiQueue=[],_aiActive=0,_aiSeq=0;
 
@@ -10883,12 +10889,81 @@ function _geminiSafeShape(data,text){
 }
 function _geminiLog(task,res){
   try{ regCantiere('gemini',{task:task||'',model:res.model||'',ms:res.durationMs||0,tin:res.tin||0,tout:res.tout||0,
-    think:res.thought||0,profile:(S.settings&&S.settings.aiModel)||'balanced',resolution:task==='ocr'?_ocrMediaResolution():'',
+    think:res.thought||0,profile:(S.settings&&S.settings.aiModel)||'balanced',resolution:task==='ocr'?_ocrMediaResolution():'',provider:String(res.provider||'interactions').slice(0,20),
     salti:[res.salti||'',res.retries?('retry:'+res.retries):''].filter(Boolean).join(' ').slice(0,120),
     status:String(res.status||'').slice(0,16),format:String(res.format||'').slice(0,8),
     api:res.attempts||0,http:res.http||0,background:res.background?1:0,poll:res.polls||0,deleted:res.deleted===true?1:(res.deleted===false?-1:0),
     rate:res.rateCode||'',wait:Number.isFinite(res.waitMs)?Math.ceil(res.waitMs/1000):0,
     msg:res.err?((res.cooldown&&!(res.attempts>0)?'pausa:':'errore:')+res.err):'ok'}); }catch(_){}
+}
+
+
+/* ══ v272.3 — GENERATECONTENT PER LA DISTILLAZIONE ════════════════════════
+   Interactions resta il motore dei lavori riflessivi. La voce usa invece il
+   metodo REST models.generateContent: e' stateless, semplice e supporta output
+   strutturati. Questo evita di far dipendere una estrazione breve dalla latenza
+   della timeline Interactions. */
+function _geminiGenerateText(data){
+  try{
+    const cs=Array.isArray(data&&data.candidates)?data.candidates:[];
+    for(const c of cs){
+      const ps=c&&c.content&&Array.isArray(c.content.parts)?c.content.parts:[];
+      const out=[]; for(const p of ps) if(p&&typeof p.text==='string'&&!p.thought) out.push(p.text);
+      if(out.length) return out.join('').trim();
+    }
+  }catch(_){}
+  return '';
+}
+function _geminiGenerateUsage(data){
+  const u=(data&&data.usageMetadata)||{};
+  return {tin:Number(u.promptTokenCount)||0,tout:Number(u.candidatesTokenCount)||0,thought:Number(u.thoughtsTokenCount)||0};
+}
+async function _geminiGenerate(opt){
+  opt=opt||{}; const task=String(opt.task||'generate'),model=String(opt.model||'gemini-3.5-flash-lite'),started=Date.now();
+  if(!GEMINI_KEY){ const z={err:'chiave',model:model,durationMs:0,attempts:0,provider:'generateContent'}; _geminiLog(task,z); return z; }
+  if(('onLine' in navigator)&&navigator.onLine===false){ const z={err:'offline',model:model,durationMs:0,attempts:0,provider:'generateContent'}; _geminiLog(task,z); return z; }
+  const cd=_aiRateGet(model); if(cd){ const z={err:cd.kind||'limite',model:model,cooldown:true,waitMs:Math.max(0,cd.until-Date.now()),durationMs:0,attempts:0,provider:'generateContent'}; _geminiLog(task,z); return z; }
+  const gc={};
+  if(Number.isFinite(opt.maxOutputTokens)) gc.maxOutputTokens=Math.max(1,Math.round(opt.maxOutputTokens));
+  const tl=_aiThinkingFor(model,opt.reasoning||'minimal'); if(tl) gc.thinkingConfig={thinkingLevel:tl};
+  if(opt.schema){ gc.responseMimeType='application/json'; gc.responseJsonSchema=opt.schema; }
+  const body={contents:[{role:'user',parts:[{text:String(opt.user==null?'':opt.user)}]}],generationConfig:gc,store:false};
+  if(opt.system) body.systemInstruction={parts:[{text:String(opt.system)}]};
+  const ctrl=('AbortController' in window)?new AbortController():null; let timer=null,timed=false,unlink=null;
+  const timeout=Math.max(3000,Number(opt.timeout)||20000);
+  if(ctrl) timer=setTimeout(()=>{ timed=true; try{ctrl.abort();}catch(_){} },timeout);
+  if(opt.signal&&ctrl){ const stop=()=>{ try{ctrl.abort();}catch(_){} }; try{ opt.signal.addEventListener('abort',stop,{once:true}); unlink=()=>opt.signal.removeEventListener('abort',stop); }catch(_){} }
+  let r=null,data=null;
+  try{
+    r=await fetch(GEMINI_GENERATE_ROOT+encodeURIComponent(model)+':generateContent',{method:'POST',signal:ctrl?ctrl.signal:undefined,
+      headers:{'Content-Type':'application/json','x-goog-api-key':GEMINI_KEY},body:JSON.stringify(body)});
+    try{ data=await r.json(); }catch(e){ if(timed||(e&&e.name==='AbortError')) throw Object.assign(new Error('timeout'),{name:'AbortError'}); data=null; }
+  }catch(e){
+    if(timer) clearTimeout(timer); try{if(unlink)unlink();}catch(_){}
+    const err=(opt.signal&&opt.signal.aborted)?'annullata':((e&&e.name==='AbortError'&&timed)?'timeout':'rete');
+    const z={err:err,model:model,durationMs:Date.now()-started,attempts:1,provider:'generateContent'}; _geminiLog(task,z); return z;
+  }
+  if(timer) clearTimeout(timer); try{if(unlink)unlink();}catch(_){}
+  if(!r||!r.ok){
+    const detail=_geminiDetail(data); let err='http',extra={};
+    if(r&&r.status===401) err='chiave';
+    else if(r&&r.status===403) err='accesso';
+    else if(r&&r.status===404) err='modello';
+    else if(r&&r.status===400) err='richiesta';
+    else if(r&&r.status===429){ err=_geminiQuotaKind(detail,data); const q=_aiRatePut(model,err,r,data); extra={cooldown:true,waitMs:q.waitMs,rateCode:q.code}; }
+    else if(r&&r.status>=500) err='occupato';
+    const z=Object.assign({err:err,http:(r&&r.status)||0,model:model,durationMs:Date.now()-started,attempts:1,provider:'generateContent'},extra); _geminiLog(task,z); return z;
+  }
+  const text=_geminiGenerateText(data),u=_geminiGenerateUsage(data); let json=null;
+  if(opt.schema){
+    json=_geminiStructuredJson(text);
+    if(json===null||!_schemaValueOk(json,opt.schema)){
+      const z={err:'schema',model:model,durationMs:Date.now()-started,attempts:1,provider:'generateContent',format:'json',tin:u.tin,tout:u.tout,thought:u.thought,salti:'gc-schema'}; _geminiLog(task,z); return z;
+    }
+  }
+  const finish=String((data&&data.candidates&&data.candidates[0]&&data.candidates[0].finishReason)||'');
+  const z={text:text,json:json,model:model,durationMs:Date.now()-started,attempts:1,provider:'generateContent',format:opt.schema?'json':'text',status:finish,tin:u.tin,tout:u.tout,thought:u.thought};
+  _geminiLog(task,z); return z;
 }
 
 /* Provider-neutral entry point. Il dominio passa intenzione + contratto; solo
@@ -12186,7 +12261,10 @@ function regCantiere(tipo,dati){
       if(Number.isFinite(dati.tout)) v.tout=Math.round(dati.tout);
       if(Number.isFinite(dati.think)) v.think=Math.round(dati.think);
       if(dati.profile) v.profile=clampStr(dati.profile,12);
+      if(dati.provider) v.provider=clampStr(dati.provider,20);          /* v272.3: interactions o generateContent */
       if(dati.resolution) v.resolution=clampStr(dati.resolution,12);
+      if(dati.status) v.status=clampStr(dati.status,16);                /* lifecycle/finishReason, mai contenuto */
+      if(dati.format) v.format=clampStr(dati.format,8);                 /* text/json */
       if(Number.isFinite(dati.api)&&dati.api>=0&&dati.api<20) v.api=Math.round(dati.api);
       if(Number.isFinite(dati.http)&&dati.http>=100&&dati.http<=599) v.http=Math.round(dati.http);
       if(dati.effort) v.effort=clampStr(dati.effort,10);           /* v155: la leva com'era posizionata a quel battito */
@@ -16992,15 +17070,16 @@ document.querySelector('#btn-testkey').onclick=async()=>{
   const field=document.querySelector('#gemini-key').value.trim();
   if(field!==GEMINI_KEY) setGeminiKey(field);
   if(!GEMINI_KEY){ out.textContent='Nessuna chiave Gemini salvata: incollala qui sopra.'; return; }
-  out.textContent='Provo la connessione…';
-  const r=await aiCall({task:'connection-test',models:['gemini-3.5-flash-lite'],user:'Rispondi soltanto: ok',maxOutputTokens:8,reasoning:'minimal',timeout:30000,priority:60});
-  if(!r.err){ out.textContent='✓ Connessione attiva · '+r.model; try{ sAppear(0); }catch(_){} }
+  out.textContent='Provo la strada usata dalla Distillazione…';
+  const probeSchema={type:'object',additionalProperties:false,properties:{ok:{type:'boolean'}},required:['ok']};
+  const r=await _geminiGenerate({task:'distill-probe',model:'gemini-3.5-flash-lite',system:'Rispondi soltanto con il JSON richiesto.',user:'Imposta ok a true.',schema:probeSchema,maxOutputTokens:24,reasoning:'minimal',timeout:15000});
+  if(!r.err&&r.json&&r.json.ok===true){ out.textContent='✓ Distillazione Gemini pronta · '+r.model+' · GenerateContent'; try{ sAppear(0); }catch(_){} }
   else if(r.err==='chiave') out.textContent='✗ La chiave non è accettata dal progetto Gemini. Ricopiala da Google AI Studio e riprova.';
   else if(r.err==='quota') out.textContent='✗ Quota giornaliera del progetto esaurita. Sentiero Base continua a funzionare.';
   else if(r.err==='limite') out.textContent='✗ Limite temporaneo di richieste. Riprova più tardi: Sentiero Base continua a funzionare.';
   else if(r.err==='modello') out.textContent='✗ I modelli configurati non risultano disponibili per questo progetto.';
   else if(r.err==='offline'||r.err==='rete') out.textContent='✗ Gemini non è raggiungibile dalla rete in questo momento.';
-  else if(r.err==='timeout') out.textContent='✗ Gemini non ha risposto entro 30 secondi. La chiave può essere valida: riprova tra poco.';
+  else if(r.err==='timeout') out.textContent='✗ La strada della Distillazione non ha risposto entro 15 secondi. La chiave può essere valida, ma questo test non è verde.';
   else if(r.err==='occupato') out.textContent='✗ Gemini è momentaneamente indisponibile. Riprova più tardi.';
   else out.textContent='✗ Connessione non riuscita ('+r.err+').';
   renderSettings();

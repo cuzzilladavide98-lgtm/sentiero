@@ -1,0 +1,150 @@
+{
+ "formato": 2,
+ "versione": "v60S.272.3 · 2026-08-25",
+ "generazione": 272003,
+ "cache": "sentiero-v60s-272-3",
+ "ragione": "recovery affidabilità: Distillazione Flash-Lite con due tentativi brevi e nota salvata prima della rete; geometria voce unificata; base immutabile; backup completo opzionale",
+ "review_finale": {
+  "stati_interactions": "solo completed è consegnabile; incomplete/failed/cancelled non vengono presentati come successo",
+  "rate_governor_background": "HTTP 429 dell OCR background entra nello stesso cooldown per-modello del percorso foreground",
+  "ui_produzione": "banchi di laboratorio rimossi; Diagnostica mantenuta come strumento di assistenza",
+  "aggiornamenti": "la prima scheda dopo update dichiara esplicitamente Major release e riassume i cambiamenti percepibili",
+  "aggiornamenti_scroll": "hotfix SE-2: la scheda Major release vive dentro tab-oggi e usa lo stesso #app>main scorrevole; eliminato lo scroll annidato che Safari/iPhone SE non consegnava",
+  "gemini_connessione_hotfix": "hotfix 24/08: endpoint Interactions riallineato a /v1beta/interactions; Prova connessione usa il modello a bassa latenza gemini-3.5-flash-lite con 30 s e distingue timeout da rete; base linguistica online usa cache-buster v6 e no-store",
+  "guida_privacy_hotfix": "hotfix 24/08: guida e privacy riallineate al comportamento Gemini reale, esempio personale anonimizzato, capitolo IA locale rimosso, prova connessione Flash-Lite chiarita e safe area iOS protetta",
+  "discoverability_seo": "hotfix 24/08: Inizia diventa landing indicizzabile per ricerche su diario digitale/personale; titoli e descrizioni unici, canonical e Open Graph; app shell noindex per evitare concorrenza interna; sitemap XML aggiunta; nessun meta-keywords e nessun tracker",
+  "patch_272_1_frutto": "timeout tecnico della soglia separato dallo skip umano: 20 s di tetto UI, messaggio esplicito, nessun FRUTTO_SKIP_KEY e nessun visto sul risultato tardivo",
+  "patch_272_1_audio": "rilettura post-microfono resa stato esplicito `reviewing`: trascritto davanti a Butta/Tieni sul viewport 375×647; pipeline Distillazione invariata",
+  "patch_272_1_base": "nuova generazione reale 272001/cache 272-1; base italiana v7 timbrata v60S.272.1 e network-first nel service worker, con fallback solo alla cache della nuova generazione",
+  "patch_272_1_sussurro": "nessuna chiamata aggiuntiva: prompt meno incline al SILENZIO automatico dopo il gate locale; gli errori provider vengono distinti dal silenzio nella Diagnostica",
+  "ui_fatto_cerchio": "non modificata: sovrapposizione confermata ma riservata al redesign unitario delle apparizioni",
+  "patch_272_2_distill": "Distillazione interattiva solo gemini-3.5-flash-lite, minimal, massimo due tentativi da 10 s; nessun retry interno aggiuntivo; fuori dalla coda background; nota persistita prima della rete e fallback locale precomputato",
+  "patch_272_2_geometry": "geometriaVoce condivisa da Ensō/cielo/satelliti; satelliti rileggono il centro durante l orbita; review audio assoluta senza nascondere o ridisporre i blocchi flex del Mondo",
+  "patch_272_2_backup": "Backup completo esplicito con chiave Gemini e Backup senza chiave separato; import e persistenza chiave verificati rileggendo localStorage; Diagnostica sempre senza segreti",
+  "patch_272_3_distill": "Distillazione spostata da Interactions a models.generateContent con structured output; probe impostazioni usa lo stesso percorso; fallback su modello 3.1 Flash-Lite distinto; provider visibile in Diagnostica",
+  "patch_272_3_base": "base completa v8 incorporata direttamente nell HTML; file esterno v272.3 resta aggiornabile ma un errore di fetch non degrada piu alla base minima",
+  "patch_272_2_base_storico": "asset immutabile lingue/base-it-v272.2.json, versione interna 7, per_versione v60S.272.2; service worker network-first per questo URL e Diagnostica con metadata del file ricevuto (superato dalla base completa incorporata v272.3)"
+ },
+ "file": {
+  "LICENSE-Lora-OFL.txt": {
+   "byte": 4563,
+   "sha256": "948aed765160f7b974105606c21994715a171f89fca48e57bf1e0a23aca0bef1",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "guida.html": {
+   "byte": 35877,
+   "sha256": "5d9fd175c9ea21e012723f0edc04a58bf88118f351d400288a92677ea6d378a7",
+   "cambiato": true,
+   "motivo": "guida v272.3 coerente con Distillazione GenerateContent e fallback Gemini distinto"
+  },
+  "icon-180.png": {
+   "byte": 26585,
+   "sha256": "259c0011f3246ea87673286db747662a328650dbc7cc732bc2b8b08c4812933f",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "icon-192.png": {
+   "byte": 29674,
+   "sha256": "c00616a553124e53b17ead7be8537972a71fb313fb31504159f65ca35f9a428f",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "icon-512.png": {
+   "byte": 210463,
+   "sha256": "aac9a1b9c260ac71cf72e1b959a29d09547105dd5f3eba2d01d5ddbeb46c02ae",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "index.html": {
+   "byte": 1329106,
+   "sha256": "6c93f5688d78265a1ecab98cb0b7c5dacb1da8b07c8616d5e0ecfad903baa9de",
+   "cambiato": true,
+   "motivo": "v272.3: Distillazione via GenerateContent strutturato; probe usa la stessa strada; provider persistito in Diagnostica; base italiana completa incorporata; geometria voce e backup completo preservati"
+  },
+  "inizia.html": {
+   "byte": 17765,
+   "sha256": "2a4fa831a0f6a86210ee857818756442773123ce300307b2b58ce6010007330e",
+   "cambiato": true,
+   "motivo": "metadata/testi v272.3; comportamento pubblico invariato"
+  },
+  "lingue/base-it.json": {
+   "byte": 15373,
+   "sha256": "fe4f4708fc470e835601789177744dd8260be0953a44827687c48a45a30bb77f",
+   "cambiato": false,
+   "motivo": "compatibilità legacy; v272.3 non lo usa come base attiva"
+  },
+  "lingue/en.json": {
+   "byte": 22093,
+   "sha256": "2301784cd755f99fbde7cb9c397ae6187050ce9f8e313bc854fdd0617ecd8587",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "manifest.json": {
+   "byte": 834,
+   "sha256": "f1dd5d13e422b47efcf13619364a65948ddb76307f2f1119ff2da09e6baf7a34",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "privacy.html": {
+   "byte": 22941,
+   "sha256": "0f12b9863f61e51b5230de7a9e208ccf0db202724d809c1adebb84a2df6601ce",
+   "cambiato": true,
+   "motivo": "testi v272.3; contratto dati invariato"
+  },
+  "sitemap.xml": {
+   "byte": 491,
+   "sha256": "88e59b06fecc7b83b84773fcd681640a8759fb34180d4648fa6a2458ef2d0970",
+   "cambiato": true,
+   "motivo": "lastmod guida/privacy aggiornato al 25/08/2026"
+  },
+  "splash-1125x2436.png": {
+   "byte": 169939,
+   "sha256": "97f20c3c955757f18075c5e759fd8e18f68e87c3ef16633ea145c17073d26ac2",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "splash-1170x2532.png": {
+   "byte": 174006,
+   "sha256": "2330b7b61c50e6f5fb807dee4344ed188d7fb86ccd79f9f47473978ddb22b8b6",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "splash-1179x2556.png": {
+   "byte": 173708,
+   "sha256": "53d88ad2e8bbdbe5c3f40034b9eb487907b6bd70840c87562d22ab8dfb0dfd36",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "splash-1290x2796.png": {
+   "byte": 187983,
+   "sha256": "0ca598a6fedb9951e8c20864d77e38995337999038a34f60ef8c7aef1e472393",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "splash-750x1334.png": {
+   "byte": 104787,
+   "sha256": "25665200d6517fa87e62de038a00746b2348c196788dd2e57babd88d765d7740",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "splash-828x1792.png": {
+   "byte": 139435,
+   "sha256": "19b649e1f63a6f4d3ac565f93dd52b93bc1eff3abc819ff7a173834e147a226c",
+   "cambiato": false,
+   "motivo": "invariato rispetto alla v60S.272.0"
+  },
+  "sw.js": {
+   "byte": 6876,
+   "sha256": "9106dd229f9c6f83c38885c64bdb80e50961e293bcf8da2536d0ea214dd5ab6f",
+   "cambiato": true,
+   "motivo": "cache sentiero-v60s-272-3; precache base-it-v272.3; generazione diagnostica 272003"
+  },
+  "lingue/base-it-v272.3.json": {
+   "byte": 13862,
+   "sha256": "d4eb0a13500c93993f3829a509f273743a5e409bd810673b0b85c3099807bf3e",
+   "cambiato": true,
+   "motivo": "base italiana v8 per v60S.272.3; stessi contenuti linguistici della v272.2, metadata di release aggiornati; copia completa anche incorporata nell HTML"
+  }
+ }
+}

@@ -1,6 +1,7 @@
-const CACHE = 'sentiero-v60s-272-2';
+const CACHE = 'sentiero-v60s-272-3';
 const PROD_CACHE_PREFIX = 'sentiero-v60s-';
-/* v272.2 recovery: distill Flash-Lite bounded, geometry unified, immutable base, complete backup. */
+/* v272.3 recovery: Distillazione via GenerateContent, base completa incorporata,
+   stessa geometria voce e backup completo preservati. */
 /* v272.0 discoverability-1: landing/guida/manifest aggiornati per descrivere
    Sentiero come diario digitale personale in modo naturale e indicizzabile;
    sitemap pubblica aggiunta. Nessun tracker e nessun meta-keywords. */
@@ -29,7 +30,7 @@ const PROD_CACHE_PREFIX = 'sentiero-v60s-';
 const ASSETS = ['./', './index.html', './manifest.json',
   './icon-180.png', './icon-192.png',
   './lingue/en.json',
-  './lingue/base-it-v272.2.json',   /* v267: la base linguistica viaggia con l'app. Offline si usa questa; con la rete si aggiorna da qui. */    /* v218: i pacchetti delle lingue viaggiano con l'app: offline dal primo avvio */
+  './lingue/base-it-v272.3.json',   /* v267: la base linguistica viaggia con l'app. Offline si usa questa; con la rete si aggiorna da qui. */    /* v218: i pacchetti delle lingue viaggiano con l'app: offline dal primo avvio */
   './privacy.html',
   './guida.html',
   './inizia.html'];     /* v221: l'informativa viaggia con l'app. Senza, chi la apre
@@ -62,7 +63,7 @@ self.addEventListener('activate', e => {
 /* v269.8 — «CHI STA SERVENDO QUESTA PAGINA?»
    Una domanda sola, una risposta sola, nessun protocollo. La pagina chiede la
    generazione di chi la serve; il worker la ricava dal nome della propria cache
-   (sentiero-v60s-272-2 -> 272002). Serve a distinguere, nel nastro, una sessione
+   (sentiero-v60s-272-3 -> 272003). Serve a distinguere, nel nastro, una sessione
    servita dalla generazione nuova da una servita da quella vecchia rimasta al
    comando. Un worker di prima di questa versione non risponde: nel nastro resta
    zero, e anche quello dice qualcosa. */
@@ -90,17 +91,17 @@ self.addEventListener('fetch', e => {
      CacheStorage scelga per prima una risposta statica vecchia. */
   try {
     const u = new URL(url);
-    if (u.pathname.endsWith('/lingue/base-it-v272.2.json')) {
+    if (u.pathname.endsWith('/lingue/base-it-v272.3.json')) {
       e.respondWith((async () => {
         const c = await caches.open(CACHE);
         try {
           const res = await fetch(e.request, { cache: 'no-store' });
           if (res && res.ok) {
-            try { await c.put('./lingue/base-it-v272.2.json', res.clone()); } catch (_) {}
+            try { await c.put('./lingue/base-it-v272.3.json', res.clone()); } catch (_) {}
             return res;
           }
         } catch (_) {}
-        return (await c.match('./lingue/base-it-v272.2.json')) || Response.error();
+        return (await c.match('./lingue/base-it-v272.3.json')) || Response.error();
       })());
       return;
     }
