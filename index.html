@@ -179,14 +179,19 @@ body[data-sez="altro"] #tab-impostazioni{display:block}
 #flow:not(:empty){background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.10);border-radius:16px;padding:14px 16px}
 #live.show{background:rgba(7,10,9,0.72);border:0.5px solid rgba(245,242,234,0.08);border-radius:16px;padding:12px 16px}
 /* Scarta/Distilla: pillola ancorata al fondo del mondo - nessun contenuto puo piu spingerla sotto il foglio, su nessun viewport */
-#mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:44px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}
-#mic-wrap:has(#confirm-row:not(.hidden)) #live.show{position:absolute;left:16px;right:16px;top:14px;bottom:176px;width:auto;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box}   /* width:auto: senza, il width:100% di base vince su right e la carta sborda */
+/* v272.1 — RILETTURA AUDIO: uno stato esplicito, non una coincidenza CSS.
+   Sul SE potevano essere visibili Butta/Tieni mentre il trascritto restava dietro
+   al fulcro del mondo. `reviewing` viene acceso dallo stesso punto che mostra i
+   due tasti: testo e decisione diventano quindi una sola proprietà. */
+#mic-wrap #confirm-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:28px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:6}
+#mic-wrap.reviewing #mondo-su,#mic-wrap.reviewing #mondo-voce{visibility:hidden;pointer-events:none}
+#mic-wrap.reviewing #mondo-giu{overflow:visible;padding-top:0}
+#mic-wrap.reviewing #live.show{position:absolute;z-index:5;left:16px;right:16px;top:18px;bottom:112px;width:auto;margin:0;overflow-y:auto;padding:16px 18px;box-sizing:border-box;text-align:left}
 /* la nascita della quest: i caratteri si accendono, l'aura si spegne piano */
 @keyframes q-pc{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-@keyframes q-aura{0%{opacity:0}18%{opacity:1}100%{opacity:0}}   /* in rilettura il trascritto E il mondo: tutta la finestra, il fuoco respira dietro la carta */
-#mic-wrap:has(#confirm-row:not(.hidden)) #mic-label,#mic-wrap:has(#confirm-row:not(.hidden)) #ring-count,#mic-wrap:has(#confirm-row:not(.hidden)) #flow{visibility:hidden}   /* niente testi-fantasma dietro la carta */
-#mic-wrap:has(#confirm-row:not(.hidden)) #flow{display:none}   /* nel momento della rilettura il flow tace: duplicava la pillola */
-#mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:106px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:3}   /* la priorita sta sopra la pillola, mai nel mucchio */
+@keyframes q-aura{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+#mic-wrap.reviewing #flow{display:none}
+#mic-wrap #prio-row:not(.hidden){position:absolute;left:50%;transform:translateX(-50%);bottom:94px;margin:0;width:max-content;max-width:92%;background:rgba(7,10,9,0.88);border:0.5px solid rgba(245,242,234,0.12);border-radius:999px;padding:4px 12px;z-index:7}   /* la priorita sta sopra la pillola, mai nel mucchio */
 /* punto 3 riscritto (v60S.93): morphing continuo guidato da --fp (0=aperto, 1=picco).
    Solo transform/opacity, il layout non si muove mai: capolettera 84->46 (scala .548),
    anello 84->52 (scala .619) che sale al posto del "dove sono" mentre svanisce. */
@@ -4173,7 +4178,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.272.0 · 2026-08-24';
+const APP_VERSION='v60S.272.1 · 2026-08-25';
 
 /* Lab 15: la distillazione multi-campo e stata validata su iPhone con 3.7 diretto.
    Il Seme distingue ora un output vuoto da un errore e lascia che la produzione
@@ -4199,13 +4204,12 @@ const APP_VERSION='v60S.272.0 · 2026-08-24';
    persona. Nessun numero che venga da un archivio reale. Nessun titolo scritto
    da qualcuno. Gli esempi, se servono, si inventano. */
 const NOVITA=[
- {titolo:'Major release · Cosa è cambiato',righe:[
-   'Questa è una major release: Sentiero cambia molto sotto il cofano, ma il Diario, le quest, le abitudini e la tua storia restano nello stesso stato locale.',
-   'La Generativa ora usa Google Gemini. La vecchia chiave Generativa non viene convertita: crea o inserisci una chiave Gemini. La nuova chiave resta separata dai tuoi dati e non entra mai nel backup.',
-   'La Stanza ora tiene insieme Scrivi e Foto: l’OCR legge la pagina nello stesso luogo, puoi correggere il testo e poi Raccogliere senza passare da una seconda porta.',
-   'Il Frutto resta davvero legato al suo CARICAMENTO; Perla, Dono e le osservazioni importanti non sfuggono più in pochi secondi ma restano in banner leggibili finché non li chiudi.',
-   'Il Sussurro parla in modo più semplice e ha una presenza più chiara. OLED e LCD ora hanno una resa distinta fino al Giardino: luce emessa sul primo, materia e pigmento sul secondo.',
-   'Sotto la superficie sono più robusti anche microfono, offline, limiti Gemini e risposte incomplete: quando una chiamata non è davvero completa Sentiero non la presenta come riuscita.'
+ {titolo:'Correzioni importanti · Cosa è cambiato',righe:[
+   'Il Frutto non viene più considerato saltato se la rete è lenta. Dopo un’attesa lunga Sentiero entra comunque, te lo dice chiaramente e lascia il Frutto disponibile per una riapertura successiva.',
+   'Dopo una registrazione il testo da rileggere ha adesso uno spazio proprio e resta davanti a Butta e Tieni anche sugli schermi corti.',
+   'La base italiana viaggia con una nuova generazione della PWA: Sentiero può verificare finalmente che il vocabolario pubblicato appartenga davvero alla stessa versione che stai usando.',
+   'Il Sussurro conserva i suoi filtri, ma il silenzio non è più la risposta predefinita quando un filo concreto ha già superato il primo controllo. La Diagnostica distingue inoltre il silenzio scelto da un errore Gemini.',
+   'Fatto e Cerchio del giorno restano invariati in questa correzione: la loro apparizione verrà riprogettata come un’unica esperienza, invece di ricevere una toppa.'
  ]},
  /* v245 — IL CAMPO «da» E STATO TOLTO, e per una ragione che vale come lezione:
     conteneva un numero di versione, e il comando che alza la versione a ogni
@@ -6948,12 +6952,14 @@ function presentaRaccolto(seNiente){
     if(txt){
       micLabel.textContent='Rileggi e raccogli';
       live.textContent=txt; live.classList.add('show'); live.scrollTop=0;   /* si rilegge dall'inizio */
+      const mw=document.getElementById('mic-wrap'); if(mw) mw.classList.add('reviewing');
       const cr=document.querySelector('#confirm-row'); if(cr) cr.classList.remove('hidden');
       renderFlow();
       return true;
     }
     if(seNiente) micLabel.textContent=seNiente;
     live.classList.remove('show');
+    try{ const mw=document.getElementById('mic-wrap'); if(mw) mw.classList.remove('reviewing'); }catch(_){}
     try{ updateRing(); }catch(_){}
   }catch(_){}
   return false;
@@ -6983,7 +6989,10 @@ function _tastoFermo(on){
 function toggleMicrofono(){
   if(!SR){
     const txt=live.textContent.trim();
-    if(txt) document.querySelector('#confirm-row').classList.remove('hidden');
+    if(txt){
+      try{ const mw=document.getElementById('mic-wrap'); if(mw) mw.classList.add('reviewing'); }catch(_){}
+      document.querySelector('#confirm-row').classList.remove('hidden');
+    }
     return;
   }
   try{ nota('mtp',recording?2:1); }catch(_){}
@@ -7035,6 +7044,7 @@ document.querySelector('#btn-prio-no').onclick=()=>{
 };
 function resetCapture(){
   committedText='';sessionFinal='';interimText='';
+  try{ const mw=document.getElementById('mic-wrap'); if(mw) mw.classList.remove('reviewing'); }catch(_){}
   live.textContent='';live.classList.remove('show','distill');
   if(!SR) live.classList.add('show');
   document.querySelector('#confirm-row').classList.add('hidden');
@@ -8561,7 +8571,7 @@ async function condividiFrutto(f){
    sta li: non e una carta dentro un cassetto, e la cosa che si attraversa per entrare.
    Regole dure: se non c'e un frutto la soglia sparisce SUBITO, e non aspetta mai piu di sei
    secondi. Nessuno deve restare fermo davanti a un'attesa che non porta niente. ─────────── */
-const SOGLIA_ATTESA_MAX=65000;  /* il vero tetto e quello della chiamata Frutto (60 s) + margine */
+const SOGLIA_ATTESA_MAX=20000;  /* tetto della PORTA, non del lavoro: dopo 20 s Sentiero entra e il Frutto resta recuperabile */
 const FRUTTO_SKIP_KEY='sentiero-frutto-skip';
 function _sogliaVia(el){
   if(!el||el.classList.contains('via')) return;
@@ -8661,18 +8671,32 @@ async function apriSoglia(){
   };
   el.addEventListener('pointerdown',salta);
   const tetto=setTimeout(function(){
-    scaduta=true; _fruttoSegnaSaltato(tk); chiudi('tetto tecnico');
+    if(chiusa||saltata) return;
+    scaduta=true;
+    try{ el.removeEventListener('pointerdown',salta); }catch(_){}
+    /* Un guasto tecnico non decide al posto della persona. Non scriviamo
+       FRUTTO_SKIP_KEY e non tocchiamo `visto`: se il lavoro termina tardi,
+       rimane un Frutto non visto e la prossima apertura puo mostrarlo. */
+    const car=corpo.querySelector('.sg-caricamento');
+    if(car) car.innerHTML='<div class="sg-load-t">ATTESA LUNGA</div>'
+      +'<div class="sg-load-s">La rete sta impiegando troppo.</div>'
+      +'<div class="sg-load-s">Entro adesso. Il Frutto resta in attesa e Sentiero riproverà se serve.</div>';
+    try{ regCantiere('frutto-porta',{msg:'tetto tecnico: non consumato'}); }catch(_){}
+    setTimeout(function(){ chiudi('tetto tecnico: retry preservato'); },2200);
   },SOGLIA_ATTESA_MAX);
 
   const fr=await lavoro;
   clearTimeout(tetto);
   try{ el.removeEventListener('pointerdown',salta); }catch(_){}
 
-  /* Se la persona ha detto «entra subito» (o il backend ha superato persino
-     il suo tetto), un risultato tardivo puo essere conservato nella storia ma
-     NON deve tenderle un agguato alla riapertura. */
-  if(saltata||scaduta){
-    if(fr&&fr.lettura) _fruttoSegnaVisto(fr,saltata?'saltato':'timeout');
+  /* Solo «entra subito» consuma volontariamente il Frutto di oggi. Un timeout
+     tecnico lascia intatta la possibilità di vederlo a una riapertura. */
+  if(saltata){
+    if(fr&&fr.lettura) _fruttoSegnaVisto(fr,'saltato');
+    return;
+  }
+  if(scaduta){
+    try{ if(fr&&fr.lettura) regCantiere('frutto-porta',{msg:'arrivato dopo il tetto: resta non visto'}); }catch(_){}
     return;
   }
   if(chiusa) return;
@@ -9851,7 +9875,7 @@ function _baseValida(b){
    La base valida si tiene nello stato, quindi finisce nei backup: chi cambia
    telefono non riparte da zero culturalmente. */
 const BASE_ORIGINE='lingue/base-it.json';
-const BASE_CACHE_TAG='v6-2026-08-24-production-gemini-release';
+const BASE_CACHE_TAG='v7-2026-08-25-production-sentiero-272-1';
 const BASE_OGNI_MS=1000*60*60*24*7;     /* una volta a settimana basta e avanza */
 let _BASE_ULTIMO_ESITO={esito:'non provata',canale:'',quando:0};
 async function aggiornaBaseLinguistica(forza){
@@ -11069,6 +11093,7 @@ const OBSERVER_LINE_SYS=
 "I NUMERI: al massimo UNO per riga, e solo come fatto vissuto (la terza mattina, ventotto giorni, cinque occasioni). MAI rapporti o sequenze di cifre (3 su 7, da 0 a 7): la forma delle settimane si dice in parole - cresce, tiene, cala, torna, si assottiglia. Vietate le parole da analista o da officina interna: pattern, trend, plateau, dati, media, percentuale, rituale, quest, task, streak, sussurro. Traduci sempre l'etichetta nel fatto vissuto.\n"+
 "I PRIMI GIORNI: se eta_del_cammino dice primo giorno o prima settimana, non leggere storie che non esistono ancora: accogli il gesto di oggi, concreto e leggero, senza pesare un passato che non c'e.\n"+
 "LO SPECCHIO E LA SCOPERTA: una riga-specchio (ripetere che ha fatto cio che ha appena spuntato, o che era in lista oggi) vale SOLO se chiude un filo piu vecchio di oggi: una promessa di giorni prima, un ritorno dopo un vuoto, una prima volta assoluta. Altrimenti SILENZIO - meglio tacere che fare da specchio. La riga migliore e una SCOPERTA: il legame che ancora non ha visto (questo gesto arriva sempre dopo le giornate piene; questo cede sempre lo stesso giorno; queste due cose si tirano a vicenda). Una scoperta vera vale piu di dieci specchi.\n"+
+"SOGLIA DEL SILENZIO: questa chiamata non parte a ogni spunta. Un filtro locale ha gia trovato almeno un possibile filo oltre l'istante. SILENZIO quindi NON e il punto di partenza: prima cerca davvero in diario_pertinente, quest_nata, arco_quattro_settimane, nota_utente, pietra_del_desiderio, rientro_da_ferie e fuori_piano. Se uno di questi campi sostiene un collegamento concreto e verificabile, scrivilo. Taci solo quando parlare richiederebbe inventare, ripetere una riga recente o dire una banalita.\n"+
 "LA STRUTTURA: mai due righe con la stessa costruzione (citazione-poi-fatto, ora-poi-conteggio): righe_recenti ti mostrano le tue ultime, cambia attacco e forma ogni volta. Il campo attacchi_bruciati contiene lo scheletro delle tue ultime righe, gia estratto: se la riga che stai per dire comincia con uno di quegli scheletri, e sbagliata prima ancora di essere finita - buttala e ricomincia da un altro appiglio dei dati. E i rapporti restano vietati anche scritti a lettere (sette su sette vale quanto 7 su 7): la pienezza si dice in lingua comune - piena, quasi piena, a meta, quasi vuota, vuota. Non dire mai giornata rara o settimana rara.\n"+
 "ESEMPI, tutti veri, presi dal suo cammino.\n"+
 "COSI SI - \u00abieri sera lo avevi scritto: \u00abdomani alle 10 comincio a sistemare camera\u00bb - e l'hai fatto\u00bb: una promessa datata che oggi si chiude, parole sue, nessun commento sopra.\n"+
@@ -11077,8 +11102,8 @@ const OBSERVER_LINE_SYS=
 "COSI NO - \u00ab6 su 7, streak a 1 - ieri tenuto\u00bb: due cifre e un rapporto. E un bollettino, e un bollettino non e un amico.\n"+
 "COSI NO - \u00abquasi le 18 e il caffe non l'hai preso\u00bb: specchio puro, niente che sia piu vecchio di oggi. Qui la risposta giusta era SILENZIO.\n"+
 "COSI NO - \u00ablo scrivevi gia un mese fa e oggi l'hai fatto davvero\u00bb detto su una quest che quest_nata dava per nata OGGI: un ricordo inventato. Un solo filo falso toglie credito a tutti quelli veri.\n"+
-"SILENZIO: se i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere e meta del tuo mestiere: usalo senza esitare.\n"+
-"LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, il silenzio e quasi sempre la scelta giusta: il tuo silenzio da valore alla tua voce.\n"+
+"SILENZIO: se dopo quella ricerca i dati non offrono nulla di vero e nuovo, o la riga verrebbe generica, rispondi con la sola parola SILENZIO. Tacere resta parte del mestiere, ma non usarlo come rifugio quando il filo concreto c'e.\n"+
+"LA TUA VOCE: nel campo la_tua_voce sai quanto hai gia parlato oggi e quanto hai taciuto. Sei un amico presente, non un commentatore: piu hai gia parlato, piu alta deve essere la soglia per parlare ancora - dopo molte righe, solo un filo davvero forte merita la prossima. Se l'ultima riga e di pochi minuti fa, evita soprattutto di ripetere lo stesso filo o la stessa forma; un collegamento indipendente, concreto e nuovo puo ancora meritare voce. Il silenzio da valore alla voce, non deve spegnerla.\n"+
 "MATERIALE: ancora tutto a particolari reali dei dati - l'arco delle settimane, il ritorno dopo le occasioni mancate, il patto di stamattina, l'attrito che aveva nominato, una domanda rimasta aperta, una frase del suo diario. Le sue parole esatte tra virgolette basse \u00abcosi\u00bb, mai parafrasate, solo se calzano da sole. righe_recenti sono le TUE frasi passate, con la data: puoi riprendere il filo e dargli direzione - continuita, non ripetizione: mai riusare struttura, immagine o attacco. La costanza si misura SOLO sui giorni previsti dal piano: non leggere assenze nei giorni non previsti. diario_pertinente e un accostamento per parola chiave, non per senso: il campo per dice QUALE parola ha fatto l'aggancio - guardala, e se quella parola nella voce vuol dire un'altra cosa, la voce non c'entra: scartala e non citarla. Ogni voce del diario porta nel campo scritto QUANTO FA, gia in parole: le distanze nel tempo si RICOPIANO da li, MAI calcolate da te partendo dalle date - se scritto dice piu di un mese fa, dire ieri e una menzogna. quest_nata dice da quando esiste la quest appena compiuta: ogni distanza nel tempo sulla sua origine puoi dirla SOLO leggendo quest_nata o una data esplicita nei dati - se e ignota, non datare: una memoria inventata tradisce tutte le altre. pietra_del_desiderio dice che questa quest e una pietra della montagna nominata da chi ti legge: e il filo piu lungo che esista - trattalo con il peso che merita, senza retorica da vetta.\n"+
 "L'ORA: quello che ricevi e ora_in_cui_ha_segnato, cioe il minuto in cui ha toccato lo schermo. NON e l'ora in cui ha fatto la cosa, e quella tu non la sai. Puo aver corso a mezzogiorno e averlo segnato a mezzanotte. Quindi: mai dire ne far capire quando una cosa e stata fatta, ne che sia cominciata tardi, ne che l'orario stia scivolando. Puoi dire a che ora CHIUDE la lista o segna le cose, perche quello e vero. Il momento (prima spunta del giorno, giorno completo) puo dare vita alla riga, mai citato in modo meccanico.\n"+
 "CHI TI LEGGE: il campo chi_ti_legge dice se e un uomo o una donna, e ogni participio e ogni aggettivo che lo riguarda si accorda a quello: sei tornato o sei tornata, non sei solo o non sei sola. Se dice che non lo sai, NON tirare a indovinare: gira la frase e scegli forme che il genere non lo chiedono (l'hai fatto, ci sei, e tornato il ritmo, oggi c'e). Sbagliare il genere di chi ti legge cancella in un colpo solo tutta la memoria lunga: e la prova che non lo conosci.\n"+
@@ -11461,9 +11486,9 @@ async function askObserverLine(pkg,segnale){
      scoperta. Quarantacinque bastano alla catena piu lenta con il pensiero
      acceso, e il segnale permette di smettere prima se la riga non serve piu. */
   const res=await aiCall({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),task:'observer-line',maxOutputTokens:600,reasoning:'low',timeout:45000,priority:5,signal:segnale||undefined});
-  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined};
-  const line=(res&&res.text)?clampStr(res.text,600).trim():null;   /* errori in silenzio: una riga mancata non rompe la spunta */
-  if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* il silenzio scelto si rispetta - ma anche il silenzio ha un costo, e ora si vede */
+  const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined,err:(res&&res.err)||null};
+  const line=(res&&res.text)?clampStr(res.text,600).trim():null;
+  if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* silenzio e guasto restano entrambi non invasivi, ma la Diagnostica adesso li distingue */
   return Object.assign({riga:line},meta);
 }
 /* ══ LA BRACE — il pensiero dell'osservatrice in volo: dalla spunta alla casa del sussurro.
@@ -12886,9 +12911,12 @@ function observerLineFor(el){
         try{ nota('sps'); }catch(_){}
         window._verdettoRef={riga:String(line),aperto:false};   /* v147: il registro e scritto, la riga puo ricevere il verdetto */
         chiudi(function(){ try{ nota('srn'); }catch(_){} _whisper(line); try{ nota('srf'); }catch(_){} },1,msLinea);   /* il sussurro nasce dove la brace atterra */
+      }else if(resL&&resL.err){
+        try{ regCantiere('errore',{task:title,msg:'sussurro: '+String(resL.err).slice(0,100),ms:msLinea,model:resL.model,salti:resL.salti,pkg:pkgL}); }catch(_){}
+        chiudi(null,4,msLinea);                                          /* errore vero: non viene piu contato come silenzio scelto */
       }else{
-        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti,pkg:pkgL});   /* anche il silenzio ha un pacchetto: taceva a ragione o non aveva materiale? */
-        chiudi(null,0,msLinea);                                          /* silenzio scelto o errore: la brace esala */
+        regCantiere('silenzio',{task:title,ms:msLinea,model:resL&&resL.model,tin:resL&&resL.tin,tout:resL&&resL.tout,salti:resL&&resL.salti,pkg:pkgL});   /* il silenzio scelto conserva il pacchetto che lo giustifica */
+        chiudi(null,0,msLinea);
       }
       }catch(err){
         /* v270.2 — questo ramo NON ESISTEVA. Una riga che lanciava qui dentro

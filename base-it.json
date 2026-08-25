@@ -1,9 +1,9 @@
 {
   "_leggimi": "LA BASE LINGUISTICA DI SENTIERO. Non e un vocabolario da leggere: e cio che la giuria usa per misurare. Ogni voce dichiara DA DOVE VIENE, perche una misura senza provenienza e un'opinione con dei numeri sopra.",
   "lingua": "it",
-  "versione": 5,
-  "aggiornato": "2026-08-24",
-  "impronta": "v6-2026-08-24-production-gemini-release",
+  "versione": 6,
+  "aggiornato": "2026-08-25",
+  "impronta": "v7-2026-08-25-production-sentiero-272-1",
   "livelli_di_conoscenza": {
     "incorporata": "scritta a mano dentro l'app. Serve a funzionare offline dal primo minuto. NON e una misura: e un punto di partenza dichiarato.",
     "evidenza": "raccolta da una fonte esterna, ancora grezza. Non si usa finche non e validata.",
@@ -507,7 +507,7 @@
     "da": "lingue/base-it.json",
     "nota": "l'aggiornamento e una richiesta a un file statico pubblicato con l'app. Non esce nessun dato della persona: e una lettura, non una domanda. Se la risposta non passa i controlli, si tiene la base di prima."
   },
-  "per_versione": "v60S.272.0",
+  "per_versione": "v60S.272.1",
   "_perche_per_versione": "Il contratto di generazione (v269.7). Questo file viaggia separato dall'HTML e il service worker lo serve dalla cache: senza timbro, una sessione poteva eseguire codice nuovo con una base vecchia - ed e successo davvero fra la v268.6 e la v269, con «naturalezza» tornata a pesare 1.5. Chi legge questo file controlla il timbro: se non corrisponde ad APP_VERSION, non lo usa e ripiega sulla base incorporata nell'HTML, che non puo mai essere di un'altra generazione.",
   "lessico_del_sistema": {
     "_cosa_e": "parole interne dell'app che una voce generata non deve rivolgere alla persona come gergo tecnico. Non e un corpus: e un confine di prodotto.",

@@ -1,4 +1,4 @@
-const CACHE = 'sentiero-v60s-272-0';
+const CACHE = 'sentiero-v60s-272-1';
 const PROD_CACHE_PREFIX = 'sentiero-v60s-';
 /* v272.0 discoverability-1: landing/guida/manifest aggiornati per descrivere
    Sentiero come diario digitale personale in modo naturale e indicizzabile;
@@ -11,6 +11,10 @@ const PROD_CACHE_PREFIX = 'sentiero-v60s-';
 /* v272.0 hotfix docs-1: guida/privacy riallineate alla Generativa reale; safe-area
    iPhone corretta e vecchio capitolo dell'IA locale rimosso. Questo byte forza
    l'installazione del worker e il refresh degli HTML precache. */
+/* v272.1: nuova generazione reale della cache. Frutto tecnico non consumabile,
+   rilettura audio esplicita, base linguistica v7 e Sussurro meno incline al
+   silenzio automatico. La base italiana e network-first: una copia vecchia non
+   puo piu vincere soltanto perche era gia in CacheStorage. */
 /* v168: nella lista restavano sette file audio che l'app non suona dalla v101 (audio spento in
    blocco) e uno, d-major.mp3, che nel repo non c'e mai stato: a ogni installazione partivano
    sette richieste inutili, una per un .wav pesante. I file restano nel repo per il giorno in cui
@@ -57,7 +61,7 @@ self.addEventListener('activate', e => {
 /* v269.8 — «CHI STA SERVENDO QUESTA PAGINA?»
    Una domanda sola, una risposta sola, nessun protocollo. La pagina chiede la
    generazione di chi la serve; il worker la ricava dal nome della propria cache
-   (sentiero-v60s-272-0 -> 272000). Serve a distinguere, nel nastro, una sessione
+   (sentiero-v60s-272-1 -> 272001). Serve a distinguere, nel nastro, una sessione
    servita dalla generazione nuova da una servita da quella vecchia rimasta al
    comando. Un worker di prima di questa versione non risponde: nel nastro resta
    zero, e anche quello dice qualcosa. */
@@ -78,6 +82,27 @@ self.addEventListener('fetch', e => {
   try {
     const u = new URL(url);
     if (u.hostname === 'generativelanguage.googleapis.com') return; // l'IA non entra mai nella cache PWA
+  } catch (_) {}
+
+  /* v272.1 — base linguistica: rete prima, cache della STESSA generazione dopo.
+     Il contratto per_versione resta fail-closed nel client; qui impediamo che
+     CacheStorage scelga per prima una risposta statica vecchia. */
+  try {
+    const u = new URL(url);
+    if (u.pathname.endsWith('/lingue/base-it.json')) {
+      e.respondWith((async () => {
+        const c = await caches.open(CACHE);
+        try {
+          const res = await fetch(e.request, { cache: 'no-store' });
+          if (res && res.ok) {
+            try { await c.put('./lingue/base-it.json', res.clone()); } catch (_) {}
+            return res;
+          }
+        } catch (_) {}
+        return (await c.match('./lingue/base-it.json')) || Response.error();
+      })());
+      return;
+    }
   } catch (_) {}
 
   // App shell: network-first, così le nuove versioni arrivano da sole; offline si usa la cache.
