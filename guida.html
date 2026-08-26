@@ -68,7 +68,7 @@ li::before{content:'';position:absolute;left:2px;top:.72em;width:6px;height:6px;
 .sch-riga{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:.5px solid rgba(245,242,234,.07);font-size:15px;color:var(--t1)}
 .sch-riga:last-child{border-bottom:none}
 .sch-o{width:20px;height:20px;border-radius:50%;border:1.4px solid rgba(245,242,234,.38);flex:none}
-.sch-v{width:20px;height:20px;border-radius:6px;background:var(--accent);color:#1a1208;flex:none;
+.sch-v{width:20px;height:20px;border-radius:6px;background:#2b302e;color:#F5F2EA;flex:none;
   display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
 .sch-riga.fatta{color:var(--t3);text-decoration:line-through}
 .sch-d{margin-left:auto;color:rgba(245,242,234,.3);font-size:12px}
@@ -181,11 +181,16 @@ a{color:var(--accent)}
   </div>
 
   <p>Sotto la scritta <strong>Oggi</strong> ci sono le cose del giorno. Tocca il
-  <strong>cerchio a sinistra</strong>: diventa un quadrato dorato con la spunta e
-  la riga si barra.</p>
+  <strong>cerchio a sinistra</strong>: la spunta si chiude e la riga si barra. Il
+  movimento resta lì, attorno alla checkbox: niente vola nel resto dello schermo.</p>
+
+  <p class="calmo">La forza segue quello che hai davvero completato oggi, non la velocità dei tocchi:
+  all'inizio il gesto è blu, poi diventa rosso e nei passi più avanzati viola. Se togli una spunta
+  fatta per errore, anche il passo torna indietro.</p>
 
   <p class="calmo">Il <strong>rombo</strong> <span class="tasto">◆</span> a destra
-  serve a spostare la cosa più avanti nella giornata.</p>
+  segna una cosa come <strong>importante</strong>: quando tutte le importanti sono fatte,
+  si chiude il Cerchio del giorno.</p>
 
   <p><strong>Tieni premuto su una riga</strong> e si aprono i tasti per curarla:
   <span class="tasto">Aggiorna</span>, <span class="tasto">Rimanda…</span>,
@@ -538,10 +543,10 @@ a{color:var(--accent)}
   <!-- ═══ 12 ═══ -->
   <h2 id="dodici"><span class="n">CAPITOLO 12</span>Se qualcosa non torna</h2>
 
-  <h3>Una voce meccanica dice «Fatto» quando spunto una cosa</h3>
-  <p class="calmo">È la voce del telefono, e <strong>di default è spenta</strong>.
-  Se ti parla, qualcuno l’ha accesa: <strong>Altro</strong> nella barra in basso →
-  <strong>La voce che legge ad alta voce</strong>, e spegnila.</p>
+  <h3>Una voce meccanica legge qualcosa ad alta voce</h3>
+  <p class="calmo">La voce del telefono è <strong>di default spenta</strong>. La normale
+  spunta non dice più “Fatto”, “Bene” o altre parole-premio. Se senti una lettura,
+  vai in <strong>Altro</strong> → <strong>La voce che legge ad alta voce</strong>.</p>
 
   <h3>Il giardino non si apre</h3>
   <p class="calmo">Devi tenere premuto <strong>su uno spazio vuoto</strong>, per

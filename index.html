@@ -458,7 +458,7 @@ section{margin-top:38px}
 /* la spunta e 40x40, e 34x34 nel tema inchiostro: sotto i 44 in tutti e due i casi.
    Cinque punti per lato la portano a 50 e a 44. Il cerchio disegnato non si muove. */
 .item .chk::before{content:'';position:absolute;inset:-1.5px;border-radius:24%;
-  background:linear-gradient(160deg,#C9503C,#9E2F1F);box-shadow:0 1px 3px rgba(0,0,0,.35);
+  background:linear-gradient(160deg,#323735,#242826);box-shadow:0 1px 3px rgba(0,0,0,.35);
   opacity:0;transform:translateY(-10px) rotate(-13deg) scale(1.1);
   transition:opacity .2s ease,transform .25s ease}
 /* il segno si scrive, bianco, inciso nel vermiglio */
@@ -469,18 +469,53 @@ section{margin-top:38px}
 .item.done .chk{border-color:transparent}
 .item.done .chk::before{opacity:1;transform:rotate(-4deg) scale(1)}
 .item.done .chk-mark path{stroke-dashoffset:0}
-/* coreografia SOLO al tocco vivo (justdone), mai ai re-render: ~600ms, 36 frame */
-.item.justdone .chk::before{animation:colpo .42s cubic-bezier(.3,0,.2,1.35) both}
-@keyframes colpo{0%{opacity:0;transform:translateY(-14px) rotate(-13deg) scale(1.12)}
- 26%{opacity:1;transform:translateY(0) rotate(-2deg) scale(.9,.86)}
- 40%{transform:translateY(-1.5px) rotate(-5.5deg) scale(1.04)}
- 62%{transform:rotate(-3.6deg) scale(.985)}
- 100%{opacity:1;transform:rotate(-4deg) scale(1)}}
-.item.justdone .chk{animation:sanguina .5s ease-out .12s both}
-@keyframes sanguina{0%{box-shadow:0 0 0 0 rgba(232,168,76,.45)}100%{box-shadow:0 0 0 10px rgba(232,168,76,0)}}   /* v173: l'alone del completamento era rosso come l'errore */
-.item.justdone .chk-mark path{transition-delay:.3s}
+/* v272.7 — la coreografia originale della checkbox resta la radice.
+   Le pose sono ora dichiarate sulla griglia del display target: 60 Hz = 16,67 ms.
+   Il browser interpola tra le POSE CHIAVE sul compositore: non ha senso imporre
+   36 scritture JavaScript per 36 refresh. Fluidita significa consegnare poche
+   trasformazioni compositor-friendly con un unico tempo maestro, non occupare
+   il main thread a ogni frame. */
+.item.justdone .chk::before{animation:colpo60 600ms linear both}
+@keyframes colpo60{
+  0%{opacity:0;transform:translateY(-14px) rotate(-13deg) scale(1.12)}       /* f0  */
+  13.889%{opacity:.72;transform:translateY(-3px) rotate(-6deg) scale(.94)}  /* f5  */
+  22.222%{opacity:1;transform:translateY(0) rotate(-2deg) scale(.90,.86)}   /* f8  */
+  30.556%{transform:translateY(-1.5px) rotate(-5.5deg) scale(1.045)}        /* f11 */
+  44.444%{transform:rotate(-3.5deg) scale(.982)}                            /* f16 */
+  61.111%{transform:rotate(-4.4deg) scale(1.012)}                           /* f22 */
+  80.556%{transform:rotate(-3.9deg) scale(.997)}                            /* f29 */
+  100%{opacity:1;transform:rotate(-4deg) scale(1)}                          /* f36 */
+}
+.item.justdone .chk-mark path{transition-delay:.20s}
+/* QUEST_MOTION non e una nuova card: e un campo di 116x72 px attorno alla
+   checkbox. Nessun elemento puo invadere il resto dell'interfaccia. */
+.qm-layer{position:absolute;left:14px;top:50%;width:116px;height:72px;transform:translateY(-50%);
+  pointer-events:none;z-index:0;overflow:visible;contain:layout style;isolation:isolate}
+.qm-core,.qm-ring,.qm-wave,.qm-a,.qm-b{position:absolute;pointer-events:none;will-change:transform,opacity}
+.qm-core{left:7px;top:16px;width:40px;height:40px;border-radius:50%;opacity:0;
+  background:radial-gradient(circle,rgba(255,255,255,.86) 0 6%,var(--qm-hot) 17%,var(--qm) 43%,transparent 72%)}
+.qm-ring{left:5px;top:14px;width:44px;height:44px;border-radius:50%;opacity:0;border:1px solid var(--qm)}
+.qm-wave{left:34px;top:35px;width:76px;height:2px;opacity:0;transform-origin:left center;
+  background:linear-gradient(90deg,var(--qm),var(--qm-hot) 42%,transparent)}
+.qm-a,.qm-b{left:13px;top:22px;width:28px;height:28px;border-radius:50%;opacity:0}
+.qm-a{background:radial-gradient(circle,rgba(255,255,255,.76),#49A3FF 24%,transparent 72%)}
+.qm-b{background:radial-gradient(circle,rgba(255,255,255,.76),#FF4555 24%,transparent 72%)}
+.item.qm-blue{--qm:#3E9BFF;--qm-hot:#B9E2FF}
+.item.qm-red{--qm:#FF4555;--qm-hot:#FFC1BD}
+.item.qm-purple{--qm:#B65CFF;--qm-hot:#E9CAFF}
+/* LCD resta il tema per sottrazione: stessa coreografia, niente centro bianco
+   che simuli emissione. Il colore racconta la fase, non deve sembrare neon. */
+body.theme-lcd .item.qm-blue{--qm:#397EB5;--qm-hot:#6E9CB8}
+body.theme-lcd .item.qm-red{--qm:#B94A50;--qm-hot:#B87978}
+body.theme-lcd .item.qm-purple{--qm:#8659A6;--qm-hot:#9B7AAA}
+body.theme-lcd .qm-core{background:radial-gradient(circle,var(--qm) 0 20%,var(--qm-hot) 34%,transparent 68%)}
+.item.qm-active:active{opacity:1}
+.item.qm-active>.chk,.item.qm-active>.txt,.item.qm-active>.essbtn,.item.qm-active>.cal,.item.qm-active>.del,.item.qm-active>.prio{position:relative;z-index:1}
+.item.qm-undo .chk{animation:qmUndo 250ms linear both}
+@keyframes qmUndo{0%{transform:scale(1)}28%{transform:scale(.95)}58%{transform:scale(1.022)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){
-  body:not(.anima-sempre) .item.justdone .chk::before,body:not(.anima-sempre) .item.justdone .chk{animation:none}
+  body:not(.anima-sempre) .item.justdone .chk::before,body:not(.anima-sempre) .item.qm-undo .chk{animation:none}
+  body:not(.anima-sempre) .qm-layer{display:none}
 }
 /* alla deselezione tutto si ritira con grazia, in ordine inverso */
 .item .chk,.item .chk::before,.chk-mark path{transition-delay:0s}
@@ -4175,12 +4210,13 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.272.3 · 2026-08-25';
+const APP_VERSION='v60S.272.7 · 2026-08-26';
 
-/* v272.3: la Distillazione non passa piu dall'Interactions API. Usa direttamente
-   GenerateContent, lo stesso endpoint documentato da Google per l'estrazione
-   strutturata, con Flash-Lite e un fallback Flash-Lite stabile distinto. La nota
-   resta persistita prima della rete. */
+/* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
+   non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
+   avvio e Service Worker conservano il contratto dimostrato sul telefono.
+   L'unico nuovo sottosistema runtime e QUEST_MOTION, che esiste soltanto dopo
+   un gesto di completamento e non programma nulla durante il boot. */
 
 /* ══ COSA E CAMBIATO ══════════════════════════════════════════════════════
    Si scrive QUI, a ogni versione, e si scrive per chi usa l'app - non per chi
@@ -4200,6 +4236,12 @@ const APP_VERSION='v60S.272.3 · 2026-08-25';
    persona. Nessun numero che venga da un archivio reale. Nessun titolo scritto
    da qualcuno. Gli esempi, se servono, si inventano. */
 const NOVITA=[
+ {titolo:'La spunta ha un nuovo movimento · senza rallentare il resto',righe:[
+   'Quando completi una cosa, il movimento resta nella sua riga: non parte più una stella e non compare più una parola-premio al centro dello schermo.',
+   'La prima parte della giornata reagisce in blu, poi il gesto acquista forza in rosso e nei passi più avanzati arriva al viola. Conta quante cose risultano davvero fatte oggi, non quanto velocemente le hai spuntate.',
+   'Se togli una spunta fatta per errore, il conto torna indietro: quando rifarai davvero quel passo, tornerà anche la sua stessa intensità.',
+   'Il Frutto, la Distillazione Gemini, il microfono e il Cerchio continuano a usare il percorso stabile della versione precedente.'
+ ]},
  {titolo:'Correzioni importanti · Cosa è cambiato',righe:[
    'La Distillazione usa adesso una strada Gemini separata e pensata proprio per l’estrazione strutturata: non aspetta più l’endpoint usato da Frutto e Osservatrice.',
    'In Prova connessione Sentiero verifica la stessa strada usata davvero dalla Distillazione, compreso il JSON strutturato: se il test è verde, il percorso è pronto.',
@@ -4641,7 +4683,6 @@ function jsonExportSenzaSegreti(value,spazi){
 }
 
 const DAYS_IT=['L','M','M','G','V','S','D'];
-const COMBO_WORDS=['Fatto','Bene','Ottimo','Eccellente','Sublime','Maestria','Pieno','Tao'];
 const todayKey=()=>localDayKey(new Date());
 /* v272.2 — UNA SOLA GEOMETRIA DELLA VOCE. */
 function geometriaVoce(){
@@ -6331,6 +6372,7 @@ function diagnosticaSicura(){
     d.geometriaVoce={mic:[Math.round(g.x),Math.round(g.y),Math.round(g.w)],enso:e?[Math.round(e.cx),Math.round(e.cy)]:null,
       deltaEnsoPx:e?Math.round(Math.hypot(g.x-e.cx,g.y-e.cy)*10)/10:null};
   }catch(_){}
+  try{ const q=window._questMotionDiag||{}; d.movimentoQuest={targetHz:Number(q.targetHz)||60,frameMs:Number(q.frameMs)||16.667,runs:Number(q.runs)||0,blue:Number(q.blue)||0,red:Number(q.red)||0,purple:Number(q.purple)||0,undo:Number(q.undo)||0,cancelled:Number(q.cancelled)||0,fallback:Number(q.fallback)||0,lastStep:Number(q.lastStep)||0,lastPhase:String(q.lastPhase||'').slice(0,12),lastFrames:Number(q.lastFrames)||0,lastMs:Number(q.lastMs)||0,probeAvvio:0}; }catch(_){}
   /* Solo contatori tecnici del giorno: nessun prompt, risposta o contenuto. */
   try{
     const tk=todayKey(), tutti=(S.registro||[]).filter(e=>e&&e.tipo==='gemini');
@@ -9821,7 +9863,7 @@ const BASE_MINIMA={"versione":0,"impronta":"minima-incorporata","nucleo":["a","a
 /* v272.3 — BASE COMPLETA INCORPORATA. Il file esterno resta aggiornabile, ma
    la qualita linguistica non dipende piu da GitHub/CDN/cache: l'HTML porta gia
    la stessa base validata della release. */
-const BASE_COMPLETA={"per_versione":"v60S.272.3","versione":8,"impronta":"v9-2026-08-25-production-sentiero-272-3","nucleo":["a","adesso","affaccia","ancora","andare","andata","anche","appello","arriva","arrivano","aspetta","avanti","aveva","avevi","avuto","basta","bianco","bel","buco","cammina","capo","che","chi","chiude","chiusa","ci","cima","come","compare","con","corsa","cosa","cosi","cui","da","dal","dalla","dava","dentro","di","dice","dicevi","dimenticatoio","dopo","dov","due","durato","e","era","erano","essere","fa","farsi","fatto","fermo","ferma","fila","finalmente","fine","foglio","fondo","fosse","fuori","galla","giornata","giorni","giorno","gia","ha","hai","in","indietro","insieme","invecchia","la","lascia","lasciato","le","li","lista","lo","ma","magro","mai","mancava","manca","messa","mezzo","mosso","mossa","mosse","movimento","muove","muta","nasce","nascere","nel","nella","nessuna","nessuno","niente","no","non","nuovo","oggi","ogni","ora","ormai","palo","parla","parole","parte","parecchio","passa","passata","passo","pezzo","piede","piedi","piena","piene","piu","poco","poi","porta","posizione","pronta","proprio","qualcosa","quanto","quasi","quel","quella","questa","queste","qui","reggeva","resta","restano","restava","rientra","riga","righe","rimane","rimasta","rispunta","ritorno","scritto","scrivi","scrivevi","segno","sempre","senza","settimana","settimane","si","sente","sotto","spalle","sparita","sta","stallo","stessa","stesso","su","tace","tanto","tempo","tiene","torna","tornata","traccia","tua","tuoi","tutte","tutto","un","una","va","vecchia","vedere","viva","voce","volta","volte","vuota","zitta"],"bigrammi":["non compare","da un","un pezzo","non si","si parla","piu da","nessuna traccia","non e","e sparita","si fa","fa viva","messa da","da parte","non torna","torna a","a nascere","non se","se ne","ne va","in lista","piu di","di una","una volta","torna sempre","sempre li","da capo","ogni volta","non si chiude","si chiude","chiude mai","e tornata","dopo un","di silenzio","aveva smesso","smesso di","di comparire","ora c","di nuovo","al palo","in movimento","a terra","in piedi","in stallo","in corsa","nel dimenticatoio","a galla","non lascia","lascia mai","mai niente","passa liscio","il segno","scivola via","a mani","mani vuote","settimana dopo","dopo settimana","la piu","piu vecchia","rimasta aperta","sta li","li da","non si muove","in cima","alle cose","cose ferme","da un pezzo","hai lasciato","lasciato una","una riga","in queste","queste settimane","le righe","righe restano","il diario","la tua","tua voce","va cosi","cosi da","i giorni","giorni pieni","il passo","passo tiene","qualcosa si","si muove","un segno","nella giornata","le giornate","giornate piene","con dentro","dentro qualcosa","quel giorno","un giorno","giorno pieno","lo stesso","ha retto","poco spazio","ci e","e entrata","in fondo","a un","non era","e passata"],"lode":["bravo","brava","bravi","brave","complimenti","ottimo","ottima","benissimo","ben fatto","grande","fantastico","fantastica","orgoglioso","orgogliosa","congratulazioni","meritato","meritata","impressionante","eccellente","perfetto"],"biasimo":["pigro","pigra","pigrizia","fallito","fallita","colpa","sbagliato","sbagliata","dovevi","avresti dovuto","peccato","purtroppo","male","peggio","scarso","deludente","inutile","vergogna"],"consolazione":["non preoccuparti","va bene cosi","non e grave","capita a tutti","non importa","tranquillo","tranquilla","su con la vita","andra meglio"],"prescrizione":["devi","dovresti","dovrai","prova a","cerca di","ricorda di","basta che","ti serve","scegli","inizia da","concentrati","fai in modo"],"gergo":["rituale","rituali","quest","quests","task","tasks","streak","streaks","arco delle","occasioni previste","distillazione","osservatrice","sussurro","sussurri","patto del mattino","pergamena","pattern","trend","plateau","giornata rara","settimana rara","giorni rari","seme piantato"],"pronomi":["lei","lui","quella","quello","ci","ne","lo","la"],"deissi":["ieri","oggi","domani","stasera","stamattina","adesso","poco fa"],"pesi":{"_cosa_e":"quanto conta ogni criterio. NON sono tarati contro un giudizio umano: sono un punto di partenza dichiarato. La taratura e l'esperimento E5 e va fatta prima di credere a questi numeri.","provenienza":"incorporata, NON tarata","comprensibilita":3.0,"carico":2.0,"fedelta":4.0,"neutralita":3.0,"ambiguita":0.0,"naturalezza":0.0,"vita":0.0,"coesione":3.0,"_sospesi":"ambiguita e vita dalla v268 (nel duello alla cieca hanno indovinato 1 volta su 6 e 1 su 10). naturalezza dalla v269: il 92% dei bigrammi della lista viene dalle nostre stesse forme, quelle scritte per prime, e le famiglie nate dopo prendevano zero - misurava l'anzianita di scrittura, non la naturalezza. Restano calcolate come diagnostica. Non invertite: un'euristica sbagliata invertita e un'euristica sbagliata al contrario.","_pavimenti":"fedelta, neutralita e coesione NON entrano nel punteggio dalla v269: sono pavimenti, gia applicati dal veto e dal filtro. Misurato sulle 30 sere vere, toglierli dalla somma cambiava il vincitore in 0 sere su 29 - il 61% del peso dichiarato non spostava niente. Il peso resta scritto qui perche dice quanto contano come soglia, non come voto.","_chi_decide":"dalla v269 il punteggio lo fanno carico (misura) e comprensibilita (misura, indice Gulpease). Tutto il resto e pavimento o diagnostica."}};
+const BASE_COMPLETA={"per_versione":"v60S.272.7","versione":9,"impronta":"v10-2026-08-26-production-sentiero-272-7","nucleo":["a","adesso","affaccia","ancora","andare","andata","anche","appello","arriva","arrivano","aspetta","avanti","aveva","avevi","avuto","basta","bianco","bel","buco","cammina","capo","che","chi","chiude","chiusa","ci","cima","come","compare","con","corsa","cosa","cosi","cui","da","dal","dalla","dava","dentro","di","dice","dicevi","dimenticatoio","dopo","dov","due","durato","e","era","erano","essere","fa","farsi","fatto","fermo","ferma","fila","finalmente","fine","foglio","fondo","fosse","fuori","galla","giornata","giorni","giorno","gia","ha","hai","in","indietro","insieme","invecchia","la","lascia","lasciato","le","li","lista","lo","ma","magro","mai","mancava","manca","messa","mezzo","mosso","mossa","mosse","movimento","muove","muta","nasce","nascere","nel","nella","nessuna","nessuno","niente","no","non","nuovo","oggi","ogni","ora","ormai","palo","parla","parole","parte","parecchio","passa","passata","passo","pezzo","piede","piedi","piena","piene","piu","poco","poi","porta","posizione","pronta","proprio","qualcosa","quanto","quasi","quel","quella","questa","queste","qui","reggeva","resta","restano","restava","rientra","riga","righe","rimane","rimasta","rispunta","ritorno","scritto","scrivi","scrivevi","segno","sempre","senza","settimana","settimane","si","sente","sotto","spalle","sparita","sta","stallo","stessa","stesso","su","tace","tanto","tempo","tiene","torna","tornata","traccia","tua","tuoi","tutte","tutto","un","una","va","vecchia","vedere","viva","voce","volta","volte","vuota","zitta"],"bigrammi":["non compare","da un","un pezzo","non si","si parla","piu da","nessuna traccia","non e","e sparita","si fa","fa viva","messa da","da parte","non torna","torna a","a nascere","non se","se ne","ne va","in lista","piu di","di una","una volta","torna sempre","sempre li","da capo","ogni volta","non si chiude","si chiude","chiude mai","e tornata","dopo un","di silenzio","aveva smesso","smesso di","di comparire","ora c","di nuovo","al palo","in movimento","a terra","in piedi","in stallo","in corsa","nel dimenticatoio","a galla","non lascia","lascia mai","mai niente","passa liscio","il segno","scivola via","a mani","mani vuote","settimana dopo","dopo settimana","la piu","piu vecchia","rimasta aperta","sta li","li da","non si muove","in cima","alle cose","cose ferme","da un pezzo","hai lasciato","lasciato una","una riga","in queste","queste settimane","le righe","righe restano","il diario","la tua","tua voce","va cosi","cosi da","i giorni","giorni pieni","il passo","passo tiene","qualcosa si","si muove","un segno","nella giornata","le giornate","giornate piene","con dentro","dentro qualcosa","quel giorno","un giorno","giorno pieno","lo stesso","ha retto","poco spazio","ci e","e entrata","in fondo","a un","non era","e passata"],"lode":["bravo","brava","bravi","brave","complimenti","ottimo","ottima","benissimo","ben fatto","grande","fantastico","fantastica","orgoglioso","orgogliosa","congratulazioni","meritato","meritata","impressionante","eccellente","perfetto"],"biasimo":["pigro","pigra","pigrizia","fallito","fallita","colpa","sbagliato","sbagliata","dovevi","avresti dovuto","peccato","purtroppo","male","peggio","scarso","deludente","inutile","vergogna"],"consolazione":["non preoccuparti","va bene cosi","non e grave","capita a tutti","non importa","tranquillo","tranquilla","su con la vita","andra meglio"],"prescrizione":["devi","dovresti","dovrai","prova a","cerca di","ricorda di","basta che","ti serve","scegli","inizia da","concentrati","fai in modo"],"gergo":["rituale","rituali","quest","quests","task","tasks","streak","streaks","arco delle","occasioni previste","distillazione","osservatrice","sussurro","sussurri","patto del mattino","pergamena","pattern","trend","plateau","giornata rara","settimana rara","giorni rari","seme piantato"],"pronomi":["lei","lui","quella","quello","ci","ne","lo","la"],"deissi":["ieri","oggi","domani","stasera","stamattina","adesso","poco fa"],"pesi":{"_cosa_e":"quanto conta ogni criterio. NON sono tarati contro un giudizio umano: sono un punto di partenza dichiarato. La taratura e l'esperimento E5 e va fatta prima di credere a questi numeri.","provenienza":"incorporata, NON tarata","comprensibilita":3.0,"carico":2.0,"fedelta":4.0,"neutralita":3.0,"ambiguita":0.0,"naturalezza":0.0,"vita":0.0,"coesione":3.0,"_sospesi":"ambiguita e vita dalla v268 (nel duello alla cieca hanno indovinato 1 volta su 6 e 1 su 10). naturalezza dalla v269: il 92% dei bigrammi della lista viene dalle nostre stesse forme, quelle scritte per prime, e le famiglie nate dopo prendevano zero - misurava l'anzianita di scrittura, non la naturalezza. Restano calcolate come diagnostica. Non invertite: un'euristica sbagliata invertita e un'euristica sbagliata al contrario.","_pavimenti":"fedelta, neutralita e coesione NON entrano nel punteggio dalla v269: sono pavimenti, gia applicati dal veto e dal filtro. Misurato sulle 30 sere vere, toglierli dalla somma cambiava il vincitore in 0 sere su 29 - il 61% del peso dichiarato non spostava niente. Il peso resta scritto qui perche dice quanto contano come soglia, non come voto.","_chi_decide":"dalla v269 il punteggio lo fanno carico (misura) e comprensibilita (misura, indice Gulpease). Tutto il resto e pavimento o diagnostica."}};
 const _BASE_CACHE={v:null};
 function _baseLing(){
   if(_BASE_CACHE.v) return _BASE_CACHE.v;
@@ -9913,8 +9955,8 @@ function _baseValida(b){
 
    La base valida si tiene nello stato, quindi finisce nei backup: chi cambia
    telefono non riparte da zero culturalmente. */
-const BASE_ORIGINE='lingue/base-it-v272.3.json';
-const BASE_CACHE_TAG='v9-2026-08-25-production-sentiero-272-3';
+const BASE_ORIGINE='lingue/base-it-v272.7.json';
+const BASE_CACHE_TAG='v10-2026-08-26-production-sentiero-272-7';
 const BASE_OGNI_MS=1000*60*60*24*7;     /* una volta a settimana basta e avanza */
 let _BASE_ULTIMO_ESITO={esito:'non provata',canale:'',quando:0,per_versione:'',versione:0,impronta:''};
 async function aggiornaBaseLinguistica(forza){
@@ -13126,7 +13168,6 @@ function _verdettoChiudi(){
   document.addEventListener('pointermove',function(e){ if(vT&&(Math.abs(e.clientX-vx)>12||Math.abs(e.clientY-vy)>12)){ clearTimeout(vT); vT=null; } },{passive:true});
   ['pointerup','pointercancel'].forEach(function(ev){ document.addEventListener(ev,function(){ clearTimeout(vT); vT=null; },{passive:true}); });
 })();
-let combo=0,lastCheck=0;
 
 /* ── Scritto distillato (battito "distillato"): un dono, nella voce dell'osservatrice ── */
 const OBSERVER_DISTILL_SYS=
@@ -13187,28 +13228,102 @@ async function askObserverDistill(pkg){
 let _lastDistill='';
 /* v165: rimosso runDistill - pannello morto, i suoi elementi non esistono dall'HTML da molte versioni */
 /* v165: rimossa anche la coda del pannello (close/share): elementi inesistenti */
+/* ══════ v272.7 — QUEST MOTION: UN SOLO ATTORE, SOLO DOPO IL TOCCO ══════
+   CONTRATTO DI STABILITA:
+   - nessun timer/rAF/fetch/probe all'avvio;
+   - nessuna mutazione dello stato persistente;
+   - un solo movimento attivo alla volta: il nuovo gesto fa assestare il vecchio;
+   - solo transform/opacity su una piccola zona locale;
+   - i key pose sono numerati in frame a 60 Hz; l'interpolazione la fa WebKit.
+   Il conteggio e lo STATO REALE di oggi: scheduled spuntate + quest fatte. Una
+   deselezione lo abbassa da sola, senza contatori temporali da correggere. */
+function completateOggi(state,tk,dow){
+  const ck=(state.checks&&state.checks[tk])||{};
+  const sched=scheduledFor(state,dow,tk).filter(t=>ck[t.id]===true).length;
+  /* rolloverDay archivia le quest fatte quando cambia giorno: q.fatto, durante
+     il giorno corrente, e quindi un fatto di OGGI anche se la quest aveva una
+     data futura ed e stata anticipata. */
+  const quest=(state.quests||[]).filter(q=>q&&q.fatto===true).length;
+  return sched+quest;
+}
+function anteprimaSigillo(state,tk,dow){
+  const r=computeProgress(state,tk,dow), es=essentialStatus(state,tk,dow);
+  const full=r.total>0&&r.p===1&&state.lastFullSealed!==tk;
+  const soft=!full&&state.lastSealed!==tk&&((es.total>0)?es.done===es.total:(r.total>=2&&r.p>=.667));
+  return full?'full':soft?'soft':'';
+}
+const QUEST_MOTION=(()=>{
+  const HZ=60,FRAME=1000/HZ;
+  const D=window._questMotionDiag={targetHz:HZ,frameMs:+FRAME.toFixed(3),runs:0,blue:0,red:0,purple:0,undo:0,cancelled:0,fallback:0,lastStep:0,lastPhase:'',lastFrames:0,lastMs:0};
+  let active=null,token=0,timers=[];
+  const reduced=()=>{ try{return matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.body.classList.contains('anima-sempre');}catch(_){return false;} };
+  function clearTimers(){ timers.forEach(x=>clearTimeout(x));timers=[]; }
+  function after(tok,ms,fn){ const id=setTimeout(()=>{ if(tok===token) try{fn();}catch(_){} },ms);timers.push(id);return id; }
+  function finish(a){ if(!a)return; try{a.anim.forEach(x=>x&&x.cancel&&x.cancel());}catch(_){} try{a.layer&&a.layer.remove();}catch(_){} try{a.el.classList.remove('qm-active','qm-blue','qm-red','qm-purple','justdone');}catch(_){} }
+  function settle(){ if(active){ D.cancelled++; finish(active); active=null; } clearTimers(); token++; }
+  function kf(frames,poses){ return poses.map(p=>Object.assign({offset:Math.max(0,Math.min(1,p.f/frames))},p.v)); }
+  function anim(node,frames,poses){ if(!node||!node.animate)return null; return node.animate(kf(frames,poses),{duration:frames*FRAME,easing:'linear',fill:'both'}); }
+  function phase(step,seal){ if(seal)return 'purple'; return step<=3?'blue':(step<=6?'red':'purple'); }
+  function strength(step){ return Math.max(.56,Math.min(1,.50+Math.max(1,step)*.07)); }
+  function makeLayer(el){ const q=document.createElement('span');q.className='qm-layer';q.setAttribute('aria-hidden','true');q.innerHTML='<i class="qm-core"></i><i class="qm-ring"></i><i class="qm-wave"></i><i class="qm-a"></i><i class="qm-b"></i>';el.insertBefore(q,el.firstChild);return q; }
+  function play(el,step,seal){
+    settle(); if(!el)return {ms:0,token:token,impact:0};
+    step=Math.max(1,step|0);const ph=phase(step,seal),F=ph==='purple'?42:36,ms=Math.round(F*FRAME),tok=token,f=strength(step);
+    D.runs++;D[ph]++;D.lastStep=step;D.lastPhase=ph;D.lastFrames=F;D.lastMs=ms;
+    el.classList.add('qm-active','qm-'+ph);const q=makeLayer(el),A=[];active={el,layer:q,anim:A,token:tok};
+    if(reduced()||!el.animate){ if(!el.animate)D.fallback++;after(tok,40,()=>{finish(active);active=null;});return {ms:40,token:tok,impact:0}; }
+    const chk=el.querySelector('.chk'),core=q.querySelector('.qm-core'),ring=q.querySelector('.qm-ring'),wave=q.querySelector('.qm-wave'),a=q.querySelector('.qm-a'),b=q.querySelector('.qm-b');
+    const amp=1+(f-.5)*.14, squash=1-(f-.5)*.13;
+    if(ph==='blue'){
+      A.push(anim(chk,F,[{f:0,v:{transform:'scale(1)'}},{f:4,v:{transform:`scale(${squash.toFixed(3)})`}},{f:8,v:{transform:`scale(${(squash-.035).toFixed(3)})`}},{f:12,v:{transform:`scale(${amp.toFixed(3)})`}},{f:17,v:{transform:'scale(.985)'}},{f:23,v:{transform:'scale(1.012)'}},{f:F,v:{transform:'scale(1)'}}]));
+      A.push(anim(core,F,[{f:0,v:{opacity:0,transform:'scale(1.55)'}},{f:3,v:{opacity:.20,transform:'scale(1.25)'}},{f:7,v:{opacity:.90,transform:'scale(.40)'}},{f:10,v:{opacity:1,transform:'scale(.18)'}},{f:14,v:{opacity:.58,transform:'scale(.72)'}},{f:22,v:{opacity:.18,transform:'scale(1.35)'}},{f:F,v:{opacity:0,transform:'scale(1.7)'}}]));
+      A.push(anim(ring,F,[{f:0,v:{opacity:0,transform:'scale(.7)'}},{f:10,v:{opacity:0,transform:'scale(.7)'}},{f:12,v:{opacity:.60,transform:'scale(.82)'}},{f:18,v:{opacity:.28,transform:'scale(1.22)'}},{f:27,v:{opacity:.06,transform:'scale(1.55)'}},{f:F,v:{opacity:0,transform:'scale(1.65)'}}]));
+      A.push(anim(wave,F,[{f:0,v:{opacity:0,transform:'scaleX(0)'}},{f:13,v:{opacity:0,transform:'scaleX(0)'}},{f:16,v:{opacity:.38,transform:'scaleX(.14)'}},{f:23,v:{opacity:.22,transform:'scaleX(.68)'}},{f:31,v:{opacity:0,transform:'scaleX(1)'}},{f:F,v:{opacity:0,transform:'scaleX(1)'}}]));
+    }else if(ph==='red'){
+      A.push(anim(chk,F,[{f:0,v:{transform:'scale(1)'}},{f:4,v:{transform:`scale(${(squash-.025).toFixed(3)})`}},{f:8,v:{transform:`scale(${(squash-.065).toFixed(3)})`}},{f:11,v:{transform:`scale(${(amp+.045).toFixed(3)})`}},{f:16,v:{transform:'scale(.97)'}},{f:22,v:{transform:'scale(1.025)'}},{f:F,v:{transform:'scale(1)'}}]));
+      A.push(anim(core,F,[{f:0,v:{opacity:0,transform:'scale(.28)'}},{f:5,v:{opacity:.28,transform:'scale(.36)'}},{f:9,v:{opacity:1,transform:'scale(.58)'}},{f:12,v:{opacity:.92,transform:'scale(.98)'}},{f:18,v:{opacity:.42,transform:'scale(1.55)'}},{f:27,v:{opacity:.08,transform:'scale(2.05)'}},{f:F,v:{opacity:0,transform:'scale(2.2)'}}]));
+      A.push(anim(ring,F,[{f:0,v:{opacity:0,transform:'scale(.45)'}},{f:9,v:{opacity:.18,transform:'scale(.5)'}},{f:12,v:{opacity:.82,transform:'scale(.74)'}},{f:18,v:{opacity:.48,transform:'scale(1.22)'}},{f:27,v:{opacity:.10,transform:'scale(1.75)'}},{f:F,v:{opacity:0,transform:'scale(2)'}}]));
+      A.push(anim(wave,F,[{f:0,v:{opacity:0,transform:'scaleX(0)'}},{f:10,v:{opacity:0,transform:'scaleX(0)'}},{f:13,v:{opacity:.66,transform:'scaleX(.12)'}},{f:19,v:{opacity:.48,transform:'scaleX(.66)'}},{f:27,v:{opacity:.12,transform:'scaleX(1.02)'}},{f:F,v:{opacity:0,transform:'scaleX(1.08)'}}]));
+    }else{
+      /* Purple non e un terzo colore gratuito: nei primi 12 frame i due campi
+         locali convergono, restano quasi fermi per due frame, poi la risultante
+         prende il posto di entrambi. */
+      A.push(anim(chk,F,[{f:0,v:{transform:'scale(1)'}},{f:5,v:{transform:`scale(${(squash-.04).toFixed(3)})`}},{f:8,v:{transform:`scale(${(squash-.075).toFixed(3)})`}},{f:10,v:{transform:`scale(${(squash-.075).toFixed(3)})`}},{f:13,v:{transform:`scale(${(amp+.07).toFixed(3)})`}},{f:18,v:{transform:'scale(.96)'}},{f:25,v:{transform:'scale(1.035)'}},{f:34,v:{transform:'scale(.993)'}},{f:F,v:{transform:'scale(1)'}}]));
+      A.push(anim(a,F,[{f:0,v:{opacity:0,transform:'translate3d(-12px,0,0) scale(1)'}},{f:3,v:{opacity:.42,transform:'translate3d(-10px,0,0) scale(1)'}},{f:8,v:{opacity:.92,transform:'translate3d(-4px,0,0) scale(.88)'}},{f:10,v:{opacity:1,transform:'translate3d(-1px,0,0) scale(.78)'}},{f:12,v:{opacity:0,transform:'translate3d(0,0,0) scale(.45)'}},{f:F,v:{opacity:0,transform:'translate3d(0,0,0) scale(.45)'}}]));
+      A.push(anim(b,F,[{f:0,v:{opacity:0,transform:'translate3d(12px,0,0) scale(1)'}},{f:3,v:{opacity:.42,transform:'translate3d(10px,0,0) scale(1)'}},{f:8,v:{opacity:.92,transform:'translate3d(4px,0,0) scale(.88)'}},{f:10,v:{opacity:1,transform:'translate3d(1px,0,0) scale(.78)'}},{f:12,v:{opacity:0,transform:'translate3d(0,0,0) scale(.45)'}},{f:F,v:{opacity:0,transform:'translate3d(0,0,0) scale(.45)'}}]));
+      A.push(anim(core,F,[{f:0,v:{opacity:0,transform:'scale(.2)'}},{f:10,v:{opacity:0,transform:'scale(.2)'}},{f:12,v:{opacity:.94,transform:'scale(.24)'}},{f:15,v:{opacity:1,transform:'scale(.52)'}},{f:21,v:{opacity:.68,transform:'scale(1.18)'}},{f:30,v:{opacity:.20,transform:'scale(1.88)'}},{f:F,v:{opacity:0,transform:'scale(2.35)'}}]));
+      A.push(anim(ring,F,[{f:0,v:{opacity:0,transform:'scale(.35)'}},{f:13,v:{opacity:.12,transform:'scale(.4)'}},{f:15,v:{opacity:.88,transform:'scale(.64)'}},{f:21,v:{opacity:.58,transform:'scale(1.18)'}},{f:31,v:{opacity:.12,transform:'scale(1.8)'}},{f:F,v:{opacity:0,transform:'scale(2.18)'}}]));
+      A.push(anim(wave,F,[{f:0,v:{opacity:0,transform:'scaleX(0)'}},{f:14,v:{opacity:0,transform:'scaleX(0)'}},{f:17,v:{opacity:.76,transform:'scaleX(.12)'}},{f:24,v:{opacity:.54,transform:'scaleX(.72)'}},{f:34,v:{opacity:.10,transform:'scaleX(1.08)'}},{f:F,v:{opacity:0,transform:'scaleX(1.16)'}}]));
+    }
+    after(tok,ms+20,()=>{ if(active&&active.token===tok){finish(active);active=null;} });
+    return {ms:ms,token:tok,impact:Math.round((ph==='purple'?13:11)*FRAME),phase:ph};
+  }
+  function undo(el){
+    settle();D.undo++;if(!el)return 0;el.classList.add('qm-undo');const tok=token;
+    after(tok,260,()=>el.classList.remove('qm-undo'));return 250;
+  }
+  return {play,undo,after,settle,diag:D,targetHz:HZ,frameMs:FRAME,phase};
+})();
+
 function onComplete(el){
-  const now=Date.now();
-  combo=(now-lastCheck<10000)?combo+1:1;
-  lastCheck=now;
-  const lvl=Math.min(combo,8);
-  const word=COMBO_WORDS[lvl-1];
-  haptic(true);  /* tocco tattile deciso a ogni completamento */
-  /* suono del combo: i livelli personali hanno priorità (livello = combo); altrimenti il singolo suono con pitch crescente */
-  let sfxPlayed=false;
-  try{ if(SFX.length) sfxPlayed=playSFX(lvl-1); }catch(_){}
-  if(!sfxPlayed){ try{ playEventSound('questCompleted',{semitones:Math.min((combo||1)-1,7)}); }catch(_){} }
-  floatWord(word,lvl);  /* niente suono sintetico di Completed: solo visivo+tattile + voce TTS se attiva */
-  try{ say(word,lvl); }catch(_){}   /* voce reale solo se music off & voice on; nessun synth */
-  try{
-    const c=el.querySelector('.chk');
-    if(c){ const r=c.getBoundingClientRect(); FX.burst(r.left+r.width/2,r.top+r.height/2,lvl); }
-  }catch(_){}
-  if(lvl>=5) shake(false);
+  const tk=todayKey(),dow=dowOf();
+  const passo=Math.max(1,completateOggi(S,tk,dow)|0), lvl=Math.max(1,Math.min(8,passo));
+  const seal=anteprimaSigillo(S,tk,dow);
   el.classList.add('justdone');
-  ink(el);
-  try{ observerLineFor(el); }catch(_){}   /* la mente osservatrice dice una riga vera sul task (IA, ~1-2s, in sottofondo) */
-  updateRing();
+  const qm=QUEST_MOTION.play(el,passo,seal);
+  /* Se questa stessa spunta sigilla il giorno, la regia del Cerchio della v272.3
+     resta l'unica fonte di aptica/suono globale: niente doppio rituale. */
+  if(!seal){
+    haptic(lvl>=4);
+    QUEST_MOTION.after(qm.token,qm.impact,()=>{
+      let sfxPlayed=false;
+      try{ if(SFX.length) sfxPlayed=playSFX(lvl-1); }catch(_){}
+      if(!sfxPlayed){ try{ playEventSound('questCompleted',{semitones:Math.min(passo-1,7)}); }catch(_){} }
+    });
+  }
+  try{ observerLineFor(el); }catch(_){}   /* resta immediata come nella v272.3 */
+  updateRing();                            /* Cerchio e side effect: contratto v272.3 */
+  return qm.ms||600;
 }
 function ink(itemEl){
   const chk=itemEl.querySelector('.chk');
@@ -14500,7 +14615,7 @@ function updateRing(){
     micBtn.classList.add('sealed');
     setTimeout(()=>{
       try{ATHEME.stop(true);}catch(_){}   /* ultima quest completata → fade out dell'Active Theme; niente Victory sintetica */
-      try{ say('Tao',6); }catch(_){}     /* voce reale se attiva; nessun gong/synth */
+      try{ say('Cerchio pieno',6); }catch(_){}  /* il conseguimento dice cio che e, non un grado filosofico */
       floatWord('Cerchio pieno',6); shake(true);
       try{ if(!playEventSound('cerchioChiuso') && !playBuiltinSeal() && SFX.length) playSFX(SFX.length-1); }catch(_){}   /* sigillo: suono dedicato, o sigillo incorporato, o l'ultimo livello */
       try{ FX.bloom(); }catch(_){}
@@ -14665,8 +14780,8 @@ function buildTaskRow(t,checks){
     S.checks[tk][t.id]=now; save();
     /* v271: una spunta puo essere l'ultimo pezzo di una condizione */
     if(now) try{ sbloccaOra('spunta'); }catch(_){}
-    if(now){ div.classList.add('done'); onComplete(div); setTimeout(()=>{ div.classList.remove('justdone'); delete div.dataset.busy; },650); }   /* mirato: aggiorna la riga, non l'intera lista */
-    else { div.classList.remove('done'); sUndo(); delete div.dataset.busy; updateRing(); }
+    if(now){ div.classList.add('done'); const ms=onComplete(div)||600; setTimeout(()=>{ div.classList.remove('justdone'); delete div.dataset.busy; },ms+40); }
+    else { div.classList.remove('done'); sUndo(); updateRing(); const ms=QUEST_MOTION.undo(div); setTimeout(()=>{ delete div.dataset.busy; },Math.max(80,ms+20)); }
   };
   try{ attachNota(div,t.id,t.titolo); }catch(_){}
   return div;
@@ -14829,8 +14944,8 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
       }catch(_){}
     }
     save();
-    if(q.fatto){ div.classList.add('done'); onComplete(div); setTimeout(rerender,600); }
-    else { sUndo(); rerender(); updateRing(); }
+    if(q.fatto){ div.classList.add('done'); const ms=onComplete(div)||600; setTimeout(rerender,ms+40); }
+    else { div.classList.remove('done'); sUndo(); updateRing(); const ms=QUEST_MOTION.undo(div); setTimeout(rerender,Math.max(80,ms+20)); }
   };
   const cb=div.querySelector('.cal'); if(cb) cb.onclick=(e)=>{ e.stopPropagation(); addToCalendar(q); };
   div.querySelector('.del').onclick=(e)=>{
