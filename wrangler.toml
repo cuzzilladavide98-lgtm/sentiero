@@ -1,12 +1,19 @@
 name = "sentiero-sync"
 main = "src/index.js"
 compatibility_date = "2026-08-01"
+minify = true
 
 [[d1_databases]]
 binding = "DB"
 database_name = "sentiero-sync"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+# Valido per parsing e sviluppo locale; il deploy remoto richiede il vero UUID D1.
+database_id = "00000000-0000-0000-0000-000000000000"
+preview_database_id = "DB"
+migrations_dir = "migrations"
 
 [vars]
-# Comma-separated production origins. Empty keeps local development usable.
-ALLOWED_ORIGINS = ""
+# Sviluppo locale fail-closed. In produzione sostituire con l'origine HTTPS esatta della PWA.
+ALLOWED_ORIGINS = "http://localhost:8000,http://127.0.0.1:8000"
+
+[triggers]
+crons = ["17 3 * * *"]

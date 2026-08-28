@@ -1,9 +1,11 @@
 {
   "name": "sentiero-pwa",
   "private": true,
-  "version": "60.273.0",
+  "version": "60.273.1",
   "scripts": {
-    "test": "node qa/motion-whisper-contract.test.js && node qa/today-stage-contract.test.js && node qa/sync-data-contract.test.js && node qa/quest-settings-contract.test.js && node qa/backend-migration-contract.test.js && node qa/qr-fallback-contract.test.js",
+    "test": "node qa/motion-whisper-contract.test.js && node qa/today-stage-contract.test.js && node qa/sync-data-contract.test.js && node qa/quest-settings-contract.test.js && node qa/backend-migration-contract.test.js && node qa/qr-fallback-contract.test.js && node qa/hardening-performance-contract.test.js",
+    "test:worker:e2e": "node qa/worker-local-e2e.js",
+    "test:browser": "node qa/browser-mobile-smoke.js",
     "benchmark": "node qa/performance-benchmark.js"
   }
 }

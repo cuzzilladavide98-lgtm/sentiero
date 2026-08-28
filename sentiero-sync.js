@@ -11,7 +11,8 @@
   const CFG_KEY='sentiero-sync-config-v2', SCHEMA_KEY='sentiero-schema-version';
   const PRE_MIGRATION_KEY='sentiero-pre-migration-v2';
   const PRE_PAIR_KEY='sentiero-pre-pair-v2';
-  const SYNC_SCHEMA=2, MAX_BATCH=200;
+  const SYNC_SCHEMA=2, MAX_BATCH=100, MAX_SYNC_BODY=1500000, MAX_CIPHER_CHARS=800000;
+  const REQUEST_TIMEOUT=20000, CRYPTO_CONCURRENCY=8;
   const ARRAY_COLLECTIONS=['quests','scheduled','diary','observerNotes','obsLines','capitoli','semi','frutti','banco','unlockRules','desideri','questLog'];
   const MAP_COLLECTIONS=['checks','patti','sfide','foto','riposi','ferie','unlockDone','promVisti'];
   const SINGLE_COLLECTIONS=['settings','mastery','desiderio'];
@@ -19,8 +20,10 @@
   const LOCAL_ONLY=new Set(['registro','schemaVersion']);
   const SECRET_FIELDS=new Set(['apikey','geminikey','sentierogeminikey','aikey','providerkey','devicetoken','rootkey']);
   const enc=new TextEncoder(),dec=new TextDecoder();
-  let db=null,booted=false,currentState=null,onRemote=null,lastEntities=new Map(),serial=Promise.resolve(),syncTimer=null,listeners=[];
+  let db=null,dbOpen=null,booted=false,currentState=null,onRemote=null,lastEntities=new Map(),serial=Promise.resolve(),syncTimer=null,syncInFlight=null,listeners=[];
+  let captureQueued=false,retryMs=2000;
   let config=readConfig();
+  const aesKeyCache=new Map(),hmacKeyCache=new Map();
 
   function clone(v){ return v==null?v:JSON.parse(JSON.stringify(v)); }
   function syncSafe(v,depth){
@@ -58,9 +61,10 @@
   function readConfig(){
     try{ const x=JSON.parse(root.localStorage&&root.localStorage.getItem(CFG_KEY)||'null'); return x&&typeof x==='object'?x:{}; }catch(_){ return {}; }
   }
+  function persistConfig(){ try{ root.localStorage.setItem(CFG_KEY,JSON.stringify(config)); }catch(_){} }
   function writeConfig(next){
     config=Object.assign({},config,next||{});
-    try{ root.localStorage.setItem(CFG_KEY,JSON.stringify(config)); }catch(_){}
+    persistConfig();
     emit(); return clone(config);
   }
   function publicInfo(){
@@ -225,14 +229,18 @@
   function openDb(){
     if(db) return Promise.resolve(db);
     if(!root.indexedDB) return Promise.resolve(null);
-    return new Promise((resolve,reject)=>{ const q=root.indexedDB.open(DB_NAME,DB_VERSION);
+    if(dbOpen)return dbOpen;
+    dbOpen=new Promise((resolve,reject)=>{ const q=root.indexedDB.open(DB_NAME,DB_VERSION);
       q.onupgradeneeded=()=>{ const d=q.result;
         if(!d.objectStoreNames.contains('meta')) d.createObjectStore('meta',{keyPath:'key'});
         if(!d.objectStoreNames.contains('ops')){ const s=d.createObjectStore('ops',{keyPath:'opId'}); s.createIndex('sent','sent',{unique:false}); }
         if(!d.objectStoreNames.contains('registers')) d.createObjectStore('registers',{keyPath:'entity'});
       };
-      q.onsuccess=()=>{db=q.result;resolve(db);}; q.onerror=()=>reject(q.error||new Error('IDB'));
-    });
+      q.onsuccess=()=>{db=q.result;db.onversionchange=()=>{try{db.close();}catch(_){}db=null;dbOpen=null;};resolve(db);};
+      q.onerror=()=>reject(q.error||new Error('IDB'));
+      q.onblocked=()=>reject(new Error('IDB_BLOCKED'));
+    }).catch(error=>{dbOpen=null;throw error;});
+    return dbOpen;
   }
   function req(q){ return new Promise((resolve,reject)=>{q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);}); }
   async function getAll(store,index,key){ if(!db)return[]; const tx=db.transaction(store,'readonly'),s=tx.objectStore(store); return req(index?s.index(index).getAll(key):s.getAll()); }
@@ -243,11 +251,12 @@
   async function readMeta(key){ if(!db)return null; return req(db.transaction('meta','readonly').objectStore('meta').get(key)); }
 
   async function reseedCurrentState(){
+    if(syncInFlight)await syncInFlight;
     await serial;await clearStores(['ops','registers','meta']);
     const entities=toEntities(currentState||{}),clock=clockFactory(config.deviceId),ops=diffEntities(new Map(),entities,clock,config.deviceId,()=>nextSequence()),regs=new Map();
     for(const op of ops)applyOperation(regs,op);
     await putMany('registers',[...regs.values()]);await putMany('ops',ops.map(o=>Object.assign({sent:0,created:Date.now()},o)));
-    await put('meta',{key:'checkpoint',value:clone(currentState||{}),at:Date.now()});lastEntities=entities;
+    await put('meta',{key:'checkpoint',value:clone(currentState||{}),at:Date.now()});lastEntities=entities;persistConfig();
   }
 
   async function migrate(state){
@@ -277,6 +286,7 @@
       const fresh=new Map(); for(const op of ops) applyOperation(fresh,op);
       await putMany('registers',[...fresh.values()]);
       await putMany('ops',ops.map(o=>Object.assign({sent:0,created:Date.now()},o)));
+      persistConfig();
     }
     await put('meta',{key:'checkpoint',value:clone(currentState),at:Date.now()});
     booted=true; emit();
@@ -284,10 +294,13 @@
     if(publicInfo().enabled) scheduleSync(800);
     return publicInfo();
   }
-  function nextSequence(){ const n=(Number(config.seq)||0)+1; config.seq=n; try{root.localStorage.setItem(CFG_KEY,JSON.stringify(config));}catch(_){} return n; }
+  function nextSequence(){ const n=(Number(config.seq)||0)+1; config.seq=n; return n; }
   function capture(state){
     currentState=state;
+    if(captureQueued)return serial;
+    captureQueued=true;
     serial=serial.then(async()=>{
+      captureQueued=false;
       if(!booted||config.joining) return;
       ensureEntityIds(currentState);
       const after=toEntities(currentState),clock=clockFactory(config.deviceId,config.seq);
@@ -305,15 +318,24 @@
   }
 
   async function sha256(bytes){ return new Uint8Array(await root.crypto.subtle.digest('SHA-256',bytes)); }
-  async function importAes(raw){ return root.crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['encrypt','decrypt']); }
-  async function importHmac(raw){ return root.crypto.subtle.importKey('raw',raw,{name:'HMAC',hash:'SHA-256'},false,['sign']); }
+  function cachedKey(cache,keyB64,algorithm,usages){
+    let promise=cache.get(keyB64);
+    if(!promise){
+      if(cache.size>=4)cache.clear();
+      promise=root.crypto.subtle.importKey('raw',unbase64(keyB64),algorithm,false,usages).catch(e=>{cache.delete(keyB64);throw e;});
+      cache.set(keyB64,promise);
+    }
+    return promise;
+  }
+  function importAes(keyB64){ return cachedKey(aesKeyCache,keyB64,{name:'AES-GCM'},['encrypt','decrypt']); }
+  function importHmac(keyB64){ return cachedKey(hmacKeyCache,keyB64,{name:'HMAC',hash:'SHA-256'},['sign']); }
   async function encryptJson(value,keyB64,aad){
-    const iv=root.crypto.getRandomValues(new Uint8Array(12)),key=await importAes(unbase64(keyB64));
+    const iv=root.crypto.getRandomValues(new Uint8Array(12)),key=await importAes(keyB64);
     const data=await root.crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(String(aad||''))},key,enc.encode(JSON.stringify(value)));
     return {iv:base64(iv),data:base64(data)};
   }
   async function decryptJson(box,keyB64,aad){
-    const key=await importAes(unbase64(keyB64));
+    const key=await importAes(keyB64);
     const data=await root.crypto.subtle.decrypt({name:'AES-GCM',iv:unbase64(box.iv),additionalData:enc.encode(String(aad||''))},key,unbase64(box.data));
     return JSON.parse(dec.decode(data));
   }
@@ -322,46 +344,85 @@
     const raw=String(value||'');if(!raw.startsWith('v2.'))return raw.slice(0,60)||'Dispositivo';
     try{const p=raw.split('.'),x=await decryptJson({iv:p[1],data:p.slice(2).join('.')},config.rootKey,'device-name:'+id);return String(x.name||'Dispositivo').slice(0,60);}catch(_){return 'Dispositivo';}
   }
-  async function entityHash(entity,keyB64){ const k=await importHmac(unbase64(keyB64)),s=await root.crypto.subtle.sign('HMAC',k,enc.encode(entity)); return base64(new Uint8Array(s)).replace(/[+/=]/g,'').slice(0,32); }
+  async function entityHash(entity,keyB64){ const k=await importHmac(keyB64),s=await root.crypto.subtle.sign('HMAC',k,enc.encode(entity)); return base64(new Uint8Array(s)).replace(/[+/=]/g,'').slice(0,32); }
   function authHeaders(extra){ return Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+config.deviceToken,'X-Sentiero-Space':config.spaceId,'X-Sentiero-Device':config.deviceId},extra||{}); }
   async function api(path,init,auth){
     const endpoint=cleanEndpoint(config.endpoint); if(!endpoint) throw new Error('ENDPOINT');
     const opts=Object.assign({},init||{}); opts.headers=auth===false?Object.assign({'Content-Type':'application/json'},opts.headers||{}):authHeaders(opts.headers||{});
-    const r=await fetch(endpoint+path,opts),text=await r.text(); let data={}; try{data=text?JSON.parse(text):{};}catch(_){data={error:'response'};}
-    if(!r.ok){ const e=new Error(data.error||('HTTP_'+r.status)); e.status=r.status; e.data=data; throw e; } return data;
+    let timer=null;
+    if(!opts.signal&&root.AbortController){ const controller=new root.AbortController();opts.signal=controller.signal;timer=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT); }
+    try{
+      const r=await fetch(endpoint+path,opts),text=await r.text(); let data={}; try{data=text?JSON.parse(text):{};}catch(_){data={error:'response'};}
+      if(!r.ok){ const e=new Error(data.error||('HTTP_'+r.status)); e.status=r.status; e.data=data; throw e; } return data;
+    }catch(e){ if(e&&e.name==='AbortError'){const timeout=new Error('timeout');timeout.status=0;throw timeout;}throw e; }
+    finally{ if(timer)clearTimeout(timer); }
+  }
+  async function mapConcurrent(items,limit,fn){
+    const out=new Array(items.length);let cursor=0;
+    async function worker(){while(cursor<items.length){const i=cursor++;out[i]=await fn(items[i],i);}}
+    await Promise.all(Array.from({length:Math.min(limit,items.length)},worker));return out;
   }
   function scheduleSync(ms){ if(syncTimer)clearTimeout(syncTimer); syncTimer=setTimeout(()=>{syncTimer=null;syncNow().catch(()=>{});},Math.max(100,ms||800)); }
-  async function syncNow(){
+  function scheduleRetry(){const wait=retryMs+Math.floor(Math.random()*Math.min(1000,retryMs/2));retryMs=Math.min(60000,retryMs*2);scheduleSync(wait);}
+  function syncNow(){
+    if(syncInFlight)return syncInFlight;
+    syncInFlight=runSync().finally(()=>{syncInFlight=null;});
+    return syncInFlight;
+  }
+  async function runSync(){
     await serial; if(!publicInfo().enabled||config.revoked) return publicInfo();
     if(root.navigator&&'onLine' in root.navigator&&root.navigator.onLine===false){ writeConfig({status:'offline · modifiche in coda'}); return publicInfo(); }
     writeConfig({status:'sincronizzazione…'});
     try{
-      const pending=(await getAll('ops','sent',0)).slice(0,MAX_BATCH),envelopes=[];
-      for(const op of pending){ const box=await encryptJson(op,config.rootKey,op.opId); envelopes.push({opId:op.opId,entity:await entityHash(op.entity,config.rootKey),deviceId:op.deviceId,seq:op.seq,iv:box.iv,data:box.data}); }
-      const res=await api('/v1/sync',{method:'POST',body:JSON.stringify({cursor:Number(config.cursor)||0,ops:envelopes})});
+      const queued=(await getAll('ops','sent',0)).slice(0,MAX_BATCH);
+      const prepared=await mapConcurrent(queued,CRYPTO_CONCURRENCY,async op=>{const box=await encryptJson(op,config.rootKey,op.opId);return {op,envelope:{opId:op.opId,entity:await entityHash(op.entity,config.rootKey),deviceId:op.deviceId,seq:op.seq,iv:box.iv,data:box.data}};});
+      const pending=[],envelopes=[];let bodySize=40;
+      for(const item of prepared){
+        const bytes=JSON.stringify(item.envelope).length+1;
+        if(item.envelope.data.length>MAX_CIPHER_CHARS)throw Object.assign(new Error('op_too_large'),{permanent:true});
+        if(envelopes.length&&bodySize+bytes>MAX_SYNC_BODY)break;
+        if(!envelopes.length&&bodySize+bytes>MAX_SYNC_BODY)throw Object.assign(new Error('op_too_large'),{permanent:true});
+        pending.push(item.op);envelopes.push(item.envelope);bodySize+=bytes;
+      }
+      const res=await api('/v1/sync',{method:'POST',body:JSON.stringify({protocol:3,cursor:Number(config.cursor)||0,ops:envelopes})});
+      const acked=new Set(Array.isArray(res.acked)?res.acked:[]);
+      if(pending.some(op=>!acked.has(op.opId)))throw Object.assign(new Error('ack_missing'),{permanent:true});
       const regs=new Map(); for(const r of await getAll('registers')) regs.set(r.entity,r);
       let changed=false;
-      for(const env of res.ops||[]){
-        try{ const seen=await readMeta('seen:'+env.opId); if(seen)continue; const op=await decryptJson(env,config.rootKey,env.opId); observeClock(op); changed=applyOperation(regs,op)||changed; await put('meta',{key:'seen:'+env.opId,value:true,at:Date.now()}); }catch(_){}
+      const remote=await mapConcurrent(Array.isArray(res.ops)?res.ops:[],CRYPTO_CONCURRENCY,async env=>{
+        try{
+          const op=await decryptJson(env,config.rootKey,env.opId);
+          if(!op||op.opId!==env.opId||op.deviceId!==env.deviceId||Number(op.seq)!==Number(env.seq))throw new Error('remote_integrity');
+          return op;
+        }catch(_){throw Object.assign(new Error('remote_integrity'),{permanent:true});}
+      });
+      for(const op of remote){
+        observeClock(op);changed=applyOperation(regs,op)||changed;
       }
       if(changed){ await putMany('registers',[...regs.values()]); const next=fromEntities(currentState,registersToEntities(regs)); currentState=next; lastEntities=toEntities(next); if(onRemote) onRemote(clone(next),{source:'sync'}); }
       /* Il server ha risposto dopo INSERT OR IGNORE: le operazioni sono ormai
          recuperabili dal journal remoto e non devono crescere per sempre in IDB. */
       if(pending.length) await deleteMany('ops',pending.map(o=>o.opId));
       const left=(await getAll('ops','sent',0)).length;
-      const moreRemote=Array.isArray(res.ops)&&res.ops.length>=500;
+      const moreRemote=res.hasMore===true;
       writeConfig({cursor:Number(res.cursor)||Number(config.cursor)||0,lastSync:Date.now(),pending:left,
         status:moreRemote?'recupero dello spazio…':(left?'altre modifiche in coda':'aggiornato'),revoked:false,joining:moreRemote});
+      retryMs=2000;
       if(left||moreRemote) scheduleSync(300);
     }catch(e){
-      if(e&&e.status===403) writeConfig({status:'dispositivo revocato',revoked:true});
-      else writeConfig({status:'non raggiungibile · modifiche in coda'});
+      if(e&&e.status===403&&e.data&&e.data.error==='device_revoked') writeConfig({status:'dispositivo revocato',revoked:true});
+      else if(e&&e.status===403)writeConfig({status:'origine non autorizzata · dati locali al sicuro'});
+      else if(e&&e.status===426)writeConfig({status:'aggiornamento richiesto · dati locali al sicuro'});
+      else if(e&&e.message==='op_too_large')writeConfig({status:'modifica troppo grande · dati locali al sicuro'});
+      else if(e&&(e.permanent||e.status===400||e.status===401||e.status===413))writeConfig({status:'errore sync · dati locali al sicuro'});
+      else{writeConfig({status:'non raggiungibile · modifiche in coda'});scheduleRetry();}
     }
     return publicInfo();
   }
 
   async function createSpace(endpoint,name){
-    ensureDevice(); writeConfig({endpoint:cleanEndpoint(endpoint),deviceName:String(name||deviceLabel()).slice(0,60),revoked:false});
+    const clean=cleanEndpoint(endpoint);if(!clean)throw new Error('ENDPOINT');
+    ensureDevice(); writeConfig({endpoint:clean,deviceName:String(name||deviceLabel()).slice(0,60),revoked:false});
     await reseedCurrentState();
     const rootKey=base64(root.crypto.getRandomValues(new Uint8Array(32)));
     const protectedName=await protectDeviceName(config.deviceName,rootKey,config.deviceId);
@@ -369,7 +430,7 @@
     writeConfig({spaceId:res.spaceId,deviceToken:res.deviceToken,rootKey,cursor:0,status:'pronto a sincronizzare',joining:false});
     await syncNow(); return publicInfo();
   }
-  function disable(){ writeConfig({spaceId:'',deviceToken:'',rootKey:'',cursor:0,status:'solo su questo dispositivo',revoked:false,joining:false}); return publicInfo(); }
+  function disable(){ if(syncTimer){clearTimeout(syncTimer);syncTimer=null;}aesKeyCache.clear();hmacKeyCache.clear();writeConfig({spaceId:'',deviceToken:'',rootKey:'',cursor:0,status:'solo su questo dispositivo',revoked:false,joining:false}); return publicInfo(); }
   async function listDevices(){ const r=await api('/v1/devices',{method:'GET'}),list=Array.isArray(r.devices)?r.devices:[];return Promise.all(list.map(async d=>Object.assign({},d,{name:await revealDeviceName(d.name,d.id)}))); }
   async function renameDevice(id,name){const plain=String(name||'').trim().slice(0,60);if(!plain)throw new Error('NAME');const protectedName=await protectDeviceName(plain,config.rootKey,id),r=await api('/v1/devices/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({name:protectedName})});if(id===config.deviceId)writeConfig({deviceName:plain});return r;}
   async function revokeDevice(id){ const r=await api('/v1/devices/'+encodeURIComponent(id),{method:'DELETE'}); if(id===config.deviceId) writeConfig({revoked:true,status:'dispositivo revocato'}); return r; }

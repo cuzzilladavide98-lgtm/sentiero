@@ -22,4 +22,4 @@ La sincronizzazione non si attiva durante la migrazione. Per inviare dati serve 
 - recupero locale tecnico: `sentiero-pre-migration-v2` conserva lo stato precedente, ma l'interfaccia non lo ripristina automaticamente per evitare sovrascritture accidentali.
 - prima di completare un pairing in ingresso viene inoltre salvata `sentiero-pre-pair-v2`; lo spazio remoto sostituisce lo stato Sentiero locale, come dichiarato nella conferma, mentre chiave Gemini e diagnostica restano locali.
 
-La migrazione è coperta da `qa/backend-migration-contract.test.js`; la qualità reale del contenuto importato va comunque verificata con un proprio backup rappresentativo prima del rollout generale.
+La migrazione e il recupero sono coperti da fixture v1/v272.x in `qa/backend-migration-contract.test.js`; l'uso quotidiano può continuare sul checkpoint compatibile anche con il cloud disattivato o irraggiungibile.

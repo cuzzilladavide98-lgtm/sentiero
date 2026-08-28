@@ -14,10 +14,14 @@ async function hash(value) {
   return b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode(String(value || '')))));
 }
 
+function configuredOrigins(env) {
+  return String(env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
+}
+
 function originHeaders(request, env) {
   const origin = request.headers.get('Origin') || '';
-  const allow = String(env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
-  const accepted = !allow.length ? (origin || '*') : (allow.includes(origin) ? origin : 'null');
+  const allow = configuredOrigins(env);
+  const accepted = allow.includes(origin) ? origin : 'null';
   return {
     'Access-Control-Allow-Origin': accepted,
     'Access-Control-Allow-Headers': 'authorization,content-type,x-sentiero-space,x-sentiero-device',
@@ -29,8 +33,7 @@ function originHeaders(request, env) {
 
 function originAllowed(request, env) {
   const origin = request.headers.get('Origin') || '';
-  const allow = String(env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
-  return !allow.length || !origin || allow.includes(origin);
+  return !!origin && configuredOrigins(env).includes(origin);
 }
 
 function reply(request, env, body, status = 200) {
@@ -56,14 +59,19 @@ async function authenticate(request, env) {
 }
 
 function validPublicKey(k) {
-  return k && typeof k === 'object' && k.kty === 'EC' && k.crv === 'P-256' && typeof k.x === 'string' && typeof k.y === 'string';
+  return k && typeof k === 'object' && k.kty === 'EC' && k.crv === 'P-256' &&
+    typeof k.x === 'string' && /^[A-Za-z0-9_-]{40,50}$/.test(k.x) &&
+    typeof k.y === 'string' && /^[A-Za-z0-9_-]{40,50}$/.test(k.y);
 }
+
+function validDeviceId(value) { return typeof value === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(value); }
+function validProtectedName(value) { return typeof value === 'string' && /^v2\.[A-Za-z0-9+/=]{16,80}\.[A-Za-z0-9+/=]{16,400}$/.test(value); }
 
 async function createSpace(request, env) {
   const body = await bodyJson(request, 10000);
-  const deviceId = String(body.deviceId || '').slice(0, 100);
-  const name = String(body.name || 'Questo dispositivo').trim().slice(0, 500);
-  if (!deviceId) return reply(request, env, { error: 'device_required' }, 400);
+  const deviceId = body.deviceId, name = body.name;
+  if (!validDeviceId(deviceId)) return reply(request, env, { error: 'device_required' }, 400);
+  if (!validProtectedName(name)) return reply(request, env, { error: 'protected_name_required' }, 400);
   const spaceId = randomToken(18), deviceToken = randomToken(32), now = Date.now();
   await env.DB.batch([
     env.DB.prepare('INSERT INTO spaces(id,created_at) VALUES(?,?)').bind(spaceId, now),
@@ -74,24 +82,39 @@ async function createSpace(request, env) {
 }
 
 async function sync(request, env, auth) {
-  const body = await bodyJson(request);
-  const cursor = Math.max(0, Number(body.cursor) || 0);
-  const ops = Array.isArray(body.ops) ? body.ops.slice(0, 200) : [];
+  const body = await bodyJson(request, 2000000);
+  if (Number(body.protocol) !== 3) return reply(request, env, { error: 'client_upgrade_required' }, 426);
+  const rawCursor = Number(body.cursor), cursor = Number.isSafeInteger(rawCursor) && rawCursor >= 0 ? rawCursor : 0;
+  if (!Array.isArray(body.ops)) return reply(request, env, { error: 'ops_required' }, 400);
+  if (body.ops.length > 200) return reply(request, env, { error: 'too_many_ops' }, 413);
+  const ops = body.ops;
   const writes = [];
-  for (const op of ops) {
-    if (!op || typeof op.opId !== 'string' || op.opId.length > 100 || typeof op.entity !== 'string' || op.entity.length > 80 ||
-        typeof op.iv !== 'string' || op.iv.length > 80 || typeof op.data !== 'string' || op.data.length > 200000 ||
-        op.deviceId !== auth.id || !Number.isSafeInteger(Number(op.seq))) continue;
+  for (let index = 0; index < ops.length; index++) {
+    const op = ops[index], seq = Number(op && op.seq);
+    if (!op || typeof op.opId !== 'string' || !/^[A-Za-z0-9._:-]{3,100}$/.test(op.opId) ||
+        typeof op.entity !== 'string' || !/^[A-Za-z0-9_-]{16,80}$/.test(op.entity) ||
+        typeof op.iv !== 'string' || !/^[A-Za-z0-9+/=]{16,80}$/.test(op.iv) ||
+        typeof op.data !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(op.data) || op.data.length > 800000 ||
+        op.deviceId !== auth.id || !Number.isSafeInteger(seq) || seq < 1) {
+      return reply(request, env, { error: 'invalid_op', index }, 400);
+    }
     writes.push(env.DB.prepare('INSERT OR IGNORE INTO operations(space_id,op_id,entity_hash,device_id,seq,iv,payload,created_at) VALUES(?,?,?,?,?,?,?,?)')
-      .bind(auth.space_id, op.opId, op.entity, auth.id, Number(op.seq), op.iv, op.data, Date.now()));
+      .bind(auth.space_id, op.opId, op.entity, auth.id, seq, op.iv, op.data, Date.now()));
   }
   writes.push(env.DB.prepare('UPDATE devices SET last_seen=? WHERE space_id=? AND id=?').bind(Date.now(), auth.space_id, auth.id));
   if (writes.length) await env.DB.batch(writes);
-  const rows = await env.DB.prepare('SELECT row_id,op_id,device_id,seq,iv,payload FROM operations WHERE space_id=? AND row_id>? ORDER BY row_id LIMIT 500')
+  const rows = await env.DB.prepare('SELECT row_id,op_id,device_id,seq,iv,payload FROM operations WHERE space_id=? AND row_id>? ORDER BY row_id LIMIT 101')
     .bind(auth.space_id, cursor).all();
-  const list = (rows.results || []).map(r => ({ cursor: r.row_id, opId: r.op_id, deviceId: r.device_id, seq: r.seq, iv: r.iv, data: r.payload }));
+  const candidates = rows.results || [], list = [];
+  let responseChars = 0;
+  for (const r of candidates) {
+    const size = String(r.payload || '').length + 300;
+    if (list.length >= 100 || (list.length && responseChars + size > 1500000)) break;
+    list.push({ cursor: r.row_id, opId: r.op_id, deviceId: r.device_id, seq: r.seq, iv: r.iv, data: r.payload });
+    responseChars += size;
+  }
   const nextCursor = list.length ? list[list.length - 1].cursor : cursor;
-  return reply(request, env, { cursor: nextCursor, ops: list });
+  return reply(request, env, { cursor: nextCursor, ops: list, acked: ops.map(op => op.opId), hasMore: candidates.length > list.length });
 }
 
 async function deleteSpace(request, env, auth) {
@@ -107,12 +130,15 @@ async function devices(request, env, auth, path) {
   const m = path.match(/^\/v1\/devices\/([^/]+)$/); if (!m) return null;
   const id = decodeURIComponent(m[1]).slice(0, 100);
   if (request.method === 'PATCH') {
-    const b = await bodyJson(request, 5000), name = String(b.name || '').trim().slice(0, 500); if (!name) return reply(request, env, { error: 'name_required' }, 400);
-    await env.DB.prepare('UPDATE devices SET name=? WHERE space_id=? AND id=?').bind(name, auth.space_id, id).run();
+    const b = await bodyJson(request, 5000), name = b.name;
+    if (!validProtectedName(name)) return reply(request, env, { error: 'protected_name_required' }, 400);
+    const result = await env.DB.prepare('UPDATE devices SET name=? WHERE space_id=? AND id=?').bind(name, auth.space_id, id).run();
+    if (!result.meta || result.meta.changes !== 1) return reply(request, env, { error: 'device_not_found' }, 404);
     return reply(request, env, { ok: true });
   }
   if (request.method === 'DELETE') {
-    await env.DB.prepare('UPDATE devices SET revoked_at=? WHERE space_id=? AND id=?').bind(Date.now(), auth.space_id, id).run();
+    const result = await env.DB.prepare('UPDATE devices SET revoked_at=? WHERE space_id=? AND id=?').bind(Date.now(), auth.space_id, id).run();
+    if (!result.meta || result.meta.changes !== 1) return reply(request, env, { error: 'device_not_found' }, 404);
     return reply(request, env, { ok: true });
   }
   return null;
@@ -129,7 +155,7 @@ async function createPair(request, env, auth) {
 
 async function redeemPair(request, env) {
   const b = await bodyJson(request, 20000), token = String(b.token || '');
-  if (!token || !b.deviceId || !validPublicKey(b.publicKey)) return reply(request, env, { error: 'pair_payload' }, 400);
+  if (!token || token.length > 200 || !validDeviceId(b.deviceId) || !validPublicKey(b.publicKey)) return reply(request, env, { error: 'pair_payload' }, 400);
   const row = await env.DB.prepare('SELECT * FROM pairs WHERE token_hash=?').bind(await hash(token)).first();
   if (!row || row.expires_at < Date.now() || row.status !== 'open') return reply(request, env, { error: 'pair_expired' }, 410);
   const claim = randomToken(24), deviceToken = randomToken(32);
@@ -163,13 +189,15 @@ async function pairRoute(request, env, auth, path) {
   });
   if (action === 'approve' && request.method === 'POST') {
     if (row.status !== 'pending-confirmation' || !row.consumer_device || !row.consumer_token_hash) return reply(request, env, { error: 'pair_state' }, 409);
-    const b = await bodyJson(request, 220000); if (!b.iv || !b.data) return reply(request, env, { error: 'wrapped_key' }, 400);
+    const b = await bodyJson(request, 5000);
+    if (typeof b.iv !== 'string' || !/^[A-Za-z0-9+/=]{16,80}$/.test(b.iv) ||
+        typeof b.data !== 'string' || !/^[A-Za-z0-9+/=]{32,4000}$/.test(b.data)) return reply(request, env, { error: 'wrapped_key' }, 400);
     const now = Date.now();
     await env.DB.batch([
       env.DB.prepare('INSERT INTO devices(space_id,id,name,token_hash,created_at,last_seen) VALUES(?,?,?,?,?,?)')
         .bind(row.space_id, row.consumer_device, row.consumer_name || 'Nuovo dispositivo', row.consumer_token_hash, now, now),
       env.DB.prepare("UPDATE pairs SET wrapped_iv=?,wrapped_payload=?,status='approved' WHERE token_hash=?")
-        .bind(String(b.iv).slice(0, 100), String(b.data).slice(0, 200000), tokenHash)
+        .bind(b.iv, b.data, tokenHash)
     ]);
     return reply(request, env, { ok: true });
   }
@@ -178,11 +206,21 @@ async function pairRoute(request, env, auth, path) {
 
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: originHeaders(request, env) });
     const url = new URL(request.url), path = url.pathname;
     try {
+      if (path === '/health' && request.method === 'GET') {
+        if (url.searchParams.get('deep') === '1') {
+          if (!originAllowed(request, env)) return reply(request, env, { error: 'origin_forbidden' }, 403);
+          const probe = await env.DB.prepare('SELECT 1 AS ok').first();
+          return reply(request, env, { ok: Number(probe && probe.ok) === 1, database: 'reachable', service: 'sentiero-sync', schema: 2, protocol: 3 });
+        }
+        return reply(request, env, { ok: true, service: 'sentiero-sync', schema: 2, protocol: 3 });
+      }
+      if (request.method === 'OPTIONS') {
+        if (!originAllowed(request, env)) return reply(request, env, { error: 'origin_forbidden' }, 403);
+        return new Response(null, { status: 204, headers: originHeaders(request, env) });
+      }
       if (!originAllowed(request, env)) return reply(request, env, { error: 'origin_forbidden' }, 403);
-      if (path === '/health') return reply(request, env, { ok: true, service: 'sentiero-sync', schema: 2 });
       if (path === '/v1/spaces' && request.method === 'POST') return createSpace(request, env);
       if (path === '/v1/pairs/redeem' && request.method === 'POST') return redeemPair(request, env);
       if (/^\/v1\/pairs\/[^/]+\/claim$/.test(path)) return pairRoute(request, env, null, path);
@@ -197,5 +235,8 @@ export default {
     } catch (e) {
       return reply(request, env, { error: String(e && e.message || 'server_error').slice(0, 80) }, Number(e && e.status) || 500);
     }
+  },
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(env.DB.prepare('DELETE FROM pairs WHERE expires_at<?').bind(Date.now() - 24 * 60 * 60 * 1000).run());
   }
 };

@@ -6,7 +6,8 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const indexPath = path.join(root, 'index.html');
-const html = fs.readFileSync(indexPath, 'utf8');
+const page = fs.readFileSync(indexPath, 'utf8');
+const html = page+'\n<script>\n'+fs.readFileSync(path.join(root, 'sentiero-app.js'), 'utf8')+'\n</script>';
 
 function extractFunction(name, from = 0) {
   const start = html.indexOf('function ' + name + '(', from);

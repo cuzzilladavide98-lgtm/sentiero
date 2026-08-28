@@ -2,14 +2,17 @@
   "name": "sentiero-sync-worker",
   "private": true,
   "type": "module",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "scripts": {
     "dev": "wrangler dev",
+    "check": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
-    "db:local": "wrangler d1 execute sentiero-sync --local --file=./schema.sql",
-    "db:remote": "wrangler d1 execute sentiero-sync --remote --file=./schema.sql"
+    "db:local": "wrangler d1 migrations apply sentiero-sync --local",
+    "db:remote": "wrangler d1 migrations apply sentiero-sync --remote",
+    "db:list:local": "wrangler d1 migrations list sentiero-sync --local",
+    "db:list:remote": "wrangler d1 migrations list sentiero-sync --remote"
   },
   "devDependencies": {
-    "wrangler": "^4.32.0"
+    "wrangler": "4.127.0"
   }
 }

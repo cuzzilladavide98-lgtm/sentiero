@@ -16,12 +16,13 @@ function median(values) {
 
 function sources(dir) {
   const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
-  const list = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
+  const inline = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
+  const external = [];
   for (const m of html.matchAll(/<script\s+src="([^"]+)"[^>]*><\/script>/gi)) {
-    const file = path.join(dir, m[1].replace(/^\.\//, ''));
-    if (fs.existsSync(file)) list.unshift(fs.readFileSync(file, 'utf8'));
+    const file = path.join(dir, m[1].replace(/^\.\//, '').replace(/[?#].*$/, ''));
+    if (fs.existsSync(file)) external.push(fs.readFileSync(file, 'utf8'));
   }
-  return { html, js: list.join('\n') };
+  return { html, inlineJs: inline.join('\n'), externalJs: external.join('\n'), js: external.concat(inline).join('\n') };
 }
 
 function measure(dir) {
@@ -35,6 +36,11 @@ function measure(dir) {
     htmlBytes: Buffer.byteLength(src.html),
     htmlGzipBytes: zlib.gzipSync(src.html, { level: 9 }).length,
     startupJsBytes: Buffer.byteLength(src.js),
+    startupJsGzipBytes: zlib.gzipSync(src.js, { level: 9 }).length,
+    inlineJsBytes: Buffer.byteLength(src.inlineJs),
+    externalJsBytes: Buffer.byteLength(src.externalJs),
+    initialCodeBytes: Buffer.byteLength(src.html) + Buffer.byteLength(src.externalJs),
+    initialCodeGzipBytes: zlib.gzipSync(src.html, { level: 9 }).length + (src.externalJs ? zlib.gzipSync(src.externalJs, { level: 9 }).length : 0),
     compileMedianMs: Number(median(times).toFixed(2))
   };
 }
@@ -60,6 +66,11 @@ if (result.baseline) {
     htmlBytes: result.candidate.htmlBytes - result.baseline.htmlBytes,
     htmlGzipBytes: result.candidate.htmlGzipBytes - result.baseline.htmlGzipBytes,
     startupJsBytes: result.candidate.startupJsBytes - result.baseline.startupJsBytes,
+    startupJsGzipBytes: result.candidate.startupJsGzipBytes - result.baseline.startupJsGzipBytes,
+    inlineJsBytes: result.candidate.inlineJsBytes - result.baseline.inlineJsBytes,
+    externalJsBytes: result.candidate.externalJsBytes - result.baseline.externalJsBytes,
+    initialCodeBytes: result.candidate.initialCodeBytes - result.baseline.initialCodeBytes,
+    initialCodeGzipBytes: result.candidate.initialCodeGzipBytes - result.baseline.initialCodeGzipBytes,
     compileMedianMs: Number((result.candidate.compileMedianMs - result.baseline.compileMedianMs).toFixed(2))
   };
 }

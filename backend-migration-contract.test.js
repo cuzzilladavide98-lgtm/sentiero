@@ -6,7 +6,8 @@ const path = require('node:path');
 const sync = require('../sentiero-sync.js');
 
 const root = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const page = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = page+'\n<script>\n'+fs.readFileSync(path.join(root, 'sentiero-app.js'), 'utf8')+'\n</script>';
 const worker = fs.readFileSync(path.join(root, 'sync-worker', 'src', 'index.js'), 'utf8');
 const schema = fs.readFileSync(path.join(root, 'sync-worker', 'schema.sql'), 'utf8');
 
