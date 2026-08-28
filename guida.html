@@ -521,14 +521,14 @@ a{color:var(--accent)}
   <p><strong>Backup completo.</strong> In Dati è la scelta principale per un vero ripristino: include anche la chiave Gemini, così dopo un cambio o una reinstallazione non devi reinserirla. Se devi condividere o archiviare un file senza credenziali, scegli <strong>Backup senza chiave</strong>.</p>
 
   <p>Lo <strong>stato di Sentiero</strong> — diario, cose da fare, ricorrenti,
-  capitoli e impostazioni — vive sul tuo dispositivo. Sentiero non ha un account
-  né un server personale che ne conservi una seconda copia. Se usi la Generativa,
+  capitoli e impostazioni — nasce sul tuo dispositivo. Se attivi Dispositivi,
+  un journal cifrato può collegare i dispositivi approvati; non sostituisce il backup. Se usi la Generativa,
   le singole richieste necessarie a quella funzione vanno direttamente a Google
   Gemini API; non diventano un archivio di Sentiero. Per questo il backup resta
   importante: <strong>la copia sotto il tuo controllo è quella che esporti tu.</strong></p>
 
   <ul>
-    <li><strong>Altro</strong> nella barra in basso → in fondo, <strong>Dati</strong>.</li>
+    <li><strong>Altro</strong> nella barra in basso → <strong>Dati e backup</strong>.</li>
     <li><span class="tasto">Backup completo</span> salva dati e chiave; <span class="tasto">Backup senza chiave</span> salva soltanto i dati.</li>
     <li>Sul telefono nuovo, <span class="tasto">Importa</span> lo rimette dentro.</li>
   </ul>
@@ -574,10 +574,20 @@ a{color:var(--accent)}
 
   <h2 id="tredici"><span class="n">CAPITOLO 13</span>Rete, privacy e chiave</h2>
 
-  <p>La regola semplice è questa: <strong>Sentiero conserva il suo stato sul tuo
-  dispositivo</strong>. Non c’è un account Sentiero e non c’è un server di
-  Sentiero che riceva una copia del diario. La rete entra in gioco solo in casi
-  precisi.</p>
+  <p>La regola semplice è questa: <strong>Sentiero salva prima sul tuo
+  dispositivo</strong>. Non serve un account personale. La rete entra solo per
+  le funzioni che scegli: hosting, dettatura del sistema, Gemini e sincronizzazione cifrata.</p>
+
+  <h3>Se attivi Dispositivi</h3>
+  <p class="calmo">Le modifiche restano locali anche offline e vengono poi inviate
+  come operazioni cifrate per entità e campo. Il server non riceve il testo in
+  chiaro né la chiave Gemini. Per collegare un dispositivo, crea un invito che
+  scade in dieci minuti, aprilo sull’altro schermo, confronta le sei cifre e
+  approva dal dispositivo già collegato. Da Altro → Dispositivi puoi revocare un
+  dispositivo o cancellare l’intero journal remoto. Sul dispositivo che entra,
+  lo spazio collegato sostituisce i dati Sentiero già presenti: la conferma lo
+  dichiara e l'app conserva prima una copia locale tecnica pre-pairing. Se quel
+  dispositivo contiene dati importanti, fai comunque un Backup completo.</p>
 
   <h3>Senza chiave Gemini</h3>
   <p class="calmo">Il nucleo Base usa il codice già installato: diario, ricerca,
@@ -589,8 +599,8 @@ a{color:var(--accent)}
   <h3>Quando accendi la Generativa</h3>
   <p class="calmo">Quando una funzione Gemini serve davvero, Sentiero invia
   direttamente a <strong>Google Gemini API</strong> il testo — o la singola foto
-  scelta nella Stanza — necessario a quel lavoro. Non passa da un server di
-  Sentiero. La risposta torna nell’app e il risultato utile viene poi salvato
+   scelta nella Stanza — necessario a quel lavoro. Il server di sincronizzazione
+   non entra nella chiamata Gemini. La risposta torna nell’app e il risultato utile viene poi salvato
   nello stato locale.</p>
 
   <h3>La tua chiave</h3>

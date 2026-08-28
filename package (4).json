@@ -1,0 +1,9 @@
+{
+  "name": "sentiero-pwa",
+  "private": true,
+  "version": "60.273.0",
+  "scripts": {
+    "test": "node qa/motion-whisper-contract.test.js && node qa/today-stage-contract.test.js && node qa/sync-data-contract.test.js && node qa/quest-settings-contract.test.js && node qa/backend-migration-contract.test.js && node qa/qr-fallback-contract.test.js",
+    "benchmark": "node qa/performance-benchmark.js"
+  }
+}

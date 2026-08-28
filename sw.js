@@ -1,4 +1,4 @@
-const CACHE = 'sentiero-v60s-272-7';
+const CACHE = 'sentiero-v60s-273-0';
 const PROD_CACHE_PREFIX = 'sentiero-v60s-';
 /* v272.3 recovery: Distillazione via GenerateContent, base completa incorporata,
    stessa geometria voce e backup completo preservati. */
@@ -27,7 +27,7 @@ const PROD_CACHE_PREFIX = 'sentiero-v60s-';
    a ogni installazione perche il telefono ne usasse una, che poi nemmeno legge da
    qui. Restano tutte nel repo e restano nel gestore fetch qui sotto: la prima volta
    che una viene chiesta davvero, finisce in cache come tutto il resto. */
-const ASSETS = ['./', './index.html', './manifest.json',
+const ASSETS = ['./', './index.html', './manifest.json', './sentiero-sync.js', './vendor/qrcode.js', './vendor/jsQR.js',
   './icon-180.png', './icon-192.png',
   './lingue/en.json',
   './lingue/base-it-v272.7.json',   /* v267: la base linguistica viaggia con l'app. Offline si usa questa; con la rete si aggiorna da qui. */    /* v218: i pacchetti delle lingue viaggiano con l'app: offline dal primo avvio */
@@ -63,7 +63,7 @@ self.addEventListener('activate', e => {
 /* v269.8 — «CHI STA SERVENDO QUESTA PAGINA?»
    Una domanda sola, una risposta sola, nessun protocollo. La pagina chiede la
    generazione di chi la serve; il worker la ricava dal nome della propria cache
-   (sentiero-v60s-272-7 -> 272007). Serve a distinguere, nel nastro, una sessione
+   (sentiero-v60s-273-0 -> 273000). Serve a distinguere, nel nastro, una sessione
    servita dalla generazione nuova da una servita da quella vecchia rimasta al
    comando. Un worker di prima di questa versione non risponde: nel nastro resta
    zero, e anche quello dice qualcosa. */
@@ -83,7 +83,9 @@ self.addEventListener('fetch', e => {
   const url = e.request.url;
   try {
     const u = new URL(url);
-    if (u.hostname === 'generativelanguage.googleapis.com') return; // l'IA non entra mai nella cache PWA
+    /* API, pairing e navigazioni esterne non sono asset: soprattutto le GET di
+       stato pairing non devono mai ricevere una risposta vecchia dalla cache. */
+    if (u.origin !== self.location.origin || /\/v1\//.test(u.pathname)) return;
   } catch (_) {}
 
   /* v272.1 — base linguistica: rete prima, cache della STESSA generazione dopo.

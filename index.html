@@ -653,6 +653,60 @@ input:focus{outline:none;border-bottom-color:var(--accent)}
 .seg button{padding:6px 0;border:none;background:none;color:var(--t3);font-size:16px;font-weight:500;position:relative}
 .seg button.on{color:var(--accent)}
 
+/* v273 — editor Quest: foglio breve, campi nativi e nessuna conversione UTC. */
+.editq,.cal,.del{flex:0 0 auto}
+.editq{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;background:none;color:var(--t3);border-radius:50%}
+.editq:active{background:rgba(245,242,234,.07);color:var(--accent)}
+.quest-editor{position:fixed;inset:0;z-index:170;background:rgba(0,0,0,.64);display:flex;align-items:flex-end;justify-content:center;padding:12px 12px max(12px,env(safe-area-inset-bottom))}
+.quest-editor.hidden{display:none}
+.quest-editor-card{width:min(100%,480px);max-height:calc(100dvh - 24px);overflow-y:auto;padding:8px 22px 24px;background:var(--foglio-bg-opaco);border:1px solid rgba(245,242,234,.11);border-radius:24px;box-shadow:0 -14px 50px rgba(0,0,0,.48)}
+.quest-editor-head{position:sticky;top:-8px;z-index:1;display:grid;grid-template-columns:48px 1fr 72px;align-items:center;margin:0 -8px 12px;padding:8px;background:var(--foglio-bg-opaco)}
+.quest-editor-head h2{margin:0;text-align:center;font-family:var(--serif);font-size:20px;font-weight:500}
+.sheet-back,.sheet-save{min-height:44px;border:0;background:none;color:var(--accent);font:600 16px/1 inherit}
+.sheet-back{font-size:34px;text-align:left}.sheet-save{text-align:right}
+.quest-editor textarea,.quest-editor input[type=date]{box-sizing:border-box;width:100%;padding:13px 0;border:0;border-bottom:.5px solid rgba(245,242,234,.15);border-radius:0;background:none;color:var(--t1);font:17px/1.45 inherit}
+.quest-editor textarea{resize:vertical;min-height:86px}
+.qedit-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.qedit-grid>*{min-width:0}
+.qedit-prio{display:flex;gap:8px;margin:20px 0 0;padding:0;border:0;min-width:0}.qedit-prio legend{width:100%;margin-bottom:8px;color:var(--t3);font-size:14px}
+.qedit-prio button{flex:1 1 0;min-width:0;min-height:44px;padding:8px;border:1px solid rgba(245,242,234,.12);border-radius:12px;background:none;color:var(--t2);font:15px/1 inherit}
+.qedit-prio button.on{border-color:var(--accent);background:rgba(232,168,76,.11);color:var(--accent)}
+body.theme-carta .quest-editor-card,body.theme-carta .quest-editor-head{background:#F2EFE6}
+body.theme-carta .quest-editor textarea,body.theme-carta .quest-editor input[type=date]{border-color:rgba(23,21,18,.2)}
+
+/* v273 — Altro usa una sola colonna e sottopagine, senza scorrimento laterale. */
+#tab-impostazioni{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow-x:visible;padding-top:4px}
+#tab-impostazioni *,#tab-impostazioni *::before,#tab-impostazioni *::after{box-sizing:border-box;max-width:100%}
+.settings-toolbar{position:sticky;top:0;z-index:7;display:grid;grid-template-columns:48px 1fr 48px;align-items:center;min-height:58px;margin:0 -2px 12px;background:var(--foglio-bg-opaco);border-bottom:.5px solid var(--linea)}
+.settings-toolbar h1{grid-column:2;margin:0;text-align:center;font-family:var(--serif);font-size:24px;font-weight:500;color:var(--t1)}
+.settings-back{grid-column:1;grid-row:1;min-width:44px;min-height:44px;border:0;background:none;color:var(--accent);font:36px/1 inherit;text-align:left}
+.settings-group{margin:0 0 18px;border-radius:16px;overflow:hidden;background:rgba(245,242,234,.045);border:.5px solid rgba(245,242,234,.07)}
+.settings-row{display:grid;grid-template-columns:36px minmax(0,1fr) 18px;align-items:center;gap:10px;width:100%;min-height:66px;padding:10px 14px;border:0;border-bottom:.5px solid rgba(245,242,234,.07);background:none;color:var(--t1);text-align:left;font:inherit}
+.settings-row:last-child{border-bottom:0}.settings-row:active{background:rgba(245,242,234,.065)}
+.settings-row>span:nth-child(2){display:block;min-width:0}.settings-row b{display:block;font-size:16.5px;font-weight:550}.settings-row small{display:block;margin-top:3px;color:var(--t3);font-size:12.5px;line-height:1.35;white-space:normal}
+.settings-row i{color:var(--t3);font:26px/1 inherit}.settings-icon{display:grid;place-items:center;width:31px;height:31px;border-radius:9px;background:rgba(232,168,76,.12);color:var(--accent);font-size:16px}
+#tab-impostazioni [data-settings-page]{display:none;min-width:0;margin-top:0}
+#tab-impostazioni [data-settings-page].settings-page-active{display:block}
+#tab-impostazioni .switchrow{width:100%;min-width:0;gap:12px;align-items:center}
+#tab-impostazioni .switchrow>span:first-child{min-width:0;overflow-wrap:break-word}
+#tab-impostazioni .seg{min-width:0;flex-wrap:wrap;justify-content:flex-end;gap:8px 14px}
+#tab-impostazioni .seg button{min-height:44px;white-space:normal;text-align:center}
+#tab-impostazioni input,#tab-impostazioni textarea{display:block;width:100%;min-width:0}
+#tab-impostazioni textarea{padding:12px;border:.5px solid rgba(245,242,234,.15);border-radius:12px;background:none;color:var(--t1);font:15px/1.4 inherit;resize:vertical}
+#tab-impostazioni .btn-row{display:flex;flex-wrap:wrap;max-width:100%;gap:8px}
+#tab-impostazioni .btn-row .act{flex:1 1 150px;min-width:0;white-space:normal}
+#tab-impostazioni .btn-row .act.danger{color:#D9746B;border-color:rgba(217,116,107,.35)}
+.settings-status-card{display:flex;flex-direction:column;gap:6px;margin:10px 0 18px;padding:16px;border-radius:16px;background:rgba(127,184,164,.075);border:.5px solid rgba(127,184,164,.22)}
+.settings-status-card b{font-size:17px}.settings-status-card span{color:var(--jade);font-size:14px}.settings-status-card small{color:var(--t3);font-size:13px;line-height:1.4}
+.settings-subhead{margin:26px 0 8px;padding-top:18px;border-top:.5px solid var(--linea);font-family:var(--serif);font-size:19px;color:var(--t1)}
+.pair-box{margin:14px 0;padding:16px;border-radius:16px;background:rgba(245,242,234,.035);text-align:center;overflow:hidden}
+#pair-qr{display:block;width:min(232px,100%);height:auto;margin:0 auto 12px;background:#fff;border-radius:10px;padding:8px;image-rendering:pixelated}
+#pair-code{display:block;max-height:76px;overflow:auto;padding:8px;color:var(--t2);font-size:11px;line-height:1.35;overflow-wrap:anywhere;white-space:normal}
+#sync-devices .sync-device{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:13px 0;border-bottom:.5px solid var(--linea)}
+#sync-devices .sync-device:last-child{border-bottom:0}.sync-device b,.sync-device small{display:block}.sync-device small{margin-top:3px;color:var(--t3);font-size:12px}.sync-device button{min-width:44px;min-height:44px;border:0;background:none;color:var(--ceralacca)}
+body.theme-carta .settings-toolbar{background:#F2EFE6}.theme-carta .settings-group{background:rgba(23,21,18,.035);border-color:rgba(23,21,18,.10)}
+body.theme-carta .settings-row{border-color:rgba(23,21,18,.10)}body.theme-carta .settings-row:active{background:rgba(23,21,18,.06)}
+@media(max-width:350px){.settings-row{padding-left:10px;padding-right:10px}.settings-row small{font-size:12px}#tab-impostazioni .switchrow{align-items:flex-start;flex-direction:column}#tab-impostazioni .seg{justify-content:flex-start}}
+
 .days{display:flex;gap:7px;margin-top:10px}
 .days button{flex:1;aspect-ratio:1;max-width:42px;border-radius:50%;border:1.5px solid rgba(245,242,234,.16);
   background:none;color:var(--t2);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .18s}
@@ -2977,7 +3031,62 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
 
     <!-- ===== ALTRO — quarta destinazione persistente della barra ===== -->
     <div id="tab-impostazioni">
-      <section>
+      <div class="settings-toolbar">
+        <button id="settings-back" class="settings-back hidden" aria-label="Torna ad Altro">‹</button>
+        <h1 id="settings-title">Altro</h1>
+      </div>
+      <div id="settings-home" aria-label="Impostazioni">
+        <div class="settings-group">
+          <button class="settings-row" data-settings-open="devices"><span class="settings-icon">⌁</span><span><b>Dispositivi</b><small>Sincronizzazione, collegamento e revoca</small></span><i>›</i></button>
+          <button class="settings-row" data-settings-open="experience"><span class="settings-icon">◐</span><span><b>Esperienza</b><small>Aspetto, movimento, voce e promemoria</small></span><i>›</i></button>
+          <button class="settings-row" data-settings-open="gemini"><span class="settings-icon">✦</span><span><b>Versione Generativa</b><small>Chiave Gemini, qualità e consumo</small></span><i>›</i></button>
+        </div>
+        <div class="settings-group">
+          <button class="settings-row" data-settings-open="planning"><span class="settings-icon">◷</span><span><b>Pianificazione</b><small>Ricorrenze e Quest sbloccabili</small></span><i>›</i></button>
+          <button class="settings-row" data-settings-open="language"><span class="settings-icon">文</span><span><b>Lingua</b><small>Come il telefono, italiano o inglese</small></span><i>›</i></button>
+          <button class="settings-row" data-settings-open="data"><span class="settings-icon">⇩</span><span><b>Dati e backup</b><small>Esporta, importa e diagnostica</small></span><i>›</i></button>
+        </div>
+        <div class="settings-group">
+          <button class="settings-row" data-settings-open="help"><span class="settings-icon">?</span><span><b>Guida e privacy</b><small>Come funziona e dove restano i dati</small></span><i>›</i></button>
+        </div>
+      </div>
+
+      <section data-settings-page="devices">
+        <div class="sec-head">Dispositivi</div>
+        <div class="settings-status-card">
+          <b id="sync-device-name">Questo dispositivo</b>
+          <span id="sync-state">Solo su questo dispositivo</span>
+          <small id="sync-last">Le modifiche restano locali e funzionano offline.</small>
+        </div>
+        <label for="sync-name">Nome dispositivo</label>
+        <input type="text" id="sync-name" maxlength="60" placeholder="es. iPhone di Davide">
+        <label for="sync-endpoint">Server di sincronizzazione</label>
+        <input type="text" id="sync-endpoint" inputmode="url" autocapitalize="none" autocomplete="off" placeholder="https://sentiero-sync.…workers.dev">
+        <p class="note">Il server conserva soltanto operazioni cifrate e metadati tecnici. La chiave Gemini, i suoni e i backup non vengono sincronizzati.</p>
+        <div class="btn-row"><button class="act primary" id="sync-enable">Attiva sincronizzazione</button><button class="act" id="sync-now">Sincronizza ora</button></div>
+
+        <div id="sync-enabled-tools" class="hidden">
+          <div class="settings-subhead">Collega un altro dispositivo</div>
+          <p class="note">L’invito scade dopo dieci minuti e funziona una volta sola. Prima di approvare, confronta il codice a sei cifre mostrato sui due schermi.</p>
+          <div class="btn-row"><button class="act primary" id="pair-create">Crea invito</button><button class="act" id="pair-scan">Leggi un QR</button></div>
+          <input type="file" id="pair-image" class="hidden" accept="image/*" capture="environment">
+          <div id="pair-invite" class="pair-box hidden">
+            <canvas id="pair-qr" width="232" height="232" aria-label="QR temporaneo per collegare il dispositivo"></canvas>
+            <code id="pair-code"></code>
+            <div class="btn-row"><button class="act" id="pair-copy">Copia codice</button><button class="act primary" id="pair-approve">Approva dispositivo</button></div>
+            <p class="note" id="pair-status"></p>
+          </div>
+          <label for="pair-paste">Oppure incolla il codice ricevuto</label>
+          <textarea id="pair-paste" rows="3" placeholder="Codice temporaneo"></textarea>
+          <div class="btn-row"><button class="act primary" id="pair-redeem">Collega questo dispositivo</button><button class="act" id="pair-finish">Controlla approvazione</button></div>
+          <div class="settings-subhead">Dispositivi collegati</div>
+          <div class="group" id="sync-devices"></div>
+          <div class="btn-row"><button class="act danger" id="sync-delete">Elimina dati sincronizzati</button></div>
+          <p class="note">Cancella spazio, dispositivi e journal cifrato dal server. I dati già presenti su questo dispositivo restano locali.</p>
+        </div>
+      </section>
+
+      <section data-settings-page="experience">
         <div class="sec-head">Esperienza</div>
         <div class="group">
           <div class="switchrow hidden"><span>Suoni</span><button class="sw" id="sw-sound"></button></div>
@@ -3016,7 +3125,7 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
         <p class="note hidden" id="music-note"></p>
       </section>
 
-      <section class="hidden">
+      <section class="hidden" data-settings-page="audio">
         <div class="sec-head">Suoni personali</div>
         <div class="group" id="list-sfx"></div>
         <div class="btn-row"><button class="act primary" id="btn-cerchio">Usa i suoni Cerchio</button><button class="act" id="btn-addsfx">Aggiungi suono</button><button class="act" id="btn-clearsfx">Rimuovi tutti</button></div>
@@ -3024,7 +3133,7 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
         <p class="note">Tocca <b>Usa i suoni Cerchio</b> per attivare in un colpo gli 8 livelli incorporati + il sigillo (niente file da scaricare). Oppure carica i tuoi: fino a 8 livelli in intensità crescente — il combo 1 suona il primo, e così via su per la scala. Al sigillo suona il suono dedicato. Restano solo su questo telefono.</p>
       </section>
 
-      <section class="hidden">
+      <section class="hidden" data-settings-page="audio">
         <div class="sec-head">Suoni dell'app</div>
         <div class="switchrow"><span>Suoni dell'app</span><button class="sw" id="sw-appaudio"></button></div>
         <div class="group" id="list-snd-events"></div>
@@ -3046,7 +3155,7 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
            guardando lo schermo: se una riga spiega una cosa che si capisce da
            sola, quella riga e da togliere - e se una cosa ha bisogno di essere
            spiegata due volte, e la cosa a essere sbagliata, non la spiegazione. -->
-      <section>
+      <section data-settings-page="help">
         <div class="sec-head">Come si usa</div>
         <p class="note">Tocca il cerchio e parla. Toccalo di nuovo per fermare. Dopo puoi rileggere e scegliere Butta o Tieni. Oppure scrivi: è lo stesso.</p>
         <p class="note">Le cose che dici di voler fare non devi segnartele: restano nella lista da sole, e ci restano finché non le fai. Nessuno ti mette fretta se passa una settimana.</p>
@@ -3057,19 +3166,19 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
         <p class="note">Tredici capitoli brevi, con i passaggi meno intuitivi spiegati uno per uno. Compresa la versione Generativa, se un giorno ti interessa.</p>
       </section>
 
-      <section>
+      <section data-settings-page="help">
         <div class="sec-head">I tuoi dati</div>
-        <p class="note">Quello che scrivi resta su questo telefono. Non c'è un server che lo riceve, perché non c'è un server: nessuno lo legge, nemmeno chi ha fatto l'app. Non c'è un account, non c'è pubblicità, non ci sono statistiche.</p>
-        <p class="note">Distinguiamo tre cose diverse. <b>Quello che Sentiero manda</b>: le tue parole escono per volontà dell'app in un caso solo, e lo decidi tu — è la chiave qui sotto. <b>Quello che fa il telefono</b>: la dettatura non è nostra, ed è il browser o il sistema a trasformare la voce in testo, qui dentro o sui propri server. <b>Quello che l'app scarica</b>: soltanto i file statici necessari alla PWA; nessun modello IA viene più scaricato sul telefono.</p>
-        <p class="note">Cosa esce comunque, e non sono tue parole: quando apri l'indirizzo, GitHub — che ospita l'app — vede il tuo indirizzo IP come farebbe qualunque sito. Una volta installata, l'app funziona senza rete. Quando parli, è la dettatura del tuo browser a trasformare la voce in testo, e a seconda del telefono può farlo lì o sui server di chi l'ha fatta: Sentiero riceve solo il testo. Se accendi la posizione, resta nel diario qui e non va da nessuna parte.</p>
-        <p class="note">E infine la sola cosa tua che può uscire per volontà di Sentiero: se metti la chiave qui sotto, da quel momento il testo necessario alla funzione viene mandato direttamente a Google Gemini API con il tuo progetto. Togli la chiave e smette.</p>
-        <p class="note">Senza chiave, <b>Sentiero non manda quello che scrivi né a Gemini né a un proprio server</b> — un proprio server non ce l'ha. Un confine che però non è nostro e va detto: se usi la voce, la dettatura la fa il browser o il telefono, e a seconda del modello può trascriverla qui dentro oppure sui server di chi l'ha fatta. Sentiero riceve solo il testo che torna indietro. Su quel pezzo non possiamo prometterti niente, perché non è nostro: possiamo solo dirti che c'è.</p>
-        <p class="note">Copia di tutto te la fai da qui, quando vuoi. Cancellare l'app cancella tutto: non ne esiste una copia altrove da chiedere indietro.</p>
+        <p class="note">Per impostazione iniziale, quello che scrivi resta su questo telefono. Non c'è pubblicità né telemetria. Solo se attivi Dispositivi, Sentiero invia al server scelto operazioni cifrate: il server vede metadati tecnici, non il testo del diario.</p>
+        <p class="note">Distinguiamo quattro cose. <b>Sincronizzazione facoltativa</b>: invia delta cifrati, mai la chiave Gemini. <b>Gemini</b>: con la tua chiave, il testo necessario va direttamente a Google. <b>Dettatura</b>: è il browser o il sistema a trasformare la voce, qui o sui propri server. <b>File dell'app</b>: sono soltanto le risorse statiche necessarie alla PWA.</p>
+        <p class="note">Quando apri l'indirizzo, l'hosting vede il tuo IP come qualunque sito. Se attivi Dispositivi, anche il server di sincronizzazione vede IP, identificatore casuale del dispositivo, tempi e dimensione dei pacchetti cifrati. Posizione, suoni e chiave Gemini restano locali.</p>
+        <p class="note">Se metti la chiave qui sotto, il testo necessario alla singola funzione viene mandato direttamente a Google Gemini API con il tuo progetto. Togli la chiave e smette; la sincronizzazione non la copia sugli altri dispositivi.</p>
+        <p class="note"><b>Senza chiave, Sentiero non manda quello che scrivi a Gemini.</b> Senza sincronizzazione attiva non manda neppure delta al server. Se usi la voce, la dettatura resta invece responsabilità del browser o del telefono: Sentiero riceve solo il testo che torna.</p>
+        <p class="note">Backup e sincronizzazione restano distinti. Il backup è un file tuo; la sincronizzazione è un journal cifrato tra dispositivi. Se la attivi, prima di eliminare l'app revoca il dispositivo e conserva un backup.</p>
         <div class="btn-row"><button class="act" id="btn-privacy">Leggi tutto</button></div>
         <p class="note">Titolare del trattamento: Davide Cuzzilla — cuzzilladavide98@gmail.com</p>
       </section>
 
-      <section>
+      <section data-settings-page="gemini">
         <div class="sec-head">La versione Generativa</div>
         <input type="password" id="gemini-key" placeholder="Chiave Gemini">
         <p class="note"><strong>Senza chiave l'app si chiama Sentiero</strong> e continua a funzionare per diario, cose da fare, ricorrenze, anello, Stanza scritta e voci locali. Le funzioni che richiedono comprensione generativa — come Desiderio e la lettura di una pagina da foto — restano spente. Non serve nessun collegamento e non costa niente.</p>
@@ -3090,7 +3199,7 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
         <p class="note" id="gemini-usage-note"></p>
       </section>
 
-      <section>
+      <section data-settings-page="planning">
         <div class="sec-head">Le cose che si ripetono</div>
         <div class="group" id="list-sched"></div>
         <input type="text" id="new-task-txt" placeholder="es. camminare mezz’ora">
@@ -3112,7 +3221,7 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
         <div class="btn-row"><button class="act primary" id="btn-addtask">Aggiungi</button><button class="act hidden" id="btn-annulla-mod">Lascia stare</button></div>
       </section>
 
-      <section>
+      <section data-settings-page="planning">
         <!-- ══ v271 — QUEST SBLOCCABILI ═══════════════════════════════════════
              Sta subito dopo «le cose che si ripetono» perche i prerequisiti si
              scelgono soprattutto li: chi ha appena creato un rituale e a un
@@ -3132,7 +3241,7 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
         </div>
       </section>
 
-      <section>
+      <section data-settings-page="language">
         <!-- v215: la lingua. «Come il telefono» e la scelta di partenza: chi
              riceve l'app non deve configurare niente perche funzioni. -->
         <div class="sec-head">Lingua</div>
@@ -3142,7 +3251,7 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
         <p class="note" id="lingua-note"></p>
       </section>
 
-      <section>
+      <section data-settings-page="data">
         <div class="sec-head">Dati</div>
         <div class="btn-row">
           <button class="act primary" id="btn-export-full">Backup completo</button>
@@ -3157,6 +3266,27 @@ body.theme-lcd #today-stage-layer .ts-wave{filter:none}
     </div>
   </main>
 
+</div>
+<div id="quest-editor" class="quest-editor hidden" role="dialog" aria-modal="true" aria-labelledby="qedit-title">
+  <div class="quest-editor-card">
+    <div class="quest-editor-head">
+      <button id="qedit-close" class="sheet-back" aria-label="Chiudi modifica">‹</button>
+      <h2 id="qedit-title">Modifica Quest</h2>
+      <button id="qedit-save" class="sheet-save">Salva</button>
+    </div>
+    <label for="qedit-titolo">Titolo</label>
+    <input id="qedit-titolo" type="text" maxlength="200" autocomplete="off">
+    <label for="qedit-note">Nota</label>
+    <textarea id="qedit-note" maxlength="300" rows="3"></textarea>
+    <div class="qedit-grid">
+      <div><label for="qedit-quando">Giorno</label><input id="qedit-quando" type="date"></div>
+      <div><label for="qedit-ora">Ora</label><input id="qedit-ora" type="time"></div>
+    </div>
+    <fieldset class="qedit-prio"><legend>Priorità</legend>
+      <button type="button" data-qprio="1">Alta</button><button type="button" data-qprio="2">Media</button><button type="button" data-qprio="3">Normale</button>
+    </fieldset>
+    <p class="note">Giorno e ora restano locali: non vengono convertiti in UTC quando cambi dispositivo.</p>
+  </div>
 </div>
 <canvas id="fx"></canvas>
 <div id="flash"></div>
@@ -3268,6 +3398,18 @@ function sanitizeQuests(arr){
     if(out.length>=LIMITS.QMAX) break;
   }
   return out;
+}
+/* v273 — modifica in posto: l'identita della Quest non cambia. Date e ore sono
+   stringhe civili locali, mai Date ISO, quindi 07:00 resta 07:00 su ogni fuso. */
+function aggiornaQuestInPlace(q,patch){
+  if(!q||typeof q!=='object'||!patch||typeof patch!=='object') return false;
+  const titolo=clampStr(patch.titolo,LIMITS.TITLE).trim(); if(!titolo) return false;
+  const quando=String(patch.quando||''),ora=String(patch.ora||'');
+  if(quando&&!/^\d{4}-\d{2}-\d{2}$/.test(quando)) return false;
+  if(ora&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(ora)) return false;
+  q.titolo=titolo; q.note=clampStr(patch.note,LIMITS.NOTE); q.quando=quando; q.ora=ora;
+  q.prio=[1,2,3].includes(Number(patch.prio))?Number(patch.prio):3;
+  return true;
 }
 function questSortKey(q){ return (q.fatto?'1':'0')+String(q.prio||3)+(q.quando||'9999-99-99')+' '+(q.ora||'99:99'); }
 function sortQuests(qs){ return [...qs].sort((a,b)=>{const x=questSortKey(a),y=questSortKey(b);return x<y?-1:x>y?1:0;}); }
@@ -3386,7 +3528,7 @@ function sanitizeDiary(arr){
     const testo=clampStr(e.testo,LIMITS.DIARY);
     if(!testo) continue;
     const iso=(typeof e.iso==='string'&&!isNaN(Date.parse(e.iso)))?e.iso:new Date().toISOString();
-    const v={data:clampStr(e.data,10),iso,testo,raw:clampStr(e.raw,LIMITS.RAW),born:lst(e.born),done:lst(e.done),pos:posOf(e.pos),seme:clampStr(e.seme||'',40)};
+    const v={id:clampStr(e.id,40)||clampStr(e._syncId,40)||coreUid(),data:clampStr(e.data,10),iso,testo,raw:clampStr(e.raw,LIMITS.RAW),born:lst(e.born),done:lst(e.done),pos:posOf(e.pos),seme:clampStr(e.seme||'',40)};
     /* v200: qui mancava "dom", e questo gira a OGNI avvio. La v197 aveva insegnato
        all'app a salvare la domanda della Chiamata a terra accanto alla risposta;
        il sanitizzatore la ributtava via al riavvio successivo, e poi save() riscriveva
@@ -3422,7 +3564,7 @@ function sanitizeQuestLog(arr){
     const day=(typeof e.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.day))?e.day:'';
     if(!day) continue;
     const nata=(typeof e.nata==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.nata))?e.nata:'';
-    const v={titolo:titolo,day:day,nata:nata};
+    const v={_syncId:clampStr(e._syncId,40)||coreUid(),titolo:titolo,day:day,nata:nata};
     if(e.lasciata===1) v.lasciata=1;                                  /* v148: lasciata andare, non compiuta */
     out.push(v);
   }
@@ -3494,7 +3636,7 @@ function sanitizeObsLines(arr){   /* memoria del sussurro: le ultime righe dette
   for(const n of arr){
     if(!n||typeof n!=='object') continue;
     const riga=clampStr(n.riga,400).trim(); if(!riga) continue;
-    const v={iso:(typeof n.iso==='string')?n.iso.slice(0,40):new Date().toISOString(),task:clampStr(n.task,120).trim(),riga:riga};
+    const v={_syncId:clampStr(n._syncId,40)||coreUid(),iso:(typeof n.iso==='string')?n.iso.slice(0,40):new Date().toISOString(),task:clampStr(n.task,120).trim(),riga:riga};
     if(n.verdetto===1||n.verdetto===0) v.verdetto=n.verdetto;         /* v147 */
     out.push(v);
   }
@@ -3629,7 +3771,7 @@ function sanitizeFrutti(arr){
   for(const e of arr.slice(-40)){
     if(!e||typeof e!=='object') continue;
     const tk=clampStr(e.tk,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(tk)) continue;
-    out.push({tk:tk,lettura:clampStr(e.lettura,400),albero:clampStr(e.albero,240),
+    out.push({_syncId:clampStr(e._syncId,40)||('frutto-'+tk),tk:tk,lettura:clampStr(e.lettura,400),albero:clampStr(e.albero,240),
       alberoId:clampStr(e.alberoId,60),mossa:clampStr(e.mossa,240),chiuso:e.chiuso===true,visto:e.visto===true,silenzio:e.silenzio===true});
   }
   return out;
@@ -3639,7 +3781,7 @@ function sanitizeBanco(arr){
   const out=[];
   for(const e of arr.slice(-24)){
     if(!e||typeof e!=='object') continue;
-    const v={iso:clampStr(e.iso,24),ver:clampStr(e.ver,24),task:clampStr(e.task,120),
+    const v={_syncId:clampStr(e._syncId,40)||coreUid(),iso:clampStr(e.iso,24),ver:clampStr(e.ver,24),task:clampStr(e.task,120),
              prima:clampStr(e.prima,300),dopo:clampStr(e.dopo,300)};
     if(!v.iso) continue;
     if(e.model) v.model=clampStr(e.model,40);
@@ -3780,6 +3922,7 @@ function sanitizeState(raw,def){
     unlockRules:sanitizeUnlockRules(raw.unlockRules),
     unlockDone:sanitizeUnlockDone(raw.unlockDone),
     promVisti:sanitizePromVisti(raw.promVisti),
+    schemaVersion:2,
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
       voice:!!(raw.settings&&raw.settings.voice===true),
@@ -4276,7 +4419,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.272.7 · 2026-08-26';
+const APP_VERSION='v60S.273.0 · 2026-08-28';
 
 /* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
    non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
@@ -4302,6 +4445,12 @@ const APP_VERSION='v60S.272.7 · 2026-08-26';
    persona. Nessun numero che venga da un archivio reale. Nessun titolo scritto
    da qualcuno. Gli esempi, se servono, si inventano. */
 const NOVITA=[
+ {titolo:'Le tue cose, anche sull’altro dispositivo',righe:[
+   'Altro adesso è diviso in pagine brevi: Dispositivi, Esperienza, Versione Generativa, Pianificazione, Lingua, Dati e Guida. Non c’è più una pagina larga da inseguire di lato.',
+   'Una Quest si può cambiare senza cancellarla: titolo, nota, giorno, ora e priorità restano legati alla stessa Quest e agli stessi prerequisiti.',
+   'La sincronizzazione è facoltativa e resta local-first: lavori offline, le modifiche aspettano in coda e poi si uniscono campo per campo. Il server riceve operazioni cifrate, mai la chiave Gemini.',
+   'Per collegare un dispositivo usi un invito temporaneo, confronti un codice sui due schermi e approvi da quello già collegato.'
+ ]},
  {titolo:'La spunta ha un nuovo movimento · senza rallentare il resto',righe:[
    'Quando completi una cosa, il movimento resta nella sua riga: non parte più una stella e non compare più una parola-premio al centro dello schermo.',
    'La prima parte della giornata reagisce in blu, poi il gesto acquista forza in rosso e nei passi più avanzati arriva al viola. Conta quante cose risultano davvero fatte oggi, non quanto velocemente le hai spuntate.',
@@ -4702,21 +4851,22 @@ window.manoAlLavoro=manoAlLavoro;
        del sistema. Non e nostro, e non lo controlliamo noi.
      · DUE PERSONE SULLO STESSO PROFILO DELLO STESSO BROWSER CONDIVIDONO LO
        STESSO SENTIERO. Non c'e niente qui dentro che lo impedisca o lo avvisi.
-     · due profili, due dispositivi, o due domini diversi = due Sentieri che non
-       si parlano mai e non si sincronizzano mai.
+     · due profili, due dispositivi o due domini diversi restano separati per
+       impostazione predefinita. Possono parlarsi soltanto se la persona attiva
+       esplicitamente Dispositivi e completa il pairing cifrato.
      · in incognito lo stato esiste finche la finestra e aperta, poi sparisce.
-     · niente e cifrato: chi ha accesso al profilo del browser o a un backup completo
-       del dispositivo puo leggere anche la chiave Gemini nello storage del browser.
-       Il Backup senza chiave la esclude; il Backup completo la include soltanto dopo conferma esplicita.
+     · lo storage locale non e cifrato: chi ha accesso al profilo del browser o a
+       un backup completo del dispositivo puo leggere anche la chiave Gemini nello
+       storage del browser. Il journal remoto opzionale e invece cifrato end-to-end;
+       il Backup senza chiave esclude Gemini, quello completo la include soltanto
+       dopo conferma esplicita.
      · cancellare i dati del sito cancella tutto, e l'unico recupero e l'export
        che la persona si e fatta da sola.
 
    COSA NON SI FA, e perche:
-     non si aggiungono account o profili multipli. Servirebbero a distinguere
-     persone che oggi non ci sono, e per essere veri vorrebbero un server o
-     almeno una password - cioe esattamente le due cose che questo progetto ha
-     deciso di non avere. Se un giorno serviranno, sara una decisione dichiarata,
-     non un effetto collaterale.
+     non si aggiungono account personali o profili multipli. La sincronizzazione
+     opzionale usa identificatori casuali e token per dispositivo, senza email o
+     password; non prova quindi a distinguere persone diverse sullo stesso profilo.
    Difeso da provaChiunque, sezione D2. */
 const LS='sentiero-v1';
 const LS_PRE_IMPORT='sentiero-pre-import';
@@ -4790,7 +4940,7 @@ const defaultState={
   unlockDone:{},       /* le occorrenze gia sbloccate: chiave -> giorno */
   promVisti:{},        /* i promemoria a 14 giorni gia visti, per occorrenza */
   checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],frutti:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
-  settings:{sound:true,voice:false,notif:false,uiTheme:'classico'}
+  schemaVersion:2,settings:{sound:true,voice:false,notif:false,uiTheme:'classico'}
 };
 let S=load();
 function safeGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
@@ -4818,6 +4968,16 @@ function load(){
   try{
     const rt=safeGet(LS_REG);
     if(rt!=null){ const ra=JSON.parse(rt); if(Array.isArray(ra)) (raw||(raw={})).registro=ra; }
+  }catch(_){}
+  /* v273 — migrazione prima del sanitizzatore: la fotografia conserva il JSON
+     originale e gli identificatori stabili nascono prima che lo stato venga
+     ricostruito. La migrazione e idempotente e la chiave Gemini resta fuori. */
+  try{
+    if(raw){
+      if(Number(raw.schemaVersion||0)<2&&!safeGet('sentiero-pre-migration-v2'))
+        localStorage.setItem('sentiero-pre-migration-v2',JSON.stringify({schema:Number(raw.schemaVersion)||0,at:new Date().toISOString(),state:raw}));
+      if(window.SentieroSync) window.SentieroSync.ensureEntityIds(raw);
+    }
   }catch(_){}
   const st=sanitizeState(raw||{},defaultState);
   if(txt!=null&&raw!=null&&!fromBak){ try{ localStorage.setItem(LS+'-bak',txt); }catch(_){} }   /* avvio pulito: backup = ultimo stato buono */
@@ -4867,6 +5027,7 @@ function _scriviStato(){
     if(!ok) toast('Memoria piena o navigazione privata: dati non salvati');
   }
   finally{ S.registro=reg; }
+  if(ok){ try{ if(window.SentieroSync) window.SentieroSync.capture(S); }catch(_){} }
   return ok;
 }
 
@@ -7967,7 +8128,13 @@ async function askDistill(transcript){
 '15. PESO — il campo piu delicato del contratto, e quello dove sbagliare in eccesso costa quanto sbagliare in difetto. Metti "peso":true SOLO se il racconto porta sofferenza grave e reale: un lutto, una malattia seria propria o di una persona vicina, un pensiero di farsi del male o di non esserci piu, violenza o paura in casa, un crollo che non e la stanchezza di una giornata. In tutti gli altri casi "peso":false. NON sono peso e devono restare false: la giornata storta, la rabbia per il lavoro, la stanchezza, lo sfogo, il litigio, il non avere voglia, il sentirsi indietro, la tristezza che passa - sono la materia normale di un diario, e un diario che si allarma a ogni lunedi storto diventa inutilizzabile. Nel dubbio: false. Quando "peso" e true lascia VUOTI "quests", "rituali" e "attriti": da un dolore non nasce un compito. "diario" si compila sempre, come al punto 8, con le parole dell\'utente intatte.\n'+
 'Rispondi ESCLUSIVAMENTE con un oggetto JSON, nessun testo prima o dopo:\n'+
 '{"diario":"...","quests":[{"id":"...","titolo":"...","note":"","quando":"","ora":"","prio":3,"fatto":false}],"rituali":[{"titolo":"...","days":[0],"time":""}],"letture":[{"id":"...","stato":"completata","prova":"...","variante":null,"nuovo_titolo":null}],"menzioni":["id"],"attriti":[{"id":"...","frase":"..."}],"sguardo":{"livello":1,"segnale":""},"peso":false,"non_eseguibile":""}';
-  const distUser=(window._semeAttivo?'DOMANDA SEMINATA (il racconto risponde a questa):\n'+window._semeAttivo.testo+'\n\n':'')+'QUEST ESISTENTI:\n'+JSON.stringify(S.quests)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript;
+  /* v273 — il modello riceve il delta operativo, non l'archivio. Campi storici
+     (nata, monte) e Quest concluse remote non cambiano nessuna decisione della
+     distillazione: si tengono solo le ultime venti concluse per riconoscere una
+     menzione retrospettiva. */
+  const _qA=(S.quests||[]).filter(q=>q&&!q.fatto),_qD=(S.quests||[]).filter(q=>q&&q.fatto).slice(-20);
+  const _qCtx=_qA.concat(_qD).slice(-100).map(q=>({id:q.id,titolo:q.titolo,note:q.note||'',quando:q.quando||'',ora:q.ora||'',prio:q.prio||3,fatto:!!q.fatto}));
+  const distUser=(window._semeAttivo?'DOMANDA SEMINATA (il racconto risponde a questa):\n'+window._semeAttivo.testo+'\n\n':'')+'QUEST ESISTENTI:\n'+JSON.stringify(_qCtx)+'\n\nTASK GIÀ PIANIFICATE OGGI: '+JSON.stringify(sched)+'\n\nRITUALI ESISTENTI:\n'+JSON.stringify((S.scheduled||[]).map(t=>({id:t.id,titolo:t.titolo,days:t.days,time:t.time})))+'\n\nTRASCRITTO GREZZO ('+todayKey()+'):\n'+transcript;
   /* v272.3 — DISTILLAZIONE: ENDPOINT DEDICATO, NON INTERACTIONS.
      Il test reale su iPhone ha mostrato due timeout consecutivi da 10 s su
      Interactions mentre lo stesso progetto Gemini rispondeva ad altri task.
@@ -11077,7 +11244,7 @@ async function _geminiGenerate(opt){
 
 /* Provider-neutral entry point. Il dominio passa intenzione + contratto; solo
    questo adapter conosce endpoint, header, response timeline ed errori Google. */
-function aiCall(opt){
+function _aiCallEnqueue(opt){
   opt=opt||{};
   if(!GEMINI_KEY) return Promise.resolve({err:'chiave'});
   if(('onLine' in navigator)&&navigator.onLine===false) return Promise.resolve({err:'offline'});
@@ -11094,6 +11261,18 @@ function aiCall(opt){
     _aiQueue.sort((a,b)=>b.p-a.p||a.id-b.id);
     _aiPump();
   });
+}
+/* v273 — due renderer che chiedono nello stesso istante lo stesso lavoro
+   condividono la richiesta già in volo. Nessun risultato viene conservato e i
+   lavori cancellabili/multimediali restano indipendenti. */
+const _aiInflight=new Map();
+function aiCall(opt){
+  opt=opt||{};
+  if(opt.signal||opt.media) return _aiCallEnqueue(opt);
+  const key=String(opt.task||'')+'\u0000'+String(opt.system||'')+'\u0000'+String(opt.user||'')+'\u0000'+String(opt.reasoning||'');
+  if(_aiInflight.has(key)) return _aiInflight.get(key);
+  const p=Promise.resolve(_aiCallEnqueue(opt)).finally(()=>_aiInflight.delete(key));
+  _aiInflight.set(key,p); return p;
 }
 function _aiPump(){
   while(_aiActive<AI_MAX_CONCURRENCY&&_aiQueue.length){
@@ -12037,7 +12216,7 @@ function attachNota(div,id,titolo,isQuest){
 
   let t=null,x0=0,y0=0;
   div.addEventListener('pointerdown',e=>{
-    if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal')) return;
+    if(e.target&&e.target.closest&&e.target.closest('.chk,.essbtn,.del,.cal,.editq')) return;
     x0=e.clientX; y0=e.clientY;
     t=setTimeout(()=>{ t=null; try{ haptic(); }catch(_){} apriNotaBox(div,id,titolo,isQuest); },550);
   });
@@ -14966,6 +15145,37 @@ function inizialeQuest(titolo,id){
   if(!/\p{L}/u.test(c0)) return escapeHtml(t);
   return '<span class="ini">'+escapeHtml(c0.toUpperCase())+'</span>'+escapeHtml(t.slice(1));
 }
+let _questEditId='',_questEditPrio=3,_questEditFocus=null;
+function chiudiQuestEditor(){
+  const box=document.querySelector('#quest-editor'); if(!box) return;
+  box.classList.add('hidden'); _questEditId='';
+  try{ if(_questEditFocus&&document.contains(_questEditFocus)) _questEditFocus.focus(); }catch(_){}
+}
+function apriQuestEditor(id){
+  const q=(S.quests||[]).find(x=>x&&x.id===id),box=document.querySelector('#quest-editor'); if(!q||!box) return;
+  _questEditId=q.id; _questEditPrio=q.prio||3; _questEditFocus=document.activeElement;
+  document.querySelector('#qedit-titolo').value=q.titolo||'';
+  document.querySelector('#qedit-note').value=q.note||'';
+  document.querySelector('#qedit-quando').value=q.quando||'';
+  document.querySelector('#qedit-ora').value=q.ora||'';
+  document.querySelectorAll('[data-qprio]').forEach(b=>b.classList.toggle('on',Number(b.dataset.qprio)===_questEditPrio));
+  box.classList.remove('hidden'); setTimeout(()=>{ try{document.querySelector('#qedit-titolo').focus();}catch(_){} },40);
+}
+function salvaQuestEditor(){
+  const q=(S.quests||[]).find(x=>x&&x.id===_questEditId); if(!q) return chiudiQuestEditor();
+  const patch={titolo:document.querySelector('#qedit-titolo').value,note:document.querySelector('#qedit-note').value,
+    quando:document.querySelector('#qedit-quando').value,ora:document.querySelector('#qedit-ora').value,prio:_questEditPrio};
+  if(!aggiornaQuestInPlace(q,patch)){ toast('Controlla titolo, giorno e ora'); return; }
+  if(!salvaSubito()){ toast('La modifica non è stata salvata'); return; }
+  chiudiQuestEditor(); renderTodayQuests([]); renderQuests([]); updateRing(); toast('Quest aggiornata');
+}
+try{
+  document.querySelector('#qedit-close').onclick=chiudiQuestEditor;
+  document.querySelector('#qedit-save').onclick=salvaQuestEditor;
+  document.querySelectorAll('[data-qprio]').forEach(b=>b.onclick=()=>{ _questEditPrio=Number(b.dataset.qprio)||3; document.querySelectorAll('[data-qprio]').forEach(x=>x.classList.toggle('on',x===b)); });
+  document.querySelector('#quest-editor').onclick=e=>{ if(e.target&&e.target.id==='quest-editor') chiudiQuestEditor(); };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!document.querySelector('#quest-editor').classList.contains('hidden')) chiudiQuestEditor(); });
+}catch(_){}
 function buildQuestRow(q,tk,domani,bornIds,rerender){
   const {when,future}=questWhen(q,tk,domani);
   const p=q.prio||3;
@@ -14977,8 +15187,9 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
   div.innerHTML='<span class="prio prio-'+p+'"></span>'+
     '<button class="chk" aria-label="Completa"><svg class="chk-mark" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>'+
     '<span class="txt"><span class="ttl">'+inizialeQuest(q.titolo,q.id)+'</span>'+when+(q.note?'<span class="meta">'+escapeHtml(q.note)+'</span>':'')+'</span>'+
-    calBtn+
-    '<button class="del" aria-label="Elimina">&#215;</button>';
+     calBtn+
+     '<button class="editq" aria-label="Modifica quest"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4z"/></svg></button>'+
+     '<button class="del" aria-label="Elimina">&#215;</button>';
   div.querySelector('.chk').onclick=()=>{
     if(div.dataset.busy) return;
     div.dataset.busy='1';
@@ -15015,6 +15226,7 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
     else { div.classList.remove('done'); sUndo(); updateRing(); const left=completateOggi(S,todayKey(),dowOf()); const ms=Math.max(QUEST_MOTION.undo(div,completateOggi(S,todayKey(),dowOf())),TODAY_STAGE.undo(div,left)); setTimeout(rerender,Math.max(80,ms+20)); }
   };
   const cb=div.querySelector('.cal'); if(cb) cb.onclick=(e)=>{ e.stopPropagation(); addToCalendar(q); };
+  const eb=div.querySelector('.editq'); if(eb) eb.onclick=(e)=>{ e.stopPropagation(); apriQuestEditor(q.id); };
   div.querySelector('.del').onclick=(e)=>{
     e.stopPropagation();
     /* v176: prima spariva e basta. Ora si tiene il posto in cui stava, e per cinque secondi
@@ -16753,6 +16965,121 @@ function _unlSalva(){
   try{ sbloccaOra('regola'); }catch(_){}
   toast(eraMod?'Cambiata':'Regola aggiunta');
 }
+let _settingsPage='',_pairToken='',_pairInvite='',_pairReady=false;
+const SETTINGS_TITLES={devices:'Dispositivi',experience:'Esperienza',gemini:'Versione Generativa',planning:'Pianificazione',language:'Lingua',data:'Dati e backup',help:'Guida e privacy',audio:'Suoni'};
+function apriSettingsPage(page){
+  _settingsPage=SETTINGS_TITLES[page]?page:'';
+  const home=document.querySelector('#settings-home'),back=document.querySelector('#settings-back'),title=document.querySelector('#settings-title');
+  if(home) home.classList.toggle('hidden',!!_settingsPage);
+  if(back) back.classList.toggle('hidden',!_settingsPage);
+  if(title) title.textContent=_settingsPage?SETTINGS_TITLES[_settingsPage]:'Altro';
+  document.querySelectorAll('#tab-impostazioni [data-settings-page]').forEach(s=>s.classList.toggle('settings-page-active',s.dataset.settingsPage===_settingsPage));
+  try{ const m=document.querySelector('#app>main'); if(m) m.scrollTop=0; }catch(_){}
+  if(_settingsPage==='devices') caricaSentieroSync().then(()=>renderSyncPanel(true)).catch(()=>{});
+}
+function _syncQuando(ms){ if(!ms)return 'Mai sincronizzato'; try{return 'Ultimo aggiornamento '+new Date(ms).toLocaleString(locale(),{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(_){return 'Ultimo aggiornamento disponibile';} }
+async function renderSyncDevices(){
+  const el=document.querySelector('#sync-devices'); if(!el||!window.SentieroSync||!window.SentieroSync.info().enabled)return;
+  try{
+    const own=window.SentieroSync.info(),list=await window.SentieroSync.listDevices(); el.innerHTML='';
+    list.forEach(d=>{ const row=document.createElement('div'); row.className='sync-device';
+      const revoked=!!d.revoked_at,mine=d.id===own.deviceId;
+      row.innerHTML='<span><b>'+escapeHtml(d.name||'Dispositivo')+(mine?' · questo':'')+'</b><small>'+(revoked?'Revocato':_syncQuando(d.last_seen))+'</small></span>'+(revoked||mine?'':'<button aria-label="Revoca dispositivo">Revoca</button>');
+      const b=row.querySelector('button'); if(b)b.onclick=async()=>{ if(!confirm('Revocare «'+String(d.name||'questo dispositivo')+'»? Non potrà più sincronizzare.'))return; await window.SentieroSync.revokeDevice(d.id); renderSyncDevices(); };
+      el.appendChild(row);
+    });
+  }catch(_){ el.innerHTML='<p class="note">Elenco non raggiungibile. Le modifiche locali restano in coda.</p>'; }
+}
+function renderSyncPanel(loadDevices){
+  if(!window.SentieroSync)return; const x=window.SentieroSync.info();
+  const name=document.querySelector('#sync-name'),endpoint=document.querySelector('#sync-endpoint');
+  document.querySelector('#sync-device-name').textContent=x.deviceName||'Questo dispositivo';
+  document.querySelector('#sync-state').textContent=x.status+(x.pending?(' · '+x.pending+' in coda'):'');
+  document.querySelector('#sync-last').textContent=x.enabled?_syncQuando(x.lastSync):'Le modifiche restano locali e funzionano offline.';
+  if(name&&document.activeElement!==name) name.value=x.deviceName||'';
+  if(endpoint&&document.activeElement!==endpoint) endpoint.value=x.endpoint||'';
+  document.querySelector('#sync-enable').textContent=x.enabled?'Aggiorna nome':'Attiva sincronizzazione';
+  document.querySelector('#sync-now').classList.toggle('hidden',!x.enabled);
+  document.querySelector('#sync-enabled-tools').classList.toggle('hidden',!x.enabled);
+  if(loadDevices&&x.enabled) renderSyncDevices();
+}
+function _b64urlText(text){ const bytes=new TextEncoder().encode(text); let s='';bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function _fromB64url(text){ let s=String(text||'').replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const raw=atob(s),a=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i);return new TextDecoder().decode(a); }
+function _inviteUrl(payload){ const u=new URL(location.href); u.hash='';u.search='';u.searchParams.set('sentieroPair',_b64urlText(payload));return u.toString(); }
+function _invitePayload(text){
+  const t=String(text||'').trim(); if(!t)throw new Error('EMPTY');
+  if(t[0]==='{')return t;
+  const u=new URL(t); const p=u.searchParams.get('sentieroPair'); if(!p)throw new Error('CODE'); return _fromB64url(p);
+}
+let _qrLoader=null;
+function _loadQr(){
+  if(typeof qrcode==='function')return Promise.resolve(); if(_qrLoader)return _qrLoader;
+  _qrLoader=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./vendor/qrcode.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});return _qrLoader;
+}
+let _qrReaderLoader=null;
+function _loadQrReader(){
+  if(typeof jsQR==='function')return Promise.resolve();if(_qrReaderLoader)return _qrReaderLoader;
+  _qrReaderLoader=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./vendor/jsQR.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});return _qrReaderLoader;
+}
+async function _drawPairQr(text){
+  await _loadQr(); const canvas=document.querySelector('#pair-qr'); if(!canvas||typeof qrcode!=='function')throw new Error('QR');
+  const qr=qrcode(0,'M'); qr.addData(text);qr.make(); const n=qr.getModuleCount(),quiet=4,cell=Math.max(2,Math.floor(232/(n+quiet*2))),size=(n+quiet*2)*cell;
+  canvas.width=canvas.height=size; const c=canvas.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,size,size);c.fillStyle='#000';
+  for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(qr.isDark(r,col))c.fillRect((col+quiet)*cell,(r+quiet)*cell,cell,cell);
+}
+async function _leggiQrFile(file){
+  if(!file)throw new Error('QR_EMPTY');
+  let bmp=null;
+  try{bmp=await createImageBitmap(file);}catch(_){
+    bmp=await new Promise((ok,no)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(u);ok(img);};img.onerror=()=>{URL.revokeObjectURL(u);no(new Error('QR_IMAGE'));};img.src=u;});
+  }
+  try{
+    if('BarcodeDetector' in window){
+      try{const codes=await new BarcodeDetector({formats:['qr_code']}).detect(bmp);if(codes.length&&codes[0].rawValue)return codes[0].rawValue;}catch(_){}
+    }
+    await _loadQrReader();
+    const ow=bmp.width||bmp.naturalWidth,oh=bmp.height||bmp.naturalHeight,max=1600,scale=Math.min(1,max/Math.max(ow,oh)),w=Math.max(1,Math.round(ow*scale)),h=Math.max(1,Math.round(oh*scale));
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bmp,0,0,w,h);
+    const found=jsQR(x.getImageData(0,0,w,h).data,w,h,{inversionAttempts:'attemptBoth'});if(found&&found.data)return found.data;
+  }finally{try{if(bmp&&bmp.close)bmp.close();}catch(_){}}
+  throw new Error('QR_EMPTY');
+}
+function _syncMessage(text){ const p=document.querySelector('#pair-status');if(p)p.textContent=text; }
+
+try{
+  document.querySelectorAll('[data-settings-open]').forEach(b=>b.onclick=()=>apriSettingsPage(b.dataset.settingsOpen));
+  document.querySelector('#settings-back').onclick=()=>apriSettingsPage('');
+  document.querySelector('#sync-enable').onclick=async()=>{
+    const b=document.querySelector('#sync-enable'),endpoint=document.querySelector('#sync-endpoint').value.trim(),name=document.querySelector('#sync-name').value.trim();
+    b.disabled=true;
+    try{
+      const x=window.SentieroSync.info();
+      if(x.enabled){ if(name&&name!==x.deviceName){ await window.SentieroSync.renameDevice(x.deviceId,name); } toast('Nome dispositivo aggiornato'); }
+      else { if(!/^https:\/\//i.test(endpoint))throw new Error('Serve un indirizzo HTTPS'); await window.SentieroSync.createSpace(endpoint,name); toast('Sincronizzazione attiva'); }
+      renderSyncPanel(true);
+    }catch(e){toast(String(e&&e.message||'Server non raggiungibile'));}finally{b.disabled=false;}
+  };
+  document.querySelector('#sync-now').onclick=async()=>{ await window.SentieroSync.syncNow();renderSyncPanel(true); };
+  document.querySelector('#sync-delete').onclick=async()=>{if(!confirm('Eliminare dal server tutto il journal sincronizzato e revocare tutti i dispositivi? I dati locali resteranno qui.'))return;try{await window.SentieroSync.deleteSpace();toast('Dati sincronizzati eliminati');renderSyncPanel(false);}catch(_){toast('Eliminazione non riuscita');}};
+  document.querySelector('#pair-create').onclick=async()=>{
+    try{ const r=await window.SentieroSync.createPairing();_pairToken=r.token;_pairInvite=_inviteUrl(r.payload);_pairReady=false;
+      document.querySelector('#pair-code').textContent=_pairInvite;document.querySelector('#pair-invite').classList.remove('hidden');await _drawPairQr(_pairInvite);_syncMessage('Invito pronto · scade tra dieci minuti.');
+    }catch(e){toast('Non riesco a creare l’invito');}
+  };
+  document.querySelector('#pair-copy').onclick=async()=>{try{await navigator.clipboard.writeText(_pairInvite);toast('Codice copiato');}catch(_){toast('Seleziona e copia il codice');}};
+  document.querySelector('#pair-approve').onclick=async()=>{
+    try{
+      if(!_pairReady){ const s=await window.SentieroSync.pairingStatus(_pairToken);if(s.status!=='pending-confirmation')return _syncMessage('Apri l’invito sull’altro dispositivo, poi riprova.');_pairReady=true;_syncMessage('Confronta il codice '+s.confirmationCode+' su entrambi i dispositivi. Se coincide, tocca di nuovo Approva.');document.querySelector('#pair-approve').textContent='Conferma e approva';return; }
+      await window.SentieroSync.approvePairing(_pairToken);_syncMessage('Dispositivo approvato.');renderSyncDevices();
+    }catch(e){_syncMessage('Approvazione non riuscita o invito scaduto.');}
+  };
+  document.querySelector('#pair-scan').onclick=()=>document.querySelector('#pair-image').click();
+  document.querySelector('#pair-image').onchange=async e=>{try{const t=await _leggiQrFile(e.target.files&&e.target.files[0]);document.querySelector('#pair-paste').value=t;}catch(err){toast(err&&err.message==='QR_UNSUPPORTED'?'Questo browser non legge QR: incolla il codice':'QR non leggibile');}e.target.value='';};
+  document.querySelector('#pair-redeem').onclick=async()=>{try{const p=_invitePayload(document.querySelector('#pair-paste').value),parsed=JSON.parse(p),host=new URL(parsed.endpoint).host;if(!confirm('Collegare questo dispositivo al servizio '+host+'? Al termine i dati Sentiero presenti qui saranno sostituiti dallo spazio collegato; una copia locale pre-pairing verrà conservata.'))return;const r=await window.SentieroSync.redeemPairing(parsed,document.querySelector('#sync-name').value);_syncMessage('Confronta il codice '+r.confirmationCode+' sul dispositivo che ti invita, poi attendi l’approvazione.');toast('Richiesta inviata');}catch(e){toast('Codice non valido, già usato o scaduto');}};
+  document.querySelector('#pair-finish').onclick=async()=>{try{const r=await window.SentieroSync.finishPairing();if(r&&r.status&&r.status!=='approved')return _syncMessage('In attesa dell’approvazione sull’altro dispositivo.');_syncMessage('Dispositivo collegato.');renderSyncPanel(true);}catch(e){_syncMessage(e&&e.message==='PAIR_BACKUP'?'Spazio locale insufficiente per la copia di sicurezza: fai un Backup completo e libera spazio.':'In attesa oppure invito scaduto.');}};
+  const _urlPair=new URL(location.href).searchParams.get('sentieroPair'); if(_urlPair)setTimeout(()=>{try{navVai('altro','pair');apriSettingsPage('devices');document.querySelector('#pair-paste').value=_inviteUrl(_fromB64url(_urlPair));}catch(_){}},350);
+}catch(_){}
+
 function renderSettings(){
   try{ if(_ricMod&&!(S.scheduled||[]).some(x=>x&&x.id===_ricMod)) _ricMod=null; }catch(_){}
   /* v253 — non si ricostruisce un pannello che nessuno sta guardando.
@@ -18023,6 +18350,32 @@ async function primeMicPermission(){
     setTimeout(()=>{ try{probe.stop()}catch(_){} },400);
   }catch(_){}
 }
+
+/* v273 — il journal asincrono parte dopo che tutto il runtime storico esiste.
+   Il checkpoint localStorage e gia utilizzabile: IndexedDB e la rete non possono
+   bloccare il primo disegno. Un merge remoto rientra dallo stesso sanitizzatore
+   e dalla stessa porta di salvataggio di qualunque dato locale. */
+let _syncLoadPromise=null,_syncSubscribed=false;
+function initSentieroSync(){
+  if(!window.SentieroSync)return Promise.reject(new Error('SYNC_LOAD'));
+  if(!_syncSubscribed){_syncSubscribed=true;window.SentieroSync.subscribe(()=>{if(_settingsPage==='devices')renderSyncPanel(false);});}
+  return window.SentieroSync.bootstrap(S,{onRemote:function(next){
+    try{
+      S=sanitizeState(next,defaultState);
+      salvaSubito();
+      render(); renderTasks(); renderTodayQuests([]); renderQuests([]); updateRing();
+      if(typeof renderSettings==='function') renderSettings();
+    }catch(_){}
+  }});
+}
+function caricaSentieroSync(){
+  if(window.SentieroSync)return initSentieroSync(); if(_syncLoadPromise)return _syncLoadPromise;
+  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
+}
+try{
+  const _loadJournal=()=>caricaSentieroSync().catch(function(){ try{ regCantiere('errore',{msg:'journal locale non disponibile'}); }catch(_){} });
+  if('requestIdleCallback' in window) requestIdleCallback(_loadJournal,{timeout:1600}); else setTimeout(_loadJournal,700);
+}catch(_){}
 
 </script>
 

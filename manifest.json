@@ -1,7 +1,7 @@
 {
   "name": "Sentiero",
   "short_name": "Sentiero",
-  "description": "Diario digitale personale, gratuito e senza account. Scrivi o parla, ritrova pensieri e cose da fare, funziona offline-first e usa Gemini solo se lo scegli.",
+  "description": "Diario digitale personale local-first: scrivi o parla, ritrova pensieri e cose da fare, funziona offline e può sincronizzare operazioni cifrate se lo scegli.",
   "lang": "it",
   "start_url": ".",
   "scope": ".",

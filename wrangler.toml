@@ -1,0 +1,12 @@
+name = "sentiero-sync"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sentiero-sync"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+# Comma-separated production origins. Empty keeps local development usable.
+ALLOWED_ORIGINS = ""

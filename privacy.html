@@ -71,10 +71,10 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   </header>
 
   <div class="leggi">
-    <p>Lo stato di Sentiero resta sul tuo dispositivo. Sentiero non ha un account
-    né un server che conservi una copia del diario. Se attivi la Generativa, il
-    contenuto necessario alla singola funzione viene inviato direttamente a
-    Google Gemini API.</p>
+    <p>Sentiero nasce local-first: lo stato resta sul dispositivo. Se scegli la
+    sincronizzazione, un server conserva un journal di operazioni cifrate che
+    solo i dispositivi approvati possono leggere. La chiave Gemini resta locale;
+    le funzioni generative inviano il solo contenuto necessario direttamente a Google.</p>
   </div>
 
   <p class="calmo">Questa pagina è l'informativa richiesta dagli articoli 13 e 14
@@ -93,10 +93,9 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   browser tiene le impostazioni dei siti. Ci finiscono le voci del diario, le
   cose da fare, le impostazioni e, se l'hai attivata, la chiave che hai incollato tu.</p>
   <ul>
-    <li>Non c'è un account: niente email, niente password, niente da registrare.</li>
+    <li>Non c'è un account personale: niente email o password. La sincronizzazione usa identificatori casuali di spazio e dispositivo.</li>
     <li>Non c'è pubblicità, non ci sono statistiche, non c'è nessun cookie di terzi.</li>
-    <li>Se cancelli l'app, o cancelli i dati del sito dalle impostazioni del
-    browser, non resta niente da nessuna parte. Non c'è una copia altrove da chiedere indietro.</li>
+    <li>Senza sincronizzazione, cancellare l'app o i dati del sito elimina lo stato locale. Se hai attivato la sincronizzazione, usa prima <strong>Elimina dati sincronizzati</strong>: cancellare solo l'app non cancella il journal cifrato dal server.</li>
     <li>Dalle impostazioni puoi creare un <strong>Backup completo</strong>, che include anche la chiave Gemini per permettere un vero ripristino, oppure un <strong>Backup senza chiave</strong>. Il Backup completo va custodito come una password.</li>
   </ul>
   <p class="nota">A fine mese Sentiero conserva anche una copia grafica dell’ensō nella memoria locale dell’app. È un’immagine derivata dai dati del capitolo mensile: non entra nel backup perché può essere ricreata automaticamente dagli stessi dati dopo un’importazione.</p>
@@ -104,7 +103,7 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   senza, un diario non potrebbe ricordare niente. Per questo non trovi la
   finestrella dei cookie &mdash; non perché ce la siamo dimenticata.</p>
 
-  <h2>Prima di Gemini: tre casi in cui entra la rete</h2>
+  <h2>Prima di Gemini: quattro casi in cui entra la rete</h2>
   <p class="calmo">Sono separati dalla Generativa e vale la pena dirli per intero.</p>
 
   <div class="esce">
@@ -132,9 +131,30 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <div class="esce">
     <h3>3 · La posizione, se la accendi</h3>
     <p>C'è un'impostazione, spenta finché non la accendi tu, che allega al
-    ricordo il punto in cui eri. Resta nel diario sul telefono, arrotondata, e
-    non viene mandata da nessuna parte. Se tocchi il tasto per condividere dove
+    ricordo il punto in cui eri. Resta nel diario, arrotondata; se hai attivato la
+    sincronizzazione viaggia solo dentro il relativo pacchetto cifrato. Se tocchi il tasto per condividere dove
     sei, sei tu a costruire un link di Google Maps e a decidere a chi darlo.</p>
+  </div>
+
+  <div class="esce">
+    <h3>4 · Sincronizzazione, solo se la attivi</h3>
+    <p>Sentiero salva prima sul dispositivo e continua a funzionare offline. In
+    seguito invia al server configurato operazioni per singola entità e campo,
+    cifrate con AES‑GCM. Il server vede indirizzo IP, identificatori casuali,
+    orari, dimensioni e ordine dei pacchetti; le etichette leggibili dei dispositivi
+    sono cifrate e non riceve la chiave di cifratura, la chiave Gemini, i suoni o
+    i file di backup.</p>
+    <p>Il collegamento usa ECDH P‑256, un invito monouso con scadenza di dieci
+    minuti e un codice di conferma sui due schermi. Puoi vedere e revocare i
+    dispositivi. <strong>Elimina dati sincronizzati</strong> cancella spazio,
+    dispositivi, inviti e journal dal server; i dati locali restano sul telefono.</p>
+    <p>Quando un dispositivo entra in uno spazio, Sentiero conserva prima sullo
+    stesso dispositivo una copia tecnica pre-pairing e poi applica lo stato dello
+    spazio collegato. Questa copia non viene inviata al server e non sostituisce
+    un Backup completo scelto dall'utente.</p>
+    <p class="nota">L'indirizzo e il gestore effettivo del server sono quelli
+    mostrati in Altro → Dispositivi. Chi pubblica un server diverso deve indicare
+    qui il proprio fornitore, la regione e i tempi operativi di backup/log.</p>
   </div>
 
   <h2>Se usi la versione Generativa</h2>
@@ -142,8 +162,8 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   impostazioni una chiave Gemini che hai creato tu nel tuo progetto Google.
   Quando una funzione generativa serve davvero, Sentiero invia direttamente a
   <strong>generativelanguage.googleapis.com</strong> il contenuto necessario a
-  quella singola funzione e riceve la risposta. Non c'è un server di Sentiero
-  nel mezzo e Sentiero non costruisce un archivio remoto del tuo diario.</p>
+   quella singola funzione e riceve la risposta. Il server di sincronizzazione
+   non è nel percorso Gemini e non riceve né prompt né chiave API.</p>
   <ul>
     <li>La chiave non è precompilata e non viene mai chiesta in chat: la inserisci tu nell'app. Google AI Studio crea oggi nuove chiavi come <em>auth key</em>; le vecchie Standard key devono essere migrate secondo le scadenze indicate da Google.</li>
     <li><strong>Prova connessione</strong> usa Flash‑Lite per verificare rapidamente che chiave, rete e API rispondano. Non cambia il profilo scelto: con <strong>Massimo</strong>, le funzioni che lo richiedono continuano a usare Gemini 3.7 Flash.</li>
@@ -204,15 +224,15 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
     <li>Vale il consenso del telefono, come prima. Se lo togli, smette.</li>
   </ul>
 
-  <h2>Quello che non esce mai</h2>
-  <p>Tre cose nuove che vivono soltanto sul tuo telefono, e non hanno bisogno
-  di rete nemmeno con la chiave inserita:</p>
+  <h2>Quello che non va mai a Gemini</h2>
+  <p>Queste funzioni vengono calcolate dall'app e non chiamano Gemini. Se hai
+  attivato Dispositivi, i relativi dati fanno parte del journal cifrato come il
+  resto dello stato, ma il server non può leggerli:</p>
   <ul>
     <li><strong>La ricerca nel diario.</strong> Cerca fra le tue voci qui
     dentro, mentre scrivi. Nessuna parola cercata esce dal telefono.</li>
     <li><strong>Gli eventi che tornano ogni anno e il richiamo a quattordici
-    giorni.</strong> Li calcola l'app guardando la data di oggi. Non c'&egrave;
-    nessun server che si ricorda i tuoi compleanni.</li>
+    giorni.</strong> Li calcola l'app guardando la data di oggi.</li>
     <li><strong>Le quest sbloccabili.</strong> Le regole le scrivi tu e vivono
     nel tuo stato, come tutto il resto. La condizione la controlla l'app.</li>
   </ul>
@@ -220,18 +240,21 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <h2>Per quanto tempo</h2>
   <p>Per il tempo che decidi tu. Non c'è una scadenza e non c'è una pulizia
   automatica: le tue voci restano finché non le cancelli, o finché non cancelli
-  l'app. Io non le ho, quindi non posso né tenerle né buttarle.</p>
+  l'app. Se attivi la sincronizzazione, il journal cifrato resta finché non usi
+  <strong>Elimina dati sincronizzati</strong> o finché l'operatore dichiarato del
+  server non applica la propria politica di conservazione.</p>
 
   <h2>I tuoi diritti</h2>
   <p>Il GDPR ti dà il diritto di sapere quali tuoi dati ha qualcun altro, di
   averne copia, di correggerli, di farli cancellare, di limitarne l'uso e di
   opporti. Con Sentiero la risposta è particolare e va detta chiara:</p>
   <div class="scheda">
-    <h3>Io non ho niente di tuo</h3>
-    <p>Non c'è un archivio a cui io possa accedere. Copia dei tuoi dati te la fai
-    da solo, dalle impostazioni, in qualunque momento; cancellarli è cancellare
-    l'app. Non serve chiedere il permesso a nessuno e non serve aspettare
-    trenta giorni.</p>
+    <h3>Il contenuto resta sotto il tuo controllo</h3>
+    <p>Senza sync non c'è un archivio remoto. Con sync, l'operatore indicato in
+    Dispositivi conserva ciphertext e metadati tecnici ma non possiede la chiave
+    per leggere diario o Quest. Puoi esportare una copia in ogni momento;
+    cancellare i dati locali avviene dal browser, cancellare il journal remoto
+    dal comando dedicato in Dispositivi.</p>
   </div>
   <p class="calmo">Se pensi che qualcosa non torni, scrivimi. E se non ti
   rispondo o la risposta non ti convince, puoi rivolgerti al
@@ -251,7 +274,7 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   avvisarti per email, perché la tua email non ce l'ho.</p>
 
   <footer>
-    Ultimo aggiornamento: 24 agosto 2026<br>
+    Ultimo aggiornamento: 27 agosto 2026<br>
     Titolare del trattamento: Davide Cuzzilla &mdash;
     <a href="mailto:cuzzilladavide98@gmail.com">cuzzilladavide98@gmail.com</a><br><br>
     <a href="./inizia.html">Torna a Sentiero</a> &nbsp;·&nbsp;
@@ -266,9 +289,10 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   </header>
 
   <div class="leggi">
-    <p>Sentiero's own state stays on your device. Sentiero has no account or
-    server keeping a copy of your diary. If you enable Generative mode, the
-    content needed for that specific feature is sent directly to Google Gemini API.</p>
+    <p>Sentiero is local-first: state stays on your device. If you opt into sync,
+    a server stores an encrypted operation journal readable only by approved
+    devices. The Gemini key stays local and generative features send only the
+    necessary content directly to Google.</p>
   </div>
 
   <h2>Who I am</h2>
@@ -279,15 +303,16 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
 
   <h2>Where your things live</h2>
   <p>In your browser's storage, on your device: diary entries, quests, settings,
-  and the API key if you chose to paste one. No account, no email, no password.
-  No advertising, no analytics, no third-party cookies. Delete the app and
-  nothing remains anywhere &mdash; there is no copy elsewhere to ask back for.
+  and the API key if you chose to paste one. No personal account, email or password.
+  No advertising, no analytics, no third-party cookies. Without sync, deleting
+  the app removes local state. With sync enabled, use “Delete synced data” first:
+  deleting only the app does not remove the encrypted server journal.
   From settings you can create a complete backup that also contains the Gemini key for full restoration, or a backup without the key. Treat the complete backup like a password.</p>
   <p class="nota">At month close Sentiero also keeps a graphical copy of that month's ensō in local app storage. It is derived from the monthly chapter data and is not put in the backup because it can be regenerated automatically after import.</p>
   <p class="nota">That storage is what makes the app you opened work: a diary
   that cannot remember is not a diary. That is why there is no cookie banner.</p>
 
-  <h2>Before Gemini: three cases where the network is involved</h2>
+  <h2>Before Gemini: four cases where the network is involved</h2>
   <div class="esce">
     <h3>1 · Loading the page</h3>
     <p>Sentiero is hosted on <strong>GitHub Pages</strong>. Like every website,
@@ -309,8 +334,22 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <div class="esce">
     <h3>3 · Location, if you turn it on</h3>
     <p>Off until you switch it on. It attaches a rounded position to the entry,
-    kept on the phone, sent nowhere. The «share where I am» button builds a
+    kept in the diary; with sync enabled it travels only inside the encrypted
+    operation payload. The «share where I am» button builds a
     Google Maps link that only you decide to send.</p>
+  </div>
+
+  <div class="esce">
+    <h3>4 · Sync, only if you enable it</h3>
+    <p>Sentiero commits locally first and keeps working offline. It later sends
+    per-entity, per-field operations encrypted with AES‑GCM to the configured
+    server. The server can see IP address, random identifiers, timing, size and
+    ordering metadata, but not readable device labels, the encryption key, Gemini key, sounds or backups.</p>
+    <p>Pairing uses P‑256 ECDH, a ten-minute one-time invitation and a confirmation
+    code on both screens. Devices can be listed and revoked. “Delete synced data”
+    removes the space, devices, invitations and encrypted journal from the server.
+    A joining device first keeps a local pre-pair copy, then applies the linked
+    space state; that local technical copy is never uploaded.</p>
   </div>
 
   <h2>If you use the Generative version</h2>
@@ -318,7 +357,8 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   your own Google project. When a generative feature is needed, the content
   required for that feature is sent directly to the Google Gemini API; Sentiero
   has no backend in the middle. The key is stored separately from diary state
-  and is excluded from backups, exports and diagnostics. It is still a secret
+  and is excluded from sync, diagnostics and backups made without a key. A
+  complete backup includes it only after the explicit backup choice. It is still a secret
   kept in a client-side app, not protected like a backend secret; Google
   recommends a backend/proxy for production client applications. New keys made
   in Google AI Studio are auth keys. Remove the key and Gemini calls stop; Base
@@ -331,11 +371,14 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   terms before making the Generative feature available to other users.</p>
 
   <h2>How long, and your rights</h2>
-  <p>As long as you want: no expiry, no automatic cleanup. Under the GDPR you
+  <p>As long as you want: local entries have no automatic expiry. An encrypted
+  sync journal remains until “Delete synced data” is used or the declared server
+  operator applies its retention policy. Under the GDPR you
   have the right to access, rectification, erasure, restriction, portability and
-  objection &mdash; and here the honest answer is that <strong>I hold nothing of
-  yours</strong>. You export your own copy from the settings; you erase it by
-  deleting the app. If something does not add up, write to me. If my answer does
+  objection. Without sync there is no remote archive. With sync, the operator
+  shown in Devices holds ciphertext and technical metadata but cannot decrypt
+  diary or Quest content. You export your own copy from settings; you erase local
+  state in the browser and the remote journal with the dedicated command. If something does not add up, write to me. If my answer does
   not satisfy you, you may complain to your national data protection authority,
   or to the Italian Garante (<a href="https://www.garanteprivacy.it" rel="noopener">garanteprivacy.it</a>).</p>
 
@@ -347,7 +390,7 @@ hr{border:none;border-top:.5px solid rgba(245,242,234,.10);margin:56px 0 0}
   <p><strong>Generative mode is for adults only.</strong> Gemini API terms require users to be at least 18 and prohibit offering the API as part of services directed to or likely to be accessed by people under 18. Sentiero Base does not use Gemini.</p>
 
   <footer>
-    Last updated: 24 August 2026<br>
+    Last updated: 27 August 2026<br>
     Data controller: Davide Cuzzilla &mdash;
     <a href="mailto:cuzzilladavide98@gmail.com">cuzzilladavide98@gmail.com</a><br><br>
     <a href="./inizia.html">Back to Sentiero</a>

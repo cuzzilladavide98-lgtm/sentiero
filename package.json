@@ -1,0 +1,15 @@
+{
+  "name": "sentiero-sync-worker",
+  "private": true,
+  "type": "module",
+  "version": "2.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 execute sentiero-sync --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute sentiero-sync --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.32.0"
+  }
+}
