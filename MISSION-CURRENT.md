@@ -1,5 +1,15 @@
 # Mission ledger — v60S.274.2
 
+## Hotfix distribuzione v60S.274.3
+
+| ID | Stato | Evidenza | Blocker |
+|---|---|---|---|
+| D01 Causa deploy reale | VERIFIED | Pages: `/assets/*` 404; copie appiattite in `/latest.json` e `/parole-giorno-v1.json` 200 | — |
+| D02 Resolver asset + edizione diretta | IN_PROGRESS | path canonico/root, snapshot edition senza ricomposizione | — |
+| D03 Migrazione Service Worker | TODO | cache v274.3, alias network-first, update URL/version | — |
+| D04 Gate Pages fresh install | TODO | URL pubblici 200 + Chrome Terra 5 articoli/Parola | deploy remoto |
+| D05 Packaging | TODO | ZIP estratto + SHA-256 | — |
+
 ## Candidata visuale v60S.274.2
 
 | ID | Stato | Evidenza | Blocker |

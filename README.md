@@ -1,4 +1,4 @@
-# Sentiero v60S.274.2
+# Sentiero v60S.274.3
 
 Sentiero è una PWA personale local-first. Diario, Quest, preferenze e stato quotidiano continuano a funzionare senza account e senza rete. La sincronizzazione multi-dispositivo è opzionale, cifrata end-to-end e disattivata per impostazione predefinita.
 
@@ -14,6 +14,8 @@ Poi apri `http://127.0.0.1:4173/`. Service Worker, installazione PWA, Web Crypto
 
 ## Novità della release
 
+- il resolver degli asset accetta sia la struttura canonica (`assets/...`) sia la topologia appiattita osservata sulla distribuzione GitHub Pages; entrambe le copie viaggiano nella release e devono avere hash identico;
+- Giornale usa immediatamente l'`edition` validata dello snapshot distribuito, senza ricomporla; il Service Worker v274.3 migra le vecchie cache, risolve gli alias e controlla gli aggiornamenti senza cache HTTP del proprio script;
 - Terra e Satellite Viola hanno ora corpi tridimensionali distinti, leggibili sia su OLED sia su LCD, con una variante senza movimento che conserva materia e gerarchia;
 - la distribuzione include uno snapshot editoriale reale e timestampato: Terra apre Giornale e Parola anche senza Worker Cloudflare, mentre il Service Worker e IndexedDB conservano l'ultima edizione valida per l'uso offline;
 - l'automazione GitHub aggiorna lo snapshot dalle 26 fonti fisse con controlli minimi di raggiungibilità, parsing e contenuto prima di pubblicarlo; un errore non sovrascrive l'ultima edizione valida;
@@ -36,6 +38,7 @@ npm run test:browser
 npm run test:news:browser
 npm run test:day:content
 npm run test:news:automation
+npm run test:pages:live
 npm run test:news:live
 node qa/performance-benchmark.js /percorso/alla/baseline
 node qa/browser-performance.js /percorso/alla/baseline
@@ -65,4 +68,4 @@ npm run test:worker:e2e
 
 Per abilitare il cloud serve distribuire il Worker e incollare il suo URL in **Altro → Dispositivi**. La procedura è in [docs/SYNC-DEPLOYMENT.md](docs/SYNC-DEPLOYMENT.md).
 
-Documenti della candidata: [contenuto Terra](docs/DAY-CONTENT-v274.2.md), [Giornale](docs/NEWSROOM-v274.1.md), [test](docs/TEST-REPORT-v274.2.md), [prestazioni precedentemente verificate](docs/PERFORMANCE-v274.0.md) e [rapporto di rilascio](RELEASE-REPORT-v60S.274.2.md).
+Documenti della candidata: [hotfix distribuzione](docs/DISTRIBUTION-HOTFIX-v274.3.md), [contenuto Terra](docs/DAY-CONTENT-v274.2.md), [Giornale](docs/NEWSROOM-v274.1.md), [prestazioni precedentemente verificate](docs/PERFORMANCE-v274.0.md) e [rapporto di rilascio](RELEASE-REPORT-v60S.274.3.md).

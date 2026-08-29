@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sentiero — confronto Terra e Satellite</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080908}
+    iframe{display:block;width:100%;height:100%;border:0}
+  </style>
+</head>
+<body>
+<iframe id="sentiero" src="../index.html?world-visual-harness=1" title="Confronto visuale"></iframe>
+<script>
+  const frame=document.getElementById('sentiero');
+  frame.addEventListener('load',()=>{
+    const d=frame.contentDocument,theme=new URLSearchParams(location.search).get('theme')==='lcd'?'lcd':'oled';
+    const earth=d.getElementById('giorno-terra').cloneNode(true),night=d.getElementById('notte-luce').cloneNode(true);
+    const board=d.createElement('main');board.id='world-visual-board';board.append(earth,night);
+    d.body.replaceChildren(board);d.body.className=theme==='lcd'?'theme-lcd':'';d.body.removeAttribute('data-mondo');
+    earth.classList.remove('hidden');night.classList.remove('hidden');
+    const style=d.createElement('style');style.textContent=`
+      html,body{width:100%;height:100%;overflow:hidden;background:var(--bg,#000)!important}
+      #world-visual-board{position:fixed;inset:0;background:var(--bg,#000);overflow:hidden}
+      #world-visual-board::before{content:'TERRA';position:absolute;left:25%;top:calc(50% + 124px);transform:translateX(-50%);color:var(--t3);font:650 10px/1 system-ui;letter-spacing:.24em}
+      #world-visual-board::after{content:'SATELLITE VIOLA';position:absolute;left:75%;top:calc(50% + 124px);transform:translateX(-50%);color:var(--t3);font:650 10px/1 system-ui;letter-spacing:.24em;white-space:nowrap}
+      #giorno-terra,#notte-luce{display:block!important;top:50%!important;margin:0!important;animation-play-state:paused!important}
+      #giorno-terra{left:25%!important;transform:translate3d(-50%,-50%,0) scale(3)!important}
+      #notte-luce{left:75%!important;transform:translate3d(-50%,-50%,0) scale(3)!important}
+      #giorno-terra *,#notte-luce *,#giorno-terra::before,#giorno-terra::after,#notte-luce::before,#notte-luce::after{animation-play-state:paused!important}
+    `;d.head.append(style);
+    document.documentElement.dataset.ready='true';
+  });
+</script>
+</body>
+</html>

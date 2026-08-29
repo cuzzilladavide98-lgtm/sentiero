@@ -1,4 +1,4 @@
-const CACHE = 'sentiero-v60s-274-1';
+const CACHE = 'sentiero-v60s-274-3';
 const PROD_CACHE_PREFIX = 'sentiero-v60s-';
 /* v272.3 recovery: Distillazione via GenerateContent, base completa incorporata,
    stessa geometria voce e backup completo preservati. */
@@ -27,16 +27,19 @@ const PROD_CACHE_PREFIX = 'sentiero-v60s-';
    a ogni installazione perche il telefono ne usasse una, che poi nemmeno legge da
    qui. Restano tutte nel repo e restano nel gestore fetch qui sotto: la prima volta
    che una viene chiesta davvero, finisce in cache come tutto il resto. */
-const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.274.1'];
-const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.274.1', './sentiero-day.mjs?v=60.274.1', './vendor/qrcode.js', './vendor/jsQR.js',
+const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.274.3'];
+const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.274.3', './sentiero-day.mjs?v=60.274.3', './vendor/qrcode.js', './vendor/jsQR.js',
   './icon-180.png', './icon-192.png',
+  './assets/giornale/latest.json', './latest.json', './assets/parole-giorno-v1.json', './parole-giorno-v1.json',
   './assets/sfx/combo-1.mp3', './assets/sfx/combo-2.mp3', './assets/sfx/combo-3.mp3', './assets/sfx/combo-4.mp3',
   './assets/sfx/combo-5.mp3', './assets/sfx/combo-6.mp3', './assets/sfx/combo-7.mp3', './assets/sfx/combo-8.mp3', './assets/sfx/seal.mp3',
   './lingue/en.json',
   './lingue/base-it-v272.7.json',   /* v267: la base linguistica viaggia con l'app. Offline si usa questa; con la rete si aggiorna da qui. */    /* v218: i pacchetti delle lingue viaggiano con l'app: offline dal primo avvio */
   './privacy.html',
   './guida.html',
-  './inizia.html'];     /* v221: l'informativa viaggia con l'app. Senza, chi la apre
+  './inizia.html'];     /* v274.2: snapshot editoriale e lessico completo sono asset lazy
+                            ma precache best-effort: Terra deve avere contenuto anche senza backend.
+                            v221: l'informativa viaggia con l'app. Senza, chi la apre
                             offline si vedrebbe servire index.html al posto suo dal
                             ripiego qui sotto - e un'informativa che non si apre non
                             e un'informativa. */
@@ -103,6 +106,30 @@ self.addEventListener('fetch', e => {
      CacheStorage scelga per prima una risposta statica vecchia. */
   try {
     const u = new URL(url);
+    const distributed = u.pathname.endsWith('/assets/giornale/latest.json') || u.pathname.endsWith('/latest.json')
+      ? ['./assets/giornale/latest.json', './latest.json']
+      : u.pathname.endsWith('/assets/parole-giorno-v1.json') || u.pathname.endsWith('/parole-giorno-v1.json')
+        ? ['./assets/parole-giorno-v1.json', './parole-giorno-v1.json'] : null;
+    if (distributed) {
+      e.respondWith((async () => {
+        const c = await caches.open(CACHE);
+        const candidates = [e.request.url, ...distributed.map(path => new URL(path, self.registration.scope).toString())];
+        for (const candidate of [...new Set(candidates)]) {
+          try {
+            const res = await fetch(candidate, { cache: 'no-store' });
+            if (!res || !res.ok) continue;
+            try {
+              await c.put(e.request, res.clone());
+              await Promise.all(distributed.map(path => c.put(path, res.clone())));
+            } catch (_) {}
+            return res;
+          } catch (_) {}
+        }
+        for (const candidate of [e.request, ...distributed]) { const cached = await c.match(candidate); if (cached) return cached; }
+        return Response.error();
+      })());
+      return;
+    }
     if (u.pathname.endsWith('/lingue/base-it-v272.7.json')) {
       e.respondWith((async () => {
         const c = await caches.open(CACHE);

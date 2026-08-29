@@ -289,6 +289,40 @@ let newsAbort = null;
 let listenerBound = false;
 let latestEdition = null;
 let lastManualRefresh = 0;
+const DISTRIBUTION_VERSION = '60.274.3';
+const NEWS_ASSET_PATHS = ['./assets/giornale/latest.json', './latest.json'];
+const WORD_ASSET_PATHS = ['./assets/parole-giorno-v1.json', './parole-giorno-v1.json'];
+
+function distributionUrl(path) {
+  const url = new URL(path, document.baseURI);
+  url.searchParams.set('v', DISTRIBUTION_VERSION);
+  return url.toString();
+}
+
+async function parseDistributedResponse(response, maxBytes) {
+  if (!response || !response.ok || Number(response.headers.get('content-length') || 0) > maxBytes) throw new Error('asset');
+  const raw = await response.text();
+  if (raw.length > maxBytes) throw new Error('asset');
+  try { return JSON.parse(raw); } catch (_) { throw new Error('asset'); }
+}
+
+async function readDistributedJson(paths, signal, maxBytes, accept) {
+  for (const path of paths) {
+    try {
+      const response = await fetch(distributionUrl(path), { signal, cache: 'no-store' });
+      const data = await parseDistributedResponse(response, maxBytes);
+      if (!accept || accept(data)) return data;
+    } catch (error) { if (error && error.name === 'AbortError') throw error; }
+  }
+  if (typeof caches !== 'undefined') {
+    for (const path of paths) {
+      for (const key of [distributionUrl(path), new URL(path, document.baseURI).toString()]) {
+        try { const data = await parseDistributedResponse(await caches.match(key), maxBytes); if (!accept || accept(data)) return data; } catch (_) {}
+      }
+    }
+  }
+  throw new Error('asset');
+}
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -379,13 +413,7 @@ function renderWeek() {
 
 async function loadCatalog() {
   if (!catalogPromise) catalogPromise = (async () => {
-    let response = null;
-    try { response = await fetch('./assets/parole-giorno-v1.json', { cache: 'force-cache' }); } catch (_) {}
-    if ((!response || !response.ok) && typeof caches !== 'undefined') try { response = await caches.match('./assets/parole-giorno-v1.json'); } catch (_) {}
-    if (!response || !response.ok) throw new Error('lessico');
-    const data = await response.json();
-    if (!data || !Array.isArray(data.words) || data.words.length < 1000) throw new Error('lessico');
-    return data;
+    return readDistributedJson(WORD_ASSET_PATHS, null, 900000, data => data && Array.isArray(data.words) && data.words.length >= 1000);
   })().catch(error => { catalogPromise = null; throw error; });
   return catalogPromise;
 }
@@ -620,11 +648,45 @@ function newsEndpoint() {
   return '';
 }
 
-async function readNewsPacket(url, signal, channel) {
-  const response = await fetch(url, { signal, cache: 'no-store' });
-  if (!response.ok || Number(response.headers.get('content-length') || 0) > 900000) throw new Error('fonti');
-  const raw = await response.text(); if (raw.length > 900000) throw new Error('fonti');
-  let data; try { data = JSON.parse(raw); } catch (_) { throw new Error('fonti'); }
+function sanitizeBundledEdition(raw, items, packetGeneratedAt, packetDayKey) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.articles) || !raw.articles.length) return null;
+  const available = new Set(items.map(item => String(item.id))), deltas = new Set(['new', 'developed', 'corrected', 'returned', 'unchanged']);
+  const articles = [];
+  for (const sourceArticle of raw.articles.slice(0, 6)) {
+    if (!sourceArticle || !Array.isArray(sourceArticle.claims)) continue;
+    const claims = [];
+    for (const sourceClaim of sourceArticle.claims.slice(0, 6)) {
+      const text = cleanText(sourceClaim && sourceClaim.text, 900), sourceIds = [...new Set((sourceClaim && sourceClaim.sourceIds || []).map(String))].filter(id => available.has(id)).slice(0, 4);
+      if (text.length >= 24 && sourceIds.length) claims.push({ text, sourceIds });
+    }
+    const title = cleanText(sourceArticle.title, 180), section = cleanText(sourceArticle.section, 50);
+    if (!title || !section || !claims.length) continue;
+    const importance = Math.max(0, Math.min(100, Number(sourceArticle.importance) || 0)), deltaType = deltas.has(sourceArticle.deltaType) ? sourceArticle.deltaType : 'new';
+    articles.push({
+      title, section, kicker: cleanText(sourceArticle.kicker, 300), claims,
+      storyIds: [...new Set((sourceArticle.storyIds || []).map(id => cleanText(id, 100)).filter(Boolean))].slice(0, 3),
+      sourceIds: [...new Set(claims.flatMap(claim => claim.sourceIds))], importance,
+      importanceReasons: (sourceArticle.importanceReasons || []).map(reason => cleanText(reason, 120)).filter(Boolean).slice(0, 6),
+      deltaType, deltaFromYesterday: cleanText(sourceArticle.deltaFromYesterday, 300),
+      presentation: ['lead', 'major', 'brief'].includes(sourceArticle.presentation) ? sourceArticle.presentation : ''
+    });
+  }
+  if (!articles.length) return null;
+  articles.forEach((article, index) => { if (!article.presentation) article.presentation = index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'; });
+  const corrections = (Array.isArray(raw.corrections) ? raw.corrections : []).slice(0, 3).map(item => ({
+    text: cleanText(item && item.text, 500),
+    sourceIds: [...new Set((item && item.sourceIds || []).map(String))].filter(id => available.has(id)).slice(0, 4),
+    storyIds: [...new Set((item && item.storyIds || []).map(id => cleanText(id, 100)).filter(Boolean))].slice(0, 2)
+  })).filter(item => item.text.length >= 24 && item.sourceIds.length);
+  const generatedAt = Number.isFinite(Date.parse(raw.generatedAt || '')) ? raw.generatedAt : packetGeneratedAt;
+  const sourceUpdatedAt = Number.isFinite(Date.parse(raw.sourceUpdatedAt || '')) ? raw.sourceUpdatedAt : packetGeneratedAt;
+  return { v: VERSION, dayKey: cleanText(raw.dayKey || packetDayKey, 10), title: cleanText(raw.title, 90) || 'Il Giornale di Sentiero', deck: cleanText(raw.deck, 300), generatedAt, sourceUpdatedAt, articles, corrections, essential: Boolean(raw.essential) };
+}
+
+async function readNewsPacket(urlOrPaths, signal, channel) {
+  let data;
+  if (Array.isArray(urlOrPaths)) data = await readDistributedJson(urlOrPaths, signal, 900000, value => value && Array.isArray(value.items));
+  else data = await parseDistributedResponse(await fetch(urlOrPaths, { signal, cache: 'no-store' }), 900000);
   if (!data || !Array.isArray(data.items)) throw new Error('fonti');
   const items = data.items.filter(item => item && item.id && item.title && item.url && item.source && /^https:\/\//.test(item.url)).slice(0, 96).map(item => ({
     id: cleanText(item.id, 80), title: cleanText(item.title, 240), summary: cleanText(item.summary, 1200), url: item.url, published: item.published, source: cleanText(item.source, 80), sourceId: cleanText(item.sourceId, 40),
@@ -632,7 +694,8 @@ async function readNewsPacket(url, signal, channel) {
     provenance: item.provenance && typeof item.provenance === 'object' ? { evidenceId: cleanText(item.provenance.evidenceId, 100), sourceId: cleanText(item.provenance.sourceId, 40), sourceDomain: cleanText(item.provenance.sourceDomain, 100), canonicalUrl: /^https:\/\//.test(item.provenance.canonicalUrl || '') ? item.provenance.canonicalUrl : item.url, publishedAt: cleanText(item.provenance.publishedAt, 40), retrievedAt: cleanText(item.provenance.retrievedAt, 40), contentFingerprint: cleanText(item.provenance.contentFingerprint, 100) } : { evidenceId: cleanText(item.id, 80), sourceId: cleanText(item.sourceId, 40), canonicalUrl: item.url, publishedAt: cleanText(item.published, 40) }
   }));
   if (!items.length) throw new Error('fonti');
-  return { items, generatedAt: cleanText(data.generatedAt, 40), channel };
+  const generatedAt = cleanText(data.generatedAt, 40), dayKey = cleanText(data.dayKey, 10);
+  return { items, generatedAt, dayKey, channel, edition: channel === 'snapshot' ? sanitizeBundledEdition(data.edition, items, generatedAt, dayKey) : null };
 }
 
 async function fetchSources(endpoint, key, signal) {
@@ -644,7 +707,7 @@ async function fetchSources(endpoint, key, signal) {
     catch (_) {}
     finally { clearTimeout(timer); if (signal) signal.removeEventListener('abort', abort); }
   }
-  return readNewsPacket('./assets/giornale/latest.json', signal, 'snapshot');
+  return readNewsPacket(NEWS_ASSET_PATHS, signal, 'snapshot');
 }
 
 export async function refreshNews(force = false) {
@@ -659,6 +722,12 @@ export async function refreshNews(force = false) {
   newsBuild = (async () => {
     try {
       const packet = await fetchSources(endpoint, key, newsAbort.signal), items = packet.items;
+      if (packet.edition) {
+        const edition = { ...packet.edition, sourceUpdatedAt: packet.edition.sourceUpdatedAt || packet.generatedAt, sourceChannel: packet.channel, materialChanges: [] };
+        renderEdition(edition, items);
+        await cachePut({ key, at: Date.now(), checkedAt: Date.now(), edition, sources: items });
+        return edition;
+      }
       const clusters = await continuityClusters(items, key), changed = selectEditorialStories(clusters, 12);
       if (cached && !changed.length) { await cachePut({ ...cached, checkedAt: Date.now() }); renderEdition(cached.edition, cached.sources, 'quadro verificato, nessun cambiamento rilevante'); return cached.edition; }
       const edition = await composeEdition(items, clusters, key, newsAbort.signal); if (!edition) throw new Error('edizione');
