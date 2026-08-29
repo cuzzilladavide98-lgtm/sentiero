@@ -378,7 +378,15 @@ function renderWeek() {
 }
 
 async function loadCatalog() {
-  if (!catalogPromise) catalogPromise = fetch('./assets/parole-giorno-v1.json', { cache: 'force-cache' }).then(response => { if (!response.ok) throw new Error('lessico'); return response.json(); }).then(data => { if (!data || !Array.isArray(data.words) || data.words.length < 1000) throw new Error('lessico'); return data; });
+  if (!catalogPromise) catalogPromise = (async () => {
+    let response = null;
+    try { response = await fetch('./assets/parole-giorno-v1.json', { cache: 'force-cache' }); } catch (_) {}
+    if ((!response || !response.ok) && typeof caches !== 'undefined') try { response = await caches.match('./assets/parole-giorno-v1.json'); } catch (_) {}
+    if (!response || !response.ok) throw new Error('lessico');
+    const data = await response.json();
+    if (!data || !Array.isArray(data.words) || data.words.length < 1000) throw new Error('lessico');
+    return data;
+  })().catch(error => { catalogPromise = null; throw error; });
   return catalogPromise;
 }
 
@@ -581,7 +589,9 @@ function renderEdition(edition, items, cachedLabel = '') {
   if (!edition) { renderNewsState('Oggi le fonti disponibili non bastano per comporre un’edizione affidabile. Nessun riempitivo prende il loro posto.', true); return; }
   latestEdition = edition; const sources = sourceMap(items || edition.sources || []), wrap = element('div', 'edition');
   const head = element('header', 'edition-head'); head.append(element('h3', '', edition.title)); if (edition.deck) head.append(element('p', '', edition.deck));
-  const when = new Date(edition.generatedAt || Date.now()); head.append(element('p', 'edition-meta', (cachedLabel ? cachedLabel + ' · ' : '') + 'edizione delle ' + new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' }).format(when)));
+  const when = new Date(edition.generatedAt || Date.now()), meta = [(cachedLabel ? cachedLabel + ' · ' : '') + 'edizione delle ' + new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' }).format(when)];
+  const sourceWhen = Date.parse(edition.sourceUpdatedAt || ''); if (Number.isFinite(sourceWhen)) meta.push('fonti aggiornate ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(sourceWhen)));
+  head.append(element('p', 'edition-meta', meta.join(' · ')));
   const tools = element('div', 'edition-tools'); const refreshButton = button('news-refresh', 'Verifica aggiornamenti', () => refreshNews(true)); refreshButton.setAttribute('aria-label', 'Verifica se il quadro del giorno è cambiato'); tools.append(refreshButton); head.append(tools); wrap.append(head);
   if (edition.corrections && edition.corrections.length) {
     const corrections = element('aside', 'edition-corrections'); corrections.append(element('strong', '', 'Correzioni e precisazioni'));
@@ -610,18 +620,31 @@ function newsEndpoint() {
   return '';
 }
 
-async function fetchSources(endpoint, key, signal) {
-  const hour = new Date().getHours(), slot = key + '-' + (hour < 12 ? 'mattino' : 'giorno');
-  const response = await fetch(endpoint + '/v1/day/news?slot=' + encodeURIComponent(slot), { signal, cache: 'no-store' });
+async function readNewsPacket(url, signal, channel) {
+  const response = await fetch(url, { signal, cache: 'no-store' });
   if (!response.ok || Number(response.headers.get('content-length') || 0) > 900000) throw new Error('fonti');
   const raw = await response.text(); if (raw.length > 900000) throw new Error('fonti');
   let data; try { data = JSON.parse(raw); } catch (_) { throw new Error('fonti'); }
   if (!data || !Array.isArray(data.items)) throw new Error('fonti');
-  return data.items.filter(item => item && item.id && item.title && item.url && item.source && /^https:\/\//.test(item.url)).slice(0, 96).map(item => ({
+  const items = data.items.filter(item => item && item.id && item.title && item.url && item.source && /^https:\/\//.test(item.url)).slice(0, 96).map(item => ({
     id: cleanText(item.id, 80), title: cleanText(item.title, 240), summary: cleanText(item.summary, 1200), url: item.url, published: item.published, source: cleanText(item.source, 80), sourceId: cleanText(item.sourceId, 40),
     sourceMeta: item.sourceMeta && typeof item.sourceMeta === 'object' ? { tier: cleanText(item.sourceMeta.tier, 2), type: cleanText(item.sourceMeta.type, 30), area: cleanText(item.sourceMeta.area, 30), role: cleanText(item.sourceMeta.role, 80), reliability: cleanText(item.sourceMeta.reliability, 80), domain: cleanText(item.sourceMeta.domain, 80), language: cleanText(item.sourceMeta.language, 8), perspective: cleanText(item.sourceMeta.perspective, 20), ownership: cleanText(item.sourceMeta.ownership, 30), country: cleanText(item.sourceMeta.country, 8), coverage: cleanText(item.sourceMeta.coverage, 20), retrieval: cleanText(item.sourceMeta.retrieval, 20), freshnessMinutes: Math.max(0, Math.min(1440, Number(item.sourceMeta.freshnessMinutes) || 0)), terms: cleanText(item.sourceMeta.terms, 80) } : null,
     provenance: item.provenance && typeof item.provenance === 'object' ? { evidenceId: cleanText(item.provenance.evidenceId, 100), sourceId: cleanText(item.provenance.sourceId, 40), sourceDomain: cleanText(item.provenance.sourceDomain, 100), canonicalUrl: /^https:\/\//.test(item.provenance.canonicalUrl || '') ? item.provenance.canonicalUrl : item.url, publishedAt: cleanText(item.provenance.publishedAt, 40), retrievedAt: cleanText(item.provenance.retrievedAt, 40), contentFingerprint: cleanText(item.provenance.contentFingerprint, 100) } : { evidenceId: cleanText(item.id, 80), sourceId: cleanText(item.sourceId, 40), canonicalUrl: item.url, publishedAt: cleanText(item.published, 40) }
   }));
+  if (!items.length) throw new Error('fonti');
+  return { items, generatedAt: cleanText(data.generatedAt, 40), channel };
+}
+
+async function fetchSources(endpoint, key, signal) {
+  const hour = new Date().getHours(), slot = key + '-' + (hour < 12 ? 'mattino' : 'giorno');
+  if (endpoint) {
+    const remote = new AbortController(), abort = () => remote.abort(), timer = setTimeout(abort, 7000);
+    if (signal) { if (signal.aborted) remote.abort(); else signal.addEventListener('abort', abort, { once: true }); }
+    try { return await readNewsPacket(endpoint + '/v1/day/news?slot=' + encodeURIComponent(slot), remote.signal, 'worker'); }
+    catch (_) {}
+    finally { clearTimeout(timer); if (signal) signal.removeEventListener('abort', abort); }
+  }
+  return readNewsPacket('./assets/giornale/latest.json', signal, 'snapshot');
 }
 
 export async function refreshNews(force = false) {
@@ -632,15 +655,14 @@ export async function refreshNews(force = false) {
   if (cached && !force) { renderEdition(cached.edition, cached.sources, 'salvata sul dispositivo'); if (age < 4 * 3600000) return cached.edition; }
   if (!cached) { const latest = await cacheLatest(); if (latest) renderEdition(latest.edition, latest.sources, latest.key === key ? 'salvata sul dispositivo' : 'ultima edizione disponibile'); else renderNewsState('La Terra sta raccogliendo le fonti di oggi.', false); }
   const endpoint = newsEndpoint();
-  if (!endpoint || (typeof navigator !== 'undefined' && navigator.onLine === false)) { if (!cached && !latestEdition) renderNewsState('Il Giornale tornerà quando il servizio di Sentiero e la rete saranno disponibili. La Settimana e la Parola restano qui.', false); return cached && cached.edition; }
   if (newsAbort) newsAbort.abort(); newsAbort = new AbortController();
   newsBuild = (async () => {
     try {
-      const items = await fetchSources(endpoint, key, newsAbort.signal); if (!items.length) throw new Error('fonti');
+      const packet = await fetchSources(endpoint, key, newsAbort.signal), items = packet.items;
       const clusters = await continuityClusters(items, key), changed = selectEditorialStories(clusters, 12);
       if (cached && !changed.length) { await cachePut({ ...cached, checkedAt: Date.now() }); renderEdition(cached.edition, cached.sources, 'quadro verificato, nessun cambiamento rilevante'); return cached.edition; }
       const edition = await composeEdition(items, clusters, key, newsAbort.signal); if (!edition) throw new Error('edizione');
-      edition.generatedAt = edition.generatedAt || new Date().toISOString(); edition.materialChanges = changed.map(cluster => cluster.storyId);
+      edition.generatedAt = edition.generatedAt || new Date().toISOString(); edition.sourceUpdatedAt = packet.generatedAt || new Date().toISOString(); edition.sourceChannel = packet.channel; edition.materialChanges = changed.map(cluster => cluster.storyId);
       await cachePut({ key, at: Date.now(), checkedAt: Date.now(), edition, sources: items }); await persistStories(clusters, edition, key); renderEdition(edition, items); return edition;
     } catch (error) { if (!(error && error.name === 'AbortError') && !cached && !latestEdition) renderNewsState('Oggi nessuna storia supera insieme le soglie di rilevanza e verificabilità. Nessun riempitivo prende il suo posto.', true); return cached && cached.edition; }
     finally { newsBuild = null; }

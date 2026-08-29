@@ -1,4 +1,24 @@
-# Mission ledger — v60S.274.1
+# Mission ledger — v60S.274.2
+
+## Candidata visuale v60S.274.2
+
+| ID | Stato | Evidenza | Blocker |
+|---|---|---|---|
+| V01 Baseline OLED/LCD | VERIFIED | render OLED: Terra piatta; LCD: Purple ridotto a punto | — |
+| V02 Terra planetaria | VERIFIED | render OLED/LCD: volume, atmosfera, terminatore, nubi, orbita | — |
+| V03 Satellite Purple | VERIFIED | nucleo/energia stratificata; pigmento LCD; reduced motion PASS | — |
+| V04 Invarianti v274.1 | VERIFIED | 0 rimossi; diff limitato all'ambito; `npm test` + Chrome 320–1024 PASS | — |
+| V05 Packaging | VERIFIED | ZIP 109 file estratto; manifest identico; suite archivio; SHA-256 | — |
+
+## Hotfix contenuto Terra v60S.274.2
+
+| ID | Stato | Evidenza | Blocker |
+|---|---|---|---|
+| C01 Snapshot editoriale reale | VERIFIED | 26 raggiunte, 23 parseabili, 96 elementi, 5 articoli timestampati | — |
+| C02 Zero single point of failure | VERIFIED | Worker → snapshot statico → IndexedDB/Cache Storage | — |
+| C03 Parola completa offline | VERIFIED | 1.694 voci; definizione+fonte; cache fallback | — |
+| C04 Aggiornamento zero-cost | VERIFIED | test esegue davvero generator + workflow commit fail-safe | — |
+| C05 Fresh install reale | VERIFIED | Chrome: 5 articoli/6 fonti/Parola; server spento → stessi contenuti | — |
 
 ## Candidata Giornale v60S.274.1
 
