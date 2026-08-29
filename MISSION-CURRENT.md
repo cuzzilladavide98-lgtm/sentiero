@@ -1,5 +1,15 @@
 # Mission ledger — v60S.274.2
 
+## Hotfix distribuzione v60S.274.3
+
+| ID | Stato | Evidenza | Blocker |
+|---|---|---|---|
+| D01 Causa deploy reale | VERIFIED | Pages: `/assets/*` 404; copie appiattite in `/latest.json` e `/parole-giorno-v1.json` 200 | — |
+| D02 Resolver asset + edizione diretta | VERIFIED | path canonico/root; snapshot edition resa direttamente; flat-deploy Chrome PASS | — |
+| D03 Migrazione Service Worker | VERIFIED | cache v274.3, alias network-first, URL SW versionato, updateViaCache none | — |
+| D04 Gate Pages fresh install | BLOCKED | Pages resta v274.2 finché la hotfix non viene pubblicata | permesso upload file dell'estensione Chrome |
+| D05 Packaging | TODO | ZIP estratto + SHA-256 | — |
+
 ## Candidata visuale v60S.274.2
 
 | ID | Stato | Evidenza | Blocker |

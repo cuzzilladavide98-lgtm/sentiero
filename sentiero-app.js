@@ -1057,7 +1057,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.274.2 · 2026-08-29';
+const APP_VERSION='v60S.274.3 · 2026-08-29';
 
 /* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
    non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
@@ -12957,7 +12957,7 @@ function endpointGiorno(){
 }
 function caricaStanzaTerra(){
   if(_giornoModulo) return Promise.resolve(_giornoModulo); if(_giornoCarica) return _giornoCarica;
-  _giornoCarica=import('./sentiero-day.mjs?v=60.274.2').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
+  _giornoCarica=import('./sentiero-day.mjs?v=60.274.3').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
   return _giornoCarica;
 }
 function contestoStanzaTerra(){ return {
@@ -14699,7 +14699,8 @@ document.querySelector('#import-file').onchange=e=>{
    AVVIO
    ====================================================================== */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').then(function(reg){
+  navigator.serviceWorker.register('./sw.js?v=60.274.3',{scope:'./',updateViaCache:'none'}).then(function(reg){
+    try{ const u=reg.update(); if(u&&u.catch) u.catch(function(){}); }catch(_){}
     try{ scheduleReminders(); }catch(_){}
     /* due strade, perche i telefoni non si comportano tutti uguale:
        - updatefound: e arrivato un lavoratore nuovo e sta per prendere servizio
@@ -15081,7 +15082,7 @@ function initSentieroSync(){
 }
 function caricaSentieroSync(){
   if(window.SentieroSync)return initSentieroSync(); if(_syncLoadPromise)return _syncLoadPromise;
-  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.2';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
+  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.3';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
 }
 try{
   const _loadJournal=()=>caricaSentieroSync().catch(function(){ try{ regCantiere('errore',{msg:'journal locale non disponibile'}); }catch(_){} });
