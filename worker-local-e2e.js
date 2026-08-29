@@ -1,9 +1,29 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
 
 const endpoint = String(process.argv[2] || 'http://127.0.0.1:8787').replace(/\/+$/, '');
 const origin = process.argv[3] || 'http://localhost:8000';
+let localWorker = null;
+
+async function ensureWorker() {
+  try { const response = await fetch(endpoint + '/health'); if (response.ok) return; } catch (_) {}
+  if (process.argv[2]) throw new Error('Worker non raggiungibile: ' + endpoint);
+  const workerRoot = path.resolve(__dirname, '..', 'sync-worker');
+  const executable = path.join(workerRoot, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+  if (!fs.existsSync(executable)) throw new Error('Wrangler locale non installato');
+  localWorker = spawn(process.execPath, [executable, 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787'], { cwd: workerRoot, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, WRANGLER_SEND_METRICS: 'false' } });
+  let diagnostic = ''; localWorker.stdout.on('data', chunk => { diagnostic += chunk; }); localWorker.stderr.on('data', chunk => { diagnostic += chunk; });
+  for (let attempt = 0; attempt < 160; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    try { const response = await fetch(endpoint + '/health'); if (response.ok) return; } catch (_) {}
+    if (localWorker.exitCode != null) break;
+  }
+  throw new Error('Wrangler non avviato: ' + diagnostic.slice(-1000));
+}
 
 async function call(path, options = {}) {
   const headers = Object.assign({ Origin: options.origin === undefined ? origin : options.origin }, options.body === undefined ? {} : { 'Content-Type': 'application/json' });
@@ -16,6 +36,7 @@ async function call(path, options = {}) {
 function protectedName(char) { return `v2.${char.repeat(16)}.${char.repeat(32)}`; }
 
 async function main() {
+  await ensureWorker();
   const health = await fetch(endpoint + '/health').then(response => response.json());
   assert.equal(health.ok, true); assert.equal(health.protocol, 3);
   const deep = await call('/health?deep=1'); assert.equal(deep.response.status, 200); assert.equal(deep.body.database, 'reachable');
@@ -62,4 +83,4 @@ async function main() {
   process.stdout.write('PASS Worker/D1 locale: health, CORS, protocollo, ack, pairing, replay, revoca, cascade e cron\n');
 }
 
-main().catch(error => { console.error(error); process.exitCode = 1; });
+main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { if (localWorker) try { localWorker.kill(); } catch (_) {} });

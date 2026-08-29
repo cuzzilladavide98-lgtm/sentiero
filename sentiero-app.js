@@ -555,6 +555,11 @@ function sanitizeState(raw,def){
     unlockRules:sanitizeUnlockRules(raw.unlockRules),
     unlockDone:sanitizeUnlockDone(raw.unlockDone),
     promVisti:sanitizePromVisti(raw.promVisti),
+    paroleGiorno:(function(source){ const out={}; if(!source||typeof source!=='object'||Array.isArray(source)) return out;
+      Object.keys(source).filter(key=>/^\d{4}-\d{2}-\d{2}$/.test(key)).sort().slice(-5000).forEach(key=>{
+        const value=source[key]; if(!value||typeof value!=='object') return;
+        const id=clampStr(value.id,80),w=clampStr(value.w,80),n=clampStr(value.n,90),l=clampStr(value.l,50);
+        if(id&&w) out[key]={id:id,w:w,n:n,l:l,p:clampStr(value.p,60),d:clampStr(value.d,360),i:clampStr(value.i,90),e:clampStr(value.e,320)}; }); return out; })(raw.paroleGiorno),
     schemaVersion:2,
     settings:{
       sound:false,   /* AUDIO SPENTO: rinascera in un cantiere dedicato */
@@ -1052,7 +1057,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.273.1 · 2026-08-28';
+const APP_VERSION='v60S.274.0 · 2026-08-28';
 
 /* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
    non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
@@ -1572,6 +1577,7 @@ const defaultState={
   unlockRules:[],      /* le regole delle quest sbloccabili */
   unlockDone:{},       /* le occorrenze gia sbloccate: chiave -> giorno */
   promVisti:{},        /* i promemoria a 14 giorni gia visti, per occorrenza */
+  paroleGiorno:{},     /* scelta lessicografica di ogni giorno: backup + sync */
   checks:{},streak:0,lastSealed:'',lastDayInit:'',observerNotes:[],obsLines:[],capitoli:[],semi:[],sfide:{},foto:{},riposi:{},votoId:'',questLog:[],desiderio:null,desideri:[],banco:[],frutti:[],mastery:{quest:{},giorni:{},sguardo:[],riv:[]},
   schemaVersion:2,settings:{sound:true,voice:false,notif:false,uiTheme:'classico'}
 };
@@ -5442,18 +5448,30 @@ function fruttoLocale(S,tk){
   return null;
 }
 
+const FRUTTO_JOB_KEY='sentiero-frutto-job-v1';
+let _fruttoInFlight=null,_fruttoInFlightKey='';
+function _fruttoJobLeggi(){ try{ const value=JSON.parse(localStorage.getItem(FRUTTO_JOB_KEY)||'null'); return value&&typeof value==='object'?value:null; }catch(_){ return null; } }
+function _fruttoJobScrivi(tk,state,extra){
+  try{ const old=_fruttoJobLeggi(),attempts=(old&&old.tk===tk?Number(old.attempts)||0:0)+(state==='GENERATING'?1:0);
+    localStorage.setItem(FRUTTO_JOB_KEY,JSON.stringify(Object.assign({tk:tk,state:state,attempts:attempts,updatedAt:Date.now()},extra||{}))); }catch(_){}
+}
+
 async function fruttoDiOggi(){
   const tk=todayKey();
   const gia=(S.frutti||[]).filter(f=>f&&f.tk===tk)[0];
-  if(gia) return gia.silenzio?null:gia;
+  if(gia){ _fruttoJobScrivi(tk,'AVAILABLE',{silenzio:!!gia.silenzio}); return gia.silenzio?null:gia; }
+  if(_fruttoInFlight&&_fruttoInFlightKey===tk) return _fruttoInFlight;
+  _fruttoInFlightKey=tk; _fruttoJobScrivi(tk,'GENERATING',{startedAt:Date.now()});
+  _fruttoInFlight=(async function(){
+  try{
   if(!generativa()){
     /* v208: senza chiave il frutto lo scrive la casa. Prima qui non c'era niente,
        e la mattina restava vuota per sempre. */
     const riga=fruttoLocale(S,tk);
-    if(!riga){ S.frutti=(S.frutti||[]).concat([{tk:tk,silenzio:true}]).slice(-40); save(); return null; }
+    if(!riga){ S.frutti=(S.frutti||[]).concat([{_syncId:'frutto-'+tk,tk:tk,silenzio:true}]).slice(-40); salvaSubito(); _fruttoJobScrivi(tk,'AVAILABLE',{silenzio:true}); return null; }
     const mossaL=frMossa(S,tk,new Date().getHours(),null);
     const nuovoL={tk:tk,lettura:riga,albero:'',alberoId:'',mossa:mossaL?mossaL.testo:'',chiuso:false,visto:false,locale:true};
-    S.frutti=(S.frutti||[]).concat([nuovoL]).slice(-40); save();
+    nuovoL._syncId='frutto-'+tk; S.frutti=(S.frutti||[]).filter(item=>item&&item.tk!==tk).concat([nuovoL]).slice(-40); salvaSubito(); _fruttoJobScrivi(tk,'AVAILABLE');
     try{ regCantiere('frutto',{msg:'locale'}); }catch(_){}
     return nuovoL;
   }
@@ -5462,18 +5480,32 @@ async function fruttoDiOggi(){
   try{ esito=await scriviFrutto(S,tk); }catch(_){ esito=null; }
   const ms=Date.now()-t0;
   if(!esito||esito.errore){ try{ regCantiere('frutto',{msg:'errore: '+((esito&&esito.errore)||'nulla'),ms:ms}); }catch(_){}
-    return null; }                                               /* errore di rete: il giorno NON si consuma, si riprova all'apertura dopo */
+    _fruttoJobScrivi(tk,'RECOVERABLE_ERROR',{error:clampStr((esito&&esito.errore)||'nessuna risposta',80),nextAt:Date.now()+30000}); return null; }
   if(esito.silenzio||esito.veto){
-    S.frutti=(S.frutti||[]).concat([{tk:tk,silenzio:true}]).slice(-40); save();
+    S.frutti=(S.frutti||[]).filter(item=>item&&item.tk!==tk).concat([{_syncId:'frutto-'+tk,tk:tk,silenzio:true}]).slice(-40); salvaSubito(); _fruttoJobScrivi(tk,'AVAILABLE',{silenzio:true});
     try{ regCantiere('frutto',{msg:esito.veto?('veto: '+esito.veto):('silenzio: '+(esito.perche||'')),ms:ms,
       model:esito.meta&&esito.meta.model,tin:esito.meta&&esito.meta.tin,tout:esito.meta&&esito.meta.tout}); }catch(_){}
     return null; }
   const mossa=frMossa(S,tk,new Date().getHours(),null);
-  const nuovo={tk:tk,lettura:esito.riga,albero:'',alberoId:'',mossa:mossa?mossa.testo:'',chiuso:false,visto:false};
-  S.frutti=(S.frutti||[]).concat([nuovo]).slice(-40); save();
+  const nuovo={_syncId:'frutto-'+tk,tk:tk,lettura:esito.riga,albero:'',alberoId:'',mossa:mossa?mossa.testo:'',chiuso:false,visto:false};
+  S.frutti=(S.frutti||[]).filter(item=>item&&item.tk!==tk).concat([nuovo]).slice(-40); salvaSubito(); _fruttoJobScrivi(tk,'AVAILABLE');
   try{ regCantiere('frutto',{msg:'scritto',ms:ms,model:esito.meta&&esito.meta.model,
     tin:esito.meta&&esito.meta.tin,tout:esito.meta&&esito.meta.tout,salti:esito.meta&&esito.meta.salti}); }catch(_){}
   return nuovo;
+  }catch(error){ _fruttoJobScrivi(tk,'RECOVERABLE_ERROR',{error:clampStr(String(error&&error.message||error||'errore'),80),nextAt:Date.now()+30000}); throw error; }
+  })();
+  try{ return await _fruttoInFlight; }
+  finally{ if(_fruttoInFlightKey===tk){ _fruttoInFlight=null; _fruttoInFlightKey=''; } }
+}
+
+function recuperaFrutto(){
+  try{
+    const tk=todayKey(),existing=(S.frutti||[]).some(item=>item&&item.tk===tk),job=_fruttoJobLeggi();
+    if(existing||document.hidden||!navigator.onLine) return;
+    if(job&&job.tk===tk&&job.state==='RECOVERABLE_ERROR'&&Number(job.nextAt||0)>Date.now()) return;
+    if(job&&job.tk===tk&&job.state==='GENERATING'&&Date.now()-Number(job.startedAt||0)<90000) return;
+    const run=fruttoDiOggi(); if(run&&run.catch) run.catch(()=>{});
+  }catch(_){}
 }
 function _frCapo(x,testo,px,y,maxW,lh,font,colore){
   x.font=font; x.fillStyle=colore;
@@ -5661,6 +5693,10 @@ async function apriSoglia(){
   _fruttoDisegna(corpo,fr,chiudi);
   try{ regCantiere('frutto-porta',{msg:'caricamento -> frutto'}); }catch(_){}
 }
+try{
+  window.addEventListener('online',recuperaFrutto,{passive:true});
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) recuperaFrutto(); },{passive:true});
+}catch(_){}
 /* ══════ MOTORE MAESTRIA fase 1: il modello legge, il client conta ══════ */
 function processMastery(mo){
   if(!mo) return;
@@ -8547,7 +8583,7 @@ async function askObserverLine(pkg,segnale){
      attesa onesta per una riga di sei parole: e una DECISIONE, non una
      scoperta. Quarantacinque bastano alla catena piu lenta con il pensiero
      acceso, e il segnale permette di smettere prima se la riga non serve piu. */
-  const res=await aiCall({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),task:'observer-line',maxOutputTokens:600,reasoning:'low',timeout:45000,priority:5,signal:segnale||undefined});
+  const res=await aiCall({system:OBSERVER_LINE_SYS,user:'DATI (JSON):\n'+JSON.stringify(pkg),task:'observer-line',maxOutputTokens:180,reasoning:'minimal',timeout:30000,priority:55,signal:segnale||undefined});
   const meta={model:(res&&res.model)||null,tin:(res&&res.tin)||0,tout:(res&&res.tout)||0,salti:(res&&res.salti)||undefined,err:(res&&res.err)||null};
   const line=(res&&res.text)?clampStr(res.text,600).trim():null;
   if(!line||/^silenzio[.!\u2026]?$/i.test(line)) return Object.assign({riga:null},meta);   /* silenzio e guasto restano entrambi non invasivi, ma la Diagnostica adesso li distingue */
@@ -9826,7 +9862,7 @@ function observerLineFor(el){
         }
       })();
 
-    },420);
+    },120);
 
   }catch(err){
     try{ _sussurroDiag.errors++;_sussurroDiag.lastOutcome='outer-exception';regCantiere('errore',{task:_sussurroDiag.lastTask,msg:'sussurro preflight: '+String((err&&err.message)||err||'').slice(0,120)}); }catch(_){}
@@ -11807,7 +11843,7 @@ function salvaQuestEditor(){
     quando:document.querySelector('#qedit-quando').value,ora:document.querySelector('#qedit-ora').value,prio:_questEditPrio};
   if(!aggiornaQuestInPlace(q,patch)){ toast('Controlla titolo, giorno e ora'); return; }
   if(!salvaSubito()){ toast('La modifica non è stata salvata'); return; }
-  chiudiQuestEditor(); renderTodayQuests([]); renderQuests([]); updateRing(); toast('Quest aggiornata');
+  chiudiQuestEditor(); renderTodayQuests([]); renderQuests([]); updateRing(); segnalaStatoGiorno(); toast('Quest aggiornata');
 }
 try{
   document.querySelector('#qedit-close').onclick=chiudiQuestEditor;
@@ -12911,19 +12947,44 @@ function chiudiTerra(){
   if(el) el.addEventListener('click',e=>{ if(e.target===el) chiudiTerra(); });
 })();
 
-/* ══ IL SATELLITE DELLA SERA (v198) ════════════════════════════════════════
+/* ══ TERRA DIURNA — codice pesante caricato soltanto al primo ingresso ═══ */
+let _giornoModulo=null,_giornoCarica=null;
+function endpointGiorno(){
+  try{ const meta=document.querySelector('meta[name="sentiero-services"]'),value=meta&&meta.content;
+    if(value) return value; }catch(_){}
+  try{ const info=window.SentieroSync&&window.SentieroSync.info&&window.SentieroSync.info(); if(info&&info.endpoint) return info.endpoint; }catch(_){}
+  return '';
+}
+function caricaStanzaTerra(){
+  if(_giornoModulo) return Promise.resolve(_giornoModulo); if(_giornoCarica) return _giornoCarica;
+  _giornoCarica=import('./sentiero-day.mjs?v=60.274.0').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
+  return _giornoCarica;
+}
+function contestoStanzaTerra(){ return {
+  state:()=>S, save:()=>{ const ok=salvaSubito(); try{ window.dispatchEvent(new Event('sentiero:state')); }catch(_){} return ok; },
+  editQuest:id=>apriQuestEditor(id), ai:opt=>aiCall(opt), canGenerate:()=>generativa(), newsEndpoint:endpointGiorno
+}; }
+async function apriStanzaTerra(){
+  try{ const modulo=await caricaStanzaTerra(); await modulo.open(contestoStanzaTerra()); }
+  catch(_){ try{toast('La stanza della Terra non è disponibile');}catch(__){} }
+}
+window.apriStanzaTerra=apriStanzaTerra;
+function segnalaStatoGiorno(){ try{ window.dispatchEvent(new Event('sentiero:state')); }catch(_){} }
+
+/* ══ IL SATELLITE DELLA SERA + LA TERRA DEL GIORNO (v274) ════════════════
    Stesso anello del microfono, punto opposto a quello azzurro, giro piu lento:
    cosi non si raggiungono mai e non si sovrappongono. Compare alle 19 e sparisce
    alle 4:20. Un solo requestAnimationFrame, e si ferma quando la pagina e coperta
    o quando l'ora non e la sua: fuori orario non consuma niente. ══════════ */
 (function(){
   const luce=document.getElementById('notte-luce'); if(!luce) return;
+  const pianeta=document.getElementById('giorno-terra'); if(!pianeta) return;
   const scie=[].slice.call(document.querySelectorAll('.notte-scia'));
   const el=document.getElementById('stanza');
   const fiore=document.getElementById('notte-fiore');
   if(!el||!fiore) return;
   const GIRO=34000;   /* piu lento dell'azzurro, che gira in 26 secondi */
-  let CX=0, CY=0, RR=120, ang=Math.PI/2, t0=performance.now(), acceso=false;
+  let CX=0, CY=0, RR=120, ang=Math.PI/2, t0=performance.now(), acceso=null;
   const STORIA=[];
   function calmo(){ try{ if(S.settings&&S.settings.anim==='sempre') return false;
     return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(_){ return false; } }
@@ -12937,7 +12998,9 @@ function chiudiTerra(){
     if(c!==acceso){
       acceso=c;
       luce.classList.toggle('hidden',!c);
+      pianeta.classList.toggle('hidden',c);
       if(!c){ scie.forEach(x=>x.style.opacity=0); }
+      if(c&&_giornoModulo&&typeof _giornoModulo.close==='function') try{_giornoModulo.close();}catch(_){}
     }
     return c;
   }
@@ -12949,15 +13012,21 @@ function chiudiTerra(){
     requestAnimationFrame(frame);
     if(document.hidden) return;
     if(ditoInMovimento()) return;                         /* v259: il dito ha la precedenza */
-    if(!acceso) return;                                   /* fuori orario: zero lavoro */
     if(document.body.getAttribute('data-mondo')==='coperto') return;
-    if(el.classList.contains('aperta')) return;           /* stanza aperta: la copre */
+    if(el.classList.contains('aperta')||document.body.classList.contains('giorno-aperto')) return;
     misura();
-    ang=((now-t0)/GIRO)*Math.PI*2 + Math.PI/2;
+    if(!acceso){
+      const a=calmo()?-Math.PI/2:((now-t0)/42000)*Math.PI*2-Math.PI/2;
+      const x=CX+Math.cos(a)*RR,y=CY+Math.sin(a)*RR;
+      poni(pianeta,x,y,1); return;
+    }
+    const quiet=calmo();
+    ang=quiet?Math.PI/2:((now-t0)/GIRO)*Math.PI*2 + Math.PI/2;
     const x=CX+Math.cos(ang)*RR, y=CY+Math.sin(ang)*RR;
-    const k=1+Math.sin(now/1700)*0.13;                    /* respira piu ampio dell'azzurro */
+    const k=quiet?1:1+Math.sin(now/1700)*0.13;             /* reduced motion: immobile */
     poni(luce,x,y,1);
     luce.style.setProperty('--luce-k',k.toFixed(3));
+    if(quiet){ scie.forEach(x=>x.style.opacity=0); return; }
     STORIA.push(x,y); if(STORIA.length>80) STORIA.splice(0,2);
     for(let i=0;i<scie.length;i++){
       const j=STORIA.length/2-1-(i+1)*5;
@@ -12983,6 +13052,7 @@ function chiudiTerra(){
     sboccia(p.x,p.y);
     try{ apriStanza(); }catch(_){}
   });
+  pianeta.addEventListener('click',()=>{ try{apriStanzaTerra();}catch(_){} });
   /* la tastiera: senza visualViewport iOS non ridimensiona la pagina e il piede
      della stanza finisce sotto i tasti. Stessa lezione della v180. */
   const vv=window.visualViewport;
@@ -15004,13 +15074,14 @@ function initSentieroSync(){
       S=sanitizeState(next,defaultState);
       salvaSubito();
       render(); renderTasks(); renderTodayQuests([]); renderQuests([]); updateRing();
+      segnalaStatoGiorno();
       if(typeof renderSettings==='function') renderSettings();
     }catch(_){}
   }});
 }
 function caricaSentieroSync(){
   if(window.SentieroSync)return initSentieroSync(); if(_syncLoadPromise)return _syncLoadPromise;
-  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.273.1';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
+  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.0';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
 }
 try{
   const _loadJournal=()=>caricaSentieroSync().catch(function(){ try{ regCantiere('errore',{msg:'journal locale non disponibile'}); }catch(_){} });

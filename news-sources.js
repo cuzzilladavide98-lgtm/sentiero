@@ -1,0 +1,11 @@
+/* Public newsroom registry. Keep retrieval URLs fixed: the Worker must never
+   become a user-controlled fetch proxy. Metadata is sent to the client so the
+   editorial pipeline can rank evidence without guessing source quality. */
+export const NEWS_SOURCES = Object.freeze([
+  Object.freeze({ sourceId: 'rai', name: 'RaiNews', domain: 'rainews.it', type: 'newsroom', area: 'general', language: 'it', tier: 'B', role: 'public-service newsroom', retrieval: 'rss', freshnessMinutes: 30, reliability: 'edited newsroom', terms: 'link-and-summary', url: 'https://www.rainews.it/rss/tutti' }),
+  Object.freeze({ sourceId: 'istat', name: 'Istat', domain: 'istat.it', type: 'primary', area: 'statistics', language: 'it', tier: 'A', role: 'official statistics', retrieval: 'rss', freshnessMinutes: 180, reliability: 'primary institution', terms: 'official feed', url: 'https://www.istat.it/documenti/comunicato-stampa/feed' }),
+  Object.freeze({ sourceId: 'ecb', name: 'Banca centrale europea', domain: 'ecb.europa.eu', type: 'primary', area: 'economy', language: 'en', tier: 'A', role: 'central bank', retrieval: 'rss', freshnessMinutes: 180, reliability: 'primary institution', terms: 'official feed', url: 'https://www.ecb.europa.eu/rss/press.html' }),
+  Object.freeze({ sourceId: 'europarl', name: 'Parlamento europeo', domain: 'europarl.europa.eu', type: 'primary', area: 'europe', language: 'it', tier: 'A', role: 'legislative institution', retrieval: 'rss', freshnessMinutes: 180, reliability: 'primary institution', terms: 'official feed', url: 'https://www.europarl.europa.eu/rss/doc/press-releases/it.xml' }),
+  Object.freeze({ sourceId: 'un', name: 'ONU News', domain: 'news.un.org', type: 'institutional-news', area: 'world', language: 'en', tier: 'B', role: 'multilateral newsroom', retrieval: 'rss', freshnessMinutes: 60, reliability: 'institutional newsroom', terms: 'official feed', url: 'https://news.un.org/feed/subscribe/en/news/all/rss.xml' }),
+  Object.freeze({ sourceId: 'nasa', name: 'NASA', domain: 'nasa.gov', type: 'primary', area: 'science', language: 'en', tier: 'A', role: 'space agency', retrieval: 'rss', freshnessMinutes: 240, reliability: 'primary institution', terms: 'official feed', url: 'https://www.nasa.gov/news-release/feed/' })
+]);

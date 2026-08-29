@@ -1,6 +1,6 @@
 # Deploy della sincronizzazione opzionale
 
-Il codice, le migrazioni e la prova locale Worker + D1 sono completi. Il deploy remoto richiede soltanto l'accesso a un account Cloudflare, il vero UUID D1 e la scelta dell'origine pubblica di Sentiero. Non inserire credenziali nel repository.
+Il codice, le migrazioni e la prova locale Worker + D1 sono completi. Il deploy remoto richiede soltanto l'accesso a un account Cloudflare, il vero UUID D1 e la scelta dell'origine pubblica di Sentiero. Non inserire credenziali nel repository. Lo stesso Worker espone il pacchetto pubblico finito del Giornale in `/v1/day/news`; non riceve stato personale o prompt.
 
 ## 1. Crea D1
 
@@ -41,11 +41,20 @@ npm run check
 npm run deploy
 ```
 
+Copia poi l'URL HTTPS distribuito nel meta tag di `index.html`:
+
+```html
+<meta name="sentiero-services" content="https://sentiero-sync.<account>.workers.dev">
+```
+
+L'endpoint inserito in **Altro → Dispositivi** rimane una seconda fonte valida per compatibilità. Senza URL il Giornale usa l'ultima edizione locale e la PWA resta pienamente local-first.
+
 Verifica prima il processo pubblico e poi D1 dall'origine autorizzata:
 
 ```bash
 curl https://<worker>/health
 curl -H "Origin: https://origine-sentiero.example" "https://<worker>/health?deep=1"
+curl -H "Origin: https://origine-sentiero.example" "https://<worker>/v1/day/news"
 ```
 
 La risposta profonda deve dichiarare `database: "reachable"` e `protocol: 3`. Poi in Sentiero apri **Altro → Dispositivi**, inserisci l'URL HTTPS del Worker, scegli il nome dispositivo e attiva.

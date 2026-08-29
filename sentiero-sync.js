@@ -14,7 +14,7 @@
   const SYNC_SCHEMA=2, MAX_BATCH=100, MAX_SYNC_BODY=1500000, MAX_CIPHER_CHARS=800000;
   const REQUEST_TIMEOUT=20000, CRYPTO_CONCURRENCY=8;
   const ARRAY_COLLECTIONS=['quests','scheduled','diary','observerNotes','obsLines','capitoli','semi','frutti','banco','unlockRules','desideri','questLog'];
-  const MAP_COLLECTIONS=['checks','patti','sfide','foto','riposi','ferie','unlockDone','promVisti'];
+  const MAP_COLLECTIONS=['checks','patti','sfide','foto','riposi','ferie','unlockDone','promVisti','paroleGiorno'];
   const SINGLE_COLLECTIONS=['settings','mastery','desiderio'];
   const ROOT_FIELDS=['streak','lastSealed','lastFullSealed','lastDayInit','essentials','patto','vistoVersione','obsFamiglie','obsForme','obsDetti','obsZitto','baseLing','baseLingQuando','votoId'];
   const LOCAL_ONLY=new Set(['registro','schemaVersion']);

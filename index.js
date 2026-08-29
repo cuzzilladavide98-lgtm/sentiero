@@ -1,3 +1,5 @@
+import { NEWS_SOURCES } from './news-sources.js';
+
 const te = new TextEncoder();
 
 function b64url(bytes) {
@@ -46,6 +48,140 @@ async function bodyJson(request, max = 600000) {
   const text = await request.text();
   if (text.length > max) throw Object.assign(new Error('too_large'), { status: 413 });
   try { return text ? JSON.parse(text) : {}; } catch (_) { throw Object.assign(new Error('bad_json'), { status: 400 }); }
+}
+
+/* The newsroom receives only public, bounded RSS material.  There is no user
+   identifier, Sentiero state or model key in this route.  Sources are fixed in
+   code so the endpoint cannot be turned into an SSRF proxy. */
+const DAY_FEEDS = NEWS_SOURCES;
+
+function xmlText(value) {
+  return String(value || '')
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&#(x?[0-9a-f]+);/gi, (_, n) => { try { return String.fromCodePoint(n[0].toLowerCase() === 'x' ? parseInt(n.slice(1), 16) : parseInt(n, 10)); } catch (_) { return ' '; } })
+    .replace(/&(amp|lt|gt|quot|apos|nbsp);/gi, (_, n) => ({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }[n.toLowerCase()]))
+    .replace(/\s+/g, ' ').trim();
+}
+
+function tag(block, names) {
+  for (const name of names) {
+    const match = block.match(new RegExp('<(?:[a-z]+:)?' + name + '\\b[^>]*>([\\s\\S]*?)<\\/(?:[a-z]+:)?' + name + '>', 'i'));
+    if (match) return xmlText(match[1]);
+  }
+  return '';
+}
+
+function itemLink(block) {
+  const atom = block.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*>/i);
+  const raw = atom ? xmlText(atom[1]) : tag(block, ['link', 'guid']);
+  try { const url = new URL(raw); return url.protocol === 'https:' ? url.toString() : ''; } catch (_) { return ''; }
+}
+
+function validPublished(value) {
+  const time = Date.parse(String(value || ''));
+  return Number.isFinite(time) && time > Date.UTC(2000, 0, 1) && time < Date.now() + 86400000 ? new Date(time).toISOString() : '';
+}
+
+function parseFeed(xml, source, now = Date.now()) {
+  const input = String(xml || '').slice(0, 1200000), blocks = input.match(/<(?:item|entry)\b[\s\S]*?<\/(?:item|entry)>/gi) || [];
+  const output = [];
+  for (const block of blocks.slice(0, 40)) {
+    const title = tag(block, ['title']).slice(0, 240), url = itemLink(block);
+    const summary = tag(block, ['description', 'summary', 'encoded', 'content']).slice(0, 1200);
+    const published = validPublished(tag(block, ['pubDate', 'published', 'updated', 'date']));
+    if (!title || !url || !published) continue;
+    const age = now - Date.parse(published); if (age < -3600000 || age > 7 * 86400000) continue;
+    output.push({ title, url, summary, published, source: source.name, sourceCode: source.sourceId, sourceMeta: source });
+  }
+  return output;
+}
+
+function normalizedStory(value) {
+  return xmlText(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9à-ÿ ]/g, ' ').replace(/\b(?:il|lo|la|i|gli|le|un|uno|una|di|a|da|in|con|su|per|tra|fra|e|the|a|an|of|to|in|on|for|and|with)\b/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function storyId(code, url) {
+  let h = 2166136261; const text = code + '\u0000' + url;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return code + '-' + (h >>> 0).toString(36);
+}
+
+function dedupeNews(items) {
+  const seenUrl = new Set(), seenTitle = new Set(), out = [];
+  for (const item of items.sort((a, b) => Date.parse(b.published) - Date.parse(a.published))) {
+    const u = item.url.replace(/[?#].*$/, ''), t = normalizedStory(item.title);
+    if (!u || t.length < 12 || seenUrl.has(u) || seenTitle.has(t)) continue;
+    seenUrl.add(u); seenTitle.add(t);
+    out.push({ id: storyId(item.sourceCode, u), title: item.title, summary: item.summary, url: item.url, published: item.published, source: item.source, sourceId: item.sourceCode, sourceMeta: item.sourceMeta });
+    if (out.length >= 54) break;
+  }
+  return out;
+}
+
+async function fetchWithDeadline(url, milliseconds) {
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), milliseconds);
+  try { return await fetch(url, { signal: controller.signal, redirect: 'follow', headers: { Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9' } }); }
+  finally { clearTimeout(timer); }
+}
+
+async function boundedText(response, maximum = 1200000) {
+  const declared = Number(response.headers.get('content-length') || 0);
+  if (declared > maximum) throw new Error('feed_too_large');
+  if (!response.body || !response.body.getReader) {
+    const text = await response.text();
+    if (text.length > maximum) throw new Error('feed_too_large');
+    return text;
+  }
+  const reader = response.body.getReader(), decoder = new TextDecoder(), chunks = [];
+  let received = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      if (received > maximum) throw new Error('feed_too_large');
+      chunks.push(decoder.decode(value, { stream: true }));
+    }
+    chunks.push(decoder.decode());
+    return chunks.join('');
+  } finally { try { reader.releaseLock(); } catch (_) {} }
+}
+
+async function buildNewsPayload() {
+  const settled = await Promise.allSettled(DAY_FEEDS.map(async source => {
+    const response = await fetchWithDeadline(source.url, 7500);
+    if (!response.ok) throw new Error(source.code + ':' + response.status);
+    const text = await boundedText(response);
+    return parseFeed(text, source).slice(0, 14);
+  }));
+  const items = dedupeNews(settled.flatMap(result => result.status === 'fulfilled' ? result.value : []));
+  return {
+    v: 1,
+    generatedAt: new Date().toISOString(),
+    sourceCount: new Set(items.map(item => item.source)).size,
+    registryVersion: 1,
+    failures: settled.filter(result => result.status === 'rejected').length,
+    items,
+    policy: { finite: true, maxItems: 54, personalData: false, paidProvider: false }
+  };
+}
+
+async function dayNews(request, env, ctx) {
+  const url = new URL(request.url), slot = String(url.searchParams.get('slot') || '').replace(/[^0-9a-z_-]/gi, '').slice(0, 32);
+  const cacheUrl = new URL('/v1/day/news', url.origin); cacheUrl.searchParams.set('slot', slot || 'current');
+  const cache = typeof caches !== 'undefined' && caches.default ? caches.default : null;
+  if (cache) { const hit = await cache.match(cacheUrl.toString()); if (hit) return new Response(hit.body, hit); }
+  const payload = await buildNewsPayload();
+  const response = reply(request, env, payload, payload.items.length ? 200 : 503);
+  response.headers.set('Cache-Control', 'public, max-age=900, stale-while-revalidate=3600');
+  if (cache && response.ok) {
+    const write = cache.put(cacheUrl.toString(), response.clone()).catch(error => console.warn(JSON.stringify({ event: 'news_cache_put_failed', message: String(error && error.message || error) })));
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(write); else await write;
+  }
+  return response;
 }
 
 async function authenticate(request, env) {
@@ -204,8 +340,10 @@ async function pairRoute(request, env, auth, path) {
   return null;
 }
 
+export { DAY_FEEDS, parseFeed, dedupeNews, normalizedStory, buildNewsPayload, boundedText };
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url), path = url.pathname;
     try {
       if (path === '/health' && request.method === 'GET') {
@@ -221,6 +359,7 @@ export default {
         return new Response(null, { status: 204, headers: originHeaders(request, env) });
       }
       if (!originAllowed(request, env)) return reply(request, env, { error: 'origin_forbidden' }, 403);
+      if (path === '/v1/day/news' && request.method === 'GET') return dayNews(request, env, ctx);
       if (path === '/v1/spaces' && request.method === 'POST') return createSpace(request, env);
       if (path === '/v1/pairs/redeem' && request.method === 'POST') return redeemPair(request, env);
       if (/^\/v1\/pairs\/[^/]+\/claim$/.test(path)) return pairRoute(request, env, null, path);

@@ -32,18 +32,20 @@ test('il bootstrap non incorpora più gli MP3 del Cerchio', () => {
 
 test('peso di avvio resta sotto i budget misurati della candidata', () => {
   const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1]).concat(app).join('\n');
-  assert.match(html, /rel="preload" href="\.\/sentiero-app\.js\?v=60\.273\.1" as="script"/);
-  assert.match(html, /<script src="\.\/sentiero-app\.js\?v=60\.273\.1"><\/script>/);
+  assert.match(html, /rel="preload" href="\.\/sentiero-app\.js\?v=60\.274\.0" as="script"/);
+  assert.match(html, /<script src="\.\/sentiero-app\.js\?v=60\.274\.0"><\/script>/);
   assert.ok(Buffer.byteLength(html) < 300000, 'index.html oltre 300.000 B');
   assert.ok(zlib.gzipSync(html, { level: 9 }).length < 100000, 'index.html gzip oltre 100.000 B');
   assert.ok(Buffer.byteLength(scripts) < 960000, 'JavaScript inline oltre 960.000 B');
 });
 
 test('il Service Worker attiva la release solo con il runtime principale completo', () => {
-  assert.match(sw, /const CORE_ASSETS = \['\.\/', '\.\/index\.html', '\.\/manifest\.json', '\.\/sentiero-app\.js\?v=60\.273\.1'\]/);
+  assert.match(sw, /const CORE_ASSETS = \['\.\/', '\.\/index\.html', '\.\/manifest\.json', '\.\/sentiero-app\.js\?v=60\.274\.0'\]/);
   assert.match(sw, /Promise\.all\(CORE_ASSETS\.map/);
   assert.match(sw, /throw new Error\('core asset: '/);
-  for (const relative of ['index.html', 'manifest.json', 'sentiero-app.js', 'sentiero-sync.js']) {
+  assert.match(sw, /sentiero-day\.mjs\?v=60\.274\.0/);
+  assert.doesNotMatch(sw, /parole-giorno-v1\.json/);
+  for (const relative of ['index.html', 'manifest.json', 'sentiero-app.js', 'sentiero-sync.js', 'sentiero-day.mjs']) {
     assert.equal(fs.existsSync(path.join(root, relative)), true, relative);
   }
 });
@@ -113,6 +115,19 @@ test('il Worker pagina il recupero remoto con un segnale hasMore esplicito', asy
   assert.equal(body.ops.length, 100);
   assert.equal(body.cursor, 100);
   assert.equal(body.hasMore, true);
+});
+
+test('la newsroom pubblica usa soltanto il registry fisso e non richiede dati Sentiero', async () => {
+  const worker = (await import(pathToFileURL(path.join(root, 'sync-worker', 'src', 'index.js')).href)).default;
+  const originalFetch = global.fetch, published = new Date().toUTCString();
+  global.fetch = async url => new Response(`<?xml version="1.0"?><rss><channel><item><title>Documento pubblico verificato ${String(url).slice(-8)}</title><link>https://example.test/${encodeURIComponent(String(url).slice(-12))}</link><description>Una fonte pubblica consegna materiale sufficiente e circoscritto per la redazione.</description><pubDate>${published}</pubDate></item></channel></rss>`, { status: 200, headers: { 'Content-Type': 'application/rss+xml' } });
+  try {
+    const request = new Request('https://sync.example/v1/day/news?slot=test', { headers: { Origin: 'https://sentiero.example' } });
+    const response = await worker.fetch(request, { ALLOWED_ORIGINS: 'https://sentiero.example' }, { waitUntil() {} });
+    assert.equal(response.status, 200); const body = await response.json();
+    assert.ok(body.items.length >= 5); assert.equal(body.policy.personalData, false); assert.equal(body.policy.paidProvider, false);
+    assert.ok(body.items.every(item => item.sourceMeta && item.sourceMeta.tier && item.sourceMeta.domain));
+  } finally { global.fetch = originalFetch; }
 });
 
 test('il cron elimina gli inviti scaduti senza toccare il journal', async () => {
