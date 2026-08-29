@@ -74,33 +74,61 @@ function tag(block, names) {
   return '';
 }
 
-function itemLink(block) {
-  const atom = block.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*>/i);
-  const raw = atom ? xmlText(atom[1]) : tag(block, ['link', 'guid']);
-  try { const url = new URL(raw); return url.protocol === 'https:' ? url.toString() : ''; } catch (_) { return ''; }
+function canonicalItemUrl(raw, source) {
+  try {
+    const url = new URL(xmlText(raw), source.url);
+    const allowed = (source.linkDomains || [source.domain]).some(domain => url.hostname === domain || url.hostname.endsWith('.' + domain));
+    if (url.protocol !== 'https:' || !allowed) return '';
+    url.hash = '';
+    for (const key of [...url.searchParams.keys()]) if (/^(?:utm_.+|fbclid|gclid|cmpid|ocid|at_.+)$/i.test(key)) url.searchParams.delete(key);
+    return url.toString();
+  } catch (_) { return ''; }
 }
 
+function itemLink(block, source) {
+  const links = [...block.matchAll(/<link\b([^>]*)>/gi)];
+  const preferred = links.find(match => /\brel=["']alternate["']/i.test(match[1])) || links.find(match => !/\brel=["'](?:self|enclosure)["']/i.test(match[1]));
+  const href = preferred && preferred[1].match(/\bhref=["']([^"']+)["']/i);
+  return canonicalItemUrl(href ? href[1] : tag(block, ['link', 'guid']), source);
+}
+
+const FEED_DATE_MONTHS = Object.freeze({
+  gen: 'Jan', gennaio: 'January', feb: 'Feb', febbraio: 'February', mar: 'Mar', marzo: 'March', apr: 'Apr', aprile: 'April', mag: 'May', maggio: 'May', giu: 'Jun', giugno: 'June', lug: 'Jul', luglio: 'July', ago: 'Aug', agosto: 'August', set: 'Sep', sett: 'Sep', settembre: 'September', ott: 'Oct', ottobre: 'October', nov: 'Nov', novembre: 'November', dic: 'Dec', dicembre: 'December',
+  ene: 'Jan', enero: 'January', abr: 'Apr', abril: 'April', mayo: 'May', jun: 'Jun', junio: 'June', jul: 'Jul', julio: 'July', sept: 'Sep', septiembre: 'September', oct: 'Oct', octubre: 'October', diciembre: 'December',
+  janv: 'Jan', janvier: 'January', fev: 'Feb', fevr: 'Feb', fevrier: 'February', avr: 'Apr', avril: 'April', mai: 'May', juin: 'June', juil: 'Jul', juillet: 'July', aout: 'August', dec: 'Dec', decembre: 'December'
+});
+
 function validPublished(value) {
-  const time = Date.parse(String(value || ''));
+  const folded = String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
+  const normalized = folded
+    .replace(/^(?:lun|mar|mer|gio|ven|sab|dom|lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica)\s*,?\s*/i, '')
+    .replace(/\b([a-z]{3,10})\b/gi, word => FEED_DATE_MONTHS[word.toLowerCase()] || word);
+  const time = Date.parse(normalized);
   return Number.isFinite(time) && time > Date.UTC(2000, 0, 1) && time < Date.now() + 86400000 ? new Date(time).toISOString() : '';
 }
 
 function parseFeed(xml, source, now = Date.now()) {
   const input = String(xml || '').slice(0, 1200000), blocks = input.match(/<(?:item|entry)\b[\s\S]*?<\/(?:item|entry)>/gi) || [];
-  const output = [];
+  const output = [], retrievedAt = new Date(now).toISOString();
   for (const block of blocks.slice(0, 40)) {
-    const title = tag(block, ['title']).slice(0, 240), url = itemLink(block);
+    const title = tag(block, ['title']).slice(0, 240), url = itemLink(block, source);
     const summary = tag(block, ['description', 'summary', 'encoded', 'content']).slice(0, 1200);
     const published = validPublished(tag(block, ['pubDate', 'published', 'updated', 'date']));
     if (!title || !url || !published) continue;
     const age = now - Date.parse(published); if (age < -3600000 || age > 7 * 86400000) continue;
-    output.push({ title, url, summary, published, source: source.name, sourceCode: source.sourceId, sourceMeta: source });
+    const evidenceId = storyId(source.sourceId, url);
+    output.push({ title, url, summary, published, source: source.name, sourceCode: source.sourceId, sourceMeta: source, provenance: {
+      evidenceId, sourceId: source.sourceId, sourceDomain: source.domain, feedUrl: source.url, canonicalUrl: url,
+      publishedAt: published, retrievedAt, contentFingerprint: storyId('fp', normalizedStory(title + ' ' + summary))
+    } });
   }
   return output;
 }
 
 function normalizedStory(value) {
-  return xmlText(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9à-ÿ ]/g, ' ').replace(/\b(?:il|lo|la|i|gli|le|un|uno|una|di|a|da|in|con|su|per|tra|fra|e|the|a|an|of|to|in|on|for|and|with)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  return xmlText(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9à-ÿ ]/g, ' ')
+    .replace(/\b(?:il|lo|la|i|gli|le|un|uno|una|di|a|da|in|con|su|per|tra|fra|e|the|an|of|to|on|for|and|with|le|les|la|un|une|de|du|des|et|en|el|los|las|una|uno|del|y|con|von|der|die|das|und|mit)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
 }
 
 function storyId(code, url) {
@@ -115,8 +143,8 @@ function dedupeNews(items) {
     const u = item.url.replace(/[?#].*$/, ''), t = normalizedStory(item.title);
     if (!u || t.length < 12 || seenUrl.has(u) || seenTitle.has(t)) continue;
     seenUrl.add(u); seenTitle.add(t);
-    out.push({ id: storyId(item.sourceCode, u), title: item.title, summary: item.summary, url: item.url, published: item.published, source: item.source, sourceId: item.sourceCode, sourceMeta: item.sourceMeta });
-    if (out.length >= 54) break;
+    out.push({ id: storyId(item.sourceCode, u), title: item.title, summary: item.summary, url: item.url, published: item.published, source: item.source, sourceId: item.sourceCode, sourceMeta: item.sourceMeta, provenance: item.provenance });
+    if (out.length >= 96) break;
   }
   return out;
 }
@@ -152,26 +180,32 @@ async function boundedText(response, maximum = 1200000) {
 
 async function buildNewsPayload() {
   const settled = await Promise.allSettled(DAY_FEEDS.map(async source => {
-    const response = await fetchWithDeadline(source.url, 7500);
-    if (!response.ok) throw new Error(source.code + ':' + response.status);
-    const text = await boundedText(response);
-    return parseFeed(text, source).slice(0, 14);
+    const response = await fetchWithDeadline(source.url, 7000);
+    if (!response.ok) throw new Error(source.sourceId + ':' + response.status);
+    const text = await boundedText(response, 700000);
+    return { source, items: parseFeed(text, source).slice(0, source.maxItems || 7) };
   }));
-  const items = dedupeNews(settled.flatMap(result => result.status === 'fulfilled' ? result.value : []));
+  const items = dedupeNews(settled.flatMap(result => result.status === 'fulfilled' ? result.value.items : []));
+  const usedSources = new Map(items.map(item => [item.sourceId, item.sourceMeta]));
+  const countBy = field => Object.fromEntries([...usedSources.values()].reduce((map, source) => map.set(source[field], (map.get(source[field]) || 0) + 1), new Map()));
   return {
-    v: 1,
+    v: 2,
     generatedAt: new Date().toISOString(),
-    sourceCount: new Set(items.map(item => item.source)).size,
-    registryVersion: 1,
+    sourceCount: usedSources.size,
+    registrySize: DAY_FEEDS.length,
+    registryVersion: 3,
     failures: settled.filter(result => result.status === 'rejected').length,
+    perspectives: countBy('perspective'), languages: countBy('language'),
+    sources: settled.map((result, index) => ({ sourceId: DAY_FEEDS[index].sourceId, ok: result.status === 'fulfilled', items: result.status === 'fulfilled' ? result.value.items.length : 0 })),
     items,
-    policy: { finite: true, maxItems: 54, personalData: false, paidProvider: false }
+    policy: { finite: true, maxItems: 96, personalData: false, paidProvider: false, userSuppliedUrls: false }
   };
 }
 
 async function dayNews(request, env, ctx) {
-  const url = new URL(request.url), slot = String(url.searchParams.get('slot') || '').replace(/[^0-9a-z_-]/gi, '').slice(0, 32);
-  const cacheUrl = new URL('/v1/day/news', url.origin); cacheUrl.searchParams.set('slot', slot || 'current');
+  const url = new URL(request.url), requestedSlot = String(url.searchParams.get('slot') || '');
+  const slot = /^\d{4}-\d{2}-\d{2}-(?:mattino|giorno)$/.test(requestedSlot) ? requestedSlot : 'current';
+  const cacheUrl = new URL('/v1/day/news', url.origin); cacheUrl.searchParams.set('slot', slot);
   const cache = typeof caches !== 'undefined' && caches.default ? caches.default : null;
   if (cache) { const hit = await cache.match(cacheUrl.toString()); if (hit) return new Response(hit.body, hit); }
   const payload = await buildNewsPayload();

@@ -51,7 +51,7 @@ assert.ok(claimEvidenceScore('La banca centrale riduce il tasso dopo il rallenta
 assert.equal(claimEvidenceScore('Un vulcano ha distrutto una capitale ieri.', ['s1'], sources), 0);
 const raw = { title: 'Il Giornale di Sentiero', deck: 'Il quadro che cambia.', corrections: [], articles: sources.map((source, index) => ({
   section: ['Economia', 'Scienza', 'Europa'][index], title: source.title, kicker: source.summary,
-  storyIds: ['st-' + (index + 1)], claims: [{ text: source.summary, sourceIds: [source.id] }, { text: source.title + ' secondo il documento pubblicato dalla fonte.', sourceIds: [source.id] }]
+  storyIds: ['st-' + (index + 1)], claims: [{ text: source.summary, sourceIds: [source.id] }]
 })) };
 assert.ok(validateEdition(raw, sources, '2026-08-28'));
 const poisoned = structuredClone(raw); poisoned.articles[0].claims[0].text = 'Un vulcano ha distrutto una capitale ieri.';
@@ -60,11 +60,11 @@ assert.equal(validateEdition(poisoned, sources, '2026-08-28'), null, 'claim non 
 const repeats = Array.from({ length: 10 }, (_, index) => ({ ...sources[0], id: 'r' + index, url: 'https://example.test/r' + index }));
 assert.equal(clusterNews(repeats).length, 1, 'dieci repliche diventano una storia');
 assert.equal(materiallyChanged({ signature: [...new Set(['banca', 'centrale', 'riduce', 'tasso', 'riferimento', 'rallentamento', 'inflazione'])], numbers: '', sourceTiers: ['A'] }, { items: [sources[0]] }), false);
-assert.equal(materiallyChanged({ signature: ['banca', 'centrale', 'riduce', 'tasso'], numbers: '', sourceTiers: ['B'] }, { items: [sources[0]] }), true, 'una fonte primaria nuova è cambiamento materiale');
+assert.equal(materiallyChanged({ signature: ['banca', 'centrale', 'riduce', 'tasso', 'riferimento', 'rallentamento', 'inflazione'], numbers: '', sourceTiers: ['B'] }, { items: [sources[0]] }), false, 'una ripetizione primaria non finge un delta');
 
 assert.ok(NEWS_SOURCES.length >= 5);
 for (const source of NEWS_SOURCES) for (const field of ['sourceId', 'name', 'domain', 'type', 'area', 'language', 'tier', 'role', 'retrieval', 'freshnessMinutes', 'reliability', 'terms', 'url']) assert.ok(source[field], source.sourceId + ':' + field);
-const feed = `<?xml version="1.0"?><rss><channel><item><title>Decisione verificata</title><link>https://example.test/a</link><description>Testo pubblico sufficiente per una scheda editoriale.</description><pubDate>${new Date().toUTCString()}</pubDate></item></channel></rss>`;
+const feed = `<?xml version="1.0"?><rss><channel><item><title>Decisione verificata</title><link>https://www.istat.it/a</link><description>Testo pubblico sufficiente per una scheda editoriale.</description><pubDate>${new Date().toUTCString()}</pubDate></item></channel></rss>`;
 assert.equal(parseFeed(feed, NEWS_SOURCES[0]).length, 1);
 assert.equal(dedupeNews([...parseFeed(feed, NEWS_SOURCES[0]), ...parseFeed(feed, NEWS_SOURCES[0])]).length, 1);
 await assert.rejects(() => boundedText(new Response('x'.repeat(128), { headers: { 'content-length': '128' } }), 64), /feed_too_large/);

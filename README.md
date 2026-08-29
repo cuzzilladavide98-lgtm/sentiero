@@ -1,4 +1,4 @@
-# Sentiero v60S.274.0
+# Sentiero v60S.274.1
 
 Sentiero è una PWA personale local-first. Diario, Quest, preferenze e stato quotidiano continuano a funzionare senza account e senza rete. La sincronizzazione multi-dispositivo è opzionale, cifrata end-to-end e disattivata per impostazione predefinita.
 
@@ -16,7 +16,8 @@ Poi apri `http://127.0.0.1:4173/`. Service Worker, installazione PWA, Web Crypto
 
 - la Terra diurna sostituisce il satellite tra le 04:20 e le 19:00 e apre una stanza unica con Settimana, Giornale finito e Parola del giorno;
 - la Settimana proietta direttamente le Quest esistenti, dal lunedì alla domenica, senza duplicare oggetti o identità;
-- il Giornale usa un registro pubblico chiuso di fonti, continuità delle storie, claim collegati alle fonti, gate deterministici, rubric editoriale, correzioni e cache offline;
+- il Giornale usa 26 fonti pubbliche gratuite (11 primarie e 15 redazioni indipendenti, in quattro lingue), cluster semantici multilingua, provenienza per claim e memoria delle storie per distinguere il vero delta da ieri;
+- nessuna quota riempie l’edizione: importanza, conseguenze e solidità dell’evidenza determinano da una a sei storie, ordinate in una prima pagina gerarchica; un Editorial Critic avversariale ricompone la bozza prima della pubblicazione e il fallback resta finito e leggibile anche senza Gemini;
 - la Parola del giorno usa un catalogo attribuito di 1.694 voci e persiste la scelta completa: 1.000 giorni simulati senza ripetizioni;
 - Sussurro riduce attesa deterministica e tetto di output; Frutto è single-flight, idempotente e recuperabile dopo errore, sospensione o riavvio;
 - Worker/D1 serve anche il pacchetto notizie pubblico con input limitati, cache condivisa, origini fisse e timeout;
@@ -29,6 +30,8 @@ La suite applicativa richiede soltanto Node.js e non chiama servizi esterni. Il 
 ```bash
 npm test
 npm run test:browser
+npm run test:news:browser
+npm run test:news:live
 node qa/performance-benchmark.js /percorso/alla/baseline
 node qa/browser-performance.js /percorso/alla/baseline
 
@@ -55,4 +58,4 @@ npm run test:worker:e2e
 
 Per abilitare il cloud serve distribuire il Worker e incollare il suo URL in **Altro → Dispositivi**. La procedura è in [docs/SYNC-DEPLOYMENT.md](docs/SYNC-DEPLOYMENT.md).
 
-Documenti della candidata: [architettura](docs/ARCHITECTURE-v274.0.md), [prestazioni](docs/PERFORMANCE-v274.0.md), [test](docs/TEST-REPORT-v274.0.md) e [rapporto di rilascio](RELEASE-REPORT-v60S.274.0.md).
+Documenti della candidata: [Giornale](docs/NEWSROOM-v274.1.md), [test](docs/TEST-REPORT-v274.1.md), [prestazioni precedentemente verificate](docs/PERFORMANCE-v274.0.md) e [rapporto di rilascio](RELEASE-REPORT-v60S.274.1.md).

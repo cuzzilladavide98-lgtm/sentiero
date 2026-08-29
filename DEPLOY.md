@@ -1,4 +1,4 @@
-# Deploy Worker/D1 v60S.274.0
+# Deploy Worker/D1 v60S.274.1
 
 1. `npm ci`
 2. `npx wrangler login`
