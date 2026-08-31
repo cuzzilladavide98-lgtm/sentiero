@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const snapshot = JSON.parse(fs.readFileSync(new URL('../assets/giornale/latest.json', import.meta.url), 'utf8'));
+assert.equal(fs.readFileSync(new URL('../latest.json', import.meta.url), 'utf8'), fs.readFileSync(new URL('../assets/giornale/latest.json', import.meta.url), 'utf8'));
+assert.equal(fs.readFileSync(new URL('../parole-giorno-v1.json', import.meta.url), 'utf8'), fs.readFileSync(new URL('../assets/parole-giorno-v1.json', import.meta.url), 'utf8'));
+assert.equal(snapshot.kind, 'sentiero-editorial-snapshot');
+assert.ok(Number.isFinite(Date.parse(snapshot.generatedAt)));
+assert.ok(snapshot.registrySize >= 24);
+assert.ok(snapshot.reachable >= 18);
+assert.ok(snapshot.parseable >= 14);
+assert.ok(snapshot.items.length >= 12);
+assert.ok(snapshot.edition && snapshot.edition.articles.length >= 1);
+assert.ok(snapshot.edition.articles.every(article => article.claims.length && article.sourceIds.length));
+assert.ok(snapshot.items.every(item => /^https:\/\//.test(item.url) && item.provenance?.evidenceId && item.provenance?.retrievedAt));
+
+const day = fs.readFileSync(new URL('../sentiero-day.mjs', import.meta.url), 'utf8');
+const app = fs.readFileSync(new URL('../sentiero-app.js', import.meta.url), 'utf8');
+const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const generator = fs.readFileSync(new URL('../tools/build-news-snapshot.mjs', import.meta.url), 'utf8');
+const workflow = fs.readFileSync(new URL('../.github/workflows/update-giornale.yml', import.meta.url), 'utf8');
+assert.match(day, /assets\/giornale\/latest\.json/);
+assert.match(day, /NEWS_ASSET_PATHS = \['\.\/assets\/giornale\/latest\.json', '\.\/latest\.json'\]/);
+assert.match(day, /WORD_ASSET_PATHS = \['\.\/assets\/parole-giorno-v1\.json', '\.\/parole-giorno-v1\.json'\]/);
+assert.match(day, /if \(packet\.edition\)/);
+assert.match(day, /sanitizeBundledEdition/);
+assert.doesNotMatch(day, /Il Giornale tornerà quando il servizio/);
+assert.match(sw, /assets\/giornale\/latest\.json/);
+assert.match(sw, /assets\/parole-giorno-v1\.json/);
+assert.match(sw, /endsWith\('\/assets\/giornale\/latest\.json'\).*endsWith\('\/latest\.json'\)/s);
+assert.match(sw, /assets\/parole-giorno-v1\.json'.*parole-giorno-v1\.json'/s);
+assert.match(app, /updateViaCache:'none'/);
+assert.match(app, /sw\.js\?v=60\.274\.3/);
+assert.match(generator, /NEWS_SOURCES\.map\(retrieve\)/);
+assert.doesNotMatch(generator, /process\.argv\[[2-9]\].*(?:url|http)/i);
+assert.match(workflow, /schedule:/);
+assert.match(workflow, /contents:\s*write/);
+assert.match(workflow, /assets\/giornale\/latest\.json/);
+assert.match(workflow, /latest\.json/);
+
+console.log(JSON.stringify({ ok: true, generatedAt: snapshot.generatedAt, items: snapshot.items.length, articles: snapshot.edition.articles.length, reachable: snapshot.reachable, parseable: snapshot.parseable }));
