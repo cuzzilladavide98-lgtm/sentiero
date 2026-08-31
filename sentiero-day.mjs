@@ -1,7 +1,7 @@
 const DAWN_MINUTES = 4 * 60 + 20;
 const NIGHT_MINUTES = 19 * 60;
 const DAY_MS = 86400000;
-const VERSION = 3;
+const VERSION = 4;
 
 export function isDaytime(date = new Date()) {
   const minutes = date.getHours() * 60 + date.getMinutes();
@@ -116,6 +116,52 @@ function storyTokens(value) {
   for (const raw of words) { if (raw.length < 3 || STOP.has(raw) || /^\d+$/.test(raw)) continue; const token = canonicalToken(raw); if (token.length >= 3 && !STOP.has(token)) out.add(token); }
   return out;
 }
+
+const QUEST_SENSITIVE = new Set(('salute sanitario sanitaria medico medica malattia malattie diagnosi terapia farmaco farmaci ospedale oncologia oncologico oncologica psicologo psicologa psichiatria depressione ansia suicidio dipendenza dipendenze alcol droga droghe ' +
+  'religione religioso religiosa cristiano cristiana musulmano musulmana ebreo ebrea ateo atea chiesa moschea sinagoga ' +
+  'sesso sessuale sessualita orientamento gay lesbica trans identita genere gravidanza aborto ' +
+  'politica politico politica partito voto elezione elezioni sindacato etnia etnico razza razziale cittadinanza migrante rifugiato ' +
+  'banca debito debiti mutuo stipendio reddito finanza investimento investimenti conto iban fisco fiscale avvocato tribunale reato processo carcere').split(/\s+/));
+
+export function safeQuestKeywords(quests) {
+  const counts = new Map();
+  for (const quest of Array.isArray(quests) ? quests : []) {
+    if (!quest || quest.fatto) continue;
+    for (const token of storyTokens(cleanText(quest.titolo, 180))) {
+      if (QUEST_SENSITIVE.has(token) || [...QUEST_SENSITIVE].some(word => token.startsWith(word) || word.startsWith(token))) continue;
+      counts.set(token, (counts.get(token) || 0) + 1);
+    }
+  }
+  return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'it')).slice(0, 8).map(([word]) => word);
+}
+
+export function personalizeEditionForDevice(edition, items, quests) {
+  if (!edition || !Array.isArray(edition.articles) || edition.articles.length < 2) return edition;
+  const keywords = safeQuestKeywords(quests); if (!keywords.length) return edition;
+  const byId = new Map((items || []).map(item => [String(item.id), item]));
+  const ranked = edition.articles.map((article, index) => {
+    const evidence = (article.sourceIds || []).map(id => byId.get(String(id))).filter(Boolean);
+    const tokens = storyTokens(evidence.map(item => [item.title, item.summary, ...(item.topics || [])].join(' ')).join(' '));
+    const matches = keywords.filter(keyword => tokens.has(keyword)).length;
+    return { article: { ...article, localRelevanceBoost: Math.min(3, matches) }, index, base: Number(article.importance || 0), score: Number(article.importance || 0) + Math.min(3, matches) };
+  });
+  const lead = ranked.shift();
+  ranked.sort((a, b) => Math.abs(a.base - b.base) > 4 ? b.base - a.base : b.score - a.score || b.base - a.base || a.index - b.index);
+  const articles = [lead, ...ranked].map((entry, index) => ({ ...entry.article, presentation: index === 0 ? 'lead' : index < 3 ? 'major' : 'brief' }));
+  return { ...edition, articles };
+}
+
+function looksItalian(value) {
+  const text = ' ' + foldText(value) + ' ';
+  const italian = (text.match(/\b(?:il|lo|la|gli|le|un|una|di|del|della|che|con|per|nel|nella|sono|ha|hanno|tra|questa|questo|dopo|oggi|ieri)\b/g) || []).length;
+  const english = (text.match(/\b(?:the|and|with|from|that|this|has|have|will|after|before|according|says|said|new)\b/g) || []).length;
+  return italian >= 2 && italian >= english * 2;
+}
+
+function editionIsItalian(edition) {
+  if (!edition || edition.language !== 'it' || !Array.isArray(edition.articles) || !edition.articles.length) return false;
+  return edition.articles.every(article => looksItalian([article.title, article.kicker, ...(article.claims || []).map(claim => claim.text)].join(' ')));
+}
 function intersectionSize(a, b) { let common = 0; for (const token of a) if (b.has(token)) common++; return common; }
 function similarity(a, b) { const common = intersectionSize(a, b); return common ? (0.65 * common / Math.max(1, Math.min(a.size, b.size)) + 0.35 * common / Math.max(1, new Set([...a, ...b]).size)) : 0; }
 
@@ -163,7 +209,65 @@ export function clusterNews(items) {
     cluster.profiles.push(profile);
     for (const token of tokens) cluster.tokens.add(token);
   }
-  return clusters.map(({ tokens, profiles, ...cluster }) => ({ ...cluster, storyId: storyKey(cluster.items), signature: [...tokens].sort().slice(0, 64), evidenceFingerprint: hashText(cluster.items.map(item => item.provenance && item.provenance.contentFingerprint || item.id).sort().join('|')) }));
+  let merged = clusters.map(({ tokens, profiles, ...cluster }) => ({ ...cluster, storyId: storyKey(cluster.items), signature: [...tokens].sort().slice(0, 64), evidenceFingerprint: hashText(cluster.items.map(item => item.provenance && item.provenance.contentFingerprint || item.id).sort().join('|')) }));
+  merged = mergeCrossLanguageClusters(merged);
+  return merged;
+}
+
+function mergeCrossLanguageClusters(clusters) {
+  const enriched = clusters.map(c => ({
+    ...c,
+    numbers: new Set(c.items.flatMap(item => extractNumbers(item.title + ' ' + item.summary))),
+    tokens: new Set(c.signature || []),
+    langs: [...new Set(c.items.map(item => item.sourceMeta?.language).filter(Boolean))]
+  }));
+  let merged = true;
+  while (merged) {
+    merged = false;
+    for (let i = 0; i < enriched.length; i++) {
+      if (enriched[i].items.length === 0) continue;
+      for (let j = i + 1; j < enriched.length; j++) {
+        if (enriched[j].items.length === 0) continue;
+        if (shouldMergeClusters(enriched[i], enriched[j])) {
+          mergeInto(enriched[i], enriched[j]);
+          merged = true;
+        }
+      }
+    }
+  }
+  return enriched.filter(c => c.items.length > 0).map(({ numbers, tokens, langs, ...c }) => c);
+}
+
+function isDateLikeNumber(n) {
+  const num = Number(n);
+  return (num >= 2020 && num <= 2030) || (num >= 1 && num <= 31);
+}
+
+function isSignificantNumber(n) {
+  const num = Number(n);
+  return num >= 100 && !isDateLikeNumber(n);
+}
+
+function shouldMergeClusters(a, b) {
+  const sharedNumbers = [...a.numbers].filter(n => b.numbers.has(n) && !isDateLikeNumber(n));
+  const significantShared = sharedNumbers.filter(isSignificantNumber);
+  if (sharedNumbers.length === 0) return false;
+  const tokenSim = similarity(a.tokens, b.tokens);
+  if (significantShared.length >= 2 && tokenSim >= 0.12) return true;
+  if (significantShared.length >= 1 && tokenSim >= 0.10) return true;
+  if (sharedNumbers.length >= 2 && tokenSim >= 0.2) return true;
+  if (sharedNumbers.length >= 1 && tokenSim >= 0.35) return true;
+  return false;
+}
+
+function mergeInto(target, source) {
+  for (const item of source.items) target.items.push(item);
+  for (const n of source.numbers) target.numbers.add(n);
+  for (const t of source.tokens) target.tokens.add(t);
+  target.signature = [...target.tokens].sort().slice(0, 64);
+  source.items.length = 0;
+  source.numbers.clear();
+  source.tokens.clear();
 }
 
 function cleanText(value, limit) {
@@ -207,14 +311,21 @@ export function editorialImportance(cluster, now = Date.now()) {
   const recency = newest ? Math.max(0, 8 - Math.floor(Math.max(0, now - newest) / 21600000)) : 0;
   const promotional = items.some(item => /\b(?:nomina|appoints?|celebrat|anniversary|evento|conference|webinar|speech|remarks|awards?)\b/i.test(item.title || ''));
   const lowPublicValue = items.some(item => /\b(?:sport|calcio|football|celebrity|gossip|lottery|oroscop)\b/i.test(item.title || ''));
+  const isPurelyLocal = items.every(item => item.sourceMeta?.area === 'local' || item.sourceId?.startsWith('tgr-'));
+  const localCrime = isPurelyLocal && items.some(item => /\b(?:uccide|ucciso|morto|morti|incidente|arrestato|intossicat|ferito|feriti|sparatoria|coltellat|omicidio|omicida|investito|traffico|controesodo|rientri)\b/i.test(item.title || ''));
   const area = Math.max(0, ...areas.map(value => AREA_WEIGHT[value] || 4));
-  const score = Math.max(0, Math.min(100, 10 + area + Math.min(18, impact * 5) + (primary ? 12 : 0) + (independent ? 10 : 0) + (primary && independent ? 16 : 0) + Math.min(6, Math.max(0, domains.size - 1) * 2) + recency + (cluster && cluster.deltaType === 'developed' ? 9 : cluster && cluster.deltaType === 'new' ? 7 : 0) - (promotional ? 24 : 0) - (lowPublicValue ? 30 : 0)));
+  const score = Math.max(0, Math.min(100, 10 + area + Math.min(18, impact * 5) + (primary ? 12 : 0) + (independent ? 10 : 0) + (primary && independent ? 16 : 0) + Math.min(6, Math.max(0, domains.size - 1) * 2) + recency + (cluster && cluster.deltaType === 'developed' ? 9 : cluster && cluster.deltaType === 'new' ? 7 : 0) - (promotional ? 24 : 0) - (lowPublicValue ? 30 : 0) - (localCrime ? 35 : 0)));
   const reasons = [area ? 'impatto-' + (areas.sort((a, b) => (AREA_WEIGHT[b] || 0) - (AREA_WEIGHT[a] || 0))[0] || 'pubblico') : '', primary && independent ? 'fonte-primaria+verifica-indipendente' : primary ? 'fonte-primaria' : independent ? 'verifica-indipendente' : '', impact ? 'conseguenze-materiali' : '', cluster && cluster.deltaType ? 'delta-' + cluster.deltaType : ''].filter(Boolean);
   return { score, reasons, perspectives: [...perspectives], domains: [...domains] };
 }
 
-export function selectEditorialStories(clusters, limit = 12, now = Date.now()) {
-  return (clusters || []).filter(cluster => cluster && (cluster.changed || !cluster.previous)).map(cluster => ({ ...cluster, importance: editorialImportance(cluster, now) })).filter(cluster => cluster.importance.score >= 28).sort((a, b) => b.importance.score - a.importance.score || Date.parse(b.items[0] && b.items[0].published) - Date.parse(a.items[0] && a.items[0].published)).slice(0, Math.max(1, limit));
+export function selectEditorialStories(clusters, limit = 12, now = Date.now(), targetLanguage = 'it') {
+  return (clusters || []).filter(cluster => cluster && (cluster.changed || !cluster.previous)).map(cluster => {
+    const imp = editorialImportance(cluster, now);
+    const hasTargetLang = cluster.items.some(item => item.sourceMeta && item.sourceMeta.language === targetLanguage);
+    const langBoost = hasTargetLang ? 10 : 0;
+    return { ...cluster, importance: { ...imp, score: Math.min(100, imp.score + langBoost) } };
+  }).filter(cluster => cluster.importance.score >= 28).sort((a, b) => b.importance.score - a.importance.score || Date.parse(b.items[0] && b.items[0].published) - Date.parse(a.items[0] && a.items[0].published)).slice(0, Math.max(1, limit));
 }
 
 export function editionRubric(edition, sources) {
@@ -274,7 +385,8 @@ export function validateEdition(raw, sources, key, allowedStoryIds, clusters) {
     if (correctionText.length >= 24 && ids.length && correctsPrior && claimEvidenceDetail(correctionText, ids, sources).supported) corrections.push({ text: correctionText, sourceIds: ids, storyIds: correctionStories });
     else return null;
   }
-  const edition = { v: VERSION, dayKey: key, title: cleanText(raw.title, 90) || 'Il Giornale di Sentiero', deck: cleanText(raw.deck, 300), generatedAt: new Date().toISOString(), articles, corrections };
+  const edition = { v: VERSION, language: 'it', dayKey: key, title: cleanText(raw.title, 90) || 'Il Giornale di Sentiero', deck: cleanText(raw.deck, 300), generatedAt: new Date().toISOString(), articles, corrections };
+  if (!editionIsItalian(edition)) return null;
   edition.rubric = editionRubric(edition, sources);
   return edition.rubric.pass ? edition : null;
 }
@@ -288,8 +400,9 @@ let newsBuild = null;
 let newsAbort = null;
 let listenerBound = false;
 let latestEdition = null;
+let latestSources = [];
 let lastManualRefresh = 0;
-const DISTRIBUTION_VERSION = '60.274.3';
+const DISTRIBUTION_VERSION = '60.274.4';
 const NEWS_ASSET_PATHS = ['./assets/giornale/latest.json', './latest.json'];
 const WORD_ASSET_PATHS = ['./assets/parole-giorno-v1.json', './parole-giorno-v1.json'];
 
@@ -539,13 +652,86 @@ async function persistStories(clusters, edition, key) {
 
 function sourceMap(items) { return new Map((items || []).map(item => [String(item.id), item])); }
 
+const OPAQUE_TITLE_PATTERNS = [
+  /^l'?ultimo\s+\w+$/i,        // "L'ultimo messaggio", "L'ultima notizia"
+  /^la\s+\w+$/i,               // "La decisione", "La notizia"
+  /^il\s+\w+$/i,               // "Il commento", "Il messaggio"
+  /^un\s+\w+$/i,               // "Un aggiornamento"
+  /^nuov\w*\s+\w+$/i,          // "Nuova notizia"
+  /^aggiornamento$/i,          // "Aggiornamento"
+  /^comunicato$/i,             // "Comunicato"
+  /^nota$/i,                   // "Nota"
+  /^dichiarazione$/i,          // "Dichiarazione"
+  /^intervento$/i,             // "Intervento"
+  /^risposta$/i,               // "Risposta"
+];
+
+function isTitleInformative(title) {
+  const t = cleanText(title, 120);
+  if (t.length < 15) return false; // troppo breve per essere informativo
+  if (OPAQUE_TITLE_PATTERNS.some(rx => rx.test(t))) return false;
+  // deve contenere almeno un'entità sostantiva significativa (non solo articoli/preposizioni)
+  const tokens = storyTokens(t);
+  const hasEntity = tokens.size >= 2; // almeno 2 token significativi
+  return hasEntity;
+}
+
+function selectInformativeTitle(usableItems) {
+  // 1. Prova i titoli originali ordinati per informatività
+  const candidates = [...usableItems]
+    .map(item => ({ title: cleanText(item.title, 120), summary: cleanText(item.summary || '', 300) }))
+    .filter(c => isTitleInformative(c.title))
+    .sort((a, b) => b.title.length - a.title.length); // preferisce più lungo (più info)
+  
+  if (candidates.length) return candidates[0].title;
+  
+  // 2. Costruisci titolo dal summary del primo item valido
+  for (const item of usableItems) {
+    const summary = cleanText(item.summary || '', 300);
+    if (summary.length >= 30) {
+      // Prendi la prima frase significativa
+      const sentences = summary.split(/[.!?]/).map(s => cleanText(s, 120)).filter(s => s.length >= 15);
+      if (sentences.length) {
+        const candidate = sentences[0];
+        if (isTitleInformative(candidate)) return candidate;
+      }
+    }
+  }
+  
+  // 3. Nessun titolo informativo disponibile
+  return null;
+}
+
 export function fallbackEdition(items, key, preparedClusters) {
-  const clusters = selectEditorialStories(preparedClusters || clusterNews(items), 5);
+  const allClusters = selectEditorialStories(preparedClusters || clusterNews(items), 20);
+  const italianClusters = allClusters.filter(cluster => 
+    cluster.items.some(item => item.sourceMeta && item.sourceMeta.language === 'it' && looksItalian(item.title + ' ' + item.summary))
+  );
+  
+  // Filter out low-value local crime from national sources (AGI, SkyTG24, etc.)
+  const isLocalCrimeNational = cluster => {
+    const itItems = cluster.items.filter(item => item.sourceMeta?.language === 'it');
+    if (itItems.length === 0) return false;
+    const hasCrimeKeywords = itItems.some(item => /\b(?:uccide|ucciso|morto|morti|incidente|arrestato|intossicat|ferito|feriti|sparatoria|coltellat|omicidio|omicida|investito|traffico|controesodo|rientri)\b/i.test(item.title || ''));
+    if (!hasCrimeKeywords) return false;
+    // Penalize only if: no primary source, <=1 Italian source, single language
+    const hasPrimary = cluster.items.some(item => item.sourceMeta?.perspective === 'primary');
+    const itSourceCount = itItems.length;
+    const isMultiLanguage = new Set(cluster.items.map(item => item.sourceMeta?.language).filter(Boolean)).size > 1;
+    return !hasPrimary && itSourceCount <= 1 && !isMultiLanguage;
+  };
+  
+  const clusters = italianClusters.filter(cluster => !isLocalCrimeNational(cluster)).slice(0, 6);
   const articles = [];
   for (const cluster of clusters) {
-    const usable = cluster.items.filter(item => cleanText(item.summary || item.title, 900).length >= 24).sort((a, b) => tierRank(b) - tierRank(a) || (a.sourceMeta?.perspective === b.sourceMeta?.perspective ? 0 : a.sourceMeta?.perspective === 'primary' ? -1 : 1) || Date.parse(b.published) - Date.parse(a.published));
+    const usable = cluster.items.filter(item => item.sourceMeta && item.sourceMeta.language === 'it' && cleanText(item.summary || item.title, 900).length >= 24 && looksItalian(item.title + ' ' + item.summary)).sort((a, b) => tierRank(b) - tierRank(a) || (a.sourceMeta?.perspective === b.sourceMeta?.perspective ? 0 : a.sourceMeta?.perspective === 'primary' ? -1 : 1) || Date.parse(b.published) - Date.parse(a.published));
     if (!usable.length) continue;
-    const preferredLanguage = usable.find(item => item.sourceMeta && item.sourceMeta.language === 'it') || usable[0], claims = [];
+    
+    // Select best title: prefer informative titles, fallback to building one from summary
+    const titleCandidate = selectInformativeTitle(usable);
+    if (!titleCandidate) continue; // exclude story if no informative title available
+    const preferredLanguage = { ...usable[0], title: titleCandidate };
+    const claims = [];
     for (const evidence of usable) {
       const text = cleanText(evidence.summary || evidence.title, 780), detail = claimEvidenceDetail(text, [evidence.id], items);
       if (detail.supported && !claims.some(claim => profileSimilarity(semanticProfile(claim.text), semanticProfile(text)) > 0.82)) claims.push({ text, sourceIds: [evidence.id], evidenceScore: Number(detail.score.toFixed(3)), provenance: detail.provenance });
@@ -558,8 +744,14 @@ export function fallbackEdition(items, key, preparedClusters) {
     articles.push({ title: preferredLanguage.title, section, kicker, claims, storyIds: [cluster.storyId], sourceIds: [...new Set(claims.flatMap(claim => claim.sourceIds))], importance: cluster.importance.score, importanceReasons: cluster.importance.reasons, deltaType: cluster.deltaType || 'new', deltaFromYesterday: cluster.deltaSummary || 'Nuova oggi.' });
   }
   if (!articles.length) return null;
-  articles.sort((a, b) => b.importance - a.importance); articles.forEach((article, index) => { article.presentation = index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'; });
-  const edition = { v: VERSION, dayKey: key, title: 'Il Giornale di Sentiero', deck: articles.length === 1 ? 'Una sola storia supera oggi la soglia di rilevanza e verificabilità.' : 'Le storie che cambiano davvero il quadro, ordinate per conseguenza e solidità dell’evidenza.', generatedAt: new Date().toISOString(), articles, corrections: [], essential: true };
+  articles.sort((a, b) => b.importance - a.importance);
+  
+  // Filter out low-importance local crime unless we'd have too few articles
+  const majorArticles = articles.filter(a => a.importance >= 52);
+  const finalArticles = majorArticles.length >= 3 ? majorArticles : articles.slice(0, 6);
+  
+  finalArticles.forEach((article, index) => { article.presentation = index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'; });
+  const edition = { v: VERSION, language: 'it', dayKey: key, title: 'Il Giornale di Sentiero', deck: finalArticles.length === 1 ? 'Una sola storia supera oggi la soglia di rilevanza e verificabilità.' : 'Le storie che cambiano davvero il quadro, ordinate per conseguenza e solidità dell’evidenza.', generatedAt: new Date().toISOString(), articles: finalArticles, corrections: [], essential: true };
   edition.rubric = editionRubric(edition, items); edition.rubric.issues = [...new Set([...edition.rubric.issues, 'edizione-essenziale'])];
   return edition;
 }
@@ -600,7 +792,7 @@ async function composeEdition(items, clusters, key, signal) {
   const selected = selectEditorialStories(clusters, 12), packets = selected.map(cluster => ({ storyId: cluster.storyId, firstSeen: cluster.firstSeen, lastMaterialChange: cluster.lastMaterialChange, changedToday: cluster.changed, deltaFromYesterday: cluster.delta, contextAlreadyExplained: cluster.previousContext, claimsPublishedBefore: cluster.previousClaims, importance: cluster.importance, sources: cluster.items.slice(0, 6).map(item => ({ id: item.id, source: item.source, sourceId: item.sourceId, sourceMeta: item.sourceMeta, provenance: item.provenance, published: item.published, title: item.title, summary: cleanText(item.summary, 900), url: item.url })) }));
   if (!packets.length) return null;
   if (!context || !context.canGenerate || !context.canGenerate()) return fallbackEdition(items, key, clusters);
-  const system = `Sei la redazione del Giornale di Sentiero: un quotidiano italiano finito che si legge una volta e lascia un modello del mondo più nitido. Il materiale è pubblico, già raggruppato e ordinato con una misura deterministica di importanza; Gemini è editor, mai fonte. Scegli da una a sei storie, anche una sola: nessun minimo, nessun riempitivo, nessuna quota tematica. Pubblica soltanto ciò che cambia comprensione, conseguenze o possibilità d'azione. Ogni frase fattuale deve essere un claim autonomo con gli id esatti delle fonti che la sostengono. Titolo e apertura non possono promettere più dei claim. Non aggiungere causalità, precedenti, intenzioni, previsioni o contesto enciclopedico assente. Distingui ciò che un'istituzione dichiara da ciò che una redazione indipendente verifica; una ripetizione non è corroborazione. Usa deltaFromYesterday e claimsPublishedBefore: non raccontare di nuovo l'invariato e nomina con precisione cosa è cambiato. Rappresenta divergenze e incertezza senza falsa equivalenza. Scrivi prosa italiana concreta, ritmica, sobria e memorabile: niente gergo da briefing, elenchi travestiti, morale, formule generiche o clickbait. Gerarchizza per portata, durata, irreversibilità e solidità dell'evidenza, non per volume di copertura. corrections è ammesso solo per una storia marcata corrected e richiede storyIds. Il giornale deve avere una fine.`;
+  const system = `Sei la redazione del Giornale di Sentiero: un quotidiano italiano finito che si legge una volta e lascia un modello del mondo più nitido. Tutto il testo visibile deve essere in italiano naturale, inclusi titolo, sommario, sezioni, aperture, claim e correzioni: traduci fedelmente l'evidenza straniera senza tradurre nomi propri o alterare il significato. Il materiale è pubblico, già raggruppato e ordinato con una misura deterministica di importanza; Gemini è editor, mai fonte. Non ricevi e non devi inferire Quest, diario, posizione o altri dati personali. Scegli da una a sei storie, anche una sola: nessun minimo, nessun riempitivo, nessuna quota tematica. Pubblica soltanto ciò che cambia comprensione, conseguenze o possibilità d'azione. Ogni frase fattuale deve essere un claim autonomo con gli id esatti delle fonti che la sostengono. Titolo e apertura non possono promettere più dei claim. Non aggiungere causalità, precedenti, intenzioni, previsioni o contesto enciclopedico assente. Distingui ciò che un'istituzione dichiara da ciò che una redazione indipendente verifica; una ripetizione non è corroborazione. Usa deltaFromYesterday e claimsPublishedBefore: non raccontare di nuovo l'invariato e nomina con precisione cosa è cambiato. Rappresenta divergenze e incertezza senza falsa equivalenza. Scrivi prosa italiana concreta, ritmica, sobria e memorabile: niente gergo da briefing, elenchi travestiti, morale, formule generiche o clickbait. Gerarchizza per portata, durata, irreversibilità e solidità dell'evidenza, non per volume di copertura. corrections è ammesso solo per una storia marcata corrected e richiede storyIds. Il giornale deve avere una fine.`;
   const user = 'GIORNO: ' + key + '\nSTORIE PUBBLICHE E CONTINUITÀ (JSON):\n' + JSON.stringify(packets);
   const first = await context.ai({ system, user, task: 'day-newspaper', schema: EDITION_SCHEMA, maxOutputTokens: 4600, reasoning: 'high', timeout: 65000, priority: 18, signal });
   const allowedStoryIds = new Set(selected.map(cluster => cluster.storyId)), clusterMap = new Map(selected.map(cluster => [cluster.storyId, cluster]));
@@ -612,23 +804,99 @@ async function composeEdition(items, clusters, key, signal) {
   return best || fallbackEdition(items, key, clusters);
 }
 
+const ITALIAN_REGIONS = Object.freeze([
+  ['abruzzo', 'Abruzzo', 42.35, 13.40], ['basilicata', 'Basilicata', 40.64, 15.80], ['calabria', 'Calabria', 38.91, 16.59],
+  ['campania', 'Campania', 40.85, 14.27], ['emiliaromagna', 'Emilia-Romagna', 44.49, 11.34], ['fvg', 'Friuli-Venezia Giulia', 45.65, 13.77],
+  ['lazio', 'Lazio', 41.90, 12.50], ['liguria', 'Liguria', 44.41, 8.93], ['lombardia', 'Lombardia', 45.46, 9.19],
+  ['marche', 'Marche', 43.62, 13.52], ['molise', 'Molise', 41.56, 14.66], ['piemonte', 'Piemonte', 45.07, 7.69],
+  ['puglia', 'Puglia', 41.13, 16.87], ['sardegna', 'Sardegna', 39.22, 9.12], ['sicilia', 'Sicilia', 38.12, 13.36],
+  ['toscana', 'Toscana', 43.77, 11.26], ['trento', 'Trentino-Alto Adige', 46.07, 11.12], ['umbria', 'Umbria', 43.11, 12.39],
+  ['vda', "Valle d'Aosta", 45.74, 7.32], ['veneto', 'Veneto', 45.44, 12.33]
+]);
+const LOCAL_NEWS_KEY = 'sentiero-giornale-territorio-v1';
+
+function localPreference() {
+  try { const value = JSON.parse(localStorage.getItem(LOCAL_NEWS_KEY) || '{}'); return { regionSlug: cleanText(value.regionSlug, 30), region: cleanText(value.region, 50), city: cleanText(value.city, 80) }; } catch (_) { return { regionSlug: '', region: '', city: '' }; }
+}
+
+function saveLocalPreference(value) {
+  const region = ITALIAN_REGIONS.find(item => item[0] === value.regionSlug);
+  const safe = { regionSlug: region ? region[0] : '', region: region ? region[1] : '', city: cleanText(value.city, 80) };
+  try { localStorage.setItem(LOCAL_NEWS_KEY, JSON.stringify(safe)); } catch (_) {}
+  return safe;
+}
+
+function nearestRegion(latitude, longitude) {
+  return ITALIAN_REGIONS.map(region => ({ region, distance: Math.pow(Number(latitude) - region[2], 2) + Math.pow((Number(longitude) - region[3]) * Math.cos(Number(latitude) * Math.PI / 180), 2) })).sort((a, b) => a.distance - b.distance)[0]?.region || null;
+}
+
+function newsFigure(item, compact = false) {
+  const media = item && item.media; if (!media || !media.url) return null;
+  const figure = element('figure', 'article-media' + (compact ? ' compact' : ''));
+  const link = element('a'); link.href = media.sourceUrl || item.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+  const image = element('img'); image.src = media.url; image.alt = media.alt || item.title || ''; image.loading = 'lazy'; image.decoding = 'async'; image.referrerPolicy = 'no-referrer'; link.append(image); figure.append(link);
+  const caption = element('figcaption', '', [media.caption, media.credit && 'Foto: ' + media.credit, media.rights].filter(Boolean).join(' · ')); figure.append(caption);
+  return figure;
+}
+
+function articleMedia(article, sources) {
+  for (const id of article && article.sourceIds || []) { const item = sources.get(String(id)); if (item && item.media) return item; }
+  return null;
+}
+
+function localNews(items, preference) {
+  if (!preference.regionSlug) return [];
+  const cityTokens = storyTokens(preference.city), eventPattern = /\b(?:evento|festival|concerto|mostra|incontro|spettacolo|fiera|apre|inaugura|sabato|domenica|stasera|domani)\b/i;
+  return (items || []).filter(item => item.sourceMeta && item.sourceMeta.regionSlug === preference.regionSlug).map(item => {
+    const text = [item.title, item.summary, ...(item.places || [])].join(' '), tokens = storyTokens(text), cityHits = intersectionSize(cityTokens, tokens);
+    return { ...item, localKind: eventPattern.test(text) ? 'Evento' : 'Notizia locale', localScore: cityHits * 12 + (Date.parse(item.published) || 0) / 1e12 };
+  }).sort((a, b) => b.localScore - a.localScore).slice(0, 4);
+}
+
+function renderLocalNews(items) {
+  const preference = localPreference(), section = element('section', 'news-local'); section.setAttribute('aria-label', 'Notizie del territorio');
+  const head = element('div', 'news-local-head'); head.append(element('p', 'giorno-label', 'Vicino a te')); head.append(element('h3', '', preference.region ? preference.region + (preference.city ? ' · ' + preference.city : '') : 'Scegli il tuo territorio')); section.append(head);
+  const controls = element('div', 'local-controls');
+  const selectLabel = element('label'); selectLabel.append(element('span', '', 'Regione')); const select = element('select'); select.setAttribute('aria-label', 'Regione per le notizie locali'); select.append(element('option', '', 'Nessuna regione')); select.firstChild.value = '';
+  for (const region of ITALIAN_REGIONS) { const option = element('option', '', region[1]); option.value = region[0]; option.selected = preference.regionSlug === region[0]; select.append(option); } selectLabel.append(select); controls.append(selectLabel);
+  const cityLabel = element('label'); cityLabel.append(element('span', '', 'Comune (facoltativo)')); const city = element('input'); city.type = 'text'; city.inputMode = 'text'; city.autocomplete = 'address-level2'; city.maxLength = 80; city.value = preference.city; city.placeholder = 'es. Torino'; city.setAttribute('aria-label', 'Comune per ordinare le notizie locali'); cityLabel.append(city); controls.append(cityLabel);
+  const save = button('local-action primary', 'Mostra il territorio', () => { const region = ITALIAN_REGIONS.find(item => item[0] === select.value); saveLocalPreference({ regionSlug: select.value, region: region && region[1], city: city.value }); renderEdition(latestEdition, latestSources); }); controls.append(save);
+  const locate = button('local-action', 'Usa la mia posizione', () => {
+    locate.disabled = true; locate.textContent = 'Individuo la regione…';
+    const done = () => { locate.disabled = false; locate.textContent = 'Usa la mia posizione'; };
+    if (!navigator.geolocation) { done(); return; }
+    navigator.geolocation.getCurrentPosition(position => { const region = nearestRegion(position.coords.latitude, position.coords.longitude); if (region) { saveLocalPreference({ regionSlug: region[0], region: region[1], city: '' }); renderEdition(latestEdition, latestSources); } done(); }, done, { enableHighAccuracy: false, timeout: 7000, maximumAge: 86400000 });
+  }); locate.setAttribute('aria-label', 'Condividi la posizione una volta per scegliere la regione; le coordinate non vengono conservate'); controls.append(locate); section.append(controls);
+  section.append(element('p', 'local-privacy', 'La scelta resta su questo dispositivo. Con “Usa la mia posizione” Sentiero conserva solo la regione, mai le coordinate.'));
+  const stories = localNews(items, preference);
+  if (preference.regionSlug && !stories.length) section.append(element('p', 'local-empty', 'Nessuna notizia locale recente e verificata è disponibile in questa edizione.'));
+  if (stories.length) {
+    const grid = element('div', 'news-local-grid');
+    for (const item of stories) { const card = element('article', 'news-local-card'); card.append(element('span', 'section', item.localKind)); const media = newsFigure(item, true); if (media) card.append(media); const title = element('h4'); const link = element('a', '', item.title); link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; title.append(link); card.append(title); if (item.summary) card.append(element('p', '', item.summary)); card.append(element('small', '', item.source + ' · ' + new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(item.published)))); grid.append(card); }
+    section.append(grid);
+  }
+  return section;
+}
+
 function renderEdition(edition, items, cachedLabel = '') {
   const mount = room && room.querySelector('.news-mount'); if (!mount) return;
   if (!edition) { renderNewsState('Oggi le fonti disponibili non bastano per comporre un’edizione affidabile. Nessun riempitivo prende il loro posto.', true); return; }
-  latestEdition = edition; const sources = sourceMap(items || edition.sources || []), wrap = element('div', 'edition');
-  const head = element('header', 'edition-head'); head.append(element('h3', '', edition.title)); if (edition.deck) head.append(element('p', '', edition.deck));
+  latestEdition = edition; latestSources = items || edition.sources || []; const displayEdition = personalizeEditionForDevice(edition, latestSources, currentState().quests); const sources = sourceMap(latestSources), wrap = element('div', 'edition');
+  const head = element('header', 'edition-head'); head.append(element('h3', '', displayEdition.title)); if (displayEdition.deck) head.append(element('p', '', displayEdition.deck));
   const when = new Date(edition.generatedAt || Date.now()), meta = [(cachedLabel ? cachedLabel + ' · ' : '') + 'edizione delle ' + new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' }).format(when)];
   const sourceWhen = Date.parse(edition.sourceUpdatedAt || ''); if (Number.isFinite(sourceWhen)) meta.push('fonti aggiornate ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(sourceWhen)));
   head.append(element('p', 'edition-meta', meta.join(' · ')));
   const tools = element('div', 'edition-tools'); const refreshButton = button('news-refresh', 'Verifica aggiornamenti', () => refreshNews(true)); refreshButton.setAttribute('aria-label', 'Verifica se il quadro del giorno è cambiato'); tools.append(refreshButton); head.append(tools); wrap.append(head);
-  if (edition.corrections && edition.corrections.length) {
+  if (displayEdition.corrections && displayEdition.corrections.length) {
     const corrections = element('aside', 'edition-corrections'); corrections.append(element('strong', '', 'Correzioni e precisazioni'));
-    for (const correction of edition.corrections) { const paragraph = element('p', '', correction.text + ' '); for (const id of correction.sourceIds || []) { const source = sources.get(String(id)); if (!source) continue; const link = element('a', '', 'Fonte'); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; paragraph.append(link); } corrections.append(paragraph); } wrap.append(corrections);
+    for (const correction of displayEdition.corrections) { const paragraph = element('p', '', correction.text + ' '); for (const id of correction.sourceIds || []) { const source = sources.get(String(id)); if (!source) continue; const link = element('a', '', 'Fonte'); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; paragraph.append(link); } corrections.append(paragraph); } wrap.append(corrections);
   }
+  wrap.append(renderLocalNews(latestSources));
   const front = element('section', 'edition-front'); front.setAttribute('aria-label', 'Prima pagina');
-  edition.articles.forEach((article, index) => {
+  displayEdition.articles.forEach((article, index) => {
     const presentation = article.presentation || (index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'), node = element('article', 'news-article ' + presentation); node.dataset.importance = String(article.importance || 0); node.append(element('span', 'section', article.section));
     const deltaLabels = { new: 'Nuova oggi', developed: 'Cosa cambia da ieri', corrected: 'Correzione', returned: 'Ritorna con fatti nuovi' }; node.append(element('span', 'article-delta', deltaLabels[article.deltaType] || 'Sviluppo'));
+    const mediaItem = articleMedia(article, sources), media = newsFigure(mediaItem); if (media) node.append(media);
     node.append(element('h3', '', article.title)); if (article.kicker) node.append(element('p', 'kicker', article.kicker));
     const body = element('div', 'body'); for (const claim of article.claims || []) { const paragraph = element('p'); paragraph.append(document.createTextNode(claim.text + ' ')); const citations = element('span', 'claim-sources'); citations.setAttribute('aria-label', 'Provenienza del paragrafo'); let sourceNumber = 0; for (const id of claim.sourceIds || []) { const source = sources.get(String(id)); if (!source) continue; const meta = source.sourceMeta || {}, link = element('a', '', '[' + (++sourceNumber) + ']'); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.title = source.source + ' · ' + (meta.perspective === 'primary' ? 'fonte primaria' : 'redazione indipendente') + (meta.domain ? ' · ' + meta.domain : ''); citations.append(link); } paragraph.append(citations); body.append(paragraph); } node.append(body);
     const links = element('div', 'news-sources'); for (const id of article.sourceIds) { const source = sources.get(String(id)); if (!source) continue; const meta = source.sourceMeta || {}, role = meta.perspective === 'primary' ? 'Primaria' : 'Indipendente', link = element('a', '', source.source + ' · ' + role + ' · ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short' }).format(new Date(source.published))); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; const p = source.provenance || {}; link.title = 'Provenienza: ' + (p.evidenceId || source.id) + (p.retrievedAt ? ' · raccolta ' + p.retrievedAt : ''); links.append(link); } node.append(links); front.append(node);

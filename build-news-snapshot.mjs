@@ -1,26 +1,15 @@
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
-import { basename, dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { clusterNews, fallbackEdition } from '../sentiero-day.mjs';
+import { dedupeNews, parseFeed } from '../sync-worker/src/index.js';
+import { NEWS_SOURCES } from '../sync-worker/src/news-sources.js';
 
 const run = promisify(execFile);
-const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const root = basename(scriptDirectory) === 'tools' ? resolve(scriptDirectory, '..') : scriptDirectory;
-let workerDirectory = resolve(root, 'sync-worker', 'src');
-if (!existsSync(resolve(workerDirectory, 'index.js'))) {
-  workerDirectory = resolve(root, '.snapshot-runtime');
-  await mkdir(workerDirectory, { recursive: true });
-  await copyFile(resolve(root, 'index.js'), resolve(workerDirectory, 'index.mjs'));
-  await copyFile(resolve(root, 'news-sources.js'), resolve(workerDirectory, 'news-sources.js'));
-  await writeFile(resolve(workerDirectory, 'package.json'), '{"type":"module"}\n', 'utf8');
-}
-const { clusterNews, fallbackEdition } = await import(pathToFileURL(resolve(root, 'sentiero-day.mjs')));
-const workerIndex = resolve(workerDirectory, existsSync(resolve(workerDirectory, 'index.mjs')) ? 'index.mjs' : 'index.js');
-const { dedupeNews, parseFeed } = await import(pathToFileURL(workerIndex));
-const { NEWS_SOURCES } = await import(pathToFileURL(resolve(workerDirectory, 'news-sources.js')));
-const outputs = [resolve(root, 'assets', 'giornale', 'latest.json'), resolve(root, 'latest.json')];
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const output = resolve(root, 'assets', 'giornale', 'latest.json');
 const curl = process.platform === 'win32' ? 'curl.exe' : 'curl';
 
 async function retrieve(source) {
@@ -56,14 +45,9 @@ const snapshot = {
   items, edition
 };
 
-const serialized = JSON.stringify(snapshot) + '\n';
-const temporary = [];
-for (const output of outputs) {
-  await mkdir(dirname(output), { recursive: true });
-  const path = output + '.tmp';
-  await writeFile(path, serialized, 'utf8');
-  JSON.parse(await readFile(path, 'utf8'));
-  temporary.push([path, output]);
-}
-await Promise.all(temporary.map(([path, output]) => rename(path, output)));
-console.log(JSON.stringify({ ok: true, outputs, reachable, parseable, items: items.length, articles: edition.articles.length, generatedAt: snapshot.generatedAt }));
+await mkdir(dirname(output), { recursive: true });
+const temporary = output + '.tmp';
+await writeFile(temporary, JSON.stringify(snapshot) + '\n', 'utf8');
+JSON.parse(await readFile(temporary, 'utf8'));
+await rename(temporary, output);
+console.log(JSON.stringify({ ok: true, output, reachable, parseable, items: items.length, articles: edition.articles.length, generatedAt: snapshot.generatedAt }));
