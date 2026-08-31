@@ -92,6 +92,45 @@ function itemLink(block, source) {
   return canonicalItemUrl(href ? href[1] : tag(block, ['link', 'guid']), source);
 }
 
+function canonicalImageUrl(raw, source) {
+  try {
+    const url = new URL(xmlText(raw), source.url), allowed = (source.imageDomains || [source.domain]).some(domain => url.hostname === domain || url.hostname.endsWith('.' + domain));
+    if (url.protocol !== 'https:' || !allowed) return '';
+    url.hash = ''; return url.toString();
+  } catch (_) { return ''; }
+}
+
+function mediaTag(block, name) {
+  const match = String(block || '').match(new RegExp('<media:' + name + '\\b[^>]*>([\\s\\S]*?)<\\/media:' + name + '>', 'i'));
+  return match ? xmlText(match[1]) : '';
+}
+
+function itemMedia(block, source, articleUrl) {
+  const candidates = [...String(block || '').matchAll(/<(?:[a-z]+:)?(content|thumbnail|enclosure)\b([^>]*)>/gi)];
+  for (const match of candidates) {
+    const attributes = match[2] || '', urlMatch = attributes.match(/\burl=["']([^"']+)["']/i), type = (attributes.match(/\btype=["']([^"']+)["']/i) || [])[1] || '', medium = (attributes.match(/\bmedium=["']([^"']+)["']/i) || [])[1] || '';
+    const kind = match[1].toLowerCase(), looksImage = /^image\//i.test(type) || /^image$/i.test(medium) || /\.(?:avif|jpe?g|png|webp)(?:[?#]|$)/i.test(urlMatch && urlMatch[1] || '');
+    if (!urlMatch || (kind !== 'thumbnail' && !looksImage)) continue;
+    const url = canonicalImageUrl(urlMatch[1], source); if (!url) continue;
+    return {
+      url, alt: tag(block, ['title']).slice(0, 180), caption: mediaTag(block, 'title').slice(0, 220),
+      credit: (mediaTag(block, 'credit') || source.name).slice(0, 120), rights: String(tag(block, ['rights', 'copyright']) || source.imageRights || 'Diritti riservati alla fonte').slice(0, 180),
+      sourceUrl: articleUrl
+    };
+  }
+  return null;
+}
+
+function itemCategories(block) {
+  const places = [], topics = [];
+  for (const match of String(block || '').matchAll(/<(?:[a-z]+:)?category\b([^>]*)>([\s\S]*?)<\/(?:[a-z]+:)?category>/gi)) {
+    const value = xmlText(match[2]).slice(0, 100); if (!value) continue;
+    const domain = String((match[1].match(/\bdomain=["']([^"']+)["']/i) || [])[1] || '');
+    const target = /(?:where|place|location)/i.test(domain) ? places : topics; if (!target.includes(value)) target.push(value);
+  }
+  return { places: places.slice(0, 12), topics: topics.slice(0, 12) };
+}
+
 const FEED_DATE_MONTHS = Object.freeze({
   gen: 'Jan', gennaio: 'January', feb: 'Feb', febbraio: 'February', mar: 'Mar', marzo: 'March', apr: 'Apr', aprile: 'April', mag: 'May', maggio: 'May', giu: 'Jun', giugno: 'June', lug: 'Jul', luglio: 'July', ago: 'Aug', agosto: 'August', set: 'Sep', sett: 'Sep', settembre: 'September', ott: 'Oct', ottobre: 'October', nov: 'Nov', novembre: 'November', dic: 'Dec', dicembre: 'December',
   ene: 'Jan', enero: 'January', abr: 'Apr', abril: 'April', mayo: 'May', jun: 'Jun', junio: 'June', jul: 'Jul', julio: 'July', sept: 'Sep', septiembre: 'September', oct: 'Oct', octubre: 'October', diciembre: 'December',
@@ -114,13 +153,13 @@ function parseFeed(xml, source, now = Date.now()) {
     const title = tag(block, ['title']).slice(0, 240), url = itemLink(block, source);
     const summary = tag(block, ['description', 'summary', 'encoded', 'content']).slice(0, 1200);
     const published = validPublished(tag(block, ['pubDate', 'published', 'updated', 'date']));
-    if (!title || !url || !published) continue;
+    if (!title || !url || !published || (source.coverage === 'regional' && summary.length < 24)) continue;
     const age = now - Date.parse(published); if (age < -3600000 || age > 7 * 86400000) continue;
-    const evidenceId = storyId(source.sourceId, url);
+    const evidenceId = storyId(source.sourceId, url), categories = itemCategories(block), media = itemMedia(block, source, url);
     output.push({ title, url, summary, published, source: source.name, sourceCode: source.sourceId, sourceMeta: source, provenance: {
       evidenceId, sourceId: source.sourceId, sourceDomain: source.domain, feedUrl: source.url, canonicalUrl: url,
       publishedAt: published, retrievedAt, contentFingerprint: storyId('fp', normalizedStory(title + ' ' + summary))
-    } });
+    }, places: categories.places, topics: categories.topics, media });
   }
   return output;
 }
@@ -137,14 +176,14 @@ function storyId(code, url) {
   return code + '-' + (h >>> 0).toString(36);
 }
 
-function dedupeNews(items) {
+function dedupeNews(items, maximum = 160) {
   const seenUrl = new Set(), seenTitle = new Set(), out = [];
   for (const item of items.sort((a, b) => Date.parse(b.published) - Date.parse(a.published))) {
     const u = item.url.replace(/[?#].*$/, ''), t = normalizedStory(item.title);
     if (!u || t.length < 12 || seenUrl.has(u) || seenTitle.has(t)) continue;
     seenUrl.add(u); seenTitle.add(t);
-    out.push({ id: storyId(item.sourceCode, u), title: item.title, summary: item.summary, url: item.url, published: item.published, source: item.source, sourceId: item.sourceCode, sourceMeta: item.sourceMeta, provenance: item.provenance });
-    if (out.length >= 96) break;
+    out.push({ id: storyId(item.sourceCode, u), title: item.title, summary: item.summary, url: item.url, published: item.published, source: item.source, sourceId: item.sourceCode, sourceMeta: item.sourceMeta, provenance: item.provenance, places: item.places || [], topics: item.topics || [], media: item.media || null });
+    if (out.length >= maximum) break;
   }
   return out;
 }
@@ -189,16 +228,16 @@ async function buildNewsPayload() {
   const usedSources = new Map(items.map(item => [item.sourceId, item.sourceMeta]));
   const countBy = field => Object.fromEntries([...usedSources.values()].reduce((map, source) => map.set(source[field], (map.get(source[field]) || 0) + 1), new Map()));
   return {
-    v: 2,
+    v: 3,
     generatedAt: new Date().toISOString(),
     sourceCount: usedSources.size,
     registrySize: DAY_FEEDS.length,
-    registryVersion: 3,
+    registryVersion: 4,
     failures: settled.filter(result => result.status === 'rejected').length,
     perspectives: countBy('perspective'), languages: countBy('language'),
     sources: settled.map((result, index) => ({ sourceId: DAY_FEEDS[index].sourceId, ok: result.status === 'fulfilled', items: result.status === 'fulfilled' ? result.value.items.length : 0 })),
     items,
-    policy: { finite: true, maxItems: 96, personalData: false, paidProvider: false, userSuppliedUrls: false }
+    policy: { finite: true, maxItems: 160, personalData: false, paidProvider: false, userSuppliedUrls: false, questData: false }
   };
 }
 

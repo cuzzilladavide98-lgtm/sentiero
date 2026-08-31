@@ -2,10 +2,28 @@
    dichiarati qui: la route non accetta mai destinazioni fornite dal client.
    Sentiero conserva soltanto titolo, breve estratto, metadati e link. */
 const source = record => {
-  const value = { retrieval: 'rss', freshnessMinutes: 120, tier: 'B', reliability: 'edited source', terms: 'headline-excerpt-link', maxItems: 7, ...record };
+  const value = { retrieval: 'rss', freshnessMinutes: 120, tier: 'B', reliability: 'edited source', terms: 'headline-excerpt-link', maxItems: 7, imageRights: 'Diritti riservati alla fonte', ...record };
   value.linkDomains = Object.freeze([...(record.linkDomains || [record.domain])]);
+  value.imageDomains = Object.freeze([...(record.imageDomains || [record.domain])]);
   return Object.freeze(value);
 };
+
+const TGR_REGIONS = Object.freeze([
+  ['abruzzo', 'Abruzzo', 42.35, 13.40], ['basilicata', 'Basilicata', 40.64, 15.80], ['calabria', 'Calabria', 38.91, 16.59],
+  ['campania', 'Campania', 40.85, 14.27], ['emiliaromagna', 'Emilia-Romagna', 44.49, 11.34], ['fvg', 'Friuli-Venezia Giulia', 45.65, 13.77],
+  ['lazio', 'Lazio', 41.90, 12.50], ['liguria', 'Liguria', 44.41, 8.93], ['lombardia', 'Lombardia', 45.46, 9.19],
+  ['marche', 'Marche', 43.62, 13.52], ['molise', 'Molise', 41.56, 14.66], ['piemonte', 'Piemonte', 45.07, 7.69],
+  ['puglia', 'Puglia', 41.13, 16.87], ['sardegna', 'Sardegna', 39.22, 9.12], ['sicilia', 'Sicilia', 38.12, 13.36],
+  ['toscana', 'Toscana', 43.77, 11.26], ['trento', 'Trentino-Alto Adige', 46.07, 11.12], ['umbria', 'Umbria', 43.11, 12.39],
+  ['vda', "Valle d'Aosta", 45.74, 7.32], ['veneto', 'Veneto', 45.44, 12.33]
+]);
+
+const TGR_SOURCES = TGR_REGIONS.map(([slug, region, latitude, longitude]) => source({
+  sourceId: 'tgr-' + slug, name: 'TGR ' + region, domain: 'rainews.it', type: 'newsroom', perspective: 'independent', ownership: 'public-service',
+  country: 'IT', coverage: 'regional', area: 'local', language: 'it', role: 'regional public-service newsroom', reliability: 'edited regional newsroom',
+  terms: 'headline-excerpt-image-link', freshnessMinutes: 30, maxItems: 4, region, regionSlug: slug, latitude, longitude,
+  imageRights: '© Rai · diritti riservati', url: `https://www.rainews.it/tgr/${slug}/rss/tutti`
+}));
 
 export const NEWS_SOURCES = Object.freeze([
   // Italia: dati e atti primari
@@ -42,5 +60,6 @@ export const NEWS_SOURCES = Object.freeze([
   source({ sourceId: 'valigiablu', name: 'Valigia Blu', domain: 'valigiablu.it', type: 'analysis', perspective: 'independent', ownership: 'independent', country: 'IT', coverage: 'world', area: 'analysis', language: 'it', role: 'independent explanatory newsroom', reliability: 'edited analysis', freshnessMinutes: 360, maxItems: 5, url: 'https://www.valigiablu.it/feed/' }),
   source({ sourceId: 'sky-tg24', name: 'Sky TG24', domain: 'tg24.sky.it', type: 'newsroom', perspective: 'independent', ownership: 'commercial', country: 'IT', coverage: 'world', area: 'general', language: 'it', role: 'commercial newsroom', reliability: 'edited newsroom', freshnessMinutes: 30, maxItems: 7, url: 'https://tg24.sky.it/rss/tg24.xml' }),
   source({ sourceId: 'agi', name: 'AGI', domain: 'agi.it', type: 'news-agency', perspective: 'independent', ownership: 'commercial', country: 'IT', coverage: 'world', area: 'general', language: 'it', role: 'news agency', reliability: 'edited wire service', freshnessMinutes: 30, maxItems: 7, url: 'https://www.agi.it/rss' }),
-  source({ sourceId: 'internazionale', name: 'Internazionale', domain: 'internazionale.it', type: 'newsroom', perspective: 'independent', ownership: 'independent', country: 'IT', coverage: 'world', area: 'world', language: 'it', role: 'international independent newsroom', reliability: 'edited newsroom', freshnessMinutes: 90, maxItems: 6, url: 'https://www.internazionale.it/sitemaps/rss.xml' })
+  source({ sourceId: 'internazionale', name: 'Internazionale', domain: 'internazionale.it', type: 'newsroom', perspective: 'independent', ownership: 'independent', country: 'IT', coverage: 'world', area: 'world', language: 'it', role: 'international independent newsroom', reliability: 'edited newsroom', freshnessMinutes: 90, maxItems: 6, url: 'https://www.internazionale.it/sitemaps/rss.xml' }),
+  ...TGR_SOURCES
 ]);

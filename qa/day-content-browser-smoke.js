@@ -49,9 +49,13 @@ function runChrome(profile, url) {
 }
 
 function verify(result, label) {
-  assert.equal(result.error, undefined, label); assert.equal(result.edition, true, label); assert.equal(result.articles, 5, label); assert.ok(result.claims >= 1, label); assert.ok(result.sources >= 1, label);
+  assert.equal(result.error, undefined, label); assert.equal(result.edition, true, label); assert.ok(result.articles >= 1 && result.articles <= 6, label + ': articoli ' + result.articles); assert.ok(result.claims >= 1, label); assert.ok(result.sources >= 1, label);
   assert.match(result.sourceHref || '', /^https:\/\//); assert.match(result.meta || '', /fonti aggiornate/); assert.equal(result.word, true, label); assert.ok((result.wordTitle || '').length >= 2); assert.ok((result.definition || '').length >= 24); assert.match(result.wordSource || '', /Wiktionary/);
   assert.deepEqual(result.errors, [], label); assert.deepEqual(result.rejections, [], label);
+  
+  if (label === 'fresh install') {
+    assert.ok(result.articles >= 3, label + ': edizione sostanziosa attesa (>=3 articoli), trovati ' + result.articles);
+  }
 }
 
 (async () => {

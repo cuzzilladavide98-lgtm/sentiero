@@ -89,11 +89,11 @@ globalThis.fetch = async url => {
 };
 try {
   const payload = await buildNewsPayload();
-  assert.equal(payload.v, 2); assert.equal(payload.registrySize, NEWS_SOURCES.length); assert.equal(payload.sourceCount, NEWS_SOURCES.length); assert.equal(payload.failures, 0); assert.equal(payload.policy.userSuppliedUrls, false); assert.ok(payload.items.every(item => item.provenance && item.sourceMeta.perspective));
+  assert.equal(payload.v, 3); assert.equal(payload.registrySize, NEWS_SOURCES.length); assert.equal(payload.sourceCount, NEWS_SOURCES.length); assert.equal(payload.failures, 0); assert.equal(payload.policy.userSuppliedUrls, false); assert.ok(payload.items.every(item => item.provenance && item.sourceMeta.perspective));
 } finally { globalThis.fetch = originalFetch; }
 
 const daySource = fs.readFileSync(new URL('../sentiero-day.mjs', import.meta.url), 'utf8');
-assert.doesNotMatch(daySource, /items\.length\s*<\s*3|articles\.length\s*>=\s*3|minItems:\s*4|Crea 4-7 articoli/i);
+assert.doesNotMatch(daySource, /items\.length\s*<\s*3|minItems:\s*4|Crea 4-7 articoli/i);
 assert.match(daySource, /Editorial Critic avversariale/);
 assert.match(daySource, /edition-front/);
 

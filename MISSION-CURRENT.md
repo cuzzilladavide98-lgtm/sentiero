@@ -1,14 +1,25 @@
-# Mission ledger — v60S.274.2
+# Mission ledger — v60S.274.4
+
+## Giornale Italia mobile v60S.274.4
+
+| ID | Stato | Evidenza | Blocker |
+|---|---|---|---|
+| N01 Italiano naturale end-to-end | VERIFIED | `looksItalian()`/`editionIsItalian()` validation, prompt editoriale italiano, fallback italiano, campo `language: 'it'` su edition | — |
+| N02 Foto pertinenti e provenienza | VERIFIED | estrazione media RSS (`itemMedia`, `canonicalImageUrl`), allowlist `imageDomains`, rendering `newsFigure` con credit/diritti, campi `places/topics/media` su item | — |
+| N03 Territorio consensuale/manuale | VERIFIED | 20 fonti TGR regionali, `localPreference` (localStorage), `nearestRegion` (geolocalizzazione una volta, no coordinate persistite), UI selector regione/comune, consenso revocabile | — |
+| N04 Boost Quest locale e non sensibile | VERIFIED | `QUEST_SENSITIVE` set, `safeQuestKeywords()` filtra categorie sensibili, `personalizeEditionForDevice()` boost max +3, lead protetto, elaborazione solo locale | — |
+| N05 Mobile-first e browser | VERIFIED | Chrome 320/360/375/390/430/1024 + reduced motion: PASS (nessun overflow, touch target, gerarchia, card con/senza immagine, selector località, consenso geolocalizzazione) | — |
+| N06 Packaging | VERIFIED | ZIP GitHub-ready `sentiero-main-v60S.274.4-GIORNALE-QUALITY-GITHUB-READY.zip`, manifest, SHA-256 verificato, estrazione integra, no artefatti temporanei/secreti | — |
 
 ## Hotfix distribuzione v60S.274.3
 
 | ID | Stato | Evidenza | Blocker |
 |---|---|---|---|
 | D01 Causa deploy reale | VERIFIED | Pages: `/assets/*` 404; copie appiattite in `/latest.json` e `/parole-giorno-v1.json` 200 | — |
-| D02 Resolver asset + edizione diretta | IN_PROGRESS | path canonico/root, snapshot edition senza ricomposizione | — |
-| D03 Migrazione Service Worker | TODO | cache v274.3, alias network-first, update URL/version | — |
-| D04 Gate Pages fresh install | TODO | URL pubblici 200 + Chrome Terra 5 articoli/Parola | deploy remoto |
-| D05 Packaging | TODO | ZIP estratto + SHA-256 | — |
+| D02 Resolver asset + edizione diretta | VERIFIED | path canonico/root; snapshot edition resa direttamente; flat-deploy Chrome PASS | — |
+| D03 Migrazione Service Worker | VERIFIED | cache v274.3, alias network-first, URL SW versionato, updateViaCache none | — |
+| D04 Gate Pages fresh install | VERIFIED | Pages commit `2aafa31f`; Chrome temporaneo: 5 articoli, 5 fonti, Parola completa; asset e MIME reali | — |
+| D05 Packaging | VERIFIED | ZIP 116 file; estrazione e manifest SHA-256 identici; dipendenze build escluse | — |
 
 ## Candidata visuale v60S.274.2
 
