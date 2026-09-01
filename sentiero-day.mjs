@@ -102,16 +102,16 @@ for (const group of [
   const words = group.split(/\s+/), canonical = words[0]; for (const word of words) CONCEPT.set(word, canonical);
 }
 
-function foldText(value) { return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
-function normalizeNumber(value) { return String(value || '').replace(/\s/g, '').replace(',', '.').replace(/\.$/, ''); }
-function extractNumbers(value) { return [...new Set((foldText(value).match(/\b\d+(?:[.,]\d+)?\b/g) || []).map(normalizeNumber))]; }
-function canonicalToken(token) {
+export function foldText(value) { return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+export function normalizeNumber(value) { return String(value || '').replace(/\s/g, '').replace(',', '.').replace(/\.$/, ''); }
+export function extractNumbers(value) { return [...new Set((foldText(value).match(/\b\d+(?:[.,]\d+)?\b/g) || []).map(normalizeNumber))]; }
+export function canonicalToken(token) {
   if (CONCEPT.has(token)) return CONCEPT.get(token);
   if (token.length > 7) return token.replace(/(?:mente|zione|zioni|ation|ations|ements|ement|ments|ment|iques|ique|ciones|cion|ungen|ung)$/i, '') || token;
   if (token.length > 5) return token.replace(/(?:ing|ers|es|s)$/i, '') || token;
   return token;
 }
-function storyTokens(value) {
+export function storyTokens(value) {
   const words = foldText(value).replace(/[^a-z0-9\p{L}]+/gu, ' ').split(/\s+/), out = new Set();
   for (const raw of words) { if (raw.length < 3 || STOP.has(raw) || /^\d+$/.test(raw)) continue; const token = canonicalToken(raw); if (token.length >= 3 && !STOP.has(token)) out.add(token); }
   return out;
@@ -151,14 +151,14 @@ export function personalizeEditionForDevice(edition, items, quests) {
   return { ...edition, articles };
 }
 
-function looksItalian(value) {
+export function looksItalian(value) {
   const text = ' ' + foldText(value) + ' ';
   const italian = (text.match(/\b(?:il|lo|la|gli|le|un|una|di|del|della|che|con|per|nel|nella|sono|ha|hanno|tra|questa|questo|dopo|oggi|ieri)\b/g) || []).length;
   const english = (text.match(/\b(?:the|and|with|from|that|this|has|have|will|after|before|according|says|said|new)\b/g) || []).length;
   return italian >= 2 && italian >= english * 2;
 }
 
-function editionIsItalian(edition) {
+export function editionIsItalian(edition) {
   if (!edition || edition.language !== 'it' || !Array.isArray(edition.articles) || !edition.articles.length) return false;
   return edition.articles.every(article => looksItalian([article.title, article.kicker, ...(article.claims || []).map(claim => claim.text)].join(' ')));
 }
@@ -666,7 +666,7 @@ const OPAQUE_TITLE_PATTERNS = [
   /^risposta$/i,               // "Risposta"
 ];
 
-function isTitleInformative(title) {
+export function isTitleInformative(title) {
   const t = cleanText(title, 120);
   if (t.length < 15) return false; // troppo breve per essere informativo
   if (OPAQUE_TITLE_PATTERNS.some(rx => rx.test(t))) return false;
@@ -676,12 +676,12 @@ function isTitleInformative(title) {
   return hasEntity;
 }
 
-function selectInformativeTitle(usableItems) {
+export function selectInformativeTitle(usableItems) {
   // 1. Prova i titoli originali ordinati per informatività
   const candidates = [...usableItems]
     .map(item => ({ title: cleanText(item.title, 120), summary: cleanText(item.summary || '', 300) }))
     .filter(c => isTitleInformative(c.title))
-    .sort((a, b) => b.title.length - a.title.length); // preferisce più lungo (più info)
+    .sort((a, b) => b.title.length - a.title.length);
   
   if (candidates.length) return candidates[0].title;
   
@@ -689,7 +689,6 @@ function selectInformativeTitle(usableItems) {
   for (const item of usableItems) {
     const summary = cleanText(item.summary || '', 300);
     if (summary.length >= 30) {
-      // Prendi la prima frase significativa
       const sentences = summary.split(/[.!?]/).map(s => cleanText(s, 120)).filter(s => s.length >= 15);
       if (sentences.length) {
         const candidate = sentences[0];
@@ -698,7 +697,7 @@ function selectInformativeTitle(usableItems) {
     }
   }
   
-  // 3. Nessun titolo informativo disponibile
+  // 3. Nessun titolo autosufficiente disponibile: la storia viene esclusa
   return null;
 }
 
@@ -714,11 +713,12 @@ export function fallbackEdition(items, key, preparedClusters) {
     if (itItems.length === 0) return false;
     const hasCrimeKeywords = itItems.some(item => /\b(?:uccide|ucciso|morto|morti|incidente|arrestato|intossicat|ferito|feriti|sparatoria|coltellat|omicidio|omicida|investito|traffico|controesodo|rientri)\b/i.test(item.title || ''));
     if (!hasCrimeKeywords) return false;
-    // Penalize only if: no primary source, <=1 Italian source, single language
+    // Penalize only if: no primary source, single Italian source, single language, AND low importance
     const hasPrimary = cluster.items.some(item => item.sourceMeta?.perspective === 'primary');
     const itSourceCount = itItems.length;
     const isMultiLanguage = new Set(cluster.items.map(item => item.sourceMeta?.language).filter(Boolean)).size > 1;
-    return !hasPrimary && itSourceCount <= 1 && !isMultiLanguage;
+    const maxImportance = Math.max(...cluster.items.map(item => item.sourceMeta?.tier === 'A' ? 3 : item.sourceMeta?.tier === 'B' ? 2 : 1));
+    return !hasPrimary && itSourceCount <= 1 && !isMultiLanguage && maxImportance < 3;
   };
   
   const clusters = italianClusters.filter(cluster => !isLocalCrimeNational(cluster)).slice(0, 6);
@@ -855,26 +855,114 @@ function localNews(items, preference) {
 
 function renderLocalNews(items) {
   const preference = localPreference(), section = element('section', 'news-local'); section.setAttribute('aria-label', 'Notizie del territorio');
-  const head = element('div', 'news-local-head'); head.append(element('p', 'giorno-label', 'Vicino a te')); head.append(element('h3', '', preference.region ? preference.region + (preference.city ? ' · ' + preference.city : '') : 'Scegli il tuo territorio')); section.append(head);
-  const controls = element('div', 'local-controls');
-  const selectLabel = element('label'); selectLabel.append(element('span', '', 'Regione')); const select = element('select'); select.setAttribute('aria-label', 'Regione per le notizie locali'); select.append(element('option', '', 'Nessuna regione')); select.firstChild.value = '';
-  for (const region of ITALIAN_REGIONS) { const option = element('option', '', region[1]); option.value = region[0]; option.selected = preference.regionSlug === region[0]; select.append(option); } selectLabel.append(select); controls.append(selectLabel);
-  const cityLabel = element('label'); cityLabel.append(element('span', '', 'Comune (facoltativo)')); const city = element('input'); city.type = 'text'; city.inputMode = 'text'; city.autocomplete = 'address-level2'; city.maxLength = 80; city.value = preference.city; city.placeholder = 'es. Torino'; city.setAttribute('aria-label', 'Comune per ordinare le notizie locali'); cityLabel.append(city); controls.append(cityLabel);
-  const save = button('local-action primary', 'Mostra il territorio', () => { const region = ITALIAN_REGIONS.find(item => item[0] === select.value); saveLocalPreference({ regionSlug: select.value, region: region && region[1], city: city.value }); renderEdition(latestEdition, latestSources); }); controls.append(save);
-  const locate = button('local-action', 'Usa la mia posizione', () => {
-    locate.disabled = true; locate.textContent = 'Individuo la regione…';
-    const done = () => { locate.disabled = false; locate.textContent = 'Usa la mia posizione'; };
+  const hasRegion = !!preference.regionSlug;
+  
+  if (!hasRegion) {
+    // Stato iniziale: nessuna regione scelta
+    const card = element('div', 'local-card');
+    const head = element('div', 'local-head');
+    head.append(element('p', 'giorno-label', 'Vicino a te'));
+    head.append(element('h3', '', 'Scegli il tuo territorio'));
+    card.append(head);
+    
+    const actions = element('div', 'local-actions');
+    
+    const selectWrapper = element('div', 'local-select-wrap');
+    const selectLabel = element('label', '', 'Regione');
+    const select = element('select'); select.setAttribute('aria-label', 'Regione per le notizie locali');
+    select.append(element('option', '', 'Scegli una regione'));
+    select.firstChild.value = '';
+    for (const region of ITALIAN_REGIONS) { const option = element('option', '', region[1]); option.value = region[0]; select.append(option); }
+    selectWrapper.append(selectLabel); selectWrapper.append(select);
+    actions.append(selectWrapper);
+    
+    const cityWrapper = element('div', 'local-input-wrap');
+    const cityLabel = element('label', '', 'Comune (facoltativo)');
+    const city = element('input'); city.type = 'text'; city.inputMode = 'text'; city.autocomplete = 'address-level2'; city.maxLength = 80; city.placeholder = 'es. Torino'; city.setAttribute('aria-label', 'Comune per ordinare le notizie locali');
+    cityWrapper.append(cityLabel); cityWrapper.append(city);
+    actions.append(cityWrapper);
+    
+    const primaryBtn = button('local-btn primary', 'Mostra notizie locali', () => { const region = ITALIAN_REGIONS.find(item => item[0] === select.value); if (!select.value) return; saveLocalPreference({ regionSlug: select.value, region: region && region[1], city: city.value }); renderEdition(latestEdition, latestSources); });
+    actions.append(primaryBtn);
+    
+    const geoBtn = button('local-btn geo', 'Usa la mia posizione', () => {
+      geoBtn.disabled = true; geoBtn.textContent = 'Individuo la regione…';
+      const done = () => { geoBtn.disabled = false; geoBtn.textContent = 'Usa la mia posizione'; };
+      if (!navigator.geolocation) { done(); return; }
+      navigator.geolocation.getCurrentPosition(position => { const region = nearestRegion(position.coords.latitude, position.coords.longitude); if (region) { saveLocalPreference({ regionSlug: region[0], region: region[1], city: '' }); renderEdition(latestEdition, latestSources); } done(); }, done, { enableHighAccuracy: false, timeout: 7000, maximumAge: 86400000 });
+    }); geoBtn.setAttribute('aria-label', 'Condividi la posizione una volta per scegliere la regione; le coordinate non vengono conservate');
+    actions.append(geoBtn);
+    
+    card.append(actions);
+    
+    const privacy = element('p', 'local-privacy', 'La posizione serve solo a scegliere la zona. Le coordinate non vengono salvate.');
+    card.append(privacy);
+    section.append(card);
+    return section;
+  }
+  
+  // Stato con regione scelta
+  const stories = localNews(items, preference);
+  const card = element('div', 'local-card');
+  const head = element('div', 'local-head');
+  head.append(element('p', 'giorno-label', 'Vicino a te'));
+  head.append(element('h3', '', preference.region + (preference.city ? ' · ' + preference.city : '')));
+  card.append(head);
+  
+  const actions = element('div', 'local-actions');
+  
+  const changeWrapper = element('div', 'local-select-wrap');
+  const changeLabel = element('label', '', 'Cambia regione');
+  const changeSelect = element('select'); changeSelect.setAttribute('aria-label', 'Cambia regione per le notizie locali');
+  changeSelect.append(element('option', '', 'Scegli una regione'));
+  changeSelect.firstChild.value = '';
+  for (const region of ITALIAN_REGIONS) { const option = element('option', '', region[1]); option.value = region[0]; option.selected = preference.regionSlug === region[0]; changeSelect.append(option); }
+  changeWrapper.append(changeLabel); changeWrapper.append(changeSelect);
+  actions.append(changeWrapper);
+  
+  const cityWrapper = element('div', 'local-input-wrap');
+  const cityLabel = element('label', '', 'Comune (facoltativo)');
+  const city = element('input'); city.type = 'text'; city.inputMode = 'text'; city.autocomplete = 'address-level2'; city.maxLength = 80; city.value = preference.city; city.placeholder = 'es. Torino'; city.setAttribute('aria-label', 'Comune per ordinare le notizie locali');
+  cityWrapper.append(cityLabel); cityWrapper.append(city);
+  actions.append(cityWrapper);
+  
+  const saveBtn = button('local-btn primary', 'Aggiorna', () => { const region = ITALIAN_REGIONS.find(item => item[0] === changeSelect.value); if (!changeSelect.value) return; saveLocalPreference({ regionSlug: changeSelect.value, region: region && region[1], city: city.value }); renderEdition(latestEdition, latestSources); });
+  actions.append(saveBtn);
+  
+  const geoBtn = button('local-btn geo', 'Usa la mia posizione', () => {
+    geoBtn.disabled = true; geoBtn.textContent = 'Individuo la regione…';
+    const done = () => { geoBtn.disabled = false; geoBtn.textContent = 'Usa la mia posizione'; };
     if (!navigator.geolocation) { done(); return; }
     navigator.geolocation.getCurrentPosition(position => { const region = nearestRegion(position.coords.latitude, position.coords.longitude); if (region) { saveLocalPreference({ regionSlug: region[0], region: region[1], city: '' }); renderEdition(latestEdition, latestSources); } done(); }, done, { enableHighAccuracy: false, timeout: 7000, maximumAge: 86400000 });
-  }); locate.setAttribute('aria-label', 'Condividi la posizione una volta per scegliere la regione; le coordinate non vengono conservate'); controls.append(locate); section.append(controls);
-  section.append(element('p', 'local-privacy', 'La scelta resta su questo dispositivo. Con “Usa la mia posizione” Sentiero conserva solo la regione, mai le coordinate.'));
-  const stories = localNews(items, preference);
-  if (preference.regionSlug && !stories.length) section.append(element('p', 'local-empty', 'Nessuna notizia locale recente e verificata è disponibile in questa edizione.'));
-  if (stories.length) {
-    const grid = element('div', 'news-local-grid');
-    for (const item of stories) { const card = element('article', 'news-local-card'); card.append(element('span', 'section', item.localKind)); const media = newsFigure(item, true); if (media) card.append(media); const title = element('h4'); const link = element('a', '', item.title); link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; title.append(link); card.append(title); if (item.summary) card.append(element('p', '', item.summary)); card.append(element('small', '', item.source + ' · ' + new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(item.published)))); grid.append(card); }
-    section.append(grid);
+  }); geoBtn.setAttribute('aria-label', 'Condividi la posizione una volta per scegliere la regione; le coordinate non vengono conservate');
+  actions.append(geoBtn);
+  
+  const clearBtn = button('local-btn clear', 'Rimuovi territorio', () => { saveLocalPreference({ regionSlug: '', region: '', city: '' }); renderEdition(latestEdition, latestSources); });
+  actions.append(clearBtn);
+  
+  card.append(actions);
+  
+  const privacy = element('p', 'local-privacy', 'La posizione serve solo a scegliere la zona. Le coordinate non vengono salvate.');
+  card.append(privacy);
+  section.append(card);
+  
+  if (!stories.length) {
+    const empty = element('p', 'local-empty', 'Nessuna notizia locale recente e verificata per questo territorio.');
+    section.append(empty);
+    return section;
   }
+  
+  const grid = element('div', 'news-local-grid');
+  for (const item of stories) { 
+    const card = element('article', 'news-local-card'); 
+    card.append(element('span', 'section', item.localKind)); 
+    const media = newsFigure(item, true); if (media) card.append(media); 
+    const title = element('h4'); const link = element('a', '', item.title); link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; title.append(link); card.append(title); 
+    if (item.summary) card.append(element('p', '', item.summary)); 
+    card.append(element('small', '', item.source + ' · ' + new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(item.published)))); 
+    grid.append(card); 
+  }
+  section.append(grid);
   return section;
 }
 
@@ -958,7 +1046,7 @@ async function readNewsPacket(urlOrPaths, signal, channel) {
   if (!data || !Array.isArray(data.items)) throw new Error('fonti');
   const items = data.items.filter(item => item && item.id && item.title && item.url && item.source && /^https:\/\//.test(item.url)).slice(0, 96).map(item => ({
     id: cleanText(item.id, 80), title: cleanText(item.title, 240), summary: cleanText(item.summary, 1200), url: item.url, published: item.published, source: cleanText(item.source, 80), sourceId: cleanText(item.sourceId, 40),
-    sourceMeta: item.sourceMeta && typeof item.sourceMeta === 'object' ? { tier: cleanText(item.sourceMeta.tier, 2), type: cleanText(item.sourceMeta.type, 30), area: cleanText(item.sourceMeta.area, 30), role: cleanText(item.sourceMeta.role, 80), reliability: cleanText(item.sourceMeta.reliability, 80), domain: cleanText(item.sourceMeta.domain, 80), language: cleanText(item.sourceMeta.language, 8), perspective: cleanText(item.sourceMeta.perspective, 20), ownership: cleanText(item.sourceMeta.ownership, 30), country: cleanText(item.sourceMeta.country, 8), coverage: cleanText(item.sourceMeta.coverage, 20), retrieval: cleanText(item.sourceMeta.retrieval, 20), freshnessMinutes: Math.max(0, Math.min(1440, Number(item.sourceMeta.freshnessMinutes) || 0)), terms: cleanText(item.sourceMeta.terms, 80) } : null,
+    sourceMeta: item.sourceMeta && typeof item.sourceMeta === 'object' ? { tier: cleanText(item.sourceMeta.tier, 2), type: cleanText(item.sourceMeta.type, 30), area: cleanText(item.sourceMeta.area, 30), role: cleanText(item.sourceMeta.role, 80), reliability: cleanText(item.sourceMeta.reliability, 80), domain: cleanText(item.sourceMeta.domain, 80), language: cleanText(item.sourceMeta.language, 8), perspective: cleanText(item.sourceMeta.perspective, 20), ownership: cleanText(item.sourceMeta.ownership, 30), country: cleanText(item.sourceMeta.country, 8), coverage: cleanText(item.sourceMeta.coverage, 20), retrieval: cleanText(item.sourceMeta.retrieval, 20), freshnessMinutes: Math.max(0, Math.min(1440, Number(item.sourceMeta.freshnessMinutes) || 0)), terms: cleanText(item.sourceMeta.terms, 80), regionSlug: cleanText(item.sourceMeta.regionSlug, 30) } : null,
     provenance: item.provenance && typeof item.provenance === 'object' ? { evidenceId: cleanText(item.provenance.evidenceId, 100), sourceId: cleanText(item.provenance.sourceId, 40), sourceDomain: cleanText(item.provenance.sourceDomain, 100), canonicalUrl: /^https:\/\//.test(item.provenance.canonicalUrl || '') ? item.provenance.canonicalUrl : item.url, publishedAt: cleanText(item.provenance.publishedAt, 40), retrievedAt: cleanText(item.provenance.retrievedAt, 40), contentFingerprint: cleanText(item.provenance.contentFingerprint, 100) } : { evidenceId: cleanText(item.id, 80), sourceId: cleanText(item.sourceId, 40), canonicalUrl: item.url, publishedAt: cleanText(item.published, 40) }
   }));
   if (!items.length) throw new Error('fonti');
@@ -975,16 +1063,20 @@ async function fetchSources(endpoint, key, signal) {
     catch (_) {}
     finally { clearTimeout(timer); if (signal) signal.removeEventListener('abort', abort); }
   }
-  return readNewsPacket(NEWS_ASSET_PATHS, signal, 'snapshot');
+  const packet = await readNewsPacket(NEWS_ASSET_PATHS, signal, 'snapshot');
+  if (packet.edition && !editionIsItalian(packet.edition)) {
+    packet.edition = null;
+  }
+  return packet;
 }
 
 export async function refreshNews(force = false) {
   if (!room || newsBuild) return newsBuild;
   const key = sentieroDayKey(), cached = await cacheGet(key), age = cached ? Date.now() - Number(cached.at || 0) : Infinity;
-  if (force && Date.now() - lastManualRefresh < 10 * 60000) { if (cached) renderEdition(cached.edition, cached.sources, 'quadro già verificato'); return cached && cached.edition; }
+  if (force && Date.now() - lastManualRefresh < 10 * 60000) { if (cached && editionIsItalian(cached.edition)) renderEdition(cached.edition, cached.sources, 'quadro già verificato'); return cached && editionIsItalian(cached.edition) ? cached.edition : null; }
   if (force) lastManualRefresh = Date.now();
-  if (cached && !force) { renderEdition(cached.edition, cached.sources, 'salvata sul dispositivo'); if (age < 4 * 3600000) return cached.edition; }
-  if (!cached) { const latest = await cacheLatest(); if (latest) renderEdition(latest.edition, latest.sources, latest.key === key ? 'salvata sul dispositivo' : 'ultima edizione disponibile'); else renderNewsState('La Terra sta raccogliendo le fonti di oggi.', false); }
+  if (cached && !force) { if (editionIsItalian(cached.edition)) { renderEdition(cached.edition, cached.sources, 'salvata sul dispositivo'); if (age < 4 * 3600000) return cached.edition; } }
+  if (!cached) { const latest = await cacheLatest(); if (latest && editionIsItalian(latest.edition)) renderEdition(latest.edition, latest.sources, latest.key === key ? 'salvata sul dispositivo' : 'ultima edizione disponibile'); else renderNewsState('La Terra sta raccogliendo le fonti di oggi.', false); }
   const endpoint = newsEndpoint();
   if (newsAbort) newsAbort.abort(); newsAbort = new AbortController();
   newsBuild = (async () => {
@@ -997,11 +1089,11 @@ export async function refreshNews(force = false) {
         return edition;
       }
       const clusters = await continuityClusters(items, key), changed = selectEditorialStories(clusters, 12);
-      if (cached && !changed.length) { await cachePut({ ...cached, checkedAt: Date.now() }); renderEdition(cached.edition, cached.sources, 'quadro verificato, nessun cambiamento rilevante'); return cached.edition; }
+      if (cached && !changed.length) { await cachePut({ ...cached, checkedAt: Date.now() }); if (editionIsItalian(cached.edition)) renderEdition(cached.edition, cached.sources, 'quadro verificato, nessun cambiamento rilevante'); return cached.edition; }
       const edition = await composeEdition(items, clusters, key, newsAbort.signal); if (!edition) throw new Error('edizione');
       edition.generatedAt = edition.generatedAt || new Date().toISOString(); edition.sourceUpdatedAt = packet.generatedAt || new Date().toISOString(); edition.sourceChannel = packet.channel; edition.materialChanges = changed.map(cluster => cluster.storyId);
       await cachePut({ key, at: Date.now(), checkedAt: Date.now(), edition, sources: items }); await persistStories(clusters, edition, key); renderEdition(edition, items); return edition;
-    } catch (error) { if (!(error && error.name === 'AbortError') && !cached && !latestEdition) renderNewsState('Oggi nessuna storia supera insieme le soglie di rilevanza e verificabilità. Nessun riempitivo prende il suo posto.', true); return cached && cached.edition; }
+    } catch (error) { if (!(error && error.name === 'AbortError') && !cached && !latestEdition) renderNewsState('Oggi nessuna storia supera insieme le soglie di rilevanza e verificabilità. Nessun riempitivo prende il suo posto.', true); return cached && editionIsItalian(cached.edition) ? cached.edition : null; }
     finally { newsBuild = null; }
   })();
   return newsBuild;
