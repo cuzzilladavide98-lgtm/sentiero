@@ -179,6 +179,21 @@ function profileSimilarity(a, b) {
   return Math.min(1, base + (numberOverlap ? 0.1 : 0));
 }
 
+const EVENT_MACRO_ANCHORS = new Set('russia russian ucraina ukraine europa europe unione union nato ue onu mosca kiev cremlino putin presidente president governo government parlamento parliament ministro minister guerra war pace peace'.split(/\s+/).map(canonicalToken));
+
+function namedEventAnchors(value) {
+  const matches = String(value || '').replace(/<[^>]*>/g, ' ').match(/\p{Lu}[\p{L}'’-]{2,}/gu) || [];
+  return new Set(matches.map(token => canonicalToken(foldText(token))).filter(token => token.length >= 3 && !STOP.has(token) && !EVENT_MACRO_ANCHORS.has(token)));
+}
+
+function likelySameEvent(a, b) {
+  if (a.publishedAt && b.publishedAt && Math.abs(a.publishedAt - b.publishedAt) > 36 * 60 * 60 * 1000) return false;
+  const common = [...a.tokens].filter(token => b.tokens.has(token));
+  const specificCommon = common.filter(token => !EVENT_MACRO_ANCHORS.has(token));
+  const sharedAnchors = [...a.namedAnchors].filter(token => b.namedAnchors.has(token));
+  return sharedAnchors.length >= 2 && specificCommon.length >= 3 && similarity(a.tokens, b.tokens) >= 0.12;
+}
+
 function unionTokens(items) {
   const tokens = new Set();
   for (const item of items || []) for (const token of storyTokens(String(item.title || '') + ' ' + String(item.summary || ''))) tokens.add(token);
@@ -199,10 +214,11 @@ export function clusterNews(items) {
   const clusters = [];
   for (const item of Array.isArray(items) ? items : []) {
     if (!item || !item.id || !item.title || !item.url || !item.source) continue;
-    const profile = semanticProfile(item.title + ' ' + String(item.summary || '').slice(0, 420)), tokens = profile.tokens;
+    const normalizedSummary = sanitizeEditorial(item.summary || '', 900), eventText = item.title + ' ' + normalizedSummary.slice(0, 420);
+    const profile = { ...semanticProfile(eventText), namedAnchors: namedEventAnchors(item.title + ' ' + normalizedSummary), publishedAt: Date.parse(item.published) || 0 }, tokens = profile.tokens;
     let cluster = clusters.find(candidate => candidate.profiles.some(other => {
       const common = intersectionSize(tokens, other.tokens), score = profileSimilarity(profile, other);
-      return (common >= 2 && score >= 0.47) || (common >= 1 && score >= 0.4 && [...profile.numbers].some(number => other.numbers.has(number)));
+      return (common >= 2 && score >= 0.47) || (common >= 1 && score >= 0.4 && [...profile.numbers].some(number => other.numbers.has(number))) || likelySameEvent(profile, other);
     }));
     if (!cluster) { cluster = { id: 'c' + (clusters.length + 1), tokens: new Set(), profiles: [], items: [] }; clusters.push(cluster); }
     cluster.items.push(item);
@@ -274,6 +290,45 @@ function cleanText(value, limit) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, limit);
 }
 
+function sanitizeHtml(value) {
+  if (!value) return '';
+  // Prima si rimuovono i tag HTML reali (angolari letterali), poi si decodificano
+  // le entità. Così «&lt;tag&gt;» diventa il testo letterale «<tag>» senza essere
+  // scambiato per markup e rimosso.
+  const named = {
+    '&nbsp;': ' ', '&amp;': '&', '&lt;': '<', '&gt;': '>',
+    '&quot;': '"', '&apos;': "'", '&#39;': "'", '&ndash;': '–',
+    '&mdash;': '—', '&ldquo;': '"', '&rdquo;': '"', '&lsquo;': "'",
+    '&rsquo;': "'", '&hellip;': '…', '&agrave;': 'à', '&egrave;': 'è',
+    '&igrave;': 'ì', '&ograve;': 'ò', '&ugrave;': 'ù', '&eacute;': 'é'
+  };
+  return String(value)
+    .replace(/<[^>]+>/g, '')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/&[a-zA-Z]+;/g, entity => named[entity.toLowerCase()] !== undefined ? named[entity.toLowerCase()] : entity)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function sanitizeEditorial(text, limit) {
+  return cleanText(sanitizeHtml(text), limit);
+}
+
+export function normalizeEtymology(value, limit = 900) {
+  return sanitizeEditorial(value, limit).replace(/\b([Cc]he)\s+(?:è|e)\s+(deriva(?:no)?)\b/giu, '$1 $2');
+}
+
+// Kicker generico = ripete lo stato già comunicato dal badge delta (NUOVA OGGI,
+// ecc.) senza aggiungere evidenza. Non si renderizza: il badge basta.
+export function editorialKicker(value, limit = 260) {
+  const text = sanitizeEditorial(value, limit);
+  if (!text) return '';
+  const t = text.toLowerCase().replace(/[\s\p{P}'\u2019\u02bc]/gu, '');
+  if (t === 'nuovaoggi' || t === 'nuovanellaggiornamentodellefonti' || t === 'sviluppo' || t === 'nuovastoria' || t === 'aggiornamento') return '';
+  return text;
+}
+
 function evidenceTokens(value) { return storyTokens(String(value || '').replace(/\b(?:oggi|ieri|domani|secondo|fonte|fonti|today|yesterday|tomorrow|according)\b/gi, ' ')); }
 
 function provenanceFor(source) {
@@ -311,11 +366,12 @@ export function editorialImportance(cluster, now = Date.now()) {
   const recency = newest ? Math.max(0, 8 - Math.floor(Math.max(0, now - newest) / 21600000)) : 0;
   const promotional = items.some(item => /\b(?:nomina|appoints?|celebrat|anniversary|evento|conference|webinar|speech|remarks|awards?)\b/i.test(item.title || ''));
   const lowPublicValue = items.some(item => /\b(?:sport|calcio|football|celebrity|gossip|lottery|oroscop)\b/i.test(item.title || ''));
+  const lifestyle = items.some(item => /\b(?:podcast|episodio|recensione|review|curiosit[àa]|storia d|amore|relazione|coppia|innamorat|fidanzat|matrimonio|separaz|divorz|vita priv|sentiment|emozion|racconto|narrativa|magazine|lifestyle|rubrica|colonna|opinion|editoriale|personale|diario|memoria|ricordo|aneddot)\b/i.test(item.title || ''));
   const isPurelyLocal = items.every(item => item.sourceMeta?.area === 'local' || item.sourceId?.startsWith('tgr-'));
   const localCrime = isPurelyLocal && items.some(item => /\b(?:uccide|ucciso|morto|morti|incidente|arrestato|intossicat|ferito|feriti|sparatoria|coltellat|omicidio|omicida|investito|traffico|controesodo|rientri)\b/i.test(item.title || ''));
   const area = Math.max(0, ...areas.map(value => AREA_WEIGHT[value] || 4));
-  const score = Math.max(0, Math.min(100, 10 + area + Math.min(18, impact * 5) + (primary ? 12 : 0) + (independent ? 10 : 0) + (primary && independent ? 16 : 0) + Math.min(6, Math.max(0, domains.size - 1) * 2) + recency + (cluster && cluster.deltaType === 'developed' ? 9 : cluster && cluster.deltaType === 'new' ? 7 : 0) - (promotional ? 24 : 0) - (lowPublicValue ? 30 : 0) - (localCrime ? 35 : 0)));
-  const reasons = [area ? 'impatto-' + (areas.sort((a, b) => (AREA_WEIGHT[b] || 0) - (AREA_WEIGHT[a] || 0))[0] || 'pubblico') : '', primary && independent ? 'fonte-primaria+verifica-indipendente' : primary ? 'fonte-primaria' : independent ? 'verifica-indipendente' : '', impact ? 'conseguenze-materiali' : '', cluster && cluster.deltaType ? 'delta-' + cluster.deltaType : ''].filter(Boolean);
+  const score = Math.max(0, Math.min(100, 10 + area + Math.min(18, impact * 5) + (primary ? 12 : 0) + (independent ? 10 : 0) + (primary && independent ? 16 : 0) + Math.min(6, Math.max(0, domains.size - 1) * 2) + recency + (cluster && cluster.deltaType === 'developed' ? 9 : cluster && cluster.deltaType === 'new' ? 7 : 0) - (promotional ? 24 : 0) - (lowPublicValue ? 30 : 0) - (lifestyle ? 40 : 0) - (localCrime ? 35 : 0)));
+  const reasons = [area ? 'impatto-' + (areas.sort((a, b) => (AREA_WEIGHT[b] || 0) - (AREA_WEIGHT[a] || 0))[0] || 'pubblico') : '', primary && independent ? 'fonte-primaria+verifica-indipendente' : primary ? 'fonte-primaria' : independent ? 'verifica-indipendente' : '', impact ? 'conseguenze-materiali' : '', cluster && cluster.deltaType ? 'delta-' + cluster.deltaType : '', lifestyle ? 'stile-di-vita-escluso' : ''].filter(Boolean);
   return { score, reasons, perspectives: [...perspectives], domains: [...domains] };
 }
 
@@ -323,9 +379,8 @@ export function selectEditorialStories(clusters, limit = 12, now = Date.now(), t
   return (clusters || []).filter(cluster => cluster && (cluster.changed || !cluster.previous)).map(cluster => {
     const imp = editorialImportance(cluster, now);
     const hasTargetLang = cluster.items.some(item => item.sourceMeta && item.sourceMeta.language === targetLanguage);
-    const langBoost = hasTargetLang ? 10 : 0;
-    return { ...cluster, importance: { ...imp, score: Math.min(100, imp.score + langBoost) } };
-  }).filter(cluster => cluster.importance.score >= 28).sort((a, b) => b.importance.score - a.importance.score || Date.parse(b.items[0] && b.items[0].published) - Date.parse(a.items[0] && a.items[0].published)).slice(0, Math.max(1, limit));
+    return { ...cluster, targetLanguageAvailable: hasTargetLang, importance: imp };
+  }).filter(cluster => cluster.importance.score >= 28).sort((a, b) => b.importance.score - a.importance.score || Number(b.targetLanguageAvailable) - Number(a.targetLanguageAvailable) || Date.parse(b.items[0] && b.items[0].published) - Date.parse(a.items[0] && a.items[0].published)).slice(0, Math.max(1, limit));
 }
 
 export function editionRubric(edition, sources) {
@@ -357,11 +412,11 @@ export function validateEdition(raw, sources, key, allowedStoryIds, clusters) {
   const articles = []; let rejectedEvidence = false;
   for (const sourceArticle of raw.articles.slice(0, 6)) {
     if (!sourceArticle || !Array.isArray(sourceArticle.claims)) continue;
-    const title = cleanText(sourceArticle.title, 180), section = cleanText(sourceArticle.section, 50);
+    const title = sanitizeEditorial(sourceArticle.title, 180), section = cleanText(sourceArticle.section, 50);
     const claims = [];
     for (const rawClaim of sourceArticle.claims.slice(0, 6)) {
       if (!rawClaim || !Array.isArray(rawClaim.sourceIds)) { rejectedEvidence = true; continue; }
-      const requested = [...new Set(rawClaim.sourceIds.map(String))], ids = requested.filter(id => map.has(id)).slice(0, 4), text = cleanText(rawClaim.text, 900);
+      const requested = [...new Set(rawClaim.sourceIds.map(String))], ids = requested.filter(id => map.has(id)).slice(0, 4), text = sanitizeEditorial(rawClaim.text, 900);
       const evidence = claimEvidenceDetail(text, ids, sources);
       if (!text || text.length < 24 || ids.length !== requested.length || !ids.length || !evidence.supported) { rejectedEvidence = true; continue; }
       claims.push({ text, sourceIds: ids, evidenceScore: Number(evidence.score.toFixed(3)), provenance: evidence.provenance });
@@ -373,19 +428,19 @@ export function validateEdition(raw, sources, key, allowedStoryIds, clusters) {
     if (!headline.supported && profileSimilarity(semanticProfile(title), semanticProfile(claims.map(claim => claim.text).join(' '))) < 0.42) { rejectedEvidence = true; continue; }
     const related = storyIds.map(id => clusterMap.get(id)).filter(Boolean), importance = Math.max(0, ...related.map(cluster => cluster.importance && cluster.importance.score || editorialImportance(cluster).score));
     const primaryCluster = related.sort((a, b) => (b.importance?.score || 0) - (a.importance?.score || 0))[0];
-    articles.push({ title, section, kicker: cleanText(sourceArticle.kicker, 260), claims, storyIds, sourceIds, importance, importanceReasons: primaryCluster && primaryCluster.importance && primaryCluster.importance.reasons || [], deltaType: primaryCluster && primaryCluster.deltaType || 'new', deltaFromYesterday: primaryCluster && primaryCluster.deltaSummary || 'Nuova oggi.' });
+    articles.push({ title, section, kicker: editorialKicker(sourceArticle.kicker, 260), claims, storyIds, sourceIds, importance, importanceReasons: primaryCluster && primaryCluster.importance && primaryCluster.importance.reasons || [], deltaType: primaryCluster && primaryCluster.deltaType || 'new', deltaFromYesterday: primaryCluster && primaryCluster.deltaSummary || 'Nuova oggi.' });
   }
   if (!articles.length || rejectedEvidence) return null;
   articles.sort((a, b) => b.importance - a.importance);
   articles.forEach((article, index) => { article.presentation = index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'; });
   const corrections = [];
   for (const rawCorrection of Array.isArray(raw.corrections) ? raw.corrections.slice(0, 3) : []) {
-    const ids = [...new Set((rawCorrection.sourceIds || []).map(String))].filter(id => map.has(id)), correctionText = cleanText(rawCorrection.text, 500), correctionStories = [...new Set((rawCorrection.storyIds || []).map(String))].filter(id => clusterMap.has(id));
+    const ids = [...new Set((rawCorrection.sourceIds || []).map(String))].filter(id => map.has(id)), correctionText = sanitizeEditorial(rawCorrection.text, 500), correctionStories = [...new Set((rawCorrection.storyIds || []).map(String))].filter(id => clusterMap.has(id));
     const correctsPrior = correctionStories.some(id => clusterMap.get(id).deltaType === 'corrected');
     if (correctionText.length >= 24 && ids.length && correctsPrior && claimEvidenceDetail(correctionText, ids, sources).supported) corrections.push({ text: correctionText, sourceIds: ids, storyIds: correctionStories });
     else return null;
   }
-  const edition = { v: VERSION, language: 'it', dayKey: key, title: cleanText(raw.title, 90) || 'Il Giornale di Sentiero', deck: cleanText(raw.deck, 300), generatedAt: new Date().toISOString(), articles, corrections };
+  const edition = { v: VERSION, language: 'it', dayKey: key, title: sanitizeEditorial(raw.title, 90) || 'Il Giornale di Sentiero', deck: sanitizeEditorial(raw.deck, 300), generatedAt: new Date().toISOString(), articles, corrections };
   if (!editionIsItalian(edition)) return null;
   edition.rubric = editionRubric(edition, sources);
   return edition.rubric.pass ? edition : null;
@@ -402,7 +457,7 @@ let listenerBound = false;
 let latestEdition = null;
 let latestSources = [];
 let lastManualRefresh = 0;
-const DISTRIBUTION_VERSION = '60.274.4';
+const DISTRIBUTION_VERSION = '60.274.5-rc2';
 const NEWS_ASSET_PATHS = ['./assets/giornale/latest.json', './latest.json'];
 const WORD_ASSET_PATHS = ['./assets/parole-giorno-v1.json', './parole-giorno-v1.json'];
 
@@ -461,8 +516,8 @@ body.giorno-aperto{overflow:hidden!important}
 .week-nav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;margin:0 0 12px}.week-nav button{height:44px;border:0;background:none;color:var(--ink);font-size:25px}.week-title{text-align:center;font:600 13px/1.3 system-ui,sans-serif}.week-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;width:100%;padding:2px 0 10px}.week-day{min-width:0;min-height:66px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.24);color:var(--ink);padding:8px 1px}.week-day b,.week-day span{display:block}.week-day b{font:700 9px/1.2 system-ui,sans-serif;letter-spacing:.03em}.week-day span{margin-top:5px;font:500 20px/1 Georgia,serif}.week-day i{display:block;width:5px;height:5px;margin:6px auto 0;border-radius:50%;background:transparent}.week-day.has i{background:var(--sun)}.week-day.today{box-shadow:inset 0 0 0 1px var(--sun)}.week-day.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .week-agenda{border-top:1px solid var(--line);margin-top:9px}.agenda-empty{padding:27px 0;color:var(--muted);font:italic 18px/1.55 Georgia,serif}.agenda-row{display:grid;grid-template-columns:62px 1fr;gap:13px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:17px 0;min-height:65px}.agenda-row time{font:700 12px/1.4 system-ui,sans-serif;color:var(--sun)}.agenda-row strong{display:block;font:500 18px/1.25 Georgia,serif}.agenda-row small{display:block;margin-top:4px;color:var(--muted);font:400 13px/1.45 system-ui,sans-serif}.agenda-row.done{opacity:.55}.agenda-row.done strong{text-decoration:line-through}
 .news-state{padding:24px 0;border-block:1px solid var(--line);color:var(--muted);font:400 15px/1.6 system-ui,sans-serif}.news-state b{color:var(--ink)}.news-refresh{min-height:44px;margin-top:13px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--ink);font:600 13px/1 system-ui,sans-serif}.edition-head{padding:5px 0 28px;border-bottom:3px double var(--ink)}.edition-head h3{margin:0;font:500 clamp(35px,10vw,57px)/.98 Georgia,serif;letter-spacing:-.045em}.edition-head p{margin:15px 0 0;color:var(--muted);font:400 17px/1.55 Georgia,serif}.edition-meta{margin-top:15px!important;font:600 10px/1.3 system-ui,sans-serif!important;letter-spacing:.12em;text-transform:uppercase}.edition-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.edition-tools .news-refresh{margin-top:10px}.edition-corrections{margin:24px 0 0;padding:15px 17px;border:1px solid var(--line);font:400 14px/1.55 system-ui,sans-serif}.edition-corrections strong{display:block;margin-bottom:6px}.claim-sources{font:600 10px/1 system-ui,sans-serif;white-space:nowrap}.claim-sources a{color:#355d52;text-decoration:none;margin-left:5px}.edition-front{display:grid;grid-template-columns:minmax(0,1fr);border-bottom:2px solid var(--ink)}
-.news-article{min-width:0;padding:30px 0;border-bottom:1px solid var(--line)}.news-article .section{color:var(--sun);font:700 10px/1.2 system-ui,sans-serif;letter-spacing:.15em;text-transform:uppercase}.article-delta{display:inline-flex;margin:0 0 9px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;color:#5d4a27;font:700 9px/1.2 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}.news-article h3{margin:8px 0 9px;font:500 clamp(27px,8vw,42px)/1.05 Georgia,serif;letter-spacing:-.027em}.news-article.lead{padding-top:36px;border-bottom:2px solid var(--ink)}.news-article.lead h3{font-size:clamp(38px,11vw,58px);line-height:1}.news-article.major h3{font-size:clamp(29px,8vw,43px)}.news-article.brief h3{font-size:clamp(24px,7vw,34px)}.news-article .kicker{margin:0 0 16px;color:#475951;font:italic 17px/1.5 Georgia,serif}.news-article .body p{margin:0 0 14px;font:400 18px/1.66 Georgia,serif}.news-sources{display:flex;flex-wrap:wrap;gap:7px;margin-top:19px}.news-sources a{max-width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:#355d52;font:600 11px/1.25 system-ui,sans-serif;text-decoration:none;overflow-wrap:anywhere}.edition-end{padding:38px 0 10px;text-align:center;font:600 11px/1.5 system-ui,sans-serif;letter-spacing:.17em;text-transform:uppercase}.edition-end::before{content:'◆';display:block;margin-bottom:14px;color:var(--sun);font-size:9px}
-.word-card{position:relative;padding:25px 0 3px;border-block:2px solid var(--ink)}.word-card h3{margin:0;font:500 clamp(43px,13vw,70px)/1 Georgia,serif;letter-spacing:-.045em;overflow-wrap:anywhere}.word-meta{margin:9px 0 21px;color:var(--sun);font:700 11px/1.5 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}.word-definition{margin:0 0 17px;font:400 20px/1.55 Georgia,serif}.word-detail{padding-top:15px;border-top:1px solid var(--line);color:#41534b;font:400 15px/1.6 system-ui,sans-serif}.word-detail b{color:var(--ink)}.word-source{margin-top:18px;color:var(--muted);font:400 11px/1.5 system-ui,sans-serif}.word-source a{color:inherit}
+.news-article{min-width:0;padding:30px 0;border-bottom:1px solid var(--line)}.news-article .section{color:var(--sun);font:700 10px/1.2 system-ui,sans-serif;letter-spacing:.15em;text-transform:uppercase}.article-delta{display:inline-flex;margin:0 0 9px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;color:#5d4a27;font:700 9px/1.2 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}.news-article h3{margin:8px 0 9px;font:500 clamp(27px,8vw,42px)/1.05 Georgia,serif;letter-spacing:-.027em}.news-article.lead{padding-top:36px;border-bottom:2px solid var(--ink)}.news-article.lead h3{font-size:clamp(34px,9vw,52px);line-height:1.05}.news-article.major h3{font-size:clamp(26px,7vw,38px);line-height:1.1}.news-article.brief h3{font-size:clamp(22px,6vw,30px);line-height:1.15}.news-article .kicker{margin:0 0 12px;color:#475951;font:italic 15px/1.4 Georgia,serif}.news-article .body p{margin:0 0 12px;font:400 16px/1.6 Georgia,serif}.news-sources{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}.news-sources a{max-width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:#355d52;font:600 11px/1.25 system-ui,sans-serif;text-decoration:none;overflow-wrap:anywhere}.edition-end{padding:38px 0 10px;text-align:center;font:600 11px/1.5 system-ui,sans-serif;letter-spacing:.17em;text-transform:uppercase}.edition-end::before{content:'◆';display:block;margin-bottom:14px;color:var(--sun);font-size:9px}
+.word-card{position:relative;scroll-margin-top:145px;padding:25px 0 3px;border-block:2px solid var(--ink)}.word-card h3{margin:0;font:500 clamp(43px,13vw,70px)/1 Georgia,serif;letter-spacing:-.045em;overflow-wrap:anywhere}.word-meta{margin:9px 0 21px;color:var(--sun);font:700 11px/1.5 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}.word-definition{margin:0 0 17px;font:400 20px/1.55 Georgia,serif}.word-detail{padding-top:15px;border-top:1px solid var(--line);color:#41534b;font:400 15px/1.6 system-ui,sans-serif}.word-detail b{color:var(--ink)}.word-source{margin-top:18px;color:var(--muted);font:400 11px/1.5 system-ui,sans-serif}.word-source a{color:inherit}
 .giorno-fine{margin:72px 0 10px;text-align:center;color:var(--muted);font:italic 19px/1.5 Georgia,serif}
 @media(max-width:340px){.giorno-main{padding-inline:12px}.week-strip{gap:3px}.week-day{border-radius:13px}.week-day b{font-size:8px}.week-day span{font-size:18px}.agenda-row{grid-template-columns:55px 1fr}.news-article .body p{font-size:17px}}
 @media(min-width:760px){.week-strip{gap:9px}.week-day{min-height:72px}.giorno-main{padding-top:38px}.edition-front{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);column-gap:30px}.news-article.lead{grid-column:1/-1}.news-article.major:nth-of-type(even){padding-right:26px;border-right:1px solid var(--line)}.news-article.brief{padding:22px 0}.news-article.brief .body p{font-size:16px}.news-article.brief .kicker{font-size:15px}}
@@ -540,13 +595,14 @@ async function renderWord() {
     if (!word) { const data = await loadCatalog(); word = selectWord(data.words, key, state.paroleGiorno); }
     if (!word) throw new Error('esaurito');
     if (!state.paroleGiorno[key]) {
-      state.paroleGiorno[key] = { id: String(word.id), w: String(word.w), l: String(word.l || ''), n: normalizeWord(word.w), p: String(word.p || ''), d: String(word.d || ''), i: String(word.i || ''), e: String(word.e || '') };
+      state.paroleGiorno[key] = { id: String(word.id), w: String(word.w), l: String(word.l || ''), n: normalizeWord(word.w), p: String(word.p || ''), d: String(word.d || ''), i: String(word.i || ''), e: normalizeEtymology(word.e) };
       if (context && context.save) context.save();
     }
     const card = element('article', 'word-card'); card.append(element('h3', '', word.w));
     card.append(element('p', 'word-meta', [word.l, word.p, word.i].filter(Boolean).join(' · ')));
     card.append(element('p', 'word-definition', word.d));
-    if (word.e) { const detail = element('p', 'word-detail'); detail.append(element('b', '', 'Origine. ')); detail.append(document.createTextNode(word.e)); card.append(detail); }
+    const etymology = normalizeEtymology(word.e);
+    if (etymology) { const detail = element('p', 'word-detail'); detail.append(element('b', '', 'Origine. ')); detail.append(document.createTextNode(etymology)); card.append(detail); }
     const source = element('p', 'word-source'); source.append(document.createTextNode('Fonte lessicografica: ')); const link = element('a', '', 'Wiktionary, estrazione Kaikki.org'); link.href = 'https://kaikki.org/'; link.target = '_blank'; link.rel = 'noopener noreferrer'; source.append(link); source.append(document.createTextNode(' · CC BY-SA 4.0 / GFDL')); card.append(source);
     mount.replaceChildren(card);
   } catch (_) {
@@ -666,10 +722,28 @@ const OPAQUE_TITLE_PATTERNS = [
   /^risposta$/i,               // "Risposta"
 ];
 
+const VAGUE_EDITORIAL_FRAMING = /\b(?:edizione|speciale|festival|mostra|rassegna|selezione|ritratto|viaggio|guida|focus|intervista|panorama)\b/i;
+const PUBLIC_FACT_ACTION = /\b(?:approva|approvato|approvata|firma|firmato|annuncia|annunciato|riapre|apre|chiude|cancella|vince|premia|dimette|arresta|condanna|scopre|pubblica|aumenta|diminuisce|evacua|muore|morto|morta|uccide|colpisce|salva|salvate|restaura|restaurate|invia|inviato|riduce|taglia|vara|vieta|rilascia|raggiunge|supera)\b/i;
+
+function titleInformationScore(title) {
+  const t = cleanText(title, 120), tokens = storyTokens(t);
+  const factAction = PUBLIC_FACT_ACTION.test(t), numericFact = /\b\d+(?:[.,]\d+)?\b/.test(t);
+  return Math.min(tokens.size, 10) + (factAction ? 12 : 0) + (numericFact ? 8 : 0) + Math.min(6, namedEventAnchors(t).size * 2);
+}
+
+function fitEditorialTitle(value, limit = 120) {
+  const text = sanitizeEditorial(value, Math.max(300, limit * 2));
+  if (text.length <= limit) return text;
+  const head = text.slice(0, limit + 1), punctuation = Math.max(head.lastIndexOf(', '), head.lastIndexOf('; '), head.lastIndexOf(' — '), head.lastIndexOf(': '));
+  if (punctuation >= Math.floor(limit * 0.55)) return head.slice(0, punctuation).trim();
+  return head.slice(0, limit).replace(/\s+\S*$/, '').replace(/[,:;–—-]+$/, '').trim();
+}
+
 export function isTitleInformative(title) {
   const t = cleanText(title, 120);
   if (t.length < 15) return false; // troppo breve per essere informativo
   if (OPAQUE_TITLE_PATTERNS.some(rx => rx.test(t))) return false;
+  if (VAGUE_EDITORIAL_FRAMING.test(t) && !PUBLIC_FACT_ACTION.test(t) && !/\b\d+(?:[.,]\d+)?\b/.test(t)) return false;
   // deve contenere almeno un'entità sostantiva significativa (non solo articoli/preposizioni)
   const tokens = storyTokens(t);
   const hasEntity = tokens.size >= 2; // almeno 2 token significativi
@@ -677,25 +751,20 @@ export function isTitleInformative(title) {
 }
 
 export function selectInformativeTitle(usableItems) {
-  // 1. Prova i titoli originali ordinati per informatività
+  // 1. Valuta i titoli originali per densità fattuale, non per lunghezza o posizione.
   const candidates = [...usableItems]
-    .map(item => ({ title: cleanText(item.title, 120), summary: cleanText(item.summary || '', 300) }))
+    .map(item => ({ title: fitEditorialTitle(item.title), summary: sanitizeEditorial(item.summary || '', 300) }))
     .filter(c => isTitleInformative(c.title))
-    .sort((a, b) => b.title.length - a.title.length);
+    .map((candidate, index) => ({ ...candidate, index, score: titleInformationScore(candidate.title) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
   
   if (candidates.length) return candidates[0].title;
   
-  // 2. Costruisci titolo dal summary del primo item valido
-  for (const item of usableItems) {
-    const summary = cleanText(item.summary || '', 300);
-    if (summary.length >= 30) {
-      const sentences = summary.split(/[.!?]/).map(s => cleanText(s, 120)).filter(s => s.length >= 15);
-      if (sentences.length) {
-        const candidate = sentences[0];
-        if (isTitleInformative(candidate)) return candidate;
-      }
-    }
-  }
+  // 2. Scegli la frase-fatto più informativa documentata nei sommari.
+  const summaryCandidates = usableItems.flatMap((item, itemIndex) => sanitizeEditorial(item.summary || '', 300).split(/[.!?]/).map((sentence, sentenceIndex) => ({
+    title: fitEditorialTitle(sentence), itemIndex, sentenceIndex
+  }))).filter(candidate => isTitleInformative(candidate.title)).map(candidate => ({ ...candidate, score: titleInformationScore(candidate.title) })).sort((a, b) => b.score - a.score || a.itemIndex - b.itemIndex || a.sentenceIndex - b.sentenceIndex);
+  if (summaryCandidates.length) return summaryCandidates[0].title;
   
   // 3. Nessun titolo autosufficiente disponibile: la storia viene esclusa
   return null;
@@ -724,7 +793,7 @@ export function fallbackEdition(items, key, preparedClusters) {
   const clusters = italianClusters.filter(cluster => !isLocalCrimeNational(cluster)).slice(0, 6);
   const articles = [];
   for (const cluster of clusters) {
-    const usable = cluster.items.filter(item => item.sourceMeta && item.sourceMeta.language === 'it' && cleanText(item.summary || item.title, 900).length >= 24 && looksItalian(item.title + ' ' + item.summary)).sort((a, b) => tierRank(b) - tierRank(a) || (a.sourceMeta?.perspective === b.sourceMeta?.perspective ? 0 : a.sourceMeta?.perspective === 'primary' ? -1 : 1) || Date.parse(b.published) - Date.parse(a.published));
+    const usable = cluster.items.filter(item => item.sourceMeta && item.sourceMeta.language === 'it' && sanitizeEditorial(item.summary || item.title, 900).length >= 24 && looksItalian(item.title + ' ' + item.summary)).sort((a, b) => tierRank(b) - tierRank(a) || (a.sourceMeta?.perspective === b.sourceMeta?.perspective ? 0 : a.sourceMeta?.perspective === 'primary' ? -1 : 1) || Date.parse(b.published) - Date.parse(a.published));
     if (!usable.length) continue;
     
     // Select best title: prefer informative titles, fallback to building one from summary
@@ -733,14 +802,15 @@ export function fallbackEdition(items, key, preparedClusters) {
     const preferredLanguage = { ...usable[0], title: titleCandidate };
     const claims = [];
     for (const evidence of usable) {
-      const text = cleanText(evidence.summary || evidence.title, 780), detail = claimEvidenceDetail(text, [evidence.id], items);
+      const text = sanitizeEditorial(evidence.summary || evidence.title, 780), detail = claimEvidenceDetail(text, [evidence.id], items);
       if (detail.supported && !claims.some(claim => profileSimilarity(semanticProfile(claim.text), semanticProfile(text)) > 0.82)) claims.push({ text, sourceIds: [evidence.id], evidenceScore: Number(detail.score.toFixed(3)), provenance: detail.provenance });
       if (claims.length === 2) break;
     }
     if (!claims.length) continue;
     const perspectives = new Set(usable.map(item => item.sourceMeta && item.sourceMeta.perspective).filter(Boolean)), area = preferredLanguage.sourceMeta && preferredLanguage.sourceMeta.area;
     const section = ({ economy: 'Economia', health: 'Salute', climate: 'Clima', science: 'Scienza', institutions: 'Istituzioni', statistics: 'Dati', investigations: 'Inchieste' })[area] || 'Mondo';
-    const kicker = cluster.deltaSummary + (perspectives.size > 1 ? ' Il materiale comprende una fonte primaria e una verifica editoriale indipendente.' : ' Il testo resta aderente all’unica evidenza solida disponibile.');
+    // Kicker specifico basato sull'evidenza, niente boilerplate generico
+    const kicker = editorialKicker(cluster.deltaSummary || '', 260);
     articles.push({ title: preferredLanguage.title, section, kicker, claims, storyIds: [cluster.storyId], sourceIds: [...new Set(claims.flatMap(claim => claim.sourceIds))], importance: cluster.importance.score, importanceReasons: cluster.importance.reasons, deltaType: cluster.deltaType || 'new', deltaFromYesterday: cluster.deltaSummary || 'Nuova oggi.' });
   }
   if (!articles.length) return null;
@@ -856,7 +926,7 @@ function localNews(items, preference) {
 function renderLocalNews(items) {
   const preference = localPreference(), section = element('section', 'news-local'); section.setAttribute('aria-label', 'Notizie del territorio');
   const hasRegion = !!preference.regionSlug;
-  
+
   if (!hasRegion) {
     // Stato iniziale: nessuna regione scelta
     const card = element('div', 'local-card');
@@ -864,9 +934,9 @@ function renderLocalNews(items) {
     head.append(element('p', 'giorno-label', 'Vicino a te'));
     head.append(element('h3', '', 'Scegli il tuo territorio'));
     card.append(head);
-    
+
     const actions = element('div', 'local-actions');
-    
+
     const selectWrapper = element('div', 'local-select-wrap');
     const selectLabel = element('label', '', 'Regione');
     const select = element('select'); select.setAttribute('aria-label', 'Regione per le notizie locali');
@@ -875,16 +945,16 @@ function renderLocalNews(items) {
     for (const region of ITALIAN_REGIONS) { const option = element('option', '', region[1]); option.value = region[0]; select.append(option); }
     selectWrapper.append(selectLabel); selectWrapper.append(select);
     actions.append(selectWrapper);
-    
+
     const cityWrapper = element('div', 'local-input-wrap');
     const cityLabel = element('label', '', 'Comune (facoltativo)');
     const city = element('input'); city.type = 'text'; city.inputMode = 'text'; city.autocomplete = 'address-level2'; city.maxLength = 80; city.placeholder = 'es. Torino'; city.setAttribute('aria-label', 'Comune per ordinare le notizie locali');
     cityWrapper.append(cityLabel); cityWrapper.append(city);
     actions.append(cityWrapper);
-    
+
     const primaryBtn = button('local-btn primary', 'Mostra notizie locali', () => { const region = ITALIAN_REGIONS.find(item => item[0] === select.value); if (!select.value) return; saveLocalPreference({ regionSlug: select.value, region: region && region[1], city: city.value }); renderEdition(latestEdition, latestSources); });
     actions.append(primaryBtn);
-    
+
     const geoBtn = button('local-btn geo', 'Usa la mia posizione', () => {
       geoBtn.disabled = true; geoBtn.textContent = 'Individuo la regione…';
       const done = () => { geoBtn.disabled = false; geoBtn.textContent = 'Usa la mia posizione'; };
@@ -892,25 +962,60 @@ function renderLocalNews(items) {
       navigator.geolocation.getCurrentPosition(position => { const region = nearestRegion(position.coords.latitude, position.coords.longitude); if (region) { saveLocalPreference({ regionSlug: region[0], region: region[1], city: '' }); renderEdition(latestEdition, latestSources); } done(); }, done, { enableHighAccuracy: false, timeout: 7000, maximumAge: 86400000 });
     }); geoBtn.setAttribute('aria-label', 'Condividi la posizione una volta per scegliere la regione; le coordinate non vengono conservate');
     actions.append(geoBtn);
-    
+
     card.append(actions);
-    
+
     const privacy = element('p', 'local-privacy', 'La posizione serve solo a scegliere la zona. Le coordinate non vengono salvate.');
     card.append(privacy);
     section.append(card);
     return section;
   }
-  
-  // Stato con regione scelta
+
+  // Stato con regione scelta: PRIMA le notizie, POI i controlli secondari compatti
   const stories = localNews(items, preference);
   const card = element('div', 'local-card');
   const head = element('div', 'local-head');
   head.append(element('p', 'giorno-label', 'Vicino a te'));
   head.append(element('h3', '', preference.region + (preference.city ? ' · ' + preference.city : '')));
   card.append(head);
-  
-  const actions = element('div', 'local-actions');
-  
+
+  // Notizie locali SUBITO visibili
+  if (!stories.length) {
+    const empty = element('p', 'local-empty', 'Nessuna notizia locale recente e verificata per questo territorio.');
+    section.append(card);
+    section.append(empty);
+  } else {
+    const grid = element('div', 'news-local-grid');
+    for (const item of stories) {
+      const cardItem = element('article', 'news-local-card');
+      cardItem.append(element('span', 'section', item.localKind));
+      const media = newsFigure(item, true); if (media) cardItem.append(media);
+      const title = element('h4'); const link = element('a', '', item.title); link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; title.append(link); cardItem.append(title);
+      if (item.summary) cardItem.append(element('p', '', item.summary));
+      cardItem.append(element('small', '', item.source + ' · ' + new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(item.published))));
+      grid.append(cardItem);
+    }
+    section.append(card);
+    section.append(grid);
+  }
+
+  // Controlli secondari: compatti, sotto le notizie
+  const controls = element('div', 'local-controls');
+  controls.style.marginTop = '16px';
+  controls.style.paddingTop = '12px';
+  controls.style.borderTop = '1px solid rgba(22,43,37,.16)';
+  controls.style.display = 'none'; // nascosti di default, espandibili
+
+  const toggleBtn = button('local-btn secondary', 'Modifica territorio', () => {
+    const isHidden = controls.style.display === 'none';
+    controls.style.display = isHidden ? 'block' : 'none';
+    toggleBtn.textContent = isHidden ? 'Nascondi controlli' : 'Modifica territorio';
+  });
+  toggleBtn.style.marginBottom = '8px';
+  toggleBtn.style.fontSize = '14px';
+  toggleBtn.style.padding = '8px 12px';
+  card.append(toggleBtn);
+
   const changeWrapper = element('div', 'local-select-wrap');
   const changeLabel = element('label', '', 'Cambia regione');
   const changeSelect = element('select'); changeSelect.setAttribute('aria-label', 'Cambia regione per le notizie locali');
@@ -918,51 +1023,32 @@ function renderLocalNews(items) {
   changeSelect.firstChild.value = '';
   for (const region of ITALIAN_REGIONS) { const option = element('option', '', region[1]); option.value = region[0]; option.selected = preference.regionSlug === region[0]; changeSelect.append(option); }
   changeWrapper.append(changeLabel); changeWrapper.append(changeSelect);
-  actions.append(changeWrapper);
-  
+  controls.append(changeWrapper);
+
   const cityWrapper = element('div', 'local-input-wrap');
   const cityLabel = element('label', '', 'Comune (facoltativo)');
   const city = element('input'); city.type = 'text'; city.inputMode = 'text'; city.autocomplete = 'address-level2'; city.maxLength = 80; city.value = preference.city; city.placeholder = 'es. Torino'; city.setAttribute('aria-label', 'Comune per ordinare le notizie locali');
   cityWrapper.append(cityLabel); cityWrapper.append(city);
-  actions.append(cityWrapper);
-  
+  controls.append(cityWrapper);
+
   const saveBtn = button('local-btn primary', 'Aggiorna', () => { const region = ITALIAN_REGIONS.find(item => item[0] === changeSelect.value); if (!changeSelect.value) return; saveLocalPreference({ regionSlug: changeSelect.value, region: region && region[1], city: city.value }); renderEdition(latestEdition, latestSources); });
-  actions.append(saveBtn);
-  
+  controls.append(saveBtn);
+
   const geoBtn = button('local-btn geo', 'Usa la mia posizione', () => {
     geoBtn.disabled = true; geoBtn.textContent = 'Individuo la regione…';
     const done = () => { geoBtn.disabled = false; geoBtn.textContent = 'Usa la mia posizione'; };
     if (!navigator.geolocation) { done(); return; }
     navigator.geolocation.getCurrentPosition(position => { const region = nearestRegion(position.coords.latitude, position.coords.longitude); if (region) { saveLocalPreference({ regionSlug: region[0], region: region[1], city: '' }); renderEdition(latestEdition, latestSources); } done(); }, done, { enableHighAccuracy: false, timeout: 7000, maximumAge: 86400000 });
   }); geoBtn.setAttribute('aria-label', 'Condividi la posizione una volta per scegliere la regione; le coordinate non vengono conservate');
-  actions.append(geoBtn);
-  
+  controls.append(geoBtn);
+
   const clearBtn = button('local-btn clear', 'Rimuovi territorio', () => { saveLocalPreference({ regionSlug: '', region: '', city: '' }); renderEdition(latestEdition, latestSources); });
-  actions.append(clearBtn);
-  
-  card.append(actions);
-  
+  controls.append(clearBtn);
+
   const privacy = element('p', 'local-privacy', 'La posizione serve solo a scegliere la zona. Le coordinate non vengono salvate.');
-  card.append(privacy);
-  section.append(card);
-  
-  if (!stories.length) {
-    const empty = element('p', 'local-empty', 'Nessuna notizia locale recente e verificata per questo territorio.');
-    section.append(empty);
-    return section;
-  }
-  
-  const grid = element('div', 'news-local-grid');
-  for (const item of stories) { 
-    const card = element('article', 'news-local-card'); 
-    card.append(element('span', 'section', item.localKind)); 
-    const media = newsFigure(item, true); if (media) card.append(media); 
-    const title = element('h4'); const link = element('a', '', item.title); link.href = item.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; title.append(link); card.append(title); 
-    if (item.summary) card.append(element('p', '', item.summary)); 
-    card.append(element('small', '', item.source + ' · ' + new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(item.published)))); 
-    grid.append(card); 
-  }
-  section.append(grid);
+  controls.append(privacy);
+
+  card.append(controls);
   return section;
 }
 
@@ -1019,7 +1105,7 @@ function sanitizeBundledEdition(raw, items, packetGeneratedAt, packetDayKey) {
     if (!title || !section || !claims.length) continue;
     const importance = Math.max(0, Math.min(100, Number(sourceArticle.importance) || 0)), deltaType = deltas.has(sourceArticle.deltaType) ? sourceArticle.deltaType : 'new';
     articles.push({
-      title, section, kicker: cleanText(sourceArticle.kicker, 300), claims,
+      title, section, kicker: editorialKicker(sourceArticle.kicker, 300), claims,
       storyIds: [...new Set((sourceArticle.storyIds || []).map(id => cleanText(id, 100)).filter(Boolean))].slice(0, 3),
       sourceIds: [...new Set(claims.flatMap(claim => claim.sourceIds))], importance,
       importanceReasons: (sourceArticle.importanceReasons || []).map(reason => cleanText(reason, 120)).filter(Boolean).slice(0, 6),
@@ -1045,7 +1131,7 @@ async function readNewsPacket(urlOrPaths, signal, channel) {
   else data = await parseDistributedResponse(await fetch(urlOrPaths, { signal, cache: 'no-store' }), 900000);
   if (!data || !Array.isArray(data.items)) throw new Error('fonti');
   const items = data.items.filter(item => item && item.id && item.title && item.url && item.source && /^https:\/\//.test(item.url)).slice(0, 96).map(item => ({
-    id: cleanText(item.id, 80), title: cleanText(item.title, 240), summary: cleanText(item.summary, 1200), url: item.url, published: item.published, source: cleanText(item.source, 80), sourceId: cleanText(item.sourceId, 40),
+    id: cleanText(item.id, 80), title: sanitizeEditorial(item.title, 240), summary: sanitizeEditorial(item.summary, 1200), url: item.url, published: item.published, source: cleanText(item.source, 80), sourceId: cleanText(item.sourceId, 40),
     sourceMeta: item.sourceMeta && typeof item.sourceMeta === 'object' ? { tier: cleanText(item.sourceMeta.tier, 2), type: cleanText(item.sourceMeta.type, 30), area: cleanText(item.sourceMeta.area, 30), role: cleanText(item.sourceMeta.role, 80), reliability: cleanText(item.sourceMeta.reliability, 80), domain: cleanText(item.sourceMeta.domain, 80), language: cleanText(item.sourceMeta.language, 8), perspective: cleanText(item.sourceMeta.perspective, 20), ownership: cleanText(item.sourceMeta.ownership, 30), country: cleanText(item.sourceMeta.country, 8), coverage: cleanText(item.sourceMeta.coverage, 20), retrieval: cleanText(item.sourceMeta.retrieval, 20), freshnessMinutes: Math.max(0, Math.min(1440, Number(item.sourceMeta.freshnessMinutes) || 0)), terms: cleanText(item.sourceMeta.terms, 80), regionSlug: cleanText(item.sourceMeta.regionSlug, 30) } : null,
     provenance: item.provenance && typeof item.provenance === 'object' ? { evidenceId: cleanText(item.provenance.evidenceId, 100), sourceId: cleanText(item.provenance.sourceId, 40), sourceDomain: cleanText(item.provenance.sourceDomain, 100), canonicalUrl: /^https:\/\//.test(item.provenance.canonicalUrl || '') ? item.provenance.canonicalUrl : item.url, publishedAt: cleanText(item.provenance.publishedAt, 40), retrievedAt: cleanText(item.provenance.retrievedAt, 40), contentFingerprint: cleanText(item.provenance.contentFingerprint, 100) } : { evidenceId: cleanText(item.id, 80), sourceId: cleanText(item.sourceId, 40), canonicalUrl: item.url, publishedAt: cleanText(item.published, 40) }
   }));

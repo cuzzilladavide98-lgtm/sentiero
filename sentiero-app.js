@@ -1057,7 +1057,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.274.3 · 2026-08-29';
+const APP_VERSION='v60S.274.4 · preview iphone-rc2 · 2026-09-01';
 
 /* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
    non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
@@ -3143,21 +3143,65 @@ function nota(cod,n1,n2){
     if(!_scatolaPen) _scatolaPen=setTimeout(scatolaScrivi,1500);
   }catch(_){}
 }
-/* la stretta di mano: una domanda, una risposta, niente protocollo. Se il
-   worker e di prima della v269.8 non risponde e resta zero. */
+/* La stretta di mano aspetta un controllore vero e lega la risposta alla
+   preview dichiarata dall'HTML. Un worker vecchio puo ancora rispondere a
+   {q:'gen'}, ma non puo presentarsi come questa RC2 senza id, generazione e
+   cache esatti. */
+function _identitaPreviewHtml(){
+  try{
+    const preview=String(document.querySelector('meta[name="sentiero-preview-build"]')?.content||'').trim();
+    const generation=Number(document.querySelector('meta[name="sentiero-preview-generation"]')?.content||0);
+    return {preview,generation:Number.isFinite(generation)?generation:0};
+  }catch(_){ return {preview:'',generation:0}; }
+}
+function _attendiControllerWorker(timeoutMs){
+  return new Promise(function(resolve){
+    try{
+      const sw=navigator.serviceWorker;
+      if(!sw){ resolve(null); return; }
+      if(sw.controller){ resolve(sw.controller); return; }
+      let finito=false;
+      const chiudi=function(controller){
+        if(finito) return; finito=true; clearTimeout(timer);
+        try{ sw.removeEventListener('controllerchange',cambiato); }catch(_){}
+        resolve(controller||sw.controller||null);
+      };
+      const cambiato=function(){ if(sw.controller) chiudi(sw.controller); };
+      const timer=setTimeout(function(){ chiudi(null); },Math.max(1000,Number(timeoutMs)||6000));
+      sw.addEventListener('controllerchange',cambiato);
+      try{ sw.ready.then(function(){ if(sw.controller) chiudi(sw.controller); }).catch(function(){}); }catch(_){}
+    }catch(_){ resolve(null); }
+  });
+}
+async function sentieroServiceWorkerHandshake(timeoutMs){
+  const html=_identitaPreviewHtml();
+  const sw=navigator.serviceWorker;
+  if(!sw) return {controller:false,htmlPreview:html.preview,htmlGeneration:html.generation,preview:'',generation:0,gen:0,cache:'',coherent:false,error:'service-worker-unavailable'};
+  const controller=await _attendiControllerWorker(timeoutMs);
+  if(!controller) return {controller:false,htmlPreview:html.preview,htmlGeneration:html.generation,preview:'',generation:0,gen:0,cache:'',coherent:false,error:'controller-timeout'};
+  return new Promise(function(resolve){
+    const mc=new MessageChannel(); let finito=false;
+    const chiudi=function(data,error){
+      if(finito) return; finito=true; clearTimeout(timer);
+      try{ mc.port1.close(); }catch(_){}
+      const preview=String(data&&data.preview||'');
+      const generation=Number(data&&(data.generation==null?data.gen:data.generation))||0;
+      const cache=String(data&&data.cache||'');
+      const cacheAttesa='sentiero-preview-'+html.preview+'-g'+html.generation;
+      const coherent=!!html.preview&&html.generation>0&&preview===html.preview&&generation===html.generation&&cache===cacheAttesa;
+      resolve({controller:true,htmlPreview:html.preview,htmlGeneration:html.generation,preview,generation,gen:generation,cache,coherent,error:error||''});
+    };
+    const timer=setTimeout(function(){ chiudi(null,'message-timeout'); },Math.max(1000,Number(timeoutMs)||6000));
+    mc.port1.onmessage=function(e){ chiudi(e&&e.data,''); };
+    try{ controller.postMessage({q:'gen'},[mc.port2]); }catch(error){ chiudi(null,String(error&&error.message||error)); }
+  });
+}
 function _chiediGenerazioneWorker(){
   try{
-    const sw=navigator.serviceWorker;
-    if(!sw||!sw.controller){ nota('swg',0); return; }
-    const mc=new MessageChannel();
-    let risposto=false;
-    mc.port1.onmessage=function(e){
-      risposto=true;
-      const g=(e&&e.data&&Number(e.data.gen))||0;
-      nota('swg',Number.isFinite(g)?g:0);
-    };
-    sw.controller.postMessage({q:'gen'},[mc.port2]);
-    setTimeout(function(){ if(!risposto) nota('swg',0); },1500);
+    sentieroServiceWorkerHandshake(6000).then(function(esito){
+      const g=esito&&esito.coherent&&Number(esito.generation)>0?Number(esito.generation):0;
+      nota('swg',g);
+    }).catch(function(){ nota('swg',0); });
   }catch(_){ try{ nota('swg',0); }catch(__){} }
 }
 /* ══ v269.8 — DUE ARTEFATTI, NON UNO ════════════════════════════════════════
@@ -12957,7 +13001,7 @@ function endpointGiorno(){
 }
 function caricaStanzaTerra(){
   if(_giornoModulo) return Promise.resolve(_giornoModulo); if(_giornoCarica) return _giornoCarica;
-  _giornoCarica=import('./sentiero-day.mjs?v=60.274.3').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
+  _giornoCarica=import('./sentiero-day.mjs?v=60.274.5-rc2').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
   return _giornoCarica;
 }
 function contestoStanzaTerra(){ return {
@@ -14699,7 +14743,7 @@ document.querySelector('#import-file').onchange=e=>{
    AVVIO
    ====================================================================== */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=60.274.3',{scope:'./',updateViaCache:'none'}).then(function(reg){
+  navigator.serviceWorker.register('./sw.js?v=60.274.5-rc2',{scope:'./',updateViaCache:'none'}).then(function(reg){
     try{ const u=reg.update(); if(u&&u.catch) u.catch(function(){}); }catch(_){}
     try{ scheduleReminders(); }catch(_){}
     /* due strade, perche i telefoni non si comportano tutti uguale:
@@ -15082,7 +15126,7 @@ function initSentieroSync(){
 }
 function caricaSentieroSync(){
   if(window.SentieroSync)return initSentieroSync(); if(_syncLoadPromise)return _syncLoadPromise;
-  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.3';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
+  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.5-rc2';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
 }
 try{
   const _loadJournal=()=>caricaSentieroSync().catch(function(){ try{ regCantiere('errore',{msg:'journal locale non disponibile'}); }catch(_){} });
