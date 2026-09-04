@@ -2,6 +2,7 @@ const DAWN_MINUTES = 4 * 60 + 20;
 const NIGHT_MINUTES = 19 * 60;
 const DAY_MS = 86400000;
 const VERSION = 4;
+export const EDITORIAL_PUBLISH_THRESHOLD = 52;
 
 export function isDaytime(date = new Date()) {
   const minutes = date.getHours() * 60 + date.getMinutes();
@@ -427,6 +428,7 @@ export function validateEdition(raw, sources, key, allowedStoryIds, clusters) {
     const sourceIds = [...new Set(claims.flatMap(claim => claim.sourceIds))], headline = claimEvidenceDetail(title, sourceIds, sources);
     if (!headline.supported && profileSimilarity(semanticProfile(title), semanticProfile(claims.map(claim => claim.text).join(' '))) < 0.42) { rejectedEvidence = true; continue; }
     const related = storyIds.map(id => clusterMap.get(id)).filter(Boolean), importance = Math.max(0, ...related.map(cluster => cluster.importance && cluster.importance.score || editorialImportance(cluster).score));
+    if ((allowedStoryIds || clusterMap.size) && importance < EDITORIAL_PUBLISH_THRESHOLD) continue;
     const primaryCluster = related.sort((a, b) => (b.importance?.score || 0) - (a.importance?.score || 0))[0];
     articles.push({ title, section, kicker: editorialKicker(sourceArticle.kicker, 260), claims, storyIds, sourceIds, importance, importanceReasons: primaryCluster && primaryCluster.importance && primaryCluster.importance.reasons || [], deltaType: primaryCluster && primaryCluster.deltaType || 'new', deltaFromYesterday: primaryCluster && primaryCluster.deltaSummary || 'Nuova oggi.' });
   }
@@ -457,9 +459,47 @@ let listenerBound = false;
 let latestEdition = null;
 let latestSources = [];
 let lastManualRefresh = 0;
+let newsRequestedDay = '';
+let newsAbortReason = '';
 const DISTRIBUTION_VERSION = '60.274.5-rc2';
 const NEWS_ASSET_PATHS = ['./assets/giornale/latest.json', './latest.json'];
 const WORD_ASSET_PATHS = ['./assets/parole-giorno-v1.json', './parole-giorno-v1.json'];
+
+function validIso(value) {
+  const milliseconds = Date.parse(value || '');
+  return Number.isFinite(milliseconds) ? new Date(milliseconds).toISOString() : '';
+}
+
+function sourceTime(value) {
+  return validIso(value && (value.sourceUpdatedAt || value.sourcesUpdatedAt || value.generatedAt));
+}
+
+function sourceDay(value) {
+  const iso = sourceTime(value);
+  return iso ? sentieroDayKey(new Date(iso)) : '';
+}
+
+function freshForDay(edition, key) {
+  return Boolean(edition && editionIsItalian(edition) && (cleanText(edition.dayKey, 10) || sourceDay(edition)) === key && sourceDay(edition) === key);
+}
+
+function freshnessMilliseconds(value) {
+  return Date.parse(sourceTime(value) || '') || Date.parse(value && value.dayKey ? value.dayKey + 'T12:00:00' : '') || 0;
+}
+
+function truthfulEdition(value) {
+  if (!value || typeof value !== 'object') return value;
+  const sourcesUpdatedAt = sourceTime(value), generatedAt = validIso(value.generatedAt), evidenceDay = sourceDay(value), declaredDay = cleanText(value.dayKey, 10);
+  const generatedDay = generatedAt ? sentieroDayKey(new Date(generatedAt)) : '', correctGeneratedAt = sourcesUpdatedAt && (!generatedAt || evidenceDay !== generatedDay), correctDay = evidenceDay && evidenceDay !== declaredDay;
+  return { ...value, dayKey: evidenceDay || declaredDay, generatedAt: correctGeneratedAt ? sourcesUpdatedAt : generatedAt, sourcesUpdatedAt, sourceUpdatedAt: sourcesUpdatedAt, freshnessCorrected: Boolean(value.freshnessCorrected || correctGeneratedAt || correctDay) };
+}
+
+function newsDiagnostic(patch) {
+  try {
+    const previous = window.__sentieroNewsDiag && typeof window.__sentieroNewsDiag === 'object' ? window.__sentieroNewsDiag : {};
+    window.__sentieroNewsDiag = { ...previous, ...patch, currentDay: sentieroDayKey(), online: navigator.onLine !== false };
+  } catch (_) {}
+}
 
 function distributionUrl(path) {
   const url = new URL(path, document.baseURI);
@@ -479,13 +519,13 @@ async function readDistributedJson(paths, signal, maxBytes, accept) {
     try {
       const response = await fetch(distributionUrl(path), { signal, cache: 'no-store' });
       const data = await parseDistributedResponse(response, maxBytes);
-      if (!accept || accept(data)) return data;
+      if (!accept || accept(data)) { try { Object.defineProperty(data, '__sentieroTransport', { value: 'network' }); } catch (_) {} return data; }
     } catch (error) { if (error && error.name === 'AbortError') throw error; }
   }
   if (typeof caches !== 'undefined') {
     for (const path of paths) {
       for (const key of [distributionUrl(path), new URL(path, document.baseURI).toString()]) {
-        try { const data = await parseDistributedResponse(await caches.match(key), maxBytes); if (!accept || accept(data)) return data; } catch (_) {}
+        try { const data = await parseDistributedResponse(await caches.match(key), maxBytes); if (!accept || accept(data)) { try { Object.defineProperty(data, '__sentieroTransport', { value: 'cache-storage' }); } catch (_) {} return data; } } catch (_) {}
       }
     }
   }
@@ -635,7 +675,7 @@ async function cacheGet(key) {
 }
 
 async function cacheLatest() {
-  try { const db = await openDb(); const rows = await new Promise((resolve, reject) => { const request = db.transaction('editions').objectStore('editions').getAll(); request.onsuccess = () => resolve(request.result || []); request.onerror = () => reject(request.error); }); return rows.sort((a, b) => Number(b.at || 0) - Number(a.at || 0))[0] || null; } catch (_) { return null; }
+  try { const db = await openDb(); const rows = await new Promise((resolve, reject) => { const request = db.transaction('editions').objectStore('editions').getAll(); request.onsuccess = () => resolve(request.result || []); request.onerror = () => reject(request.error); }); return rows.sort((a, b) => freshnessMilliseconds(b.edition) - freshnessMilliseconds(a.edition) || Number(b.at || 0) - Number(a.at || 0))[0] || null; } catch (_) { return null; }
 }
 
 async function cachePut(record) {
@@ -771,7 +811,8 @@ export function selectInformativeTitle(usableItems) {
 }
 
 export function fallbackEdition(items, key, preparedClusters) {
-  const allClusters = selectEditorialStories(preparedClusters || clusterNews(items), 20);
+  const sourceClusters = preparedClusters || clusterNews(items);
+  const allClusters = selectEditorialStories(sourceClusters, Math.max(20, sourceClusters.length));
   const italianClusters = allClusters.filter(cluster => 
     cluster.items.some(item => item.sourceMeta && item.sourceMeta.language === 'it' && looksItalian(item.title + ' ' + item.summary))
   );
@@ -816,9 +857,9 @@ export function fallbackEdition(items, key, preparedClusters) {
   if (!articles.length) return null;
   articles.sort((a, b) => b.importance - a.importance);
   
-  // Filter out low-importance local crime unless we'd have too few articles
-  const majorArticles = articles.filter(a => a.importance >= 52);
-  const finalArticles = majorArticles.length >= 3 ? majorArticles : articles.slice(0, 6);
+  // La soglia è assoluta: nessun articolo debole viene usato per riempire la pagina.
+  const finalArticles = articles.filter(article => article.importance >= EDITORIAL_PUBLISH_THRESHOLD);
+  if (!finalArticles.length) return null;
   
   finalArticles.forEach((article, index) => { article.presentation = index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'; });
   const edition = { v: VERSION, language: 'it', dayKey: key, title: 'Il Giornale di Sentiero', deck: finalArticles.length === 1 ? 'Una sola storia supera oggi la soglia di rilevanza e verificabilità.' : 'Le storie che cambiano davvero il quadro, ordinate per conseguenza e solidità dell’evidenza.', generatedAt: new Date().toISOString(), articles: finalArticles, corrections: [], essential: true };
@@ -860,18 +901,20 @@ const EDITION_SCHEMA = {
 
 async function composeEdition(items, clusters, key, signal) {
   const selected = selectEditorialStories(clusters, 12), packets = selected.map(cluster => ({ storyId: cluster.storyId, firstSeen: cluster.firstSeen, lastMaterialChange: cluster.lastMaterialChange, changedToday: cluster.changed, deltaFromYesterday: cluster.delta, contextAlreadyExplained: cluster.previousContext, claimsPublishedBefore: cluster.previousClaims, importance: cluster.importance, sources: cluster.items.slice(0, 6).map(item => ({ id: item.id, source: item.source, sourceId: item.sourceId, sourceMeta: item.sourceMeta, provenance: item.provenance, published: item.published, title: item.title, summary: cleanText(item.summary, 900), url: item.url })) }));
-  if (!packets.length) return null;
-  if (!context || !context.canGenerate || !context.canGenerate()) return fallbackEdition(items, key, clusters);
+  if (!packets.length) return { edition: null, mode: 'no-stories', error: 'edizione' };
+  const deterministic = fallbackEdition(items, key, clusters);
+  if (!context || !context.canGenerate || !context.canGenerate()) return { edition: deterministic, mode: 'fallback', error: 'ai-unavailable' };
   const system = `Sei la redazione del Giornale di Sentiero: un quotidiano italiano finito che si legge una volta e lascia un modello del mondo più nitido. Tutto il testo visibile deve essere in italiano naturale, inclusi titolo, sommario, sezioni, aperture, claim e correzioni: traduci fedelmente l'evidenza straniera senza tradurre nomi propri o alterare il significato. Il materiale è pubblico, già raggruppato e ordinato con una misura deterministica di importanza; Gemini è editor, mai fonte. Non ricevi e non devi inferire Quest, diario, posizione o altri dati personali. Scegli da una a sei storie, anche una sola: nessun minimo, nessun riempitivo, nessuna quota tematica. Pubblica soltanto ciò che cambia comprensione, conseguenze o possibilità d'azione. Ogni frase fattuale deve essere un claim autonomo con gli id esatti delle fonti che la sostengono. Titolo e apertura non possono promettere più dei claim. Non aggiungere causalità, precedenti, intenzioni, previsioni o contesto enciclopedico assente. Distingui ciò che un'istituzione dichiara da ciò che una redazione indipendente verifica; una ripetizione non è corroborazione. Usa deltaFromYesterday e claimsPublishedBefore: non raccontare di nuovo l'invariato e nomina con precisione cosa è cambiato. Rappresenta divergenze e incertezza senza falsa equivalenza. Scrivi prosa italiana concreta, ritmica, sobria e memorabile: niente gergo da briefing, elenchi travestiti, morale, formule generiche o clickbait. Gerarchizza per portata, durata, irreversibilità e solidità dell'evidenza, non per volume di copertura. corrections è ammesso solo per una storia marcata corrected e richiede storyIds. Il giornale deve avere una fine.`;
   const user = 'GIORNO: ' + key + '\nSTORIE PUBBLICHE E CONTINUITÀ (JSON):\n' + JSON.stringify(packets);
   const first = await context.ai({ system, user, task: 'day-newspaper', schema: EDITION_SCHEMA, maxOutputTokens: 4600, reasoning: 'high', timeout: 65000, priority: 18, signal });
   const allowedStoryIds = new Set(selected.map(cluster => cluster.storyId)), clusterMap = new Map(selected.map(cluster => [cluster.storyId, cluster]));
   let best = first && !first.err ? validateEdition(first.json, items, key, allowedStoryIds, clusterMap) : null;
+  if (first && first.err) return { edition: deterministic, mode: 'fallback', error: cleanText(first.err, 32) };
   const critic = `Sei l'Editorial Critic avversariale. Ricomponi l'intera edizione, non commentarla e non difendere la bozza. Cerca attivamente: causalità inventata; titolo più forte dell'evidenza; falsa novità rispetto a ieri; dichiarazione istituzionale riciclata come verifica indipendente; due fonti che ripetono lo stesso comunicato; numeri o soggetti senza provenienza; incertezza cancellata; falsa equivalenza; apertura gerarchicamente sbagliata; articoli messi per raggiungere un numero; prosa burocratica, generica o sensazionalista; contesto già spiegato ripetuto. Elimina senza sostituire ogni articolo debole. I problemi deterministici già rilevati sono: ${JSON.stringify(best ? best.rubric.issues : ['bozza respinta dal gate semantico/provenance'])}. Restituisci solo la nuova edizione completa nello schema, senza introdurre fatti.`;
   const repaired = await context.ai({ system: system + '\n' + critic, user: user + '\nBOZZA SOTTO ESAME:\n' + JSON.stringify(first && first.json || {}), task: 'day-newspaper-critic', schema: EDITION_SCHEMA, maxOutputTokens: 4600, reasoning: 'high', timeout: 65000, priority: 18, signal });
   const checked = repaired && !repaired.err ? validateEdition(repaired.json, items, key, allowedStoryIds, clusterMap) : null;
   if (checked && (!best || checked.rubric.score >= best.rubric.score)) best = checked;
-  return best || fallbackEdition(items, key, clusters);
+  return { edition: best || deterministic, mode: best ? 'ai' : 'fallback', error: best ? '' : cleanText(repaired && repaired.err || 'quality', 32) };
 }
 
 const ITALIAN_REGIONS = Object.freeze([
@@ -1055,11 +1098,16 @@ function renderLocalNews(items) {
 function renderEdition(edition, items, cachedLabel = '') {
   const mount = room && room.querySelector('.news-mount'); if (!mount) return;
   if (!edition) { renderNewsState('Oggi le fonti disponibili non bastano per comporre un’edizione affidabile. Nessun riempitivo prende il loro posto.', true); return; }
+  edition = truthfulEdition(edition);
   latestEdition = edition; latestSources = items || edition.sources || []; const displayEdition = personalizeEditionForDevice(edition, latestSources, currentState().quests); const sources = sourceMap(latestSources), wrap = element('div', 'edition');
   const head = element('header', 'edition-head'); head.append(element('h3', '', displayEdition.title)); if (displayEdition.deck) head.append(element('p', '', displayEdition.deck));
-  const when = new Date(edition.generatedAt || Date.now()), meta = [(cachedLabel ? cachedLabel + ' · ' : '') + 'edizione delle ' + new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' }).format(when)];
-  const sourceWhen = Date.parse(edition.sourceUpdatedAt || ''); if (Number.isFinite(sourceWhen)) meta.push('fonti aggiornate ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(sourceWhen)));
+  const currentDay = sentieroDayKey(), sourceIso = sourceTime(edition), stale = sourceDay(edition) !== currentDay;
+  const generatedIso = validIso(edition.generatedAt) || sourceIso, when = generatedIso ? new Date(generatedIso) : new Date();
+  const generatedDay = sentieroDayKey(when), editionLabel = generatedDay === currentDay ? 'edizione delle ' + new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' }).format(when) : 'edizione del ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(when);
+  const truthLabel = cachedLabel || (stale ? 'ultima edizione salvata' : ''), meta = [(truthLabel ? truthLabel + ' · ' : '') + editionLabel];
+  const sourceWhen = Date.parse(sourceIso || ''); if (Number.isFinite(sourceWhen)) meta.push('fonti aggiornate ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(sourceWhen)));
   head.append(element('p', 'edition-meta', meta.join(' · ')));
+  newsDiagnostic({ editionDay: cleanText(edition.dayKey, 10) || generatedDay, editionGeneratedAt: generatedIso, sourcesUpdatedAt: sourceIso, cacheSavedAt: validIso(edition.cacheSavedAt), origin: cleanText(edition.sourceOrigin || edition.sourceChannel || (cachedLabel ? 'device-cache' : ''), 32), sourceAgeMinutes: sourceWhen ? Math.max(0, Math.round((Date.now() - sourceWhen) / 60000)) : -1, stale });
   const tools = element('div', 'edition-tools'); const refreshButton = button('news-refresh', 'Verifica aggiornamenti', () => refreshNews(true)); refreshButton.setAttribute('aria-label', 'Verifica se il quadro del giorno è cambiato'); tools.append(refreshButton); head.append(tools); wrap.append(head);
   if (displayEdition.corrections && displayEdition.corrections.length) {
     const corrections = element('aside', 'edition-corrections'); corrections.append(element('strong', '', 'Correzioni e precisazioni'));
@@ -1076,7 +1124,7 @@ function renderEdition(edition, items, cachedLabel = '') {
     const links = element('div', 'news-sources'); for (const id of article.sourceIds) { const source = sources.get(String(id)); if (!source) continue; const meta = source.sourceMeta || {}, role = meta.perspective === 'primary' ? 'Primaria' : 'Indipendente', link = element('a', '', source.source + ' · ' + role + ' · ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short' }).format(new Date(source.published))); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; const p = source.provenance || {}; link.title = 'Provenienza: ' + (p.evidenceId || source.id) + (p.retrievedAt ? ' · raccolta ' + p.retrievedAt : ''); links.append(link); } node.append(links); front.append(node);
   });
   wrap.append(front);
-  wrap.append(element('p', 'edition-end', 'Fine dell’edizione di oggi.')); mount.replaceChildren(wrap);
+  wrap.append(element('p', 'edition-end', stale ? 'Fine dell’ultima edizione disponibile.' : 'Fine dell’edizione di oggi.')); mount.replaceChildren(wrap);
 }
 
 function renderNewsState(message, retry) {
@@ -1104,6 +1152,7 @@ function sanitizeBundledEdition(raw, items, packetGeneratedAt, packetDayKey) {
     const title = cleanText(sourceArticle.title, 180), section = cleanText(sourceArticle.section, 50);
     if (!title || !section || !claims.length) continue;
     const importance = Math.max(0, Math.min(100, Number(sourceArticle.importance) || 0)), deltaType = deltas.has(sourceArticle.deltaType) ? sourceArticle.deltaType : 'new';
+    if (importance < EDITORIAL_PUBLISH_THRESHOLD) continue;
     articles.push({
       title, section, kicker: editorialKicker(sourceArticle.kicker, 300), claims,
       storyIds: [...new Set((sourceArticle.storyIds || []).map(id => cleanText(id, 100)).filter(Boolean))].slice(0, 3),
@@ -1122,7 +1171,7 @@ function sanitizeBundledEdition(raw, items, packetGeneratedAt, packetDayKey) {
   })).filter(item => item.text.length >= 24 && item.sourceIds.length);
   const generatedAt = Number.isFinite(Date.parse(raw.generatedAt || '')) ? raw.generatedAt : packetGeneratedAt;
   const sourceUpdatedAt = Number.isFinite(Date.parse(raw.sourceUpdatedAt || '')) ? raw.sourceUpdatedAt : packetGeneratedAt;
-  return { v: VERSION, dayKey: cleanText(raw.dayKey || packetDayKey, 10), title: cleanText(raw.title, 90) || 'Il Giornale di Sentiero', deck: cleanText(raw.deck, 300), generatedAt, sourceUpdatedAt, articles, corrections, essential: Boolean(raw.essential) };
+  return { v: VERSION, language: 'it', dayKey: cleanText(raw.dayKey || packetDayKey, 10), title: cleanText(raw.title, 90) || 'Il Giornale di Sentiero', deck: cleanText(raw.deck, 300), generatedAt, sourceUpdatedAt, sourceOrigin: 'packaged', articles, corrections, essential: Boolean(raw.essential) };
 }
 
 async function readNewsPacket(urlOrPaths, signal, channel) {
@@ -1136,53 +1185,85 @@ async function readNewsPacket(urlOrPaths, signal, channel) {
     provenance: item.provenance && typeof item.provenance === 'object' ? { evidenceId: cleanText(item.provenance.evidenceId, 100), sourceId: cleanText(item.provenance.sourceId, 40), sourceDomain: cleanText(item.provenance.sourceDomain, 100), canonicalUrl: /^https:\/\//.test(item.provenance.canonicalUrl || '') ? item.provenance.canonicalUrl : item.url, publishedAt: cleanText(item.provenance.publishedAt, 40), retrievedAt: cleanText(item.provenance.retrievedAt, 40), contentFingerprint: cleanText(item.provenance.contentFingerprint, 100) } : { evidenceId: cleanText(item.id, 80), sourceId: cleanText(item.sourceId, 40), canonicalUrl: item.url, publishedAt: cleanText(item.published, 40) }
   }));
   if (!items.length) throw new Error('fonti');
-  const generatedAt = cleanText(data.generatedAt, 40), dayKey = cleanText(data.dayKey, 10);
-  return { items, generatedAt, dayKey, channel, edition: channel === 'snapshot' ? sanitizeBundledEdition(data.edition, items, generatedAt, dayKey) : null };
+  const generatedAt = validIso(data.generatedAt), dayKey = cleanText(data.dayKey, 10);
+  const retrievedAt = items.map(item => Date.parse(item.provenance && item.provenance.retrievedAt || '') || 0).sort((a, b) => b - a)[0] || 0;
+  const sourcesUpdatedAt = validIso(data.sourcesUpdatedAt || data.sourceUpdatedAt) || generatedAt || (retrievedAt ? new Date(retrievedAt).toISOString() : '');
+  return { items, generatedAt, sourcesUpdatedAt, dayKey, channel, transport: cleanText(data.__sentieroTransport || 'network', 24), edition: channel === 'snapshot' ? sanitizeBundledEdition(data.edition, items, sourcesUpdatedAt, dayKey) : null };
 }
 
 async function fetchSources(endpoint, key, signal) {
   const hour = new Date().getHours(), slot = key + '-' + (hour < 12 ? 'mattino' : 'giorno');
   if (endpoint) {
-    const remote = new AbortController(), abort = () => remote.abort(), timer = setTimeout(abort, 7000);
+    const remote = new AbortController(); let timed = false; const abort = () => remote.abort(), timer = setTimeout(() => { timed = true; abort(); }, 7000);
     if (signal) { if (signal.aborted) remote.abort(); else signal.addEventListener('abort', abort, { once: true }); }
-    try { return await readNewsPacket(endpoint + '/v1/day/news?slot=' + encodeURIComponent(slot), remote.signal, 'worker'); }
-    catch (_) {}
+    try { const packet = await readNewsPacket(endpoint + '/v1/day/news?slot=' + encodeURIComponent(slot), remote.signal, 'worker'); packet.workerStatus = 'ok'; return packet; }
+    catch (error) { var workerError = timed ? 'timeout' : error && error.name === 'AbortError' ? 'aborted' : 'failed'; }
     finally { clearTimeout(timer); if (signal) signal.removeEventListener('abort', abort); }
   }
   const packet = await readNewsPacket(NEWS_ASSET_PATHS, signal, 'snapshot');
+  packet.workerStatus = endpoint ? workerError || 'failed' : 'not-configured';
   if (packet.edition && !editionIsItalian(packet.edition)) {
     packet.edition = null;
   }
   return packet;
 }
 
-export async function refreshNews(force = false) {
+export function refreshNews(force = false) {
   if (!room || newsBuild) return newsBuild;
-  const key = sentieroDayKey(), cached = await cacheGet(key), age = cached ? Date.now() - Number(cached.at || 0) : Infinity;
-  if (force && Date.now() - lastManualRefresh < 10 * 60000) { if (cached && editionIsItalian(cached.edition)) renderEdition(cached.edition, cached.sources, 'quadro già verificato'); return cached && editionIsItalian(cached.edition) ? cached.edition : null; }
+  const run = (async () => {
+  const key = sentieroDayKey(), cached = await cacheGet(key), latest = cached || await cacheLatest(), age = cached ? Date.now() - Number(cached.at || 0) : Infinity;
+  const cachedEdition = cached && editionIsItalian(cached.edition) ? truthfulEdition(cached.edition) : null, cachedFresh = freshForDay(cachedEdition, key);
+  if (force && cachedFresh && Date.now() - lastManualRefresh < 10 * 60000) { const at = new Date().toISOString(); renderEdition({ ...cachedEdition, sourceOrigin: 'device-cache' }, cached.sources, 'quadro già verificato'); newsDiagnostic({ refreshStartedAt: at, refreshEndedAt: at, refreshReason: 'manual-throttled', sourceFetch: 'cache-hit', compose: 'cached', abortReason: '' }); return cachedEdition; }
   if (force) lastManualRefresh = Date.now();
-  if (cached && !force) { if (editionIsItalian(cached.edition)) { renderEdition(cached.edition, cached.sources, 'salvata sul dispositivo'); if (age < 4 * 3600000) return cached.edition; } }
-  if (!cached) { const latest = await cacheLatest(); if (latest && editionIsItalian(latest.edition)) renderEdition(latest.edition, latest.sources, latest.key === key ? 'salvata sul dispositivo' : 'ultima edizione disponibile'); else renderNewsState('La Terra sta raccogliendo le fonti di oggi.', false); }
+  if (cachedEdition && !force) { renderEdition({ ...cachedEdition, sourceOrigin: 'device-cache' }, cached.sources, cachedFresh ? 'salvata sul dispositivo' : 'ultima edizione salvata'); if (cachedFresh && age < 4 * 3600000) { const at = new Date().toISOString(); newsDiagnostic({ refreshStartedAt: at, refreshEndedAt: at, refreshReason: 'startup-cache', sourceFetch: 'cache-hit', compose: 'cached', abortReason: '' }); return cachedEdition; } }
+  if (!cachedEdition) { if (latest && editionIsItalian(latest.edition)) renderEdition({ ...truthfulEdition(latest.edition), sourceOrigin: 'device-cache' }, latest.sources, 'ultima edizione disponibile'); else renderNewsState('La Terra sta raccogliendo le fonti di oggi.', false); }
   const endpoint = newsEndpoint();
-  if (newsAbort) newsAbort.abort(); newsAbort = new AbortController();
-  newsBuild = (async () => {
+  const refreshStartedAt = new Date().toISOString(); newsRequestedDay = key;
+  newsDiagnostic({ refreshStartedAt, refreshEndedAt: '', refreshReason: force ? 'manual' : 'startup', sourceFetch: 'started', compose: 'pending', abortReason: '', endpointConfigured: Boolean(endpoint) });
     try {
-      const packet = await fetchSources(endpoint, key, newsAbort.signal), items = packet.items;
+      const packet = await fetchSources(endpoint, key, null), items = packet.items, sourcesUpdatedAt = sourceTime(packet);
+      const packetDay = cleanText(packet.dayKey, 10) || sourceDay(packet) || key, packetFresh = packetDay === key && sourceDay(packet) === key;
+      newsDiagnostic({ sourceFetch: 'ok', sourceChannel: packet.channel, sourceTransport: packet.transport, workerStatus: packet.workerStatus, sourcesUpdatedAt, sourceAgeMinutes: sourcesUpdatedAt ? Math.max(0, Math.round((Date.now() - Date.parse(sourcesUpdatedAt)) / 60000)) : -1 });
       if (packet.edition) {
-        const edition = { ...packet.edition, sourceUpdatedAt: packet.edition.sourceUpdatedAt || packet.generatedAt, sourceChannel: packet.channel, materialChanges: [] };
-        renderEdition(edition, items);
-        await cachePut({ key, at: Date.now(), checkedAt: Date.now(), edition, sources: items });
+        const savedAt = new Date().toISOString(), edition = truthfulEdition({ ...packet.edition, dayKey: packet.edition.dayKey || packetDay, sourceUpdatedAt: packet.edition.sourceUpdatedAt || sourcesUpdatedAt, sourceChannel: packet.channel, sourceOrigin: packet.transport === 'cache-storage' ? 'packaged-cache' : 'packaged-live', cacheSavedAt: savedAt, materialChanges: [] });
+        const previous = latest && editionIsItalian(latest.edition) ? truthfulEdition(latest.edition) : null;
+        if (previous && freshnessMilliseconds(previous) > freshnessMilliseconds(edition)) { renderEdition({ ...previous, sourceOrigin: 'device-cache' }, latest.sources, freshForDay(previous, key) ? 'salvata sul dispositivo' : 'ultima edizione salvata'); newsDiagnostic({ compose: 'packaged-older-than-cache', refreshEndedAt: new Date().toISOString() }); return previous; }
+        await cachePut({ key: edition.dayKey || packetDay, at: Date.now(), checkedAt: Date.now(), cacheSavedAt: savedAt, edition, sources: items });
+        renderEdition(edition, items, packetFresh ? '' : 'ultima edizione disponibile');
+        newsDiagnostic({ compose: 'packaged', refreshEndedAt: new Date().toISOString() });
         return edition;
       }
       const clusters = await continuityClusters(items, key), changed = selectEditorialStories(clusters, 12);
-      if (cached && !changed.length) { await cachePut({ ...cached, checkedAt: Date.now() }); if (editionIsItalian(cached.edition)) renderEdition(cached.edition, cached.sources, 'quadro verificato, nessun cambiamento rilevante'); return cached.edition; }
-      const edition = await composeEdition(items, clusters, key, newsAbort.signal); if (!edition) throw new Error('edizione');
-      edition.generatedAt = edition.generatedAt || new Date().toISOString(); edition.sourceUpdatedAt = packet.generatedAt || new Date().toISOString(); edition.sourceChannel = packet.channel; edition.materialChanges = changed.map(cluster => cluster.storyId);
-      await cachePut({ key, at: Date.now(), checkedAt: Date.now(), edition, sources: items }); await persistStories(clusters, edition, key); renderEdition(edition, items); return edition;
-    } catch (error) { if (!(error && error.name === 'AbortError') && !cached && !latestEdition) renderNewsState('Oggi nessuna storia supera insieme le soglie di rilevanza e verificabilità. Nessun riempitivo prende il suo posto.', true); return cached && editionIsItalian(cached.edition) ? cached.edition : null; }
-    finally { newsBuild = null; }
+      if (cachedEdition && !changed.length && freshnessMilliseconds(packet) >= freshnessMilliseconds(cachedEdition)) {
+        const savedAt = new Date().toISOString(), edition = truthfulEdition({ ...cachedEdition, sourceUpdatedAt: sourcesUpdatedAt || cachedEdition.sourceUpdatedAt, sourceChannel: packet.channel, sourceOrigin: 'cache-verified', cacheSavedAt: savedAt });
+        await cachePut({ key: packetFresh ? key : edition.dayKey || packetDay, at: Date.now(), checkedAt: Date.now(), cacheSavedAt: savedAt, edition, sources: items });
+        renderEdition(edition, items, packetFresh ? 'quadro verificato, nessun cambiamento rilevante' : 'ultima edizione salvata');
+        newsDiagnostic({ compose: 'unchanged', refreshEndedAt: new Date().toISOString() });
+        return edition;
+      }
+      const compositionKey = packetFresh ? key : packetDay, deterministic = fallbackEdition(items, compositionKey, clusters); if (!deterministic) throw new Error('edizione');
+      const savedAt = new Date().toISOString(), deterministicEdition = truthfulEdition({ ...deterministic, dayKey: compositionKey, generatedAt: packetFresh ? deterministic.generatedAt : sourcesUpdatedAt, sourceUpdatedAt: sourcesUpdatedAt, sourceChannel: packet.channel, sourceOrigin: 'fallback', cacheSavedAt: savedAt, materialChanges: changed.map(cluster => cluster.storyId) });
+      await cachePut({ key: deterministicEdition.dayKey || compositionKey, at: Date.now(), checkedAt: Date.now(), cacheSavedAt: savedAt, edition: deterministicEdition, sources: items });
+      await persistStories(clusters, deterministicEdition, compositionKey); renderEdition(deterministicEdition, items, packetFresh ? '' : 'ultima edizione disponibile');
+      newsDiagnostic({ compose: 'fallback-ready', refreshEndedAt: new Date().toISOString() });
+      if (!context || !context.canGenerate || !context.canGenerate()) return deterministicEdition;
+      newsAbortReason = ''; newsAbort = new AbortController();
+      const outcome = await composeEdition(items, clusters, compositionKey, newsAbort.signal);
+      if (!outcome || !outcome.edition || outcome.mode !== 'ai') { newsDiagnostic({ compose: 'fallback:' + cleanText(outcome && outcome.error || 'quality', 32), abortReason: newsAbortReason, refreshEndedAt: new Date().toISOString() }); return deterministicEdition; }
+      const finalSavedAt = new Date().toISOString(), edition = truthfulEdition({ ...outcome.edition, dayKey: compositionKey, generatedAt: packetFresh ? outcome.edition.generatedAt || finalSavedAt : sourcesUpdatedAt, sourceUpdatedAt: sourcesUpdatedAt, sourceChannel: packet.channel, sourceOrigin: 'live-ai', cacheSavedAt: finalSavedAt, materialChanges: changed.map(cluster => cluster.storyId) });
+      await cachePut({ key: edition.dayKey || compositionKey, at: Date.now(), checkedAt: Date.now(), cacheSavedAt: finalSavedAt, edition, sources: items }); await persistStories(clusters, edition, compositionKey); renderEdition(edition, items, packetFresh ? '' : 'ultima edizione disponibile');
+      newsDiagnostic({ compose: 'ai', refreshEndedAt: new Date().toISOString() }); return edition;
+    } catch (error) {
+      const fallbackRecord = cachedEdition ? { edition: { ...cachedEdition, sourceOrigin: 'device-cache' }, sources: cached.sources } : latest && editionIsItalian(latest.edition) ? { edition: { ...truthfulEdition(latest.edition), sourceOrigin: 'device-cache' }, sources: latest.sources } : null;
+      newsDiagnostic({ sourceFetch: 'failed', compose: 'failed', abortReason: newsAbortReason || (error && error.name === 'AbortError' ? 'aborted' : ''), error: cleanText(error && error.message || 'rete', 40), refreshEndedAt: new Date().toISOString() });
+      if (fallbackRecord) { renderEdition(fallbackRecord.edition, fallbackRecord.sources, 'ultima edizione salvata'); return fallbackRecord.edition; }
+      if (!latestEdition) renderNewsState('Oggi nessuna storia supera insieme le soglie di rilevanza e verificabilità. Nessun riempitivo prende il suo posto.', true); return null;
+    }
+    finally { newsAbort = null; }
   })();
-  return newsBuild;
+  newsBuild = run;
+  run.finally(() => { if (newsBuild === run) newsBuild = null; }).catch(() => {});
+  return run;
 }
 
 export async function open(nextContext) {
@@ -1190,17 +1271,23 @@ export async function open(nextContext) {
   const today = sentieroDayKey(); weekStart = mondayKey(today); selectedDay = today;
   document.body.classList.add('giorno-aperto'); room.hidden = false; requestAnimationFrame(() => requestAnimationFrame(() => room.classList.add('aperta')));
   renderWeek(); renderWord(); refreshNews(false);
-  if (!listenerBound) { listenerBound = true; window.addEventListener('sentiero:state', () => { if (room && !room.hidden) { renderWeek(); renderWord(); } }); }
+  if (!listenerBound) {
+    listenerBound = true;
+    const resumeNews = () => { if (room && !room.hidden && (newsRequestedDay !== sentieroDayKey() || !freshForDay(latestEdition, sentieroDayKey()))) refreshNews(false); };
+    window.addEventListener('sentiero:state', () => { if (room && !room.hidden) { renderWeek(); renderWord(); } });
+    window.addEventListener('pageshow', resumeNews); window.addEventListener('online', resumeNews);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeNews(); });
+  }
   const closeButton = room.querySelector('.giorno-head button'); if (closeButton) closeButton.focus({ preventScroll: true });
 }
 
 export function close() {
   if (!room || room.hidden) return;
-  if (newsAbort) { try { newsAbort.abort(); } catch (_) {} newsAbort = null; }
+  if (newsAbort) { newsAbortReason = 'room-closed'; newsDiagnostic({ abortReason: newsAbortReason }); try { newsAbort.abort(); } catch (_) {} newsAbort = null; }
   room.classList.remove('aperta'); document.body.classList.remove('giorno-aperto');
   setTimeout(() => { if (room && !room.classList.contains('aperta')) room.hidden = true; }, 230);
 }
 
 export function refresh() {
-  if (room && !room.hidden) { renderWeek(); renderWord(); }
+  if (room && !room.hidden) { renderWeek(); renderWord(); if (newsRequestedDay !== sentieroDayKey()) refreshNews(false); }
 }

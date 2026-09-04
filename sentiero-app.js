@@ -3319,6 +3319,22 @@ function diagnosticaSicura(){
     const mods=[...new Set([].concat(AI_CHAINS.max.heavy,AI_CHAINS.max.cheap,AI_CHAINS.balanced.heavy,AI_CHAINS.balanced.cheap,AI_CHAINS.fast.heavy))];
     d.geminiCooldown=mods.map(m=>{ const x=_aiRateGet(m); return x?{model:m,kind:x.kind||'limite',code:x.code||'',secondi:Math.max(1,Math.ceil((x.until-Date.now())/1000))}:null; }).filter(Boolean);
   }catch(_){}
+  /* Freshness tecnica del Giornale: soli stati/timestamp, mai contenuti o preferenze. */
+  try{
+    const n=window.__sentieroNewsDiag;
+    if(n&&typeof n==='object'){
+      const testo=function(v,n){ return String(v==null?'':v).slice(0,n); };
+      d.giornale={
+        currentDay:testo(n.currentDay,10),editionDay:testo(n.editionDay,10),
+        editionGeneratedAt:testo(n.editionGeneratedAt,40),sourcesUpdatedAt:testo(n.sourcesUpdatedAt,40),cacheSavedAt:testo(n.cacheSavedAt,40),
+        origin:testo(n.origin,32),sourceAgeMinutes:Number.isFinite(Number(n.sourceAgeMinutes))?Number(n.sourceAgeMinutes):-1,
+        refreshStartedAt:testo(n.refreshStartedAt,40),refreshEndedAt:testo(n.refreshEndedAt,40),refreshReason:testo(n.refreshReason,16),
+        sourceFetch:testo(n.sourceFetch,16),sourceChannel:testo(n.sourceChannel,16),sourceTransport:testo(n.sourceTransport,24),workerStatus:testo(n.workerStatus,20),
+        compose:testo(n.compose,40),abortReason:testo(n.abortReason,32),error:testo(n.error,40),
+        endpointConfigured:n.endpointConfigured?1:0,online:n.online===false?0:1,stale:n.stale?1:0
+      };
+    }
+  }catch(_){}
   try{ scatolaScrivi(); d.scatola={voci:SCATOLA_VOCI,sessione:_scatolaSes,nastro:_scatola.slice(-SCATOLA_TETTO)}; }catch(_){}
   return d;
 }
