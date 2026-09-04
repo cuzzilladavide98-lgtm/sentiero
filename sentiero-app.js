@@ -1057,7 +1057,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.274.3 · 2026-08-29';
+const APP_VERSION='v60S.274.5 · 2026-09-04';
 
 /* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
    non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
@@ -3143,21 +3143,65 @@ function nota(cod,n1,n2){
     if(!_scatolaPen) _scatolaPen=setTimeout(scatolaScrivi,1500);
   }catch(_){}
 }
-/* la stretta di mano: una domanda, una risposta, niente protocollo. Se il
-   worker e di prima della v269.8 non risponde e resta zero. */
+/* La stretta di mano aspetta un controllore vero e lega la risposta alla build
+   dichiarata dall'HTML. Un worker vecchio puo ancora rispondere a {q:'gen'},
+   ma non puo presentarsi come questa release senza id, generazione e cache
+   esatti. */
+function _identitaBuildHtml(){
+  try{
+    const build=String(document.querySelector('meta[name="sentiero-build"]')?.content||'').trim();
+    const generation=Number(document.querySelector('meta[name="sentiero-sw-generation"]')?.content||0);
+    return {build,generation:Number.isFinite(generation)?generation:0};
+  }catch(_){ return {build:'',generation:0}; }
+}
+function _attendiControllerWorker(timeoutMs){
+  return new Promise(function(resolve){
+    try{
+      const sw=navigator.serviceWorker;
+      if(!sw){ resolve(null); return; }
+      if(sw.controller){ resolve(sw.controller); return; }
+      let finito=false;
+      const chiudi=function(controller){
+        if(finito) return; finito=true; clearTimeout(timer);
+        try{ sw.removeEventListener('controllerchange',cambiato); }catch(_){}
+        resolve(controller||sw.controller||null);
+      };
+      const cambiato=function(){ if(sw.controller) chiudi(sw.controller); };
+      const timer=setTimeout(function(){ chiudi(null); },Math.max(1000,Number(timeoutMs)||6000));
+      sw.addEventListener('controllerchange',cambiato);
+      try{ sw.ready.then(function(){ if(sw.controller) chiudi(sw.controller); }).catch(function(){}); }catch(_){}
+    }catch(_){ resolve(null); }
+  });
+}
+async function sentieroServiceWorkerHandshake(timeoutMs){
+  const html=_identitaBuildHtml();
+  const sw=navigator.serviceWorker;
+  if(!sw) return {controller:false,htmlBuild:html.build,htmlGeneration:html.generation,build:'',generation:0,gen:0,cache:'',coherent:false,error:'service-worker-unavailable'};
+  const controller=await _attendiControllerWorker(timeoutMs);
+  if(!controller) return {controller:false,htmlBuild:html.build,htmlGeneration:html.generation,build:'',generation:0,gen:0,cache:'',coherent:false,error:'controller-timeout'};
+  return new Promise(function(resolve){
+    const mc=new MessageChannel(); let finito=false;
+    const chiudi=function(data,error){
+      if(finito) return; finito=true; clearTimeout(timer);
+      try{ mc.port1.close(); }catch(_){}
+      const build=String(data&&data.build||'');
+      const generation=Number(data&&(data.generation==null?data.gen:data.generation))||0;
+      const cache=String(data&&data.cache||'');
+      const cacheAttesa='sentiero-'+html.build.toLowerCase().replace(/\./g,'-');
+      const coherent=!!html.build&&html.generation>0&&build===html.build&&generation===html.generation&&cache===cacheAttesa;
+      resolve({controller:true,htmlBuild:html.build,htmlGeneration:html.generation,build,generation,gen:generation,cache,coherent,error:error||''});
+    };
+    const timer=setTimeout(function(){ chiudi(null,'message-timeout'); },Math.max(1000,Number(timeoutMs)||6000));
+    mc.port1.onmessage=function(e){ chiudi(e&&e.data,''); };
+    try{ controller.postMessage({q:'gen'},[mc.port2]); }catch(error){ chiudi(null,String(error&&error.message||error)); }
+  });
+}
 function _chiediGenerazioneWorker(){
   try{
-    const sw=navigator.serviceWorker;
-    if(!sw||!sw.controller){ nota('swg',0); return; }
-    const mc=new MessageChannel();
-    let risposto=false;
-    mc.port1.onmessage=function(e){
-      risposto=true;
-      const g=(e&&e.data&&Number(e.data.gen))||0;
-      nota('swg',Number.isFinite(g)?g:0);
-    };
-    sw.controller.postMessage({q:'gen'},[mc.port2]);
-    setTimeout(function(){ if(!risposto) nota('swg',0); },1500);
+    sentieroServiceWorkerHandshake(6000).then(function(esito){
+      const g=esito&&esito.coherent&&Number(esito.generation)>0?Number(esito.generation):0;
+      nota('swg',g);
+    }).catch(function(){ nota('swg',0); });
   }catch(_){ try{ nota('swg',0); }catch(__){} }
 }
 /* ══ v269.8 — DUE ARTEFATTI, NON UNO ════════════════════════════════════════
@@ -3274,6 +3318,22 @@ function diagnosticaSicura(){
     d.geminiUltimi=tutti.slice(-12).map(e=>({quando:String(e.t||'').slice(0,19),task:String(e.task||'').slice(0,24),model:String(e.model||'').slice(0,32),profile:String(e.profile||'').slice(0,12),provider:String(e.provider||'interactions').slice(0,20),resolution:String(e.resolution||'').slice(0,12),status:String(e.status||'').slice(0,16),format:String(e.format||'').slice(0,8),msg:String(e.msg||'').slice(0,32),ms:Number(e.ms)||0,tin:Number(e.tin)||0,tout:Number(e.tout)||0,think:Number(e.think)||0,http:Number(e.http)||0,api:Number(e.api)||0,background:Number(e.background)||0,poll:Number(e.poll)||0,deleted:Number(e.deleted)||0,rate:String(e.rate||'').slice(0,40),wait:Number(e.wait)||0,salti:String(e.salti||'').slice(0,120)}));
     const mods=[...new Set([].concat(AI_CHAINS.max.heavy,AI_CHAINS.max.cheap,AI_CHAINS.balanced.heavy,AI_CHAINS.balanced.cheap,AI_CHAINS.fast.heavy))];
     d.geminiCooldown=mods.map(m=>{ const x=_aiRateGet(m); return x?{model:m,kind:x.kind||'limite',code:x.code||'',secondi:Math.max(1,Math.ceil((x.until-Date.now())/1000))}:null; }).filter(Boolean);
+  }catch(_){}
+  /* Freshness tecnica del Giornale: soli stati/timestamp, mai contenuti o preferenze. */
+  try{
+    const n=window.__sentieroNewsDiag;
+    if(n&&typeof n==='object'){
+      const testo=function(v,n){ return String(v==null?'':v).slice(0,n); };
+      d.giornale={
+        currentDay:testo(n.currentDay,10),editionDay:testo(n.editionDay,10),
+        editionGeneratedAt:testo(n.editionGeneratedAt,40),sourcesUpdatedAt:testo(n.sourcesUpdatedAt,40),cacheSavedAt:testo(n.cacheSavedAt,40),
+        origin:testo(n.origin,32),sourceAgeMinutes:Number.isFinite(Number(n.sourceAgeMinutes))?Number(n.sourceAgeMinutes):-1,
+        refreshStartedAt:testo(n.refreshStartedAt,40),refreshEndedAt:testo(n.refreshEndedAt,40),refreshReason:testo(n.refreshReason,16),
+        sourceFetch:testo(n.sourceFetch,16),sourceChannel:testo(n.sourceChannel,16),sourceTransport:testo(n.sourceTransport,24),workerStatus:testo(n.workerStatus,20),
+        compose:testo(n.compose,40),abortReason:testo(n.abortReason,32),error:testo(n.error,40),
+        endpointConfigured:n.endpointConfigured?1:0,online:n.online===false?0:1,stale:n.stale?1:0
+      };
+    }
   }catch(_){}
   try{ scatolaScrivi(); d.scatola={voci:SCATOLA_VOCI,sessione:_scatolaSes,nastro:_scatola.slice(-SCATOLA_TETTO)}; }catch(_){}
   return d;
@@ -12957,7 +13017,7 @@ function endpointGiorno(){
 }
 function caricaStanzaTerra(){
   if(_giornoModulo) return Promise.resolve(_giornoModulo); if(_giornoCarica) return _giornoCarica;
-  _giornoCarica=import('./sentiero-day.mjs?v=60.274.3').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
+  _giornoCarica=import('./sentiero-day.mjs?v=60.274.5').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
   return _giornoCarica;
 }
 function contestoStanzaTerra(){ return {
@@ -14699,7 +14759,7 @@ document.querySelector('#import-file').onchange=e=>{
    AVVIO
    ====================================================================== */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=60.274.3',{scope:'./',updateViaCache:'none'}).then(function(reg){
+  navigator.serviceWorker.register('./sw.js?v=60.274.5',{scope:'./',updateViaCache:'none'}).then(function(reg){
     try{ const u=reg.update(); if(u&&u.catch) u.catch(function(){}); }catch(_){}
     try{ scheduleReminders(); }catch(_){}
     /* due strade, perche i telefoni non si comportano tutti uguale:
@@ -15082,7 +15142,7 @@ function initSentieroSync(){
 }
 function caricaSentieroSync(){
   if(window.SentieroSync)return initSentieroSync(); if(_syncLoadPromise)return _syncLoadPromise;
-  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.3';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
+  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.5';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
 }
 try{
   const _loadJournal=()=>caricaSentieroSync().catch(function(){ try{ regCantiere('errore',{msg:'journal locale non disponibile'}); }catch(_){} });

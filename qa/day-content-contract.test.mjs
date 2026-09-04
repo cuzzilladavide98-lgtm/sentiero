@@ -11,6 +11,7 @@ assert.ok(snapshot.reachable >= 18);
 assert.ok(snapshot.parseable >= 14);
 assert.ok(snapshot.items.length >= 12);
 assert.ok(snapshot.edition && snapshot.edition.articles.length >= 1);
+assert.ok(snapshot.edition.articles.every(article => Number(article.importance) >= 52));
 assert.ok(snapshot.edition.articles.every(article => article.claims.length && article.sourceIds.length));
 assert.ok(snapshot.items.every(item => /^https:\/\//.test(item.url) && item.provenance?.evidenceId && item.provenance?.retrievedAt));
 
@@ -30,7 +31,7 @@ assert.match(sw, /assets\/parole-giorno-v1\.json/);
 assert.match(sw, /endsWith\('\/assets\/giornale\/latest\.json'\).*endsWith\('\/latest\.json'\)/s);
 assert.match(sw, /assets\/parole-giorno-v1\.json'.*parole-giorno-v1\.json'/s);
 assert.match(app, /updateViaCache:'none'/);
-assert.match(app, /sw\.js\?v=60\.274\.3/);
+assert.match(app, /sw\.js\?v=60\.274\.5/);
 assert.match(generator, /NEWS_SOURCES\.map\(retrieve\)/);
 assert.doesNotMatch(generator, /process\.argv\[[2-9]\].*(?:url|http)/i);
 assert.match(workflow, /schedule:/);

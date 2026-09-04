@@ -5,11 +5,16 @@ on:
     paths:
       - '.github/workflows/update-giornale.yml'
       - 'tools/build-news-snapshot.mjs'
+      - 'tools/news-snapshot-time.mjs'
+      - 'tools/news-snapshot-continuity.mjs'
       - 'sentiero-day.mjs'
       - 'sync-worker/src/index.js'
       - 'sync-worker/src/news-sources.js'
   schedule:
-    - cron: '17 4 * * *'
+    # GitHub non garantisce puntualità ai job pianificati: una sola esecuzione
+    # giornaliera ha lasciato la PWA senza il corpus del nuovo giorno. Più slot
+    # sfalsati mantengono fresca la source of truth statica senza dipendere da PC.
+    - cron: '43 */2 * * *'
   workflow_dispatch:
 
 permissions:

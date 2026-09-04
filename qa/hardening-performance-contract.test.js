@@ -32,18 +32,18 @@ test('il bootstrap non incorpora più gli MP3 del Cerchio', () => {
 
 test('peso di avvio resta sotto i budget misurati della candidata', () => {
   const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1]).concat(app).join('\n');
-  assert.match(html, /rel="preload" href="\.\/sentiero-app\.js\?v=60\.274\.4" as="script"/);
-  assert.match(html, /<script src="\.\/sentiero-app\.js\?v=60\.274\.4"><\/script>/);
+  assert.match(html, /rel="preload" href="\.\/sentiero-app\.js\?v=60\.274\.5" as="script"/);
+  assert.match(html, /<script src="\.\/sentiero-app\.js\?v=60\.274\.5"><\/script>/);
   assert.ok(Buffer.byteLength(html) < 300000, 'index.html oltre 300.000 B');
   assert.ok(zlib.gzipSync(html, { level: 9 }).length < 100000, 'index.html gzip oltre 100.000 B');
   assert.ok(Buffer.byteLength(scripts) < 960000, 'JavaScript inline oltre 960.000 B');
 });
 
 test('il Service Worker attiva la release solo con il runtime principale completo', () => {
-  assert.match(sw, /const CORE_ASSETS = \['\.\/', '\.\/index\.html', '\.\/manifest\.json', '\.\/sentiero-app\.js\?v=60\.274\.4'\]/);
+  assert.match(sw, /const CORE_ASSETS = \['\.\/', '\.\/index\.html', '\.\/manifest\.json', '\.\/sentiero-app\.js\?v=60\.274\.5', '\.\/sentiero-day\.mjs\?v=60\.274\.5'\]/);
   assert.match(sw, /Promise\.all\(CORE_ASSETS\.map/);
   assert.match(sw, /throw new Error\('core asset: '/);
-  assert.match(sw, /sentiero-day\.mjs\?v=60\.274\.4/);
+  assert.match(sw, /sentiero-day\.mjs\?v=60\.274\.5/);
   assert.match(sw, /assets\/giornale\/latest\.json/);
   assert.match(sw, /assets\/parole-giorno-v1\.json/);
   for (const relative of ['index.html', 'manifest.json', 'sentiero-app.js', 'sentiero-sync.js', 'sentiero-day.mjs']) {

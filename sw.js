@@ -1,5 +1,9 @@
-const CACHE = 'sentiero-v60s-274-4';
-const PROD_CACHE_PREFIX = 'sentiero-v60s-';
+const RELEASE_BUILD = 'v60S.274.5';
+const SW_GENERATION = 274005;
+const CACHE = 'sentiero-v60s-274-5';
+const OWNED_CACHE_PREFIXES = ['sentiero-v60s-', 'sentiero-preview-'];
+/* v274.5: il modulo del giorno è core perché il contratto timestamp/cache deve
+   migrare prima che il nuovo worker prenda il controllo. */
 /* v272.3 recovery: Distillazione via GenerateContent, base completa incorporata,
    stessa geometria voce e backup completo preservati. */
 /* v272.0 discoverability-1: landing/guida/manifest aggiornati per descrivere
@@ -27,8 +31,8 @@ const PROD_CACHE_PREFIX = 'sentiero-v60s-';
    a ogni installazione perche il telefono ne usasse una, che poi nemmeno legge da
    qui. Restano tutte nel repo e restano nel gestore fetch qui sotto: la prima volta
    che una viene chiesta davvero, finisce in cache come tutto il resto. */
-const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.274.4'];
-const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.274.4', './sentiero-day.mjs?v=60.274.4', './vendor/qrcode.js', './vendor/jsQR.js',
+const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.274.5', './sentiero-day.mjs?v=60.274.5'];
+const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.274.5', './vendor/qrcode.js', './vendor/jsQR.js',
   './icon-180.png', './icon-192.png',
   './assets/giornale/latest.json', './latest.json', './assets/parole-giorno-v1.json', './parole-giorno-v1.json',
   './assets/sfx/combo-1.mp3', './assets/sfx/combo-2.mp3', './assets/sfx/combo-3.mp3', './assets/sfx/combo-4.mp3',
@@ -67,10 +71,11 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith(PROD_CACHE_PREFIX) && k !== CACHE).map(k => caches.delete(k))))
-  );
-  self.clients.claim();
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => OWNED_CACHE_PREFIXES.some(prefix => k.startsWith(prefix)) && k !== CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
 /* v269.8 — «CHI STA SERVENDO QUESTA PAGINA?»
@@ -80,15 +85,9 @@ self.addEventListener('activate', e => {
    servita dalla generazione nuova da una servita da quella vecchia rimasta al
    comando. Un worker di prima di questa versione non risponde: nel nastro resta
    zero, e anche quello dice qualcosa. */
-function generazioneDaCache(nome) {
-  const m = String(nome || '').match(/(\d+)-(\d+)$/);
-  if (m) return (parseInt(m[1], 10) || 0) * 1000 + (parseInt(m[2], 10) || 0);
-  const s = String(nome || '').match(/(\d+)$/);
-  return s ? (parseInt(s[1], 10) || 0) * 1000 : 0;
-}
 self.addEventListener('message', e => {
   if (!e || !e.data || e.data.q !== 'gen') return;
-  const risposta = { gen: generazioneDaCache(CACHE), cache: CACHE };
+  const risposta = { build: RELEASE_BUILD, generation: SW_GENERATION, gen: SW_GENERATION, cache: CACHE };
   if (e.ports && e.ports[0]) e.ports[0].postMessage(risposta);
 });
 
