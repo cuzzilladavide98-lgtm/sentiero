@@ -1,19 +1,8 @@
 name: Aggiorna snapshot Giornale
 
 on:
-  push:
-    paths:
-      - '.github/workflows/update-giornale.yml'
-      - 'tools/build-news-snapshot.mjs'
-      - 'tools/news-snapshot-time.mjs'
-      - 'sentiero-day.mjs'
-      - 'sync-worker/src/index.js'
-      - 'sync-worker/src/news-sources.js'
   schedule:
-    # GitHub non garantisce puntualità ai job pianificati: una sola esecuzione
-    # giornaliera ha lasciato la PWA senza il corpus del nuovo giorno. Più slot
-    # sfalsati mantengono fresca la source of truth statica senza dipendere da PC.
-    - cron: '43 */2 * * *'
+    - cron: '17 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -36,9 +25,9 @@ jobs:
         run: node tools/build-news-snapshot.mjs
       - name: Pubblica soltanto uno snapshot valido e cambiato
         run: |
-          if git diff --quiet -- assets/giornale/latest.json latest.json; then exit 0; fi
+          if git diff --quiet -- assets/giornale/latest.json; then exit 0; fi
           git config user.name "sentiero-editorial-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add assets/giornale/latest.json latest.json
+          git add assets/giornale/latest.json
           git commit -m "chore(giornale): aggiorna snapshot editoriale"
           git push

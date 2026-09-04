@@ -1,10 +1,9 @@
-const PREVIEW_BUILD = 'iphone-rc2';
-const SW_GENERATION = 27400402;
-const CACHE = `sentiero-preview-${PREVIEW_BUILD}-g${SW_GENERATION}`;
+const RELEASE_BUILD = 'v60S.274.5';
+const SW_GENERATION = 274005;
+const CACHE = 'sentiero-v60s-274-5';
 const OWNED_CACHE_PREFIXES = ['sentiero-v60s-', 'sentiero-preview-'];
-/* RC2 freshness: questo byte forza l'update del worker senza cambiare generation;
-   il modulo del giorno è core perché il contratto timestamp/cache deve migrare
-   prima che il nuovo worker prenda il controllo. */
+/* v274.5: il modulo del giorno è core perché il contratto timestamp/cache deve
+   migrare prima che il nuovo worker prenda il controllo. */
 /* v272.3 recovery: Distillazione via GenerateContent, base completa incorporata,
    stessa geometria voce e backup completo preservati. */
 /* v272.0 discoverability-1: landing/guida/manifest aggiornati per descrivere
@@ -32,8 +31,8 @@ const OWNED_CACHE_PREFIXES = ['sentiero-v60s-', 'sentiero-preview-'];
    a ogni installazione perche il telefono ne usasse una, che poi nemmeno legge da
    qui. Restano tutte nel repo e restano nel gestore fetch qui sotto: la prima volta
    che una viene chiesta davvero, finisce in cache come tutto il resto. */
-const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.274.5-rc2', './sentiero-day.mjs?v=60.274.5-rc2'];
-const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.274.5-rc2', './vendor/qrcode.js', './vendor/jsQR.js',
+const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.274.5', './sentiero-day.mjs?v=60.274.5'];
+const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.274.5', './vendor/qrcode.js', './vendor/jsQR.js',
   './icon-180.png', './icon-192.png',
   './assets/giornale/latest.json', './latest.json', './assets/parole-giorno-v1.json', './parole-giorno-v1.json',
   './assets/sfx/combo-1.mp3', './assets/sfx/combo-2.mp3', './assets/sfx/combo-3.mp3', './assets/sfx/combo-4.mp3',
@@ -88,7 +87,7 @@ self.addEventListener('activate', e => {
    zero, e anche quello dice qualcosa. */
 self.addEventListener('message', e => {
   if (!e || !e.data || e.data.q !== 'gen') return;
-  const risposta = { preview: PREVIEW_BUILD, generation: SW_GENERATION, gen: SW_GENERATION, cache: CACHE };
+  const risposta = { build: RELEASE_BUILD, generation: SW_GENERATION, gen: SW_GENERATION, cache: CACHE };
   if (e.ports && e.ports[0]) e.ports[0].postMessage(risposta);
 });
 

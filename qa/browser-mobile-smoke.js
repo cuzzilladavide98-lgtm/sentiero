@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
+const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
@@ -15,17 +16,24 @@ const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 
 function harness(width, height) {
   return `<!doctype html><meta charset="utf-8"><iframe id="app" style="width:${width}px;height:${height}px;border:0" src="/index.html?smoke=${Date.now()}"></iframe><pre id="smoke-result">pending</pre><script>
+  window.__sentieroSmokeReady=false;window.__sentieroSmokeResult=null;
   const frame=document.getElementById('app'),out=document.getElementById('smoke-result');
   const wait=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
-  frame.onload=()=>setTimeout(async()=>{try{
+  const waitFor=async(check,label,timeout=20000)=>{const start=Date.now();while(Date.now()-start<timeout){try{if(check())return;}catch(_){}await new Promise(ok=>setTimeout(ok,100));}throw new Error('readiness timeout: '+label);};
+  const finish=result=>{window.__sentieroSmokeResult=result;window.__sentieroSmokeReady=true;out.textContent=JSON.stringify(result);};
+  frame.onload=async()=>{try{
     const w=frame.contentWindow,d=frame.contentDocument,pages=['devices','experience','gemini','planning','language','data','help'],checks=[];
+    await waitFor(()=>typeof w.apriSettingsPage==='function'&&typeof w.apriStanzaTerra==='function'&&(typeof w.renderAll==='function'||typeof w.renderTasks==='function'),'bootstrap applicazione');
+    const swHandshake=typeof w.sentieroServiceWorkerHandshake==='function'?await w.sentieroServiceWorkerHandshake(15000):null;
+    if(!swHandshake||!swHandshake.controller||!swHandshake.coherent)throw new Error('service worker non stabilizzato: '+JSON.stringify(swHandshake));
     const nav=d.querySelector('a[data-sez="altro"]');if(nav)nav.click();await wait();
     for(const page of pages){w.apriSettingsPage(page);await wait();const active=d.querySelector('[data-settings-page="'+page+'"]');const nodes=[active,...active.querySelectorAll('*')].filter(Boolean).filter(el=>{const s=w.getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden'});const maxRight=Math.max(...nodes.map(el=>el.getBoundingClientRect().right));const minLeft=Math.min(...nodes.map(el=>el.getBoundingClientRect().left));checks.push({page,maxRight:+maxRight.toFixed(2),minLeft:+minLeft.toFixed(2),active:active.classList.contains('settings-page-active')});}
-    const dayOpenAt=w.performance.now();await w.apriStanzaTerra();const dayOpenMs=+(w.performance.now()-dayOpenAt).toFixed(2);await new Promise(ok=>setTimeout(ok,500));await wait();
+    const dayOpenAt=w.performance.now();await w.apriStanzaTerra();const dayOpenMs=+(w.performance.now()-dayOpenAt).toFixed(2);
+    await waitFor(()=>{const room=d.querySelector('#giorno-room'),shell=d.querySelector('.giorno-shell'),week=d.querySelector('.week-strip'),globe=d.querySelector('#giorno-terra .terra-globo');return !!room&&!room.hidden&&!!shell&&!!week&&!!globe&&d.querySelectorAll('.week-day').length===7&&!!d.querySelector('.word-card');},'stanza Terra completa');await wait();
     const room=d.querySelector('#giorno-room'),shell=d.querySelector('.giorno-shell'),week=d.querySelector('.week-strip'),earth=d.querySelector('#giorno-terra'),globe=d.querySelector('#giorno-terra .terra-globo'),night=d.querySelector('#notte-luce .nucleo');
     const earthSize=parseFloat(w.getComputedStyle(globe).width)||0,nightSize=parseFloat(w.getComputedStyle(night,'::before').width)||0;
-    const result={width:w.innerWidth,height:w.innerHeight,bodyScroll:d.documentElement.scrollWidth,rows:d.querySelectorAll('[data-settings-open]').length,checks,errors:w.__sentieroSmokeErrors||[],rejections:w.__sentieroSmokeRejections||[],reduced:w.matchMedia('(prefers-reduced-motion: reduce)').matches,ready:typeof w.renderAll==='function'||typeof w.renderTasks==='function',day:{open:!!room&&!room.hidden,openMs:dayOpenMs,shellScroll:shell&&shell.scrollWidth,shellClient:shell&&shell.clientWidth,weekScroll:week&&week.scrollWidth,weekClient:week&&week.clientWidth,days:d.querySelectorAll('.week-day').length,word:!!d.querySelector('.word-card'),earthTarget:earth&&parseFloat(w.getComputedStyle(earth).width),visualAreaRatio:nightSize?+(earthSize*earthSize/(nightSize*nightSize)).toFixed(2):0,moonAnimation:w.getComputedStyle(d.querySelector('.terra-luna')).animationName}};out.textContent=JSON.stringify(result);
-  }catch(e){out.textContent=JSON.stringify({error:String(e&&e.stack||e)});}},700);
+    finish({width:w.innerWidth,height:w.innerHeight,bodyScroll:d.documentElement.scrollWidth,rows:d.querySelectorAll('[data-settings-open]').length,checks,errors:w.__sentieroSmokeErrors||[],rejections:w.__sentieroSmokeRejections||[],reduced:w.matchMedia('(prefers-reduced-motion: reduce)').matches,ready:typeof w.renderAll==='function'||typeof w.renderTasks==='function',swHandshake,day:{open:!!room&&!room.hidden,openMs:dayOpenMs,shellScroll:shell&&shell.scrollWidth,shellClient:shell&&shell.clientWidth,weekScroll:week&&week.scrollWidth,weekClient:week&&week.clientWidth,days:d.querySelectorAll('.week-day').length,word:!!d.querySelector('.word-card'),earthTarget:earth&&parseFloat(w.getComputedStyle(earth).width),visualAreaRatio:nightSize?+(earthSize*earthSize/(nightSize*nightSize)).toFixed(2):0,moonAnimation:w.getComputedStyle(d.querySelector('.terra-luna')).animationName}});
+  }catch(e){finish({error:String(e&&e.stack||e)});}};
   </script>`;
 }
 
@@ -45,17 +53,75 @@ const server = http.createServer((req, res) => {
   } catch (_) { res.writeHead(404); res.end(); }
 });
 
-function runChrome(port, width, height, reduced) {
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function getFreePort() {
   return new Promise((resolve, reject) => {
-    const profile = fs.mkdtempSync(path.join(os.tmpdir(), `sentiero-smoke-${width}-`));
-    const args = ['--headless','--disable-gpu','--no-first-run','--disable-background-networking','--disable-default-apps','--disable-extensions','--disable-sync','--metrics-recording-only',`--window-size=${width},${height}`,'--force-device-scale-factor=2',`--user-data-dir=${profile}`,'--virtual-time-budget=20000','--dump-dom'];
-    if (reduced) args.push('--force-prefers-reduced-motion');
-    args.push(`http://127.0.0.1:${port}/smoke?w=${width}&h=${height}`);
-    const child = spawn(chrome, args, { windowsHide: true }); let stdout = '', stderr = '';
-    child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
-    const timer = setTimeout(() => { child.kill(); reject(new Error('Chrome timeout')); }, 60000);
-    child.on('error', reject); child.on('close', code => { clearTimeout(timer); const match = stdout.match(/<pre id="smoke-result">([^<]+)<\/pre>/); if (!match) { reject(new Error(`Chrome ${width}x${height} ${code}: ${stderr.slice(-500)}`)); return; } try { resolve(JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'))); } catch (error) { reject(new Error(`${width}x${height}: ${error.message}; value=${match[1].slice(0,100)}`)); } });
+    const socket = net.createServer();
+    socket.on('error', reject);
+    socket.listen(0, '127.0.0.1', () => { const port = socket.address().port; socket.close(() => resolve(port)); });
   });
+}
+
+async function getPageTarget(port) {
+  for (let i = 0; i < 100; i++) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/json/list`), targets = await response.json();
+      const page = targets.find(target => target.type === 'page' && /\/smoke\?/.test(target.url));
+      if (page && page.webSocketDebuggerUrl) return page;
+    } catch (_) {}
+    await sleep(100);
+  }
+  throw new Error('Chrome DevTools non ha esposto la pagina smoke');
+}
+
+class CDP {
+  constructor(socket) { this.socket=socket; this.id=0; this.pending=new Map(); socket.addEventListener('message', event => this.onMessage(event)); }
+  onMessage(event) { let message; try { message=JSON.parse(String(event.data)); } catch (_) { return; } if(!message.id||!this.pending.has(message.id))return;const job=this.pending.get(message.id);this.pending.delete(message.id);message.error?job.reject(new Error(message.error.message)):job.resolve(message.result); }
+  send(method, params={}) { return new Promise((resolve,reject)=>{const id=++this.id;this.pending.set(id,{resolve,reject});this.socket.send(JSON.stringify({id,method,params}));}); }
+  close() { try{this.socket.close();}catch(_){} }
+}
+
+function connectCdp(url) {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(url), timer=setTimeout(()=>reject(new Error('timeout connessione Chrome DevTools')),10000);
+    socket.addEventListener('open',()=>{clearTimeout(timer);resolve(new CDP(socket));});
+    socket.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('errore connessione Chrome DevTools'));});
+  });
+}
+
+async function stopChrome(child) {
+  if (child.exitCode !== null) return;
+  const closed = new Promise(resolve => child.once('close', resolve));
+  child.kill();
+  await Promise.race([closed, sleep(5000)]);
+}
+
+async function runChrome(port, width, height, reduced) {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), `sentiero-smoke-${width}-`));
+  const debugPort = await getFreePort();
+  const args = ['--headless=new','--disable-gpu','--no-first-run','--disable-background-networking','--disable-default-apps','--disable-extensions','--disable-sync','--metrics-recording-only',`--window-size=${width},${height}`,'--force-device-scale-factor=2',`--remote-debugging-port=${debugPort}`,`--user-data-dir=${profile}`];
+  if (reduced) args.push('--force-prefers-reduced-motion');
+  args.push(`http://127.0.0.1:${port}/smoke?w=${width}&h=${height}`);
+  const child = spawn(chrome, args, { windowsHide: true }); let stderr='', cdp=null;
+  child.stderr.on('data', chunk => { stderr += chunk; });
+  try {
+    const target=await getPageTarget(debugPort);cdp=await connectCdp(target.webSocketDebuggerUrl);await cdp.send('Runtime.enable');
+    const started=Date.now(),timeoutMs=30000;
+    while(Date.now()-started<timeoutMs){
+      const state=await cdp.send('Runtime.evaluate',{expression:'({ready:window.__sentieroSmokeReady===true,result:window.__sentieroSmokeResult})',returnByValue:true});
+      const value=state&&state.result&&state.result.value;
+      if(value&&value.ready){if(!value.result)throw new Error(`${width}x${height}: probe pronto senza risultato`);return value.result;}
+      await sleep(100);
+    }
+    const diagnostic=await cdp.send('Runtime.evaluate',{expression:'({ready:window.__sentieroSmokeReady,result:window.__sentieroSmokeResult,text:document.querySelector("#smoke-result")?.textContent||"",frameReady:document.querySelector("#app")?.contentDocument?.readyState||""})',returnByValue:true});
+    throw new Error(`${width}x${height}: probe non completato entro ${timeoutMs} ms; stato=${JSON.stringify(diagnostic?.result?.value||{})}`);
+  } catch(error) {
+    throw new Error(`${error.message}${stderr?' | Chrome: '+stderr.slice(-400):''}`);
+  } finally {
+    if(cdp)cdp.close(); await stopChrome(child);
+    try{fs.rmSync(profile,{recursive:true,force:true});}catch(_){}
+  }
 }
 
 (async () => {
@@ -64,6 +130,7 @@ function runChrome(port, width, height, reduced) {
     for (const [width, height, reduced] of [[320,568,false],[360,640,false],[375,647,false],[390,700,false],[430,740,false],[1024,768,false],[375,647,true]]) {
       const result = await runChrome(port, width, height, reduced);
       assert.equal(result.error, undefined); assert.equal(result.ready, true); assert.equal(result.rows, 7);
+      assert.equal(result.swHandshake.controller,true);assert.equal(result.swHandshake.coherent,true);assert.notEqual(result.swHandshake.generation,0);
       assert.deepEqual(result.errors, []); assert.deepEqual(result.rejections, []);
       assert.ok(result.bodyScroll <= result.width + 1, `${width}px: overflow documento ${result.bodyScroll}`);
       for (const check of result.checks) { assert.equal(check.active, true, check.page); assert.ok(check.maxRight <= result.width + 1, `${width}px ${check.page}: destra ${check.maxRight}`); assert.ok(check.minLeft >= -1, `${width}px ${check.page}: sinistra ${check.minLeft}`); }

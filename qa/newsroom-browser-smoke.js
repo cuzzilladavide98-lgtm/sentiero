@@ -73,7 +73,7 @@ function runChrome(port, width, height) {
       const result = await runChrome(port, width, height);
       assert.equal(result.error, undefined); assert.equal(result.front, true); assert.equal(result.articles, 1, 'nessun riempitivo'); assert.equal(result.lead, true);
       assert.ok(result.claims >= 1); assert.ok(result.sources >= 1); assert.equal(result.end, 'Fine dell’edizione di oggi.'); assert.ok(result.deck.includes('Una sola storia'));
-      assert.ok(result.importance >= 28); assert.ok(result.title.includes('BCE')); assert.ok(result.overflow <= 1); assert.ok(result.bodyOverflow <= 1); assert.deepEqual(result.errors, []); assert.deepEqual(result.rejections, []);
+      assert.ok(result.importance >= 52); assert.ok(result.title.includes('BCE')); assert.ok(result.overflow <= 1); assert.ok(result.bodyOverflow <= 1); assert.deepEqual(result.errors, []); assert.deepEqual(result.rejections, []);
     }
     process.stdout.write('PASS Giornale Chrome mobile/desktop: gerarchia, provenance, fallback senza riempitivi e overflow\n');
   } finally { server.close(); }
