@@ -1,4 +1,25 @@
-# Mission ledger — v60S.274.4
+# Mission ledger — v60S.274.5
+
+## Release ufficiale v60S.274.5 — 04/09/2026
+
+| ID | Stato | Evidenza | Blocker |
+|---|---|---|---|
+| RLS01 Test fisico iPhone | VERIFIED | secondo test fisico: Giornale italiano/sostanzioso, Vicino a te, freshness 04/09 e aggiornamento manuale PASS | — |
+| RLS02 Versioning/SW | VERIFIED | package/runtime/distribution `60.274.5`; generation `274005`; cache `sentiero-v60s-274-5` | — |
+| RLS03 Upgrade 274.4/RC2 | VERIFIED | browser reale: vecchio worker+cache → worker finale, runtime finale, Giornale e rimozione cache precedente | — |
+| RLS04 Gate finali | VERIFIED | suite, regressioni editoriali/freshness, browser smoke, handshake e browser-mobile 2/2 PASS | — |
+
+## RC2 freshness Giornale — 04/09/2026
+
+| ID | Stato | Evidenza | Blocker |
+|---|---|---|---|
+| F01 Causa timestamp falso/stale | VERIFIED | edition snapshot preservata; `truthfulEdition`; generated/source/cache separati | — |
+| F02 Fonti separate da AI/abort | VERIFIED | corpus+fallback salvati prima della composizione; close abortisce solo AI | — |
+| F03 Aggiornamento autonomo | VERIFIED | Action ogni 2h; builder live atomico; giorno Europe/Rome 04:20 | — |
+| F04 New-day/cache/offline/lifecycle | VERIFIED | browser: cache ieri→rete oggi, failure, offline, refresh, pageshow, single-flight | — |
+| F05 Soglia/no filler | VERIFIED | soglia pubblicazione 52 applicata a fallback, AI e snapshot distribuito | — |
+| F06 Diagnostica freshness | VERIFIED | giorno/tempi/origine/età/fetch/compose/abort/online, zero contenuti | — |
+| F07 Gate RC2 locale | VERIFIED | suite, browser, SW e snapshot live 04/09 verdi; nessun bump/package/deploy | — |
 
 ## Giornale Italia mobile v60S.274.4
 

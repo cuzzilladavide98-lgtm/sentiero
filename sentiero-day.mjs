@@ -461,7 +461,7 @@ let latestSources = [];
 let lastManualRefresh = 0;
 let newsRequestedDay = '';
 let newsAbortReason = '';
-const DISTRIBUTION_VERSION = '60.274.5-rc2';
+const DISTRIBUTION_VERSION = '60.274.5';
 const NEWS_ASSET_PATHS = ['./assets/giornale/latest.json', './latest.json'];
 const WORD_ASSET_PATHS = ['./assets/parole-giorno-v1.json', './parole-giorno-v1.json'];
 
@@ -1179,7 +1179,10 @@ async function readNewsPacket(urlOrPaths, signal, channel) {
   if (Array.isArray(urlOrPaths)) data = await readDistributedJson(urlOrPaths, signal, 900000, value => value && Array.isArray(value.items));
   else data = await parseDistributedResponse(await fetch(urlOrPaths, { signal, cache: 'no-store' }), 900000);
   if (!data || !Array.isArray(data.items)) throw new Error('fonti');
-  const items = data.items.filter(item => item && item.id && item.title && item.url && item.source && /^https:\/\//.test(item.url)).slice(0, 96).map(item => ({
+  /* Il builder distribuisce fino a 160 evidenze e l'edizione può citarne una
+     qualunque: troncare a 96 prima di validare i claim eliminava articoli validi
+     quando le fonti citate cadevano nella coda del corpus. */
+  const items = data.items.filter(item => item && item.id && item.title && item.url && item.source && /^https:\/\//.test(item.url)).slice(0, 160).map(item => ({
     id: cleanText(item.id, 80), title: sanitizeEditorial(item.title, 240), summary: sanitizeEditorial(item.summary, 1200), url: item.url, published: item.published, source: cleanText(item.source, 80), sourceId: cleanText(item.sourceId, 40),
     sourceMeta: item.sourceMeta && typeof item.sourceMeta === 'object' ? { tier: cleanText(item.sourceMeta.tier, 2), type: cleanText(item.sourceMeta.type, 30), area: cleanText(item.sourceMeta.area, 30), role: cleanText(item.sourceMeta.role, 80), reliability: cleanText(item.sourceMeta.reliability, 80), domain: cleanText(item.sourceMeta.domain, 80), language: cleanText(item.sourceMeta.language, 8), perspective: cleanText(item.sourceMeta.perspective, 20), ownership: cleanText(item.sourceMeta.ownership, 30), country: cleanText(item.sourceMeta.country, 8), coverage: cleanText(item.sourceMeta.coverage, 20), retrieval: cleanText(item.sourceMeta.retrieval, 20), freshnessMinutes: Math.max(0, Math.min(1440, Number(item.sourceMeta.freshnessMinutes) || 0)), terms: cleanText(item.sourceMeta.terms, 80), regionSlug: cleanText(item.sourceMeta.regionSlug, 30) } : null,
     provenance: item.provenance && typeof item.provenance === 'object' ? { evidenceId: cleanText(item.provenance.evidenceId, 100), sourceId: cleanText(item.provenance.sourceId, 40), sourceDomain: cleanText(item.provenance.sourceDomain, 100), canonicalUrl: /^https:\/\//.test(item.provenance.canonicalUrl || '') ? item.provenance.canonicalUrl : item.url, publishedAt: cleanText(item.provenance.publishedAt, 40), retrievedAt: cleanText(item.provenance.retrievedAt, 40), contentFingerprint: cleanText(item.provenance.contentFingerprint, 100) } : { evidenceId: cleanText(item.id, 80), sourceId: cleanText(item.sourceId, 40), canonicalUrl: item.url, publishedAt: cleanText(item.published, 40) }

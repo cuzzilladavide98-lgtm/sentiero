@@ -1057,7 +1057,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.274.4 · preview iphone-rc2 · 2026-09-01';
+const APP_VERSION='v60S.274.5 · 2026-09-04';
 
 /* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
    non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
@@ -3143,16 +3143,16 @@ function nota(cod,n1,n2){
     if(!_scatolaPen) _scatolaPen=setTimeout(scatolaScrivi,1500);
   }catch(_){}
 }
-/* La stretta di mano aspetta un controllore vero e lega la risposta alla
-   preview dichiarata dall'HTML. Un worker vecchio puo ancora rispondere a
-   {q:'gen'}, ma non puo presentarsi come questa RC2 senza id, generazione e
-   cache esatti. */
-function _identitaPreviewHtml(){
+/* La stretta di mano aspetta un controllore vero e lega la risposta alla build
+   dichiarata dall'HTML. Un worker vecchio puo ancora rispondere a {q:'gen'},
+   ma non puo presentarsi come questa release senza id, generazione e cache
+   esatti. */
+function _identitaBuildHtml(){
   try{
-    const preview=String(document.querySelector('meta[name="sentiero-preview-build"]')?.content||'').trim();
-    const generation=Number(document.querySelector('meta[name="sentiero-preview-generation"]')?.content||0);
-    return {preview,generation:Number.isFinite(generation)?generation:0};
-  }catch(_){ return {preview:'',generation:0}; }
+    const build=String(document.querySelector('meta[name="sentiero-build"]')?.content||'').trim();
+    const generation=Number(document.querySelector('meta[name="sentiero-sw-generation"]')?.content||0);
+    return {build,generation:Number.isFinite(generation)?generation:0};
+  }catch(_){ return {build:'',generation:0}; }
 }
 function _attendiControllerWorker(timeoutMs){
   return new Promise(function(resolve){
@@ -3174,22 +3174,22 @@ function _attendiControllerWorker(timeoutMs){
   });
 }
 async function sentieroServiceWorkerHandshake(timeoutMs){
-  const html=_identitaPreviewHtml();
+  const html=_identitaBuildHtml();
   const sw=navigator.serviceWorker;
-  if(!sw) return {controller:false,htmlPreview:html.preview,htmlGeneration:html.generation,preview:'',generation:0,gen:0,cache:'',coherent:false,error:'service-worker-unavailable'};
+  if(!sw) return {controller:false,htmlBuild:html.build,htmlGeneration:html.generation,build:'',generation:0,gen:0,cache:'',coherent:false,error:'service-worker-unavailable'};
   const controller=await _attendiControllerWorker(timeoutMs);
-  if(!controller) return {controller:false,htmlPreview:html.preview,htmlGeneration:html.generation,preview:'',generation:0,gen:0,cache:'',coherent:false,error:'controller-timeout'};
+  if(!controller) return {controller:false,htmlBuild:html.build,htmlGeneration:html.generation,build:'',generation:0,gen:0,cache:'',coherent:false,error:'controller-timeout'};
   return new Promise(function(resolve){
     const mc=new MessageChannel(); let finito=false;
     const chiudi=function(data,error){
       if(finito) return; finito=true; clearTimeout(timer);
       try{ mc.port1.close(); }catch(_){}
-      const preview=String(data&&data.preview||'');
+      const build=String(data&&data.build||'');
       const generation=Number(data&&(data.generation==null?data.gen:data.generation))||0;
       const cache=String(data&&data.cache||'');
-      const cacheAttesa='sentiero-preview-'+html.preview+'-g'+html.generation;
-      const coherent=!!html.preview&&html.generation>0&&preview===html.preview&&generation===html.generation&&cache===cacheAttesa;
-      resolve({controller:true,htmlPreview:html.preview,htmlGeneration:html.generation,preview,generation,gen:generation,cache,coherent,error:error||''});
+      const cacheAttesa='sentiero-'+html.build.toLowerCase().replace(/\./g,'-');
+      const coherent=!!html.build&&html.generation>0&&build===html.build&&generation===html.generation&&cache===cacheAttesa;
+      resolve({controller:true,htmlBuild:html.build,htmlGeneration:html.generation,build,generation,gen:generation,cache,coherent,error:error||''});
     };
     const timer=setTimeout(function(){ chiudi(null,'message-timeout'); },Math.max(1000,Number(timeoutMs)||6000));
     mc.port1.onmessage=function(e){ chiudi(e&&e.data,''); };
@@ -13017,7 +13017,7 @@ function endpointGiorno(){
 }
 function caricaStanzaTerra(){
   if(_giornoModulo) return Promise.resolve(_giornoModulo); if(_giornoCarica) return _giornoCarica;
-  _giornoCarica=import('./sentiero-day.mjs?v=60.274.5-rc2').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
+  _giornoCarica=import('./sentiero-day.mjs?v=60.274.5').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
   return _giornoCarica;
 }
 function contestoStanzaTerra(){ return {
@@ -14759,7 +14759,7 @@ document.querySelector('#import-file').onchange=e=>{
    AVVIO
    ====================================================================== */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=60.274.5-rc2',{scope:'./',updateViaCache:'none'}).then(function(reg){
+  navigator.serviceWorker.register('./sw.js?v=60.274.5',{scope:'./',updateViaCache:'none'}).then(function(reg){
     try{ const u=reg.update(); if(u&&u.catch) u.catch(function(){}); }catch(_){}
     try{ scheduleReminders(); }catch(_){}
     /* due strade, perche i telefoni non si comportano tutti uguale:
@@ -15142,7 +15142,7 @@ function initSentieroSync(){
 }
 function caricaSentieroSync(){
   if(window.SentieroSync)return initSentieroSync(); if(_syncLoadPromise)return _syncLoadPromise;
-  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.5-rc2';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
+  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.5';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
 }
 try{
   const _loadJournal=()=>caricaSentieroSync().catch(function(){ try{ regCantiere('errore',{msg:'journal locale non disponibile'}); }catch(_){} });
