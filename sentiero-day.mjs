@@ -181,6 +181,7 @@ function profileSimilarity(a, b) {
 }
 
 const EVENT_MACRO_ANCHORS = new Set('russia russian ucraina ukraine europa europe unione union nato ue onu mosca kiev cremlino putin presidente president governo government parlamento parliament ministro minister guerra war pace peace'.split(/\s+/).map(canonicalToken));
+const EVENT_CONTEXT_ANCHORS = new Set('stati uniti palazzo chigi gennaio febbraio marzo aprile maggio giugno luglio agosto settembre ottobre novembre dicembre lunedi martedi mercoledi giovedi venerdi sabato domenica'.split(' ').map(canonicalToken));
 
 function namedEventAnchors(value) {
   const matches = String(value || '').replace(/<[^>]*>/g, ' ').match(/\p{Lu}[\p{L}'’-]{2,}/gu) || [];
@@ -192,7 +193,12 @@ function likelySameEvent(a, b) {
   const common = [...a.tokens].filter(token => b.tokens.has(token));
   const specificCommon = common.filter(token => !EVENT_MACRO_ANCHORS.has(token));
   const sharedAnchors = [...a.namedAnchors].filter(token => b.namedAnchors.has(token));
-  return sharedAnchors.length >= 2 && specificCommon.length >= 3 && similarity(a.tokens, b.tokens) >= 0.12;
+  /* Il sommario porta spesso lo stesso fondale istituzionale a eventi diversi.
+     Per la via approssimata, almeno un nome distintivo deve comparire in
+     entrambi i TITOLI: Palazzo Chigi nei sommari non unisce ex Ilva e agenda;
+     Stati Uniti non unisce Iran e Pentagono. Le vie forti restano invariate. */
+  const sharedTitleAnchors = [...(a.titleAnchors || [])].filter(token => (b.titleAnchors || new Set()).has(token) && !EVENT_CONTEXT_ANCHORS.has(token));
+  return sharedTitleAnchors.length >= 1 && sharedAnchors.length >= 2 && specificCommon.length >= 3 && similarity(a.tokens, b.tokens) >= 0.12;
 }
 
 function unionTokens(items) {
@@ -216,7 +222,7 @@ export function clusterNews(items) {
   for (const item of Array.isArray(items) ? items : []) {
     if (!item || !item.id || !item.title || !item.url || !item.source) continue;
     const normalizedSummary = sanitizeEditorial(item.summary || '', 900), eventText = item.title + ' ' + normalizedSummary.slice(0, 420);
-    const profile = { ...semanticProfile(eventText), namedAnchors: namedEventAnchors(item.title + ' ' + normalizedSummary), publishedAt: Date.parse(item.published) || 0 }, tokens = profile.tokens;
+    const profile = { ...semanticProfile(eventText), namedAnchors: namedEventAnchors(item.title + ' ' + normalizedSummary), titleAnchors: new Set([...storyTokens(item.title)].filter(token => !EVENT_MACRO_ANCHORS.has(token))), publishedAt: Date.parse(item.published) || 0 }, tokens = profile.tokens;
     let cluster = clusters.find(candidate => candidate.profiles.some(other => {
       const common = intersectionSize(tokens, other.tokens), score = profileSimilarity(profile, other);
       return (common >= 2 && score >= 0.47) || (common >= 1 && score >= 0.4 && [...profile.numbers].some(number => other.numbers.has(number))) || likelySameEvent(profile, other);
@@ -293,9 +299,8 @@ function cleanText(value, limit) {
 
 function sanitizeHtml(value) {
   if (!value) return '';
-  // Prima si rimuovono i tag HTML reali (angolari letterali), poi si decodificano
-  // le entità. Così «&lt;tag&gt;» diventa il testo letterale «<tag>» senza essere
-  // scambiato per markup e rimosso.
+  // I feed possono annidare HTML codificato dentro XML: dopo la decodifica i tag
+  // diventano reali, quindi la pulizia va ripetuta prima di applicare il limite.
   const named = {
     '&nbsp;': ' ', '&amp;': '&', '&lt;': '<', '&gt;': '>',
     '&quot;': '"', '&apos;': "'", '&#39;': "'", '&ndash;': '–',
@@ -304,10 +309,16 @@ function sanitizeHtml(value) {
     '&igrave;': 'ì', '&ograve;': 'ò', '&ugrave;': 'ù', '&eacute;': 'é'
   };
   return String(value)
+    .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, '')
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => { try { return String.fromCodePoint(parseInt(hex, 16)); } catch (_) { return ' '; } })
+    .replace(/&#(\d+);/g, (_, dec) => { try { return String.fromCodePoint(parseInt(dec, 10)); } catch (_) { return ' '; } })
     .replace(/&[a-zA-Z]+;/g, entity => named[entity.toLowerCase()] !== undefined ? named[entity.toLowerCase()] : entity)
+    .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/<\/?[a-z][^>]*$/i, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -650,8 +661,13 @@ function keepRoomFocus(event) {
   if (event.key !== 'Tab') return;
   const focusable = roomFocusable(); if (!focusable.length) return;
   const first = focusable[0], last = focusable[focusable.length - 1], active = document.activeElement;
-  if (event.shiftKey && (active === first || !room.contains(active))) { event.preventDefault(); last.focus(); }
-  else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); }
+  const index = focusable.indexOf(active);
+  /* Un re-render tra due pressioni di Tab puo sostituire il nodo a fuoco:
+     l'uguaglianza per riferimento con first/last allora fallisce e il Tab
+     sfuggirebbe dalla finestra. Si tratta "non trovato nella lista attuale"
+     come un bordo, cosi il wrap resta garantito anche dopo un re-render. */
+  if (event.shiftKey) { if (index <= 0) { event.preventDefault(); last.focus(); } }
+  else if (index === -1 || index === focusable.length - 1) { event.preventDefault(); first.focus(); }
 }
 
 function renderReadingResume(edition) {
@@ -929,7 +945,10 @@ export function selectInformativeTitle(usableItems) {
   // 1. Valuta i titoli originali per densità fattuale, non per lunghezza o posizione.
   const candidates = [...usableItems]
     .map(item => ({ title: fitEditorialTitle(item.title), summary: sanitizeEditorial(item.summary || '', 300) }))
-    .filter(c => isTitleInformative(c.title))
+    /* Un'ellissi terminale arrivata dal feed dichiara che il titolo e monco.
+       Non la premiamo perche contiene piu token: si cerca una fonte completa o
+       una frase fattuale nel sommario; se non c'e, la storia resta fuori. */
+    .filter(c => isTitleInformative(c.title) && !/(?:\u2026|\.{2,})\s*$/.test(c.title))
     .map((candidate, index) => ({ ...candidate, index, score: titleInformationScore(candidate.title) }))
     .sort((a, b) => b.score - a.score || a.index - b.index);
   

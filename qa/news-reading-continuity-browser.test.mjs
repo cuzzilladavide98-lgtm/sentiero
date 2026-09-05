@@ -194,8 +194,9 @@ try {
   assert.equal(afterRefresh.focused, true, 'focus non restituito al controllo dopo il refresh');
   assert.equal(afterRefresh.label, 'Verifica aggiornamenti');
 
+  const beforeRestartTimeOrigin = await evaluate(cdp, 'performance.timeOrigin');
   await cdp.send('Page.reload', { ignoreCache: true });
-  await waitValue(cdp, `typeof window.apriStanzaTerra === 'function'`, 20000, 'runtime dopo riavvio');
+  await waitValue(cdp, `performance.timeOrigin !== ${JSON.stringify(beforeRestartTimeOrigin)} && typeof window.apriStanzaTerra === 'function'`, 20000, 'runtime dopo riavvio');
   await evaluate(cdp, `window.apriStanzaTerra()`);
   const resumeState = await waitValue(cdp, `(()=>{const button=document.querySelector('.news-resume button'),resume=document.querySelector('.news-resume'),shell=document.querySelector('.giorno-shell');if(!button||!resume||!shell)return null;const rect=button.getBoundingClientRect();return {label:button.textContent,height:rect.height,overflow:shell.scrollWidth>shell.clientWidth};})()`, 20000, 'invito a riprendere');
   assert.equal(resumeState.label, 'Riprendi dal punto lasciato');
@@ -220,15 +221,30 @@ try {
   }
 
   await evaluate(cdp, `document.querySelector('.news-resume button').click()`);
-  const resumed = await waitValue(cdp, `(()=>{const target=[...document.querySelectorAll('.news-article[data-reading-id]')].find(node=>node.dataset.readingId===${JSON.stringify(savedTargetId)}),heading=target?.querySelector('h3');if(!target||document.querySelector('.news-resume'))return null;const top=target.getBoundingClientRect().top;return top>=50&&top<=180&&document.activeElement===heading?{top,focused:true}:null;})()`, 5000, 'posizione e focus ripristinati');
+  const resumeStarted = Date.now(); let resumed = null, previousTop = null, stableFrames = 0;
+  while (Date.now() - resumeStarted < 5000) {
+    resumed = await evaluate(cdp, `(()=>{const target=[...document.querySelectorAll('.news-article[data-reading-id]')].find(node=>node.dataset.readingId===${JSON.stringify(savedTargetId)}),heading=target?.querySelector('h3');return {target:!!target,resume:!!document.querySelector('.news-resume'),top:target?.getBoundingClientRect().top??null,headingTop:heading?.getBoundingClientRect().top,headerBottom:document.querySelector('.giorno-head').getBoundingClientRect().bottom,focused:document.activeElement===heading};})()`);
+    stableFrames = previousTop !== null && Math.abs(resumed.top - previousTop) < .5 ? stableFrames + 1 : 0;
+    previousTop = resumed.top;
+    if (resumed.target && !resumed.resume && resumed.focused && stableFrames >= 3) break;
+    await sleep(100);
+  }
   assert.equal(resumed.focused, true);
+  assert.equal(resumed.target, true);
+  assert.equal(resumed.resume, false);
+  assert.ok(stableFrames >= 3, 'lo scorrimento deve essersi assestato prima della misura');
+  // Il bordo dell'articolo include padding e metadati. Il titolo deve essere
+  // leggibile sotto l'header sticky, a scorrimento concluso, con focus esatto.
+  const readingGap = resumed.headingTop - resumed.headerBottom;
+  assert.ok(readingGap >= 4 && readingGap <= 140, `titolo di lettura fuori posizione: ${JSON.stringify(resumed)}`);
 
   await evaluate(cdp, `(async()=>{const shell=document.querySelector('.giorno-shell'),end=document.querySelector('.edition-end');end.scrollIntoView({block:'start',behavior:'auto'});shell.dispatchEvent(new Event('scroll'));await new Promise(resolve=>setTimeout(resolve,200));})()`);
   assert.equal(await evaluate(cdp, `localStorage.getItem('${READING_KEY}')`), null, 'il marcatore deve sparire a fine edizione');
 
   await evaluate(cdp, `localStorage.setItem('${READING_KEY}',JSON.stringify({v:1,dayKey:'2000-01-01',storyId:${JSON.stringify(savedTargetId)},at:1}))`);
+  const beforeDayChangeTimeOrigin = await evaluate(cdp, 'performance.timeOrigin');
   await cdp.send('Page.reload', { ignoreCache: true });
-  await waitValue(cdp, `typeof window.apriStanzaTerra === 'function'`, 20000, 'runtime per invalidazione giorno');
+  await waitValue(cdp, `performance.timeOrigin !== ${JSON.stringify(beforeDayChangeTimeOrigin)} && typeof window.apriStanzaTerra === 'function'`, 20000, 'runtime per invalidazione giorno');
   await evaluate(cdp, `window.apriStanzaTerra()`);
   await waitValue(cdp, `document.querySelectorAll('.news-article').length >= 1`, 20000, 'edizione dopo cambio giorno');
   const stale = await evaluate(cdp, `({marker:localStorage.getItem('${READING_KEY}'),resume:!!document.querySelector('.news-resume'),errors:window.__readingErrors})`);

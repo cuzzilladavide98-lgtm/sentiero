@@ -1,6 +1,6 @@
-const RELEASE_BUILD = 'v60S.274.5';
-const SW_GENERATION = 274005;
-const CACHE = 'sentiero-v60s-274-5';
+const RELEASE_BUILD = 'v60S.275.0';
+const SW_GENERATION = 275000;
+const CACHE = 'sentiero-v60s-275-0';
 const OWNED_CACHE_PREFIXES = ['sentiero-v60s-', 'sentiero-preview-'];
 /* v274.5: il modulo del giorno è core perché il contratto timestamp/cache deve
    migrare prima che il nuovo worker prenda il controllo. */
@@ -31,8 +31,8 @@ const OWNED_CACHE_PREFIXES = ['sentiero-v60s-', 'sentiero-preview-'];
    a ogni installazione perche il telefono ne usasse una, che poi nemmeno legge da
    qui. Restano tutte nel repo e restano nel gestore fetch qui sotto: la prima volta
    che una viene chiesta davvero, finisce in cache come tutto il resto. */
-const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.274.5', './sentiero-day.mjs?v=60.274.5'];
-const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.274.5', './vendor/qrcode.js', './vendor/jsQR.js',
+const CORE_ASSETS = ['./', './index.html', './manifest.json', './sentiero-app.js?v=60.275.0', './sentiero-day.mjs?v=60.275.0'];
+const ASSETS = [...CORE_ASSETS, './sentiero-sync.js?v=60.275.0', './vendor/qrcode.js', './vendor/jsQR.js',
   './icon-180.png', './icon-192.png',
   './assets/giornale/latest.json', './latest.json', './assets/parole-giorno-v1.json', './parole-giorno-v1.json',
   './assets/sfx/combo-1.mp3', './assets/sfx/combo-2.mp3', './assets/sfx/combo-3.mp3', './assets/sfx/combo-4.mp3',

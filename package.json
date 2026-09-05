@@ -1,9 +1,9 @@
 {
   "name": "sentiero-pwa",
   "private": true,
-  "version": "60.274.5",
+  "version": "60.275.0",
   "scripts": {
-    "test": "node qa/motion-whisper-contract.test.js && node qa/today-stage-contract.test.js && node qa/sync-data-contract.test.js && node qa/quest-settings-contract.test.js && node qa/backend-migration-contract.test.js && node qa/qr-fallback-contract.test.js && node qa/hardening-performance-contract.test.js && node qa/generative-hardening-contract.test.js && node qa/day-room-contract.test.mjs && node qa/newsroom-quality-contract.test.mjs && node qa/day-content-contract.test.mjs && node qa/world-visual-contract.test.js && node qa/cross-language-merge.test.mjs && node qa/news-startup-regression.test.mjs && node qa/news-reading-continuity-browser.test.mjs && node qa/local-news-ui-browser.test.mjs",
+    "test": "node qa/motion-whisper-contract.test.js && node qa/today-stage-contract.test.js && node qa/sync-data-contract.test.js && node qa/quest-settings-contract.test.js && node qa/backend-migration-contract.test.js && node qa/qr-fallback-contract.test.js && node qa/hardening-performance-contract.test.js && node qa/generative-hardening-contract.test.js && node qa/day-room-contract.test.mjs && node qa/newsroom-quality-contract.test.mjs && node qa/day-content-contract.test.mjs && node qa/world-visual-contract.test.js && node qa/cross-language-merge.test.mjs && node qa/news-startup-regression.test.mjs && node qa/news-reading-continuity-browser.test.mjs && node qa/local-news-ui-browser.test.mjs && node qa/news-editorial-integrity-regression.test.mjs && node qa/patto-step-browser.test.mjs && node qa/sync-bootstrap-browser.test.mjs",
     "test:worker:e2e": "node qa/worker-local-e2e.js",
     "test:news:live": "node qa/news-source-live-check.mjs",
     "test:news:automation": "node qa/news-snapshot-automation.test.mjs",
@@ -12,6 +12,7 @@
     "test:pages:live": "node --use-system-ca qa/live-pages-browser-gate.js",
     "news:snapshot": "node tools/build-news-snapshot.mjs",
     "test:browser": "node qa/browser-mobile-smoke.js",
-    "benchmark": "node qa/performance-benchmark.js"
+    "benchmark": "node qa/performance-benchmark.js",
+    "test:upgrade": "node qa/service-worker-handshake.test.mjs && node qa/service-worker-upgrade.test.mjs && node qa/service-worker-real-upgrade.test.mjs"
   }
 }

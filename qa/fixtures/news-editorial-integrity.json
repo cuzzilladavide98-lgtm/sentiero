@@ -1,0 +1,70 @@
+{
+  "falsePairs": [
+    [
+      {
+        "id": "agi-ex-ilva",
+        "title": "Il ministro Urso: \"Auspichiamo una proposta vincolante della cordata italiana\". Marcegagli...",
+        "summary": "Il ministro Adolfo Urso ha convocato sindacati, enti locali e imprese l'8 settembre a Palazzo Chigi per discutere la manifestazione di interesse sull'ex Ilva.",
+        "source": "AGI",
+        "sourceId": "agi",
+        "area": "economy",
+        "perspective": "independent",
+        "tier": "B"
+      },
+      {
+        "id": "governo-belgio",
+        "title": "Incontro con il Primo Ministro del Belgio",
+        "summary": "Il Presidente del Consiglio Giorgia Meloni incontra il Primo Ministro belga Bart De Wever il 7 settembre a Palazzo Chigi.",
+        "source": "Presidenza del Consiglio",
+        "sourceId": "governo-it",
+        "area": "institutions",
+        "perspective": "primary",
+        "tier": "A"
+      }
+    ],
+    [
+      {
+        "id": "sky-iran",
+        "title": "Guerra Iran, Bessent: l'Ue si unisce alla pressione economica Usa",
+        "summary": "Il segretario al Tesoro degli Stati Uniti Scott Bessent annuncia nuove misure economiche contro l'Iran.",
+        "source": "Sky TG24",
+        "sourceId": "sky-tg24",
+        "area": "world",
+        "perspective": "independent",
+        "tier": "B"
+      },
+      {
+        "id": "internazionale-pentagono",
+        "title": "L'uomo che sta stravolgendo il Pentagono",
+        "summary": "Il segretario alla difesa Pete Hegseth espone gli Stati Uniti e i loro alleati alle minacce di Cina e Russia.",
+        "source": "Internazionale",
+        "sourceId": "internazionale",
+        "area": "analysis",
+        "perspective": "independent",
+        "tier": "B"
+      }
+    ],
+    [
+      {
+        "id": "draghi-competitivita",
+        "title": "Draghi presenta il rapporto sulla competitività europea",
+        "summary": "La Commissione europea discute a Bruxelles il rapporto con il Parlamento europeo. Il documento propone investimenti comuni per industria, energia e innovazione.",
+        "source": "Fonte Europa",
+        "sourceId": "fonte-europa",
+        "area": "institutions",
+        "perspective": "independent",
+        "tier": "B"
+      },
+      {
+        "id": "metsola-gruppi",
+        "title": "Metsola incontra i leader dei gruppi parlamentari",
+        "summary": "A Bruxelles la Commissione europea ospita una riunione del Parlamento europeo. Metsola definisce il calendario dei gruppi prima della sessione plenaria.",
+        "source": "Fonte Parlamento",
+        "sourceId": "fonte-parlamento",
+        "area": "institutions",
+        "perspective": "independent",
+        "tier": "B"
+      }
+    ]
+  ]
+}

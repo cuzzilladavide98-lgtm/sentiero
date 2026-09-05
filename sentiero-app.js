@@ -1057,7 +1057,7 @@ function pruneForSpace(state){
 /* ======================================================================
    STATO E UTILITÀ
    ====================================================================== */
-const APP_VERSION='v60S.274.5 · 2026-09-04';
+const APP_VERSION='v60S.275.0 · 2026-09-05';
 
 /* v272.7 — STABILITY FIRST. Questa release nasce FISICAMENTE dalla v272.3,
    non dalla catena 272.4/5/6. Frutto, Gemini, microfono, Ensō, stato del Cerchio,
@@ -1279,27 +1279,8 @@ function mostraNovita(){
   }catch(_){}
 }
 
-/* ══ LE TRE MAI DICHIARATE (v199) ══════════════════════════════════════════
-   Dal registro del cantiere: «Can't find variable: _lastNextMoveKey».
-   Cercandola ho scoperto che era usata due volte e dichiarata zero. Il lint dei
-   muri, con la famiglia O scritta per l'occasione, ne ha trovate TRE - e la terza,
-   _laterOpen, e anche lei LETTA al primo uso: un secondo errore vivo che nessuno
-   aveva mai visto.
-
-   Giravano per caso. In JavaScript non stretto ASSEGNARE un nome non dichiarato
-   lo crea come globale, quindi «_whisperTimer=setTimeout(...)» funziona. Ma
-   LEGGERLO prima di averlo mai assegnato e ReferenceError, ed e esattamente cio
-   che faceva renderFlow con «if(_k!==_lastNextMoveKey)»: ogni giro moriva li, e
-   tutto cio che veniva dopo in quella funzione non girava.
-
-   Si dichiarano con var e non con let: le funzioni si sollevano e possono essere
-   chiamate prima che questa riga venga eseguita. Con let sarebbe zona morta
-   temporale, cioe lo stesso errore con un nome piu elegante. */
-var _lastNextMoveKey='', _lastUserAct=0, _laterOpen=false;
-/* e _lastUserAct qualcuno deve pure aggiornarla, o il suono della prossima mossa
-   non parte mai: era letta e mai scritta. */
-try{ ['pointerdown','keydown'].forEach(function(ev){
-  addEventListener(ev,function(){ _lastUserAct=Date.now(); },{passive:true,capture:true}); }); }catch(_){}
+/* Sollevato: la lista può essere renderizzata durante l’avvio. */
+var _laterOpen=false;
 /* ── rete di sicurezza: un errore isolato non deve abbattere l'app o sporcare la console ── */
 try{
   window.addEventListener('error',function(e){ try{ if(e&&e.message&&/ResizeObserver/.test(e.message)) return; }catch(_){} });
@@ -1684,6 +1665,12 @@ function salvaSubito(){
 
 function save(){
   _daSalvare=true;
+  /* Il bootstrap del sync legge da IndexedDB in modo asincrono e puo fondersi
+     su S PRIMA che il debounce di 140ms scriva su disco: senza questo, un
+     tocco fatto nella finestra di avvio viene silenziosamente cancellato dal
+     recupero remoto. capture() aggiorna solo il riferimento a stato corrente,
+     e' innocuo chiamarlo prima della scrittura vera e propria. */
+  try{ if(window.SentieroSync) window.SentieroSync.capture(S); }catch(_){}
   if(_salvaT) return;
   _salvaT=setTimeout(function(){
     _salvaT=null;
@@ -2874,6 +2861,7 @@ function scrollToSoft(sel){
   }catch(_){}
 }
 function handleFlowAction(action,extra){
+  if(action==='passo'){ apriPasso(); return; }
   if(action==='speak'){ showPane('quest'); setTimeout(()=>{ try{ micBtn.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} try{ micLabel.textContent='Tocca il cerchio per parlare'; }catch(_){} },120); return; }  /* la voce parte con un tocco: il comando guidato porta al cerchio, non insegna un gesto nascosto */
   if(action==='distill'){ showPane('quest'); setTimeout(()=>{ const b=document.querySelector('#btn-save'); if(b&&!b.disabled) b.click(); },80); return; }
   if(action==='settings'){ showPane('impostazioni'); setTimeout(()=>{ const k=document.querySelector('#gemini-key'); if(k) k.focus(); },120); return; }
@@ -2886,42 +2874,8 @@ function handleFlowAction(action,extra){
   if(action==='nuova'){ showPane('oggi'); setTimeout(()=>{ try{ scrollToSoft('#sec-today-quests'); }catch(_){}
     try{ apriNascita(true); }catch(_){} },140); return; }
 }
-/* ── PROSSIMA MOSSA: non la prima in lista, ma l'UNICA che conta adesso ──
-   Principio "vendimi questa penna": togli la scelta, crea l'urgenza, dai il perche'.
-   Ordine di leva: task in ritardo > quest scaduta > task imminente > priorita alta >
-   prima quest > prima task. Se resta una cosa sola, la cornice diventa "chiudi e finisci". */
 function hmToMin(hm){ const m=/^(\d{2}):(\d{2})$/.exec(hm||''); return m?(+m[1]*60 + +m[2]):null; }
 function nowMin(){ const d=new Date(); return d.getHours()*60+d.getMinutes(); }
-function fmtMinGap(n){ n=Math.max(0,Math.round(n)); if(n>=60){ const h=Math.floor(n/60),mm=n%60; return h+'h'+(mm?(' '+mm+' min'):''); } return n+' min'; }
-function pickNextMove(tk,dow){
-  tk=tk||todayKey(); dow=(dow==null?dowOf():dow);
-  const checks=S.checks[tk]||{};
-  const nm=nowMin();
-  const sched=todaysScheduled().filter(t=>{ if(checks[t.id]===true) return false; const tm=hmToMin(t.time); return tm==null||tm<=nm; });  /* solo azioni già affiorate */
-  const quests=sortQuests(activeQuests(S,tk)).filter(q=>!q.fatto);
-  const r=computeProgress(S,tk,dow);
-  const lastOne=(r.total>0 && (r.total-r.done)===1);          /* resta UNA sola cosa: la penna si vende da sola */
-  const close='chiudi questa e il cerchio si chiude';
-  /* 1) task con orario gia passato: il ritardo e' l'urgenza piu' forte */
-  let od=null,odGap=-1;
-  sched.forEach(t=>{ const tm=hmToMin(t.time); if(tm!=null&&tm<nm){ const g=nm-tm; if(g>odGap){odGap=g;od=t;} } });
-  if(od) return {label:od.titolo,kind:'task',targetId:od.id,why:(lastOne?close:'in ritardo di '+fmtMinGap(odGap))};
-  /* 2) quest con data passata */
-  const odq=quests.find(q=>q.quando&&q.quando<tk);
-  if(odq) return {label:odq.titolo,kind:'quest',targetId:odq.id,why:(lastOne?close:'in ritardo')};
-  /* 3) task imminente (entro 90 min): aggancia il momento giusto */
-  let soon=null,soonGap=1e9;
-  sched.forEach(t=>{ const tm=hmToMin(t.time); if(tm!=null&&tm>=nm&&(tm-nm)<=90){ if((tm-nm)<soonGap){soonGap=tm-nm;soon=t;} } });
-  if(soon) return {label:soon.titolo,kind:'task',targetId:soon.id,why:(lastOne?close:'tra '+fmtMinGap(soonGap))};
-  /* 4) quest a priorita alta */
-  const hi=quests.find(q=>Number(q.prio)===1);
-  if(hi) return {label:hi.titolo,kind:'quest',targetId:hi.id,why:(lastOne?close:'priorita alta')};
-  /* 5) prima quest in ordine */
-  if(quests.length) return {label:quests[0].titolo,kind:'quest',targetId:quests[0].id,why:(lastOne?'l\'ultima rimasta: chiudila':'la prima da chiudere')};
-  /* 6) prima task */
-  if(sched.length) return {label:sched[0].titolo,kind:'task',targetId:sched[0].id,why:(lastOne?'l\'ultima rimasta: chiudila':'l\'appiglio del giorno')};
-  return null;
-}
 /* VAI AL PUNTO: atterra sull'elemento esatto, lo evidenzia, pronto da spuntare in un tocco */
 function focusTarget(extra){
   try{
@@ -2943,18 +2897,14 @@ function renderFlow(){
   const confirm=!document.querySelector('#confirm-row').classList.contains('hidden');
   if(confirm){ el.innerHTML='<strong>La materia e pronta.</strong><button data-flow="distill">Raccogli adesso</button>'; return; }
   const tk=todayKey(),dow=dowOf(),r=computeProgress(S,tk,dow);
-  const checks=S.checks[tk]||{};
-  const nextTask=todaysScheduled().find(t=>checks[t.id]!==true);
-  const nextQuest=sortQuests(activeQuests(S,tk)).find(q=>!q.fatto);
+  const step=currentPattoStep();
+  if(step){
+    el.innerHTML='<span class="flow-why">'+(step.done?'Il passo di oggi, fatto.':'Il passo che hai scelto')+'</span><strong>'+escapeHtml(step.item.titolo)+'</strong>'+
+      '<button data-flow="passo">'+(step.done?'Rivedi il passo':'Riprendi il passo')+'</button>';
+    return;
+  }
   if(r.total&&r.done<r.total){
-    const mv=pickNextMove(tk,dow);
-    if(mv){ const _k=mv.kind+':'+mv.targetId; if(_k!==_lastNextMoveKey){ _lastNextMoveKey=_k; if(Date.now()-_lastUserAct<2000){ try{ playEventSound('nextMoveReady'); }catch(_){} } } }
-    const next=mv?mv.label:(nextQuest?nextQuest.titolo:nextTask?nextTask.titolo:'prossima azione');
-    const tId=mv?escapeHtml(mv.targetId):'';
-    const tKind=mv?mv.kind:'';
-    el.innerHTML='<strong>Prossima mossa: '+escapeHtml(next)+'</strong>'+
-      (mv&&mv.why?'<span class="flow-why">'+escapeHtml(mv.why)+'</span>':'')+
-      '<button data-flow="today" data-target="'+tId+'" data-kind="'+tKind+'">Vai al punto</button>';
+    el.innerHTML='<strong>Le tue cose sono qui.</strong><button data-flow="today">Apri Oggi</button>';
     return;
   }
   if(r.total&&r.done===r.total){ el.innerHTML='<strong>Cerchio chiuso.</strong>Lascia che il resto resti leggero.'; return; }
@@ -11221,19 +11171,19 @@ function renderPatto(){
      sotto gli occhi tutto il giorno. Nessun contatore, nessun sollecito: dice
      solo cosa hai promesso stamattina. */
   if(scelto){
-    const pq=(S.quests||[]).find(x=>x&&x.id===S.patto.id)||(S.scheduled||[]).find(x=>x&&x.id===S.patto.id);
+    const step=currentPattoStep(),pq=step&&step.item;
     if(!pq){ box.innerHTML=''; box.classList.add('hidden'); box.dataset.tk=''; box.dataset.stato=''; return; }
-    let fatta=false; try{ fatta=!!pq.fatto||!!((S.checks[tk]||{})[S.patto.id]); }catch(_){}
-    const firma=tk+'|'+S.patto.id+'|'+(fatta?'1':'0');
+    const fatta=step.done;
+    const firma=JSON.stringify([tk,S.patto.id,fatta,pq.titolo,pq.note,pq.time,pq.ora]);
     if(box.dataset.stato===firma) return;          /* gia in scena e uguale: non si ridisegna */
     box.dataset.stato=firma; box.dataset.tk=tk;
     box.classList.remove('hidden'); box.classList.add('chiusa');
     box.classList.toggle('tenuta',fatta);
     box.innerHTML='<div class="patto-angoli"></div>'+
       '<span class="patto-eyebrow">la promessa del mattino</span>'+
-      '<span class="patto-chiusa"><i class="patto-luce"></i><span>'+
-        escapeHtml(clampStr(pq.titolo||'',140))+'</span></span>'+
-      (fatta?'<span class="patto-tenuta">tenuta</span>':'');
+      '<button class="patto-riprendi" type="button"><span class="patto-chiusa"><i class="patto-luce"></i><span>'+
+        escapeHtml(pq.titolo||'')+'</span></span><span class="patto-invito">'+(fatta?'Tenuta · rivedi il passo':'Riprendi il passo')+' <span aria-hidden="true">↗</span></span></button>';
+    box.querySelector('.patto-riprendi').onclick=apriPasso;
     return;
   }
   if(no||(!sched.length&&!qOggi.length)){ box.innerHTML=''; box.classList.add('hidden');
@@ -11345,6 +11295,90 @@ function renderPatto(){
   const binp=box.querySelector('.patto-inp');
   if(binp) binp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); nasciPatto(); } });
 }
+/* Il Patto diventa un luogo in cui tornare. Nessun secondo oggetto o storage:
+   titolo, data e compimento appartengono sempre alla Quest/ricorrenza originale. */
+function currentPattoStep(){
+  const tk=todayKey(),p=S.patto;
+  if(!p||p.tk!==tk||!p.id) return null;
+  const q=(S.quests||[]).find(x=>x&&x.id===p.id);
+  if(q) return q.quando&&q.quando>tk?null:{item:q,kind:'quest',tk,done:!!q.fatto};
+  const t=todaysScheduled().find(x=>x&&x.id===p.id);
+  return t?{item:t,kind:'task',tk,done:(S.checks[tk]||{})[t.id]===true}:null;
+}
+let passoView=null;
+function chiudiPasso(){
+  const view=passoView;if(!view) return;
+  passoView=null;
+  const room=document.getElementById('passo-room');
+  if(room.open) room.close();
+  room.querySelector('.passo-content').replaceChildren();
+  if(view.kind==='quest')renderTodayQuests([]);else renderTasks();
+  let target=view.origin;
+  if(!target||!target.isConnected||!target.getClientRects().length){
+    target=document.querySelector(document.body.dataset.sez==='parla'?'#flow [data-flow="passo"]':'.patto-riprendi');
+  }
+  if(!target||!target.getClientRects().length) target=document.querySelector('#barra [aria-current="page"]');
+  try{ target?.focus({preventScroll:true}); }catch(_){}
+}
+function renderPasso(force){
+  const view=passoView;if(!view) return;
+  const step=currentPattoStep();
+  if(!step||step.tk!==view.tk||step.item.id!==view.id||step.kind!==view.kind){
+    chiudiPasso();return;
+  }
+  const room=document.getElementById('passo-room'),mount=room.querySelector('.passo-content');
+  const status=room.querySelector('.passo-status');
+  status.textContent=step.done?'Un passo fatto. Il resto può aspettare.':'Una cosa sola, per questo momento.';
+  const old=mount.querySelector('.item'),signature=JSON.stringify([step.item.titolo,step.item.note,step.item.time,step.item.ora,step.done]);
+  if(old&&!force&&(old.dataset.busy||(view.signature===signature&&view.item===step.item))){
+    const check=old.querySelector('.chk');
+    check.setAttribute('aria-pressed',String(step.done));
+    check.disabled=!!old.dataset.busy;
+    old.querySelector('.passo-verb').textContent=step.done?'Annulla il completamento':'Fatto';
+    return;
+  }
+  const focused=!!old&&old.contains(document.activeElement);
+  const settled=()=>{
+    if(step.kind==='quest')renderTodayQuests([]);else renderTasks();
+    if(passoView===view)renderPasso(true);
+    renderFlow();
+  };
+  const row=step.kind==='quest'?buildQuestRow(step.item,step.tk,'',[],settled,true):buildTaskRow(step.item,S.checks[step.tk]||{},{standalone:true,settled});
+  // Gli accessori di lista non vengono portati nel passo: rimane l'azione originale.
+  row.querySelectorAll('.cal,.editq,.del,.essbtn,.prio').forEach(node=>node.remove());
+  row.prepend(row.querySelector('.txt'));
+  const title=row.querySelector('.ttl');title.id='passo-title';title.setAttribute('role','heading');title.setAttribute('aria-level','1');
+  const check=row.querySelector('.chk');
+  check.setAttribute('aria-pressed',String(step.done));
+  check.setAttribute('aria-label',step.done?'Annulla il completamento':'Segna come fatto');
+  const label=document.createElement('span');label.className='passo-verb';label.textContent=step.done?'Annulla il completamento':'Fatto';check.appendChild(label);
+  row.addEventListener('click',event=>{
+    if(!event.target.closest('.chk'))return;
+    const live=currentPattoStep();
+    if(!live||live.item!==step.item){event.stopImmediatePropagation();event.preventDefault();renderPasso(true);}
+  },true);
+  row.addEventListener('click',event=>{
+    if(event.target.closest('.chk')){renderPasso();renderFlow();}
+  });
+  mount.replaceChildren(row);view.signature=signature;view.item=step.item;
+  if(focused)check.focus({preventScroll:true});
+}
+function apriPasso(){
+  const step=currentPattoStep(),room=document.getElementById('passo-room');
+  if(!step||!room)return;
+  if(typeof room.showModal!=='function'){
+    showPane('oggi');focusTarget({target:step.item.id,kind:step.kind});return;
+  }
+  if(passoView){renderPasso();return;}
+  passoView={id:step.item.id,kind:step.kind,tk:step.tk,origin:document.activeElement};
+  renderPasso(true);room.showModal();room.querySelector('.passo-back').focus({preventScroll:true});
+}
+document.getElementById('passo-room').addEventListener('cancel',event=>{event.preventDefault();chiudiPasso();});
+document.getElementById('passo-room').querySelector('.passo-back').onclick=chiudiPasso;
+window.addEventListener('popstate',chiudiPasso);
+window.addEventListener('sentiero:state',()=>{renderPasso();renderFlow();renderPatto();});
+window.addEventListener('pageshow',()=>{renderPasso();renderFlow();renderPatto();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){renderPasso();renderFlow();renderPatto();}});
 /* v145: renderCammino estirpato - il passato vive nella stanza del giardino */
 /* ══ L'ENSŌ CHE NON CHIEDE DI ESSERE SALVATO — v273 LAB ═════════════════════
    Il doppio tocco e poi il pulsante erano entrambi memoria affidata alla persona:
@@ -11625,6 +11659,7 @@ function updateRing(){
     else if(!mk&&S.patti[tkM]){ delete S.patti[tkM]; save(); }
   }catch(_){}
   try{ renderPatto(); }catch(_){}
+  try{ renderPasso(); renderFlow(); }catch(_){}
   /* la presenza dell'osservatrice: dopo la firma, una soglia dell'accumulo puo farsi voce — una al giorno */
   try{ const tkP=todayKey();
     if(S.lastSealed===tkP&&localStorage.getItem('sentiero-presenza')!==tkP){
@@ -11735,7 +11770,7 @@ function setEmpty(el,text,action,label){
   if(b) b.onclick=()=>handleFlowAction(b.dataset.flow);
 }
 
-function buildTaskRow(t,checks){
+function buildTaskRow(t,checks,options){
   const done=checks[t.id]===true;
   const isEss=(S.essentials||[]).includes(t.id);
   const div=document.createElement('div');
@@ -11762,10 +11797,10 @@ function buildTaskRow(t,checks){
     S.checks[tk][t.id]=now; save();
     /* v271: una spunta puo essere l'ultimo pezzo di una condizione */
     if(now) try{ sbloccaOra('spunta'); }catch(_){}
-    if(now){ div.classList.add('done'); const ms=onComplete(div)||600; setTimeout(()=>{ div.classList.remove('justdone'); delete div.dataset.busy; },ms+40); }
-    else { div.classList.remove('done'); sUndo(); updateRing(); const left=completateOggi(S,tk,dowOf()); const ms=Math.max(QUEST_MOTION.undo(div,completateOggi(S,tk,dowOf())),TODAY_STAGE.undo(div,left)); setTimeout(()=>{ delete div.dataset.busy; },Math.max(80,ms+20)); }
+    if(now){ div.classList.add('done'); const ms=onComplete(div)||600; setTimeout(()=>{ div.classList.remove('justdone'); delete div.dataset.busy; if(options?.settled)options.settled(); },ms+40); }
+    else { div.classList.remove('done'); sUndo(); updateRing(); const left=completateOggi(S,tk,dowOf()); const ms=Math.max(QUEST_MOTION.undo(div,completateOggi(S,tk,dowOf())),TODAY_STAGE.undo(div,left)); setTimeout(()=>{ delete div.dataset.busy; if(options?.settled)options.settled(); },Math.max(80,ms+20)); }
   };
-  try{ attachNota(div,t.id,t.titolo); }catch(_){}
+  if(!options?.standalone)try{ attachNota(div,t.id,t.titolo); }catch(_){}
   return div;
 }
 function renderTasks(){
@@ -11912,7 +11947,7 @@ try{
   document.querySelector('#quest-editor').onclick=e=>{ if(e.target&&e.target.id==='quest-editor') chiudiQuestEditor(); };
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!document.querySelector('#quest-editor').classList.contains('hidden')) chiudiQuestEditor(); });
 }catch(_){}
-function buildQuestRow(q,tk,domani,bornIds,rerender){
+function buildQuestRow(q,tk,domani,bornIds,rerender,standalone){
   const {when,future}=questWhen(q,tk,domani);
   const p=q.prio||3;
   const div=document.createElement('div');
@@ -11978,8 +12013,10 @@ function buildQuestRow(q,tk,domani,bornIds,rerender){
       try{ toast('Rimessa dov\u2019era'); }catch(_){}
     }); }catch(_){}
   };
-  try{ attachNota(div,q.id,q.titolo,true); }catch(_){}
-  try{ attachScopri(div); }catch(_){}
+  if(!standalone){
+    try{ attachNota(div,q.id,q.titolo,true); }catch(_){}
+    try{ attachScopri(div); }catch(_){}
+  }
   return div;
 }
 let _soloArretrate=false;
@@ -13017,7 +13054,7 @@ function endpointGiorno(){
 }
 function caricaStanzaTerra(){
   if(_giornoModulo) return Promise.resolve(_giornoModulo); if(_giornoCarica) return _giornoCarica;
-  _giornoCarica=import('./sentiero-day.mjs?v=60.274.5').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
+  _giornoCarica=import('./sentiero-day.mjs?v=60.275.0').then(modulo=>(_giornoModulo=modulo)).catch(error=>{_giornoCarica=null;throw error;});
   return _giornoCarica;
 }
 function contestoStanzaTerra(){ return {
@@ -14759,7 +14796,7 @@ document.querySelector('#import-file').onchange=e=>{
    AVVIO
    ====================================================================== */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=60.274.5',{scope:'./',updateViaCache:'none'}).then(function(reg){
+  navigator.serviceWorker.register('./sw.js?v=60.275.0',{scope:'./',updateViaCache:'none'}).then(function(reg){
     try{ const u=reg.update(); if(u&&u.catch) u.catch(function(){}); }catch(_){}
     try{ scheduleReminders(); }catch(_){}
     /* due strade, perche i telefoni non si comportano tutti uguale:
@@ -14848,7 +14885,6 @@ try{ const _ps=apriSoglia();
    che non c'era. Se un giorno quell'idea torna - si attenua quando non serve, al
    tocco riprende - va scritta su qualcosa che esiste. */
 try{ initSoundSystem(); }catch(_){}    /* Suoni dell'app: pre-decodifica i suoni già assegnati */
-window.addEventListener('pointerdown',()=>{ _lastUserAct=Date.now(); },{passive:true});  /* ogni tocco reale: i suoni automatici partono solo dietro un'azione */
 /* orologio del giorno: ogni minuto, se una task con orario è appena affiorata, aggiorna la lista da sola */
 let _lastDueSig='';
 /* v258 — L'OROLOGIO DEL GIORNO NON GIRA A VUOTO.
@@ -14862,8 +14898,8 @@ function _orologioDelGiorno(){
   if(document.hidden) return;
   try{
     const checks=S.checks[todayKey()]||{}; const nm=nowMin();
-    const sig=todaysScheduled().filter(t=>{ const tm=hmToMin(t.time); return tm!=null&&tm<=nm&&checks[t.id]!==true; }).map(t=>t.id).join(',');
-    if(sig!==_lastDueSig){ _lastDueSig=sig; try{ renderTasks(); }catch(_){} try{ renderFlow(); }catch(_){} }
+    const sig=todayKey()+'|'+todaysScheduled().filter(t=>{ const tm=hmToMin(t.time); return tm!=null&&tm<=nm&&checks[t.id]!==true; }).map(t=>t.id).join(',');
+    if(sig!==_lastDueSig){ _lastDueSig=sig; try{ renderTasks(); }catch(_){} try{ renderFlow(); renderPatto(); renderPasso(); }catch(_){} }
   }catch(_){}
 }
 setInterval(_orologioDelGiorno,60000);
@@ -15142,7 +15178,7 @@ function initSentieroSync(){
 }
 function caricaSentieroSync(){
   if(window.SentieroSync)return initSentieroSync(); if(_syncLoadPromise)return _syncLoadPromise;
-  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.274.5';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
+  _syncLoadPromise=new Promise((ok,no)=>{const s=document.createElement('script');s.src='./sentiero-sync.js?v=60.275.0';s.onload=()=>initSentieroSync().then(ok,no);s.onerror=no;document.head.appendChild(s);});return _syncLoadPromise;
 }
 try{
   const _loadJournal=()=>caricaSentieroSync().catch(function(){ try{ regCantiere('errore',{msg:'journal locale non disponibile'}); }catch(_){} });

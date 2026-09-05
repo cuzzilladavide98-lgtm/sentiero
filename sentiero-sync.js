@@ -270,17 +270,35 @@
   }
   async function bootstrap(state,opt){
     if(booted){ currentState=state; return publicInfo(); }
-    ensureDevice(); currentState=await migrate(state); onRemote=opt&&opt.onRemote;
+    ensureDevice(); currentState=state; await migrate(state); onRemote=opt&&opt.onRemote;
+    const initialEntities=toEntities(currentState);
     try{ await openDb(); }catch(_){db=null;}
-    const regs=new Map();
-    try{ for(const r of await getAll('registers')) regs.set(r.entity,r); }catch(_){}
-    if(regs.size){ const entities=registersToEntities(regs); currentState=fromEntities(currentState,entities); if(onRemote) onRemote(clone(currentState),{source:'recovery'}); lastEntities=toEntities(currentState); }
+    const regs=new Map(); let checkpoint=null, checkpointState;
+    try{ const [records,meta]=await Promise.all([getAll('registers'),readMeta('checkpoint')]); for(const r of records) regs.set(r.entity,r); checkpoint=meta; }catch(_){}
+    if(regs.size){
+      /* Il checkpoint è la base locale già catturata. Recuperiamo solo il delta
+         successivo, comprese le cancellazioni, col normale journal LWW/HLC.
+         Ripubblicare tutto da una mappa vuota resuscitava le Quest eliminate
+         durante l'avvio e lasciava i tocchi nuovi soltanto in memoria. */
+      const localEntities=toEntities(currentState),localClock=clockFactory(config.deviceId);
+      const localOps=diffEntities(checkpoint?.value?toEntities(checkpoint.value):initialEntities,localEntities,localClock,config.deviceId,()=>nextSequence());
+      for(const op of localOps) applyOperation(regs,op);
+      currentState=fromEntities(currentState,registersToEntities(regs));
+      lastEntities=toEntities(currentState); checkpointState=clone(currentState);
+      if(onRemote) onRemote(clone(currentState),{source:'recovery'});
+      if(localOps.length){
+        await putMany('registers',[...new Set(localOps.map(op=>op.entity))].map(key=>regs.get(key)));
+        await putMany('ops',localOps.map(op=>Object.assign({sent:0,created:Date.now()},op)));
+        writeConfig({pending:(config.pending|0)+localOps.length});
+      }
+    }
     else if(config.joining){
       /* Prima riceve il journal remoto: i valori predefiniti locali non sono
          modifiche dell'utente e non devono vincere per timestamp. */
       lastEntities=new Map();
     }else{
       lastEntities=toEntities(currentState);
+      checkpointState=clone(currentState);
       const nextClock=clockFactory(config.deviceId);
       const ops=diffEntities(new Map(),lastEntities,nextClock,config.deviceId,()=>nextSequence());
       const fresh=new Map(); for(const op of ops) applyOperation(fresh,op);
@@ -288,8 +306,10 @@
       await putMany('ops',ops.map(o=>Object.assign({sent:0,created:Date.now()},o)));
       persistConfig();
     }
-    await put('meta',{key:'checkpoint',value:clone(currentState),at:Date.now()});
-    booted=true; emit();
+    await put('meta',{key:'checkpoint',value:checkpointState||clone(currentState),at:Date.now()});
+    booted=true;
+    // Copre anche i tocchi arrivati mentre il recupero scriveva su IndexedDB.
+    await capture(currentState); emit();
     try{ root.addEventListener('online',()=>scheduleSync(500)); }catch(_){}
     if(publicInfo().enabled) scheduleSync(800);
     return publicInfo();

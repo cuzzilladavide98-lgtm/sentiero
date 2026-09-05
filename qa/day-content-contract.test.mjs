@@ -31,7 +31,7 @@ assert.match(sw, /assets\/parole-giorno-v1\.json/);
 assert.match(sw, /endsWith\('\/assets\/giornale\/latest\.json'\).*endsWith\('\/latest\.json'\)/s);
 assert.match(sw, /assets\/parole-giorno-v1\.json'.*parole-giorno-v1\.json'/s);
 assert.match(app, /updateViaCache:'none'/);
-assert.match(app, /sw\.js\?v=60\.274\.5/);
+assert.match(app, /sw\.js\?v=60\.275\.0/);
 assert.match(generator, /NEWS_SOURCES\.map\(retrieve\)/);
 assert.doesNotMatch(generator, /process\.argv\[[2-9]\].*(?:url|http)/i);
 assert.match(workflow, /schedule:/);

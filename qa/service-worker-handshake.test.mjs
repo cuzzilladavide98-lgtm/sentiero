@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const chrome = [process.argv[2], 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'].filter(Boolean).find(fs.existsSync);
 if (!chrome) throw new Error('Chrome non trovato');
-const expected = { build: 'v60S.274.5', generation: 274005, cache: 'sentiero-v60s-274-5' };
+const expected = { build: 'v60S.275.0', generation: 275000, cache: 'sentiero-v60s-275-0' };
 const staleCaches = ['sentiero-v60s-274-4', 'sentiero-preview-iphone-rc2-g27400402'];
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json', '.mp3': 'audio/mpeg', '.png': 'image/png', '.wav': 'audio/wav' };
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

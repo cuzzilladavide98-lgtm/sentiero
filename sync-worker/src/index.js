@@ -63,6 +63,12 @@ function xmlText(value) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/&#(x?[0-9a-f]+);/gi, (_, n) => { try { return String.fromCodePoint(n[0].toLowerCase() === 'x' ? parseInt(n.slice(1), 16) : parseInt(n, 10)); } catch (_) { return ' '; } })
     .replace(/&(amp|lt|gt|quot|apos|nbsp);/gi, (_, n) => ({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }[n.toLowerCase()]))
+    /* Alcuni RSS codificano una seconda pagina HTML nelle entita XML. La prima
+       passata non puo vederla: ripuliamo di nuovo prima che parseFeed tronchi. */
+    .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/<\/?[a-z][^>]*$/i, ' ')
     .replace(/\s+/g, ' ').trim();
 }
 
