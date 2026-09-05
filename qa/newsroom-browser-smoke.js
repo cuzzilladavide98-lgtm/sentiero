@@ -3,9 +3,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
+const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const chrome = [process.argv[2], 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'].filter(Boolean).find(fs.existsSync);
@@ -31,12 +32,14 @@ const payload = { v: 2, items: [
 
 function harness(width, height) {
   return `<!doctype html><meta charset="utf-8"><iframe id="app" style="width:${width}px;height:${height}px;border:0" src="/index.html?newsroom=${Date.now()}"></iframe><pre id="smoke-result">pending</pre><script>
+  window.__newsroomReady=false;window.__newsroomResult=null;
   const frame=document.getElementById('app'),out=document.getElementById('smoke-result');
+  const finish=result=>{window.__newsroomResult=result;window.__newsroomReady=true;out.textContent=JSON.stringify(result);};
   frame.onload=()=>setTimeout(async()=>{try{const w=frame.contentWindow,d=frame.contentDocument;await w.apriStanzaTerra();
     const limit=Date.now()+10000;while(!d.querySelector('.edition-front')&&Date.now()<limit)await new Promise(ok=>setTimeout(ok,100));
     const front=d.querySelector('.edition-front'),articles=[...d.querySelectorAll('.news-article')],shell=d.querySelector('.giorno-shell'),lead=d.querySelector('.news-article.lead');
-    out.textContent=JSON.stringify({width:w.innerWidth,front:!!front,articles:articles.length,lead:!!lead,claims:d.querySelectorAll('.claim-sources a').length,sources:d.querySelectorAll('.news-sources a').length,end:d.querySelector('.edition-end')&&d.querySelector('.edition-end').textContent,deck:d.querySelector('.edition-head p')&&d.querySelector('.edition-head p').textContent,overflow:shell&&shell.scrollWidth-shell.clientWidth,bodyOverflow:d.documentElement.scrollWidth-w.innerWidth,errors:w.__newsErrors||[],rejections:w.__newsRejections||[],importance:lead&&Number(lead.dataset.importance),title:lead&&lead.querySelector('h3').textContent});
-  }catch(error){out.textContent=JSON.stringify({error:String(error&&error.stack||error)});}},500);</script>`;
+    finish({width:w.innerWidth,front:!!front,articles:articles.length,lead:!!lead,claims:d.querySelectorAll('.claim-sources a').length,sources:d.querySelectorAll('.news-sources a').length,end:d.querySelector('.edition-end')&&d.querySelector('.edition-end').textContent,deck:d.querySelector('.edition-head p')&&d.querySelector('.edition-head p').textContent,overflow:shell&&shell.scrollWidth-shell.clientWidth,bodyOverflow:d.documentElement.scrollWidth-w.innerWidth,errors:w.__newsErrors||[],rejections:w.__newsRejections||[],importance:lead&&Number(lead.dataset.importance),title:lead&&lead.querySelector('h3').textContent});
+  }catch(error){finish({error:String(error&&error.stack||error)});}},500);</script>`;
 }
 
 const server = http.createServer((req, res) => {
@@ -55,15 +58,78 @@ const server = http.createServer((req, res) => {
   } catch (_) { res.writeHead(404); res.end(); }
 });
 
-function runChrome(port, width, height) {
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function getFreePort() {
   return new Promise((resolve, reject) => {
-    const profile = fs.mkdtempSync(path.join(os.tmpdir(), `sentiero-news-${width}-`));
-    const args = ['--headless', '--disable-gpu', '--no-first-run', '--disable-background-networking', '--disable-default-apps', '--disable-extensions', '--disable-sync', '--metrics-recording-only', `--window-size=${width},${height}`, '--force-device-scale-factor=2', `--user-data-dir=${profile}`, '--virtual-time-budget=20000', '--dump-dom', `http://127.0.0.1:${port}/harness?w=${width}&h=${height}`];
-    const child = spawn(chrome, args, { windowsHide: true }); let stdout = '', stderr = '';
-    child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
-    const timer = setTimeout(() => { child.kill(); reject(new Error('Chrome timeout')); }, 60000);
-    child.on('error', reject); child.on('close', code => { clearTimeout(timer); const match = stdout.match(/<pre id="smoke-result">([^<]+)<\/pre>/); if (!match) return reject(new Error(`Chrome ${width}x${height} ${code}: ${stderr.slice(-500)}`)); try { resolve(JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'))); } catch (error) { reject(error); } });
+    const socket = net.createServer();
+    socket.on('error', reject);
+    socket.listen(0, '127.0.0.1', () => { const port = socket.address().port; socket.close(() => resolve(port)); });
   });
+}
+
+async function getPageTarget(port) {
+  for (let i = 0; i < 100; i++) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/json/list`), targets = await response.json();
+      const page = targets.find(target => target.type === 'page' && /\/harness\?/.test(target.url));
+      if (page && page.webSocketDebuggerUrl) return page;
+    } catch (_) {}
+    await sleep(100);
+  }
+  throw new Error('Chrome DevTools non ha esposto la pagina newsroom');
+}
+
+class CDP {
+  constructor(socket) { this.socket = socket; this.id = 0; this.pending = new Map(); socket.addEventListener('message', event => this.onMessage(event)); }
+  onMessage(event) { let message; try { message = JSON.parse(String(event.data)); } catch (_) { return; } if (!message.id || !this.pending.has(message.id)) return; const job = this.pending.get(message.id); this.pending.delete(message.id); message.error ? job.reject(new Error(message.error.message)) : job.resolve(message.result); }
+  send(method, params = {}) { return new Promise((resolve, reject) => { const id = ++this.id; this.pending.set(id, { resolve, reject }); this.socket.send(JSON.stringify({ id, method, params })); }); }
+  close() { try { this.socket.close(); } catch (_) {} }
+}
+
+function connectCdp(url) {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(url), timer = setTimeout(() => reject(new Error('timeout connessione Chrome DevTools')), 10000);
+    socket.addEventListener('open', () => { clearTimeout(timer); resolve(new CDP(socket)); });
+    socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('errore connessione Chrome DevTools')); });
+  });
+}
+
+function waitForExit(child, timeoutMs) {
+  if (child.exitCode !== null) return Promise.resolve(true);
+  return Promise.race([new Promise(resolve => child.once('close', () => resolve(true))), sleep(timeoutMs).then(() => false)]);
+}
+
+async function stopChrome(child, cdp) {
+  if (cdp) { try { await Promise.race([cdp.send('Browser.close'), sleep(1500)]); } catch (_) {} cdp.close(); }
+  if (await waitForExit(child, 2000)) return;
+  if (process.platform === 'win32' && Number.isInteger(child.pid)) spawnSync('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+  else child.kill('SIGKILL');
+  if (!await waitForExit(child, 3000)) throw new Error(`Chrome PID ${child.pid} non terminato`);
+}
+
+async function runChrome(port, width, height) {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), `sentiero-news-${width}-`)), debugPort = await getFreePort();
+  const args = ['--headless=new', '--disable-gpu', '--no-first-run', '--disable-background-networking', '--disable-default-apps', '--disable-extensions', '--disable-sync', '--metrics-recording-only', `--window-size=${width},${height}`, '--force-device-scale-factor=2', `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`, `http://127.0.0.1:${port}/harness?w=${width}&h=${height}`];
+  const child = spawn(chrome, args, { windowsHide: true }); let stderr = '', cdp = null;
+  child.stderr.on('data', chunk => { stderr += chunk; });
+  try {
+    const target = await getPageTarget(debugPort); cdp = await connectCdp(target.webSocketDebuggerUrl); await cdp.send('Runtime.enable');
+    const started = Date.now(), timeoutMs = 30000;
+    while (Date.now() - started < timeoutMs) {
+      const state = await cdp.send('Runtime.evaluate', { expression: '({ready:window.__newsroomReady===true,result:window.__newsroomResult})', returnByValue: true });
+      const value = state && state.result && state.result.value;
+      if (value && value.ready) return value.result;
+      await sleep(100);
+    }
+    const diagnostic = await cdp.send('Runtime.evaluate', { expression: '({ready:window.__newsroomReady,result:window.__newsroomResult,text:document.querySelector("#smoke-result")?.textContent||"",frameReady:document.querySelector("#app")?.contentDocument?.readyState||""})', returnByValue: true });
+    throw new Error(`${width}x${height}: probe non completato entro ${timeoutMs} ms; stato=${JSON.stringify(diagnostic && diagnostic.result && diagnostic.result.value || {})}`);
+  } catch (error) {
+    throw new Error(`${error.message}${stderr ? ' | Chrome: ' + stderr.slice(-400) : ''}`);
+  } finally {
+    await stopChrome(child, cdp);
+    try { fs.rmSync(profile, { recursive: true, force: true }); } catch (_) {}
+  }
 }
 
 (async () => {

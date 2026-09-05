@@ -461,9 +461,14 @@ let latestSources = [];
 let lastManualRefresh = 0;
 let newsRequestedDay = '';
 let newsAbortReason = '';
+let readingFrame = 0;
+let readingResumeConsumed = false;
+let newsRefreshing = false;
+let roomReturnFocus = null;
 const DISTRIBUTION_VERSION = '60.274.5';
 const NEWS_ASSET_PATHS = ['./assets/giornale/latest.json', './latest.json'];
 const WORD_ASSET_PATHS = ['./assets/parole-giorno-v1.json', './parole-giorno-v1.json'];
+const NEWS_READING_KEY = 'sentiero-giornale-lettura-v1';
 
 function validIso(value) {
   const milliseconds = Date.parse(value || '');
@@ -543,6 +548,134 @@ function button(className, label, action) {
   const node = element('button', className, label); node.type = 'button'; node.addEventListener('click', action); return node;
 }
 
+function articleReadingId(article) {
+  const storyId = article && Array.isArray(article.storyIds) && article.storyIds.find(Boolean);
+  const sourceId = article && Array.isArray(article.sourceIds) && article.sourceIds.find(Boolean);
+  const id = cleanText(storyId || sourceId, 100);
+  return id ? (storyId ? 'story:' : 'source:') + id : '';
+}
+
+function clearReadingMarker() {
+  try { localStorage.removeItem(NEWS_READING_KEY); } catch (_) {}
+}
+
+function readReadingMarker() {
+  try {
+    const marker = JSON.parse(localStorage.getItem(NEWS_READING_KEY) || 'null');
+    if (!marker || marker.v !== 1 || marker.dayKey !== sentieroDayKey() || !cleanText(marker.storyId, 108)) { clearReadingMarker(); return null; }
+    return { dayKey: marker.dayKey, storyId: cleanText(marker.storyId, 108) };
+  } catch (_) { clearReadingMarker(); return null; }
+}
+
+function saveReadingMarker(storyId) {
+  if (!storyId) return;
+  try {
+    const previous = readReadingMarker();
+    if (previous && previous.storyId === storyId) return;
+    localStorage.setItem(NEWS_READING_KEY, JSON.stringify({ v: 1, dayKey: sentieroDayKey(), storyId, at: Date.now() }));
+  } catch (_) {}
+}
+
+function captureReadingProgress() {
+  readingFrame = 0;
+  if (!room || room.hidden) return;
+  const shell = room.querySelector('.giorno-shell'), articles = [...room.querySelectorAll('.news-article[data-reading-id]')];
+  if (!shell || !articles.length) return;
+  const shellTop = shell.getBoundingClientRect().top, readingLine = shellTop + Math.min(140, Math.max(84, shell.clientHeight * .18));
+  const end = room.querySelector('.edition-end');
+  if (end && end.getBoundingClientRect().top <= readingLine) { clearReadingMarker(); return; }
+  let active = null;
+  for (const article of articles) {
+    if (article.getBoundingClientRect().top <= readingLine) active = article;
+    else break;
+  }
+  if (active) saveReadingMarker(active.dataset.readingId);
+}
+
+function scheduleReadingCapture() {
+  if (!readingFrame) readingFrame = requestAnimationFrame(captureReadingProgress);
+}
+
+function currentReadingAnchor() {
+  if (!room || room.hidden) return null;
+  const shell = room.querySelector('.giorno-shell'), articles = [...room.querySelectorAll('.news-article[data-reading-id]')];
+  if (!shell || !articles.length) return null;
+  const shellTop = shell.getBoundingClientRect().top, readingLine = shellTop + Math.min(140, Math.max(84, shell.clientHeight * .18));
+  let active = null;
+  for (const article of articles) {
+    if (article.getBoundingClientRect().top <= readingLine) active = article;
+    else break;
+  }
+  if (!active || !active.dataset.readingId) return null;
+  saveReadingMarker(active.dataset.readingId);
+  return { storyId: active.dataset.readingId, top: active.getBoundingClientRect().top - shellTop };
+}
+
+function restoreReadingAnchor(anchor) {
+  if (!anchor || !room || room.hidden) return;
+  const shell = room.querySelector('.giorno-shell'), target = [...room.querySelectorAll('.news-article[data-reading-id]')].find(article => article.dataset.readingId === anchor.storyId);
+  if (!shell || !target) return;
+  const delta = target.getBoundingClientRect().top - shell.getBoundingClientRect().top - anchor.top;
+  if (Number.isFinite(delta) && Math.abs(delta) > .5) shell.scrollTop += delta;
+}
+
+function refreshControl(label, ariaLabel) {
+  const control = button('news-refresh', label, () => refreshNews(true));
+  control.dataset.idleLabel = label;
+  control.setAttribute('aria-label', ariaLabel || label);
+  control.disabled = newsRefreshing;
+  control.setAttribute('aria-busy', newsRefreshing ? 'true' : 'false');
+  if (newsRefreshing) control.textContent = 'Verifico…';
+  return control;
+}
+
+function syncRefreshControls() {
+  if (!room) return;
+  for (const control of room.querySelectorAll('.news-refresh[data-idle-label]')) {
+    control.disabled = newsRefreshing;
+    control.setAttribute('aria-busy', newsRefreshing ? 'true' : 'false');
+    control.textContent = newsRefreshing ? 'Verifico…' : control.dataset.idleLabel;
+  }
+}
+
+function roomFocusable() {
+  if (!room) return [];
+  return [...room.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(node => !node.hidden && node.getClientRects().length);
+}
+
+function keepRoomFocus(event) {
+  if (!room || room.hidden) return;
+  if (event.key === 'Escape') { event.preventDefault(); close(); return; }
+  if (event.key !== 'Tab') return;
+  const focusable = roomFocusable(); if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1], active = document.activeElement;
+  if (event.shiftKey && (active === first || !room.contains(active))) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); }
+}
+
+function renderReadingResume(edition) {
+  if (readingResumeConsumed) return null;
+  const marker = readReadingMarker(), articles = edition && Array.isArray(edition.articles) ? edition.articles : [];
+  if (!marker) return null;
+  const targetId = marker.storyId, exists = articles.some(article => articleReadingId(article) === targetId);
+  if (!exists) { clearReadingMarker(); return null; }
+  const resume = element('aside', 'news-resume');
+  resume.append(element('p', '', 'Hai lasciato il Giornale a metà.'));
+  const action = button('', 'Riprendi dal punto lasciato', () => {
+    const target = [...room.querySelectorAll('.news-article[data-reading-id]')].find(article => article.dataset.readingId === targetId);
+    if (!target) { clearReadingMarker(); resume.remove(); return; }
+    readingResumeConsumed = true; resume.remove();
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' });
+    const heading = target.querySelector('h3');
+    if (heading) { heading.tabIndex = -1; requestAnimationFrame(() => heading.focus({ preventScroll: true })); }
+  });
+  action.setAttribute('aria-label', 'Riprendi la lettura del Giornale dal punto lasciato');
+  resume.append(action);
+  return resume;
+}
+
 function installRoom() {
   if (room) return room;
   const style = element('style'); style.id = 'giorno-room-style'; style.textContent = `
@@ -555,17 +688,19 @@ body.giorno-aperto{overflow:hidden!important}
 .giorno-section{margin:0 0 56px;scroll-margin-top:78px}.giorno-label{margin:0 0 8px;color:var(--sun);font:700 11px/1.3 system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase}.giorno-section h2{margin:0 0 20px;font:500 clamp(31px,9vw,49px)/1.02 Georgia,serif;letter-spacing:-.035em}.giorno-section-note{margin:-10px 0 20px;color:var(--muted);font:400 14px/1.55 system-ui,sans-serif}
 .week-nav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;margin:0 0 12px}.week-nav button{height:44px;border:0;background:none;color:var(--ink);font-size:25px}.week-title{text-align:center;font:600 13px/1.3 system-ui,sans-serif}.week-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;width:100%;padding:2px 0 10px}.week-day{min-width:0;min-height:66px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.24);color:var(--ink);padding:8px 1px}.week-day b,.week-day span{display:block}.week-day b{font:700 9px/1.2 system-ui,sans-serif;letter-spacing:.03em}.week-day span{margin-top:5px;font:500 20px/1 Georgia,serif}.week-day i{display:block;width:5px;height:5px;margin:6px auto 0;border-radius:50%;background:transparent}.week-day.has i{background:var(--sun)}.week-day.today{box-shadow:inset 0 0 0 1px var(--sun)}.week-day.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .week-agenda{border-top:1px solid var(--line);margin-top:9px}.agenda-empty{padding:27px 0;color:var(--muted);font:italic 18px/1.55 Georgia,serif}.agenda-row{display:grid;grid-template-columns:62px 1fr;gap:13px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:17px 0;min-height:65px}.agenda-row time{font:700 12px/1.4 system-ui,sans-serif;color:var(--sun)}.agenda-row strong{display:block;font:500 18px/1.25 Georgia,serif}.agenda-row small{display:block;margin-top:4px;color:var(--muted);font:400 13px/1.45 system-ui,sans-serif}.agenda-row.done{opacity:.55}.agenda-row.done strong{text-decoration:line-through}
-.news-state{padding:24px 0;border-block:1px solid var(--line);color:var(--muted);font:400 15px/1.6 system-ui,sans-serif}.news-state b{color:var(--ink)}.news-refresh{min-height:44px;margin-top:13px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--ink);font:600 13px/1 system-ui,sans-serif}.edition-head{padding:5px 0 28px;border-bottom:3px double var(--ink)}.edition-head h3{margin:0;font:500 clamp(35px,10vw,57px)/.98 Georgia,serif;letter-spacing:-.045em}.edition-head p{margin:15px 0 0;color:var(--muted);font:400 17px/1.55 Georgia,serif}.edition-meta{margin-top:15px!important;font:600 10px/1.3 system-ui,sans-serif!important;letter-spacing:.12em;text-transform:uppercase}.edition-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.edition-tools .news-refresh{margin-top:10px}.edition-corrections{margin:24px 0 0;padding:15px 17px;border:1px solid var(--line);font:400 14px/1.55 system-ui,sans-serif}.edition-corrections strong{display:block;margin-bottom:6px}.claim-sources{font:600 10px/1 system-ui,sans-serif;white-space:nowrap}.claim-sources a{color:#355d52;text-decoration:none;margin-left:5px}.edition-front{display:grid;grid-template-columns:minmax(0,1fr);border-bottom:2px solid var(--ink)}
+.news-state{padding:24px 0;border-block:1px solid var(--line);color:var(--muted);font:400 15px/1.6 system-ui,sans-serif}.news-state b{color:var(--ink)}.news-refresh{min-height:44px;margin-top:13px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--ink);font:600 13px/1 system-ui,sans-serif}.news-refresh:disabled{cursor:wait;opacity:.68}.edition-head{padding:5px 0 28px;border-bottom:3px double var(--ink)}.edition-head h3{margin:0;font:500 clamp(35px,10vw,57px)/.98 Georgia,serif;letter-spacing:-.045em}.edition-head p{margin:15px 0 0;color:var(--muted);font:400 17px/1.55 Georgia,serif}.edition-meta{margin-top:15px!important;font:600 10px/1.3 system-ui,sans-serif!important;letter-spacing:.12em;text-transform:uppercase}.edition-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.edition-tools .news-refresh{margin-top:10px}.edition-corrections{margin:24px 0 0;padding:15px 17px;border:1px solid var(--line);font:400 14px/1.55 system-ui,sans-serif}.edition-corrections strong{display:block;margin-bottom:6px}.claim-sources{font:600 10px/1 system-ui,sans-serif;white-space:nowrap}.claim-sources a{color:#355d52;text-decoration:none;margin-left:5px}.news-resume{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:17px 0 0;padding:11px 0 12px;border-bottom:1px solid var(--line)}.news-resume p{margin:0;color:var(--muted);font:italic 14px/1.4 Georgia,serif}.news-resume button{min-height:44px;padding:0 2px;border:0;border-bottom:1px solid currentColor;border-radius:0;background:none;color:var(--ink);font:700 12px/1.2 system-ui,sans-serif;letter-spacing:.02em}.edition-front{display:grid;grid-template-columns:minmax(0,1fr);border-bottom:2px solid var(--ink)}
 .news-article{min-width:0;padding:30px 0;border-bottom:1px solid var(--line)}.news-article .section{color:var(--sun);font:700 10px/1.2 system-ui,sans-serif;letter-spacing:.15em;text-transform:uppercase}.article-delta{display:inline-flex;margin:0 0 9px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;color:#5d4a27;font:700 9px/1.2 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}.news-article h3{margin:8px 0 9px;font:500 clamp(27px,8vw,42px)/1.05 Georgia,serif;letter-spacing:-.027em}.news-article.lead{padding-top:36px;border-bottom:2px solid var(--ink)}.news-article.lead h3{font-size:clamp(34px,9vw,52px);line-height:1.05}.news-article.major h3{font-size:clamp(26px,7vw,38px);line-height:1.1}.news-article.brief h3{font-size:clamp(22px,6vw,30px);line-height:1.15}.news-article .kicker{margin:0 0 12px;color:#475951;font:italic 15px/1.4 Georgia,serif}.news-article .body p{margin:0 0 12px;font:400 16px/1.6 Georgia,serif}.news-sources{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}.news-sources a{max-width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:#355d52;font:600 11px/1.25 system-ui,sans-serif;text-decoration:none;overflow-wrap:anywhere}.edition-end{padding:38px 0 10px;text-align:center;font:600 11px/1.5 system-ui,sans-serif;letter-spacing:.17em;text-transform:uppercase}.edition-end::before{content:'◆';display:block;margin-bottom:14px;color:var(--sun);font-size:9px}
 .word-card{position:relative;scroll-margin-top:145px;padding:25px 0 3px;border-block:2px solid var(--ink)}.word-card h3{margin:0;font:500 clamp(43px,13vw,70px)/1 Georgia,serif;letter-spacing:-.045em;overflow-wrap:anywhere}.word-meta{margin:9px 0 21px;color:var(--sun);font:700 11px/1.5 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}.word-definition{margin:0 0 17px;font:400 20px/1.55 Georgia,serif}.word-detail{padding-top:15px;border-top:1px solid var(--line);color:#41534b;font:400 15px/1.6 system-ui,sans-serif}.word-detail b{color:var(--ink)}.word-source{margin-top:18px;color:var(--muted);font:400 11px/1.5 system-ui,sans-serif}.word-source a{color:inherit}
 .giorno-fine{margin:72px 0 10px;text-align:center;color:var(--muted);font:italic 19px/1.5 Georgia,serif}
-@media(max-width:340px){.giorno-main{padding-inline:12px}.week-strip{gap:3px}.week-day{border-radius:13px}.week-day b{font-size:8px}.week-day span{font-size:18px}.agenda-row{grid-template-columns:55px 1fr}.news-article .body p{font-size:17px}}
+@media(max-width:420px){.news-resume{align-items:flex-start;flex-direction:column;gap:4px}}@media(max-width:340px){.giorno-main{padding-inline:12px}.week-strip{gap:3px}.week-day{border-radius:13px}.week-day b{font-size:8px}.week-day span{font-size:18px}.agenda-row{grid-template-columns:55px 1fr}.news-article .body p{font-size:17px}}
 @media(min-width:760px){.week-strip{gap:9px}.week-day{min-height:72px}.giorno-main{padding-top:38px}.edition-front{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);column-gap:30px}.news-article.lead{grid-column:1/-1}.news-article.major:nth-of-type(even){padding-right:26px;border-right:1px solid var(--line)}.news-article.brief{padding:22px 0}.news-article.brief .body p{font-size:16px}.news-article.brief .kicker{font-size:15px}}
 @media(prefers-reduced-motion:reduce){body:not(.anima-sempre) .giorno-room{transition:none}}
 `;
   document.head.appendChild(style);
   room = element('div', 'giorno-room'); room.id = 'giorno-room'; room.hidden = true; room.setAttribute('role', 'dialog'); room.setAttribute('aria-modal', 'true'); room.setAttribute('aria-label', 'La stanza del giorno');
+  room.addEventListener('keydown', keepRoomFocus);
   const shell = element('div', 'giorno-shell');
+  shell.addEventListener('scroll', scheduleReadingCapture, { passive: true });
   const head = element('header', 'giorno-head');
   head.append(button('', '‹', close));
   const identity = element('div'); identity.append(element('strong', '', 'La Terra')); identity.append(element('span', '', 'la stanza del giorno')); head.append(identity);
@@ -1098,6 +1233,7 @@ function renderLocalNews(items) {
 function renderEdition(edition, items, cachedLabel = '') {
   const mount = room && room.querySelector('.news-mount'); if (!mount) return;
   if (!edition) { renderNewsState('Oggi le fonti disponibili non bastano per comporre un’edizione affidabile. Nessun riempitivo prende il loro posto.', true); return; }
+  const readingAnchor = currentReadingAnchor();
   edition = truthfulEdition(edition);
   latestEdition = edition; latestSources = items || edition.sources || []; const displayEdition = personalizeEditionForDevice(edition, latestSources, currentState().quests); const sources = sourceMap(latestSources), wrap = element('div', 'edition');
   const head = element('header', 'edition-head'); head.append(element('h3', '', displayEdition.title)); if (displayEdition.deck) head.append(element('p', '', displayEdition.deck));
@@ -1108,7 +1244,8 @@ function renderEdition(edition, items, cachedLabel = '') {
   const sourceWhen = Date.parse(sourceIso || ''); if (Number.isFinite(sourceWhen)) meta.push('fonti aggiornate ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(sourceWhen)));
   head.append(element('p', 'edition-meta', meta.join(' · ')));
   newsDiagnostic({ editionDay: cleanText(edition.dayKey, 10) || generatedDay, editionGeneratedAt: generatedIso, sourcesUpdatedAt: sourceIso, cacheSavedAt: validIso(edition.cacheSavedAt), origin: cleanText(edition.sourceOrigin || edition.sourceChannel || (cachedLabel ? 'device-cache' : ''), 32), sourceAgeMinutes: sourceWhen ? Math.max(0, Math.round((Date.now() - sourceWhen) / 60000)) : -1, stale });
-  const tools = element('div', 'edition-tools'); const refreshButton = button('news-refresh', 'Verifica aggiornamenti', () => refreshNews(true)); refreshButton.setAttribute('aria-label', 'Verifica se il quadro del giorno è cambiato'); tools.append(refreshButton); head.append(tools); wrap.append(head);
+  const tools = element('div', 'edition-tools'); tools.append(refreshControl('Verifica aggiornamenti', 'Verifica se il quadro del giorno è cambiato')); head.append(tools); wrap.append(head);
+  const resume = renderReadingResume(displayEdition); if (resume) wrap.append(resume);
   if (displayEdition.corrections && displayEdition.corrections.length) {
     const corrections = element('aside', 'edition-corrections'); corrections.append(element('strong', '', 'Correzioni e precisazioni'));
     for (const correction of displayEdition.corrections) { const paragraph = element('p', '', correction.text + ' '); for (const id of correction.sourceIds || []) { const source = sources.get(String(id)); if (!source) continue; const link = element('a', '', 'Fonte'); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; paragraph.append(link); } corrections.append(paragraph); } wrap.append(corrections);
@@ -1116,7 +1253,7 @@ function renderEdition(edition, items, cachedLabel = '') {
   wrap.append(renderLocalNews(latestSources));
   const front = element('section', 'edition-front'); front.setAttribute('aria-label', 'Prima pagina');
   displayEdition.articles.forEach((article, index) => {
-    const presentation = article.presentation || (index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'), node = element('article', 'news-article ' + presentation); node.dataset.importance = String(article.importance || 0); node.append(element('span', 'section', article.section));
+    const presentation = article.presentation || (index === 0 ? 'lead' : index < 3 ? 'major' : 'brief'), node = element('article', 'news-article ' + presentation); node.dataset.importance = String(article.importance || 0); node.dataset.readingId = articleReadingId(article); node.append(element('span', 'section', article.section));
     const deltaLabels = { new: 'Nuova oggi', developed: 'Cosa cambia da ieri', corrected: 'Correzione', returned: 'Ritorna con fatti nuovi' }; node.append(element('span', 'article-delta', deltaLabels[article.deltaType] || 'Sviluppo'));
     const mediaItem = articleMedia(article, sources), media = newsFigure(mediaItem); if (media) node.append(media);
     node.append(element('h3', '', article.title)); if (article.kicker) node.append(element('p', 'kicker', article.kicker));
@@ -1124,12 +1261,12 @@ function renderEdition(edition, items, cachedLabel = '') {
     const links = element('div', 'news-sources'); for (const id of article.sourceIds) { const source = sources.get(String(id)); if (!source) continue; const meta = source.sourceMeta || {}, role = meta.perspective === 'primary' ? 'Primaria' : 'Indipendente', link = element('a', '', source.source + ' · ' + role + ' · ' + new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short' }).format(new Date(source.published))); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; const p = source.provenance || {}; link.title = 'Provenienza: ' + (p.evidenceId || source.id) + (p.retrievedAt ? ' · raccolta ' + p.retrievedAt : ''); links.append(link); } node.append(links); front.append(node);
   });
   wrap.append(front);
-  wrap.append(element('p', 'edition-end', stale ? 'Fine dell’ultima edizione disponibile.' : 'Fine dell’edizione di oggi.')); mount.replaceChildren(wrap);
+  wrap.append(element('p', 'edition-end', stale ? 'Fine dell’ultima edizione disponibile.' : 'Fine dell’edizione di oggi.')); mount.replaceChildren(wrap); restoreReadingAnchor(readingAnchor);
 }
 
 function renderNewsState(message, retry) {
   const mount = room && room.querySelector('.news-mount'); if (!mount) return; const state = element('div', 'news-state'); state.append(element('b', '', message));
-  if (retry) state.append(button('news-refresh', 'Riprova', () => refreshNews(true))); mount.replaceChildren(state);
+  if (retry) state.append(refreshControl('Riprova', 'Riprova a verificare le fonti del Giornale')); mount.replaceChildren(state);
 }
 
 function newsEndpoint() {
@@ -1213,6 +1350,8 @@ async function fetchSources(endpoint, key, signal) {
 
 export function refreshNews(force = false) {
   if (!room || newsBuild) return newsBuild;
+  const restoreRefreshFocus = Boolean(force && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('news-refresh'));
+  if (force) { newsRefreshing = true; syncRefreshControls(); }
   const run = (async () => {
   const key = sentieroDayKey(), cached = await cacheGet(key), latest = cached || await cacheLatest(), age = cached ? Date.now() - Number(cached.at || 0) : Infinity;
   const cachedEdition = cached && editionIsItalian(cached.edition) ? truthfulEdition(cached.edition) : null, cachedFresh = freshForDay(cachedEdition, key);
@@ -1265,12 +1404,21 @@ export function refreshNews(force = false) {
     finally { newsAbort = null; }
   })();
   newsBuild = run;
-  run.finally(() => { if (newsBuild === run) newsBuild = null; }).catch(() => {});
+  run.finally(() => {
+    if (newsBuild === run) newsBuild = null;
+    if (force) {
+      newsRefreshing = false; syncRefreshControls();
+      if (restoreRefreshFocus && room && !room.hidden && (!room.contains(document.activeElement) || document.activeElement === document.body)) {
+        const control = room.querySelector('.news-refresh[data-idle-label]'); if (control) requestAnimationFrame(() => control.focus({ preventScroll: true }));
+      }
+    }
+  }).catch(() => {});
   return run;
 }
 
 export async function open(nextContext) {
-  context = nextContext || context; installRoom();
+  context = nextContext || context; const wasClosed = !room || room.hidden, opener = document.activeElement; installRoom();
+  if (wasClosed) { readingResumeConsumed = false; roomReturnFocus = opener && opener !== document.body && !room.contains(opener) ? opener : null; }
   const today = sentieroDayKey(); weekStart = mondayKey(today); selectedDay = today;
   document.body.classList.add('giorno-aperto'); room.hidden = false; requestAnimationFrame(() => requestAnimationFrame(() => room.classList.add('aperta')));
   renderWeek(); renderWord(); refreshNews(false);
@@ -1279,16 +1427,18 @@ export async function open(nextContext) {
     const resumeNews = () => { if (room && !room.hidden && (newsRequestedDay !== sentieroDayKey() || !freshForDay(latestEdition, sentieroDayKey()))) refreshNews(false); };
     window.addEventListener('sentiero:state', () => { if (room && !room.hidden) { renderWeek(); renderWord(); } });
     window.addEventListener('pageshow', resumeNews); window.addEventListener('online', resumeNews);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeNews(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) captureReadingProgress(); else resumeNews(); });
   }
   const closeButton = room.querySelector('.giorno-head button'); if (closeButton) closeButton.focus({ preventScroll: true });
 }
 
 export function close() {
   if (!room || room.hidden) return;
+  captureReadingProgress();
   if (newsAbort) { newsAbortReason = 'room-closed'; newsDiagnostic({ abortReason: newsAbortReason }); try { newsAbort.abort(); } catch (_) {} newsAbort = null; }
+  const focusTarget = roomReturnFocus; roomReturnFocus = null;
   room.classList.remove('aperta'); document.body.classList.remove('giorno-aperto');
-  setTimeout(() => { if (room && !room.classList.contains('aperta')) room.hidden = true; }, 230);
+  setTimeout(() => { if (room && !room.classList.contains('aperta')) { room.hidden = true; if (focusTarget && focusTarget.isConnected && typeof focusTarget.focus === 'function') focusTarget.focus({ preventScroll: true }); } }, 230);
 }
 
 export function refresh() {
